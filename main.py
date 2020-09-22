@@ -54,7 +54,7 @@ async def source(ctx, name):
     if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
         func = bot.get_command(name).callback
         code = inspect.getsource(func)
-        await ctx.send(f'```python\n{}```'.format(code))
+        await ctx.send('```python\n{}```'.format(code))
 
 @bot.command(name='topic')
 async def topic(ctx):
