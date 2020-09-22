@@ -52,6 +52,10 @@ async def ping(ctx):
 async def topic(ctx):
     await ctx.send(random.choice(topics))
 
+@bot.command(name='test')
+async def test(ctx):
+    await ctx.send('Success (this will never happen)')    
+    
 @bot.command()
 async def hi(ctx):
     await ctx.send("Hello " + str(ctx.author)) 
