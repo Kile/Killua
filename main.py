@@ -143,7 +143,7 @@ async def on_guild_remove(guild):
 
 
 async def p():
-    playing = discord.Activity(name=f'over {len(bot.guilds)} guilds | day 5', type=discord.ActivityType.watching)
+    playing = discord.Activity(name=f'over {len(bot.guilds)} guilds | day 6', type=discord.ActivityType.watching)
     await bot.change_presence(status=discord.Status.online, activity=playing)
 
 @bot.group(name='team', invoke_without_command=True)
