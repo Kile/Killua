@@ -12,6 +12,7 @@ from datetime import datetime
 from datetime import datetime, timedelta
 from pprint import pprint
 import asyncio
+import inspect
 
 
 
@@ -47,6 +48,13 @@ async def ping(ctx):
     msg = await ctx.send('Pong!')
     end = time.time()
     await msg.edit(content = str('Pong in `' + str(1000 * (end - start))) + '` ms')
+    
+@bot.command()
+async def source(ctx, name):
+    if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
+        func = bot.get_command(name).callback
+        code = inspect.getsource(func)
+        await ctx.send(``python\n{}``.format(code))
 
 @bot.command(name='topic')
 async def topic(ctx):
