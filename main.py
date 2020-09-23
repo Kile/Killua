@@ -27,7 +27,7 @@ top =db['teampoints']
 bot = commands.Bot(command_prefix='k!', description="default prefix", case_insensitive=True)
 
 
-huggif = [f'https://i.pinimg.com/originals/66/9b/67/669b67ae57452f7afbbe5252b6230f85.gif', f'https://i.pinimg.com/originals/70/83/0d/70830dfba718d62e7af95e74955867ac.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/756945463432839168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945308381872168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945151191941251/image0.gif', 'https://pbs.twimg.com/media/Dl4PPE4UUAAsb7c.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSJgTjRyQW3NzmDzlvskIS7GMjlFpyS7yt_SQ&usqp=CAU', 'https://static.zerochan.net/Hunter.x.Hunter.full.1426317.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQJjVWplBdqrasz8Fh-7nDkxRjnnNBqk0bZlQ&usqp=CAU', 'https://i.pinimg.com/originals/75/2e/0a/752e0a5f813400dfebe322fc8b0ad0ae.jpg', 'https://thumbs.gfycat.com/IllfatedComfortableAplomadofalcon-small.gif', 'https://steamuserimages-a.akamaihd.net/ugc/492403625757327002/9B089509DDCB6D9F8E11446C7F1BC29B9BA57384/']
+huggif = [f'https://i.pinimg.com/originals/66/9b/67/669b67ae57452f7afbbe5252b6230f85.gif', f'https://i.pinimg.com/originals/70/83/0d/70830dfba718d62e7af95e74955867ac.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/756945463432839168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945308381872168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945151191941251/image0.gif', 'https://pbs.twimg.com/media/Dl4PPE4UUAAsb7c.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSJgTjRyQW3NzmDzlvskIS7GMjlFpyS7yt_SQ&usqp=CAU', 'https://static.zerochan.net/Hunter.x.Hunter.full.1426317.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQJjVWplBdqrasz8Fh-7nDkxRjnnNBqk0bZlQ&usqp=CAU', 'https://i.pinimg.com/originals/75/2e/0a/752e0a5f813400dfebe322fc8b0ad0ae.jpg', 'https://thumbs.gfycat.com/IllfatedComfortableAplomadofalcon-small.gif', 'https://steamuserimages-a.akamaihd.net/ugc/492403625757327002/9B089509DDCB6D9F8E11446C7F1BC29B9BA57384/', f'https://cdn.discordapp.com/attachments/756945125568938045/758235270524698634/image0.gif', f'https://cdn.discordapp.com/attachments/756945125568938045/758236571974762547/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758236721216749638/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237072975855626/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237082484473856/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237352756903936/image0.png', 'https://cdn.discordapp.com/attachments/756945125568938045/758237832954249216/image0.jpg']
 topics = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?']
 
 
@@ -49,20 +49,11 @@ async def ping(ctx):
     end = time.time()
     await msg.edit(content = str('Pong in `' + str(1000 * (end - start))) + '` ms')
     
-@bot.command()
-async def source(ctx, name):
-    if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
-        func = bot.get_command(name).callback
-        code = inspect.getsource(func)
-        await ctx.send('```python\n{}```'.format(code))
 
 @bot.command(name='topic')
 async def topic(ctx):
     await ctx.send(random.choice(topics))
 
-@bot.command(name='test')
-async def test(ctx):
-    await ctx.send('Success (this will never happen)')    
     
 @bot.command()
 async def hi(ctx):
@@ -72,7 +63,7 @@ async def hi(ctx):
 async def info(ctx):
     embed = discord.Embed(
         title = 'Info',
-        description = ' This is Killua, Kile\'s bot version 0.2, the first features simply include ~~this command, k!ping, k!hi and K!invite~~ more already, too lazy to update\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time started:**\n '+ str(bot.startup_datetime),
+        description = ' This is Killua, Kile\'s bot version 0.2.1, the first features simply include ~this command, `k!ping`, `k!hi`, `k!invite`, `k!hug <user>` and `k!topic`, relatively self-explanatory, also a team mode already implemented but not yet finsihed\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time restarted:**\n '+ str(bot.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
         color = 0x1400ff
     )
     await ctx.send(embed=embed) 
@@ -123,7 +114,7 @@ async def hug(ctx,  *, content=None):
         if ctx.author == ctx.message.mentions[0]:
             return await ctx.send(f'Someone hug {ctx.author.name}!')
         
-        hugtext = [f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** as strong as they can', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** and makes sure to not let go', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** the longest hug they have ever seen', f'**{ctx.author.name}** cuddles **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** uses **{ctx.message.mentions[0].name}** as a teddybear', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** until all their worries are gone and 5 minutes longer',f'**{ctx.author.name}** clones themself and together they hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** jumps in **{ctx.message.mentions[0].name}**\'s arms']
+        hugtext = [f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** as strong as they can', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** and makes sure to not let go', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** the longest hug they have ever seen', f'**{ctx.author.name}** cuddles **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** uses **{ctx.message.mentions[0].name}** as a teddybear', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** until all their worries are gone and 5 minutes longer',f'**{ctx.author.name}** clones themself and together they hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** jumps in **{ctx.message.mentions[0].name}**\'s arms', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** a bearhug', f'**{ctx.author.name}** finds a lamp with a Jinn and gets a wish. So they wish to hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** asks **{ctx.message.mentions[0].name}** for motivation and gets a hug']
         embed = discord.Embed.from_dict({
             'title': random.choice(hugtext),
             'image':{
@@ -134,6 +125,19 @@ async def hug(ctx,  *, content=None):
         await ctx.send(embed=embed)
     else:
         await ctx.send('Invalid user.. Should- I hug you?')
+        def check(m):
+            return m.content.lower() == 'yes' and m.author == ctx.author
+
+        msg = await bot.wait_for('message', check=check, timeout=60) 
+        hugtextself = [f'**Killua** hugs **{ctx.message.mentions[0].name}** as strong as they can', f'**Killua** hugs **{ctx.author.name}** and makes sure to not let go', f'**Killua** gives **{ctx.author.name}** the longest hug they have ever seen', f'**Killua** cuddles **{ctx.author.name}**', f'**Killua** uses **{ctx.author.name}** as a teddybear', f'**Killua** hugs **{ctx.author.name}** until all their worries are gone and 5 minutes longer',f'**Killua** clones themself and together they hug **{ctx.author.name}**', f'**Killua** jumps in **{ctx.author.name}**\'s arms', f'**Killua** gives **{ctx.author.name}** a bearhug', f'**Killua** finds a lamp with a Jinn and gets a wish. So they wish to hug **{ctx.author.name}**', f'**Killua** asks **{ctx.author.name}** for motivation and gets a hug']
+        embed = discord.Embed.from_dict({
+            'title': random.choice(hugtextself),
+            'image':{
+                'url': random.choice(huggif)
+            },
+            'color': 0x1400ff
+            })
+        await ctx.send(embed=embed) 
 
 
 
@@ -148,10 +152,17 @@ async def on_guild_join(guild):
 @bot.event
 async def on_guild_remove(guild):
     await p()
+    
+@tasks.loop(hours=1)
+async def days():
+   await  p()
 
 
 async def p():
-    playing = discord.Activity(name=f'over {len(bot.guilds)} guilds | day 6', type=discord.ActivityType.watching)
+    a = date.today()
+    b = date(2020,9,17)
+    delta = a - b
+    playing = discord.Activity(name=f'over {len(bot.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
     await bot.change_presence(status=discord.Status.online, activity=playing)
 
 @bot.group(name='team', invoke_without_command=True)
@@ -290,6 +301,14 @@ async def exec(ctx, *, c):
             await ctx.channel.send(f'```py\n{eval(c)}```')
         except Exception as e:
             await ctx.channel.send(str(e))
+                              
+@bot.command()
+async def source(ctx, name):
+    if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
+        func = bot.get_command(name).callback
+        code = inspect.getsource(func)
+        await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
+                              
 
 async def procont(team):
     amountteam = collection.count_documents({"team": team})
