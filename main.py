@@ -14,6 +14,9 @@ from pprint import pprint
 import asyncio
 import inspect
 from datetime import date
+from discord.utils import find
+from discord import client
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 
 
@@ -22,6 +25,7 @@ cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/te
 db = cluster['Killua']
 collection = db['teams']
 top =db['teampoints']
+server = db['guilds']
 
 
 
@@ -39,8 +43,22 @@ async def on_ready():
     print('------')
     bot.startup_datetime = datetime.now()
         
+        
+ @bot.event
+async def on_guild_join(guild):
+    
+    general = find(lambda x: x.name == 'general',  guild.text_channels)
+    if general and general.permissions_for(guild.me).send_messages:
+        await general.send('Hello {}!'.format(guild.name))
 
-
+    try:
+        print('Please work')
+        results = server.find({'id': guild.id})
+        for result in results:
+            t = result['points']
+        print(t)     
+    except Exception as e:
+        server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': ''}}, upsert=True)
 
 
 @bot.command()
@@ -64,7 +82,7 @@ async def hi(ctx):
 async def info(ctx):
     embed = discord.Embed(
         title = 'Info',
-        description = ' This is Killua, Kile\'s bot version 0.2.1, the first features simply include ~this command, `k!ping`, `k!hi`, `k!invite`, `k!hug <user>` and `k!topic`, relatively self-explanatory, also a team mode already implemented but not yet finsihed\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time restarted:**\n '+ str(bot.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
+        description = ' This is Killua, Kile\'s bot version 0.2.2, the first features simply include ~this command, `k!ping`, `k!hi`, `k!invite`, `k!hug <user>` and `k!topic`, relatively self-explanatory, also a team mode already implemented but not yet finsihed\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time restarted:**\n '+ str(bot.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
         color = 0x1400ff
     )
     await ctx.send(embed=embed) 
@@ -145,6 +163,7 @@ async def hug(ctx,  *, content=None):
 @bot.event
 async def on_connect():
     await p()
+    days.start()
     
 @bot.event
 async def on_guild_join(guild):
