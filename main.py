@@ -44,7 +44,7 @@ async def on_ready():
     bot.startup_datetime = datetime.now()
         
         
- @bot.event
+@bot.event
 async def on_guild_join(guild):
     
     general = find(lambda x: x.name == 'general',  guild.text_channels)
@@ -157,8 +157,6 @@ async def hug(ctx,  *, content=None):
             'color': 0x1400ff
             })
         await ctx.send(embed=embed) 
-
-
 
 @bot.event
 async def on_connect():
