@@ -77,6 +77,31 @@ async def topic(ctx):
 @bot.command()
 async def hi(ctx):
     await ctx.send("Hello " + str(ctx.author)) 
+    
+@bot.command(aliases=['patreon'])
+async def support(ctx):
+
+    embed = discord.Embed.from_dict({
+        'title': '**Support Killua**',
+        'thumbnail':{
+            'url': 'https://cdn.discordapp.com/avatars/758031913788375090/e44c0de4678c544e051be22e74bc502d.png?size=1024'},
+        'description': 'Hey, do you have too much money? I have a solution for that! I now have a Patreon account where you can donate to support me and get special stuff, helping with bulding Killua. No that I expect anyone to do this, but I have it set up now.\n\n https://www.patreon.com/KileAlkuri',
+        'color': 0x1400ff
+    })
+    await ctx.send(embed=embed)
+
+
+@bot.command(aliases=['c'])
+async def commands(ctx):
+
+    embed = discord.Embed.from_dict({
+        'title': '**Bot commands**',
+        'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n If you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
+        'color': 0x1400ff 
+    })
+        
+    await ctx.author.send(embed=embed)
+    await ctx.send('Check your dms ;)')
 
 @bot.command()
 async def info(ctx):
