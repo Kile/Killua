@@ -31,12 +31,10 @@ server = db['guilds']
 
 
 def get_prefix(bot, message):
-    print('This is not gonna print anything is it...')
     results = server.find({'id': message.guild.id})
-    print(results)
     for result in results:
         pref = result['prefix']
-    print(pref)
+    
     return pref
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
@@ -96,7 +94,7 @@ async def on_message(message):
         server.update_many({'id': message.guild.id},{'$set':{'prefix': 'k!'}}, upsert=True)
 
         await message.channel.send('Set prefix to default `k!`')
-        await bot.process_commands(message)
+    await bot.process_commands(message)
             
         
         
