@@ -34,8 +34,7 @@ def get_prefix(bot, message):
     y = server.find({'id': message.guild.id})
     for x in y:
         prefix = x['prefix']
-        return prefix
-    return '!k'
+    return prefix
     
     
 
