@@ -32,8 +32,10 @@ server = db['guilds']
 
 def get_prefix(bot, message):
     results = server.find({'id': message.guild.id})
+    print(results)
     for result in results:
         pref = result['prefix']
+    print(pref)
     return pref
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
