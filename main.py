@@ -31,10 +31,10 @@ server = db['guilds']
 
 
 def get_prefix(bot, message):
-    with open('prefixes.json', 'r') as f:
-        prefixes = json.load(f)
-
-    return prefixes[str(message.guild.id)]
+    results = server.find({'id': message.server.id})
+    for result in results:
+        pref = result['prefix']
+    return pref
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
 bot.remove_command('help')
@@ -66,18 +66,8 @@ async def on_guild_join(guild):
             t = result['points']
         print(t)     
     except Exception as e:
-        server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': ''}}, upsert=True)
+        server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
 
-
-@bot.event
-async def on_guild_join(guild):
-    with open('prefixes.json', 'r') as f:
-        prefixes = json.load(f)
-
-    prefixes[str(guild.id)] = 'k!'
-
-    with open('prefixes.json', 'w') as f:
-        json.dump(prefixes, f, indent=4)
 
 
 @bot.event
@@ -85,40 +75,30 @@ async def on_guild_remove(guild):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
 
-    prefixes.pop(str(guild.id))
 
-    with open('prefixes.json', 'w') as f:
-        json.dump(prefixes, f, indent=4)
-
-bot.command(aliases = ['pref'])
+@bot.command(aliases = ['pref'])
 async def prefix(ctx, prefix=None):
-    with open('prefixes.json', 'r') as f:
-        prefixes = json.load(f)
+    results = server.find({'id': ctx.server.id})
+    for result in results:
+            pref = result['prefix']
     if prefix:
         if ctx.author.guild_permissions.administrator:
-            prefixes[str(ctx.guild.id)] = prefix
 
-            with open('prefixes.json', 'w') as f:
-                json.dump(prefixes, f, indent=4)
+            server.update_one({'id': guild.id},{'$set':{'prefix': str(pref)}}, upsert=True)
+
             await ctx.send(f'Changed server prefix to `{prefix}`')
 
         else: 
             await ctx.send('Missing permissions')
     else:
-        await ctx.send(f'The current server prefix is `{prefixes[str(ctx.guild.id)]}`')
+        await ctx.send(f'The current server prefix is `{pref}`')
         
 @bot.event
 async def on_message(message):
     if message.content == 'k!default pref' and message.author.guild_permissions.administrator:
-        with open('prefixes.json', 'r') as f:
-            prefixes = json.load(f)
+        server.update_one({'id': guild.id},{'$set':{'prefix': 'k!'}}, upsert=True)
 
-        prefixes[str(message.guild.id)] = 'k!'
-
-        with open('prefixes.json', 'w') as f:
-            json.dump(prefixes, f, indent=4)
-
-        await message.channel.send('Set prefix to default `k!`')        
+        await message.channel.send('Set prefix to default `k!`')   
             
         
         
