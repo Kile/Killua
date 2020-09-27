@@ -36,8 +36,6 @@ def get_prefix(bot, message):
 
     return prefixes[str(message.guild.id)]
 
-
-defaultbot = commands.Bot(command_prefix= 'kil!', description="default prefix", case_insensitive=True)
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
 bot.remove_command('help')
 
@@ -92,7 +90,7 @@ async def on_guild_remove(guild):
     with open('prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
 
-@defaultbot.command(aliases = ['pref'])
+bot.command(aliases = ['pref'])
 async def prefix(ctx, prefix=None):
     with open('prefixes.json', 'r') as f:
         prefixes = json.load(f)
@@ -108,6 +106,19 @@ async def prefix(ctx, prefix=None):
             await ctx.send('Missing permissions')
     else:
         await ctx.send(f'The current server prefix is `{prefixes[str(ctx.guild.id)]}`')
+        
+@bot.event
+async def on_message(message):
+    if message.content == 'k!default pref' and message.author.guild_permissions.administrator:
+        with open('prefixes.json', 'r') as f:
+            prefixes = json.load(f)
+
+        prefixes[str(message.guild.id)] = 'k!'
+
+        with open('prefixes.json', 'w') as f:
+            json.dump(prefixes, f, indent=4)
+
+        await message.channel.send('Set prefix to default `k!`')        
             
         
         
