@@ -34,7 +34,10 @@ def get_prefix(bot, message):
     y = server.find({'id': message.guild.id})
     
     prefix = y[0]['prefix']
-    return prefix
+    if prefix.len != 0:
+        return prefix
+    else:
+        return '!k'
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
 bot.remove_command('help')
@@ -72,13 +75,13 @@ async def on_guild_join(guild):
 
 @bot.command(aliases = ['pref'])
 async def prefix(ctx, prefix=None):
-    results = server.find({'id': ctx.server.id})
+    results = server.find({'id': ctx.guild.id})
     for result in results:
             pref = result['prefix']
     if prefix:
         if ctx.author.guild_permissions.administrator:
 
-            server.update_many({'id': guild.id},{'$set':{'prefix': str(pref)}}, upsert=True)
+            server.update_many({'id': ctx.guild.id},{'$set':{'prefix': str(pref)}}, upsert=True)
 
             await ctx.send(f'Changed server prefix to `{prefix}`')
 
