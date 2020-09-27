@@ -32,12 +32,12 @@ server = db['guilds']
 
 def get_prefix(bot, message):
     y = server.find({'id': message.guild.id})
-    
-    prefix = y[0]['prefix']
-    if prefix.len != 0:
+    if len(prefix) != 0:
         return prefix
     else:
         return '!k'
+    prefix = y[0]['prefix']
+    
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
 bot.remove_command('help')
