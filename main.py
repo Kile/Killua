@@ -2,6 +2,7 @@ from discord.ext import commands
 import time
 import discord
 import random
+import json
 import pymongo
 from random import randint
 from datetime import datetime
@@ -29,7 +30,16 @@ server = db['guilds']
 
 
 
-bot = commands.Bot(command_prefix='k!', description="default prefix", case_insensitive=True)
+def get_prefix(bot, message):
+    with open('prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+
+    return prefixes[str(message.guild.id)]
+
+
+defaultbot = commands.Bot(command_prefix= 'kil!', description="default prefix", case_insensitive=True)
+bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
+bot.remove_command('help')
 
 
 huggif = [f'https://i.pinimg.com/originals/66/9b/67/669b67ae57452f7afbbe5252b6230f85.gif', f'https://i.pinimg.com/originals/70/83/0d/70830dfba718d62e7af95e74955867ac.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/756945463432839168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945308381872168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945151191941251/image0.gif', 'https://pbs.twimg.com/media/Dl4PPE4UUAAsb7c.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSJgTjRyQW3NzmDzlvskIS7GMjlFpyS7yt_SQ&usqp=CAU', 'https://static.zerochan.net/Hunter.x.Hunter.full.1426317.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQJjVWplBdqrasz8Fh-7nDkxRjnnNBqk0bZlQ&usqp=CAU', 'https://i.pinimg.com/originals/75/2e/0a/752e0a5f813400dfebe322fc8b0ad0ae.jpg', 'https://thumbs.gfycat.com/IllfatedComfortableAplomadofalcon-small.gif', 'https://steamuserimages-a.akamaihd.net/ugc/492403625757327002/9B089509DDCB6D9F8E11446C7F1BC29B9BA57384/', f'https://cdn.discordapp.com/attachments/756945125568938045/758235270524698634/image0.gif', f'https://cdn.discordapp.com/attachments/756945125568938045/758236571974762547/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758236721216749638/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237072975855626/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237082484473856/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237352756903936/image0.png', 'https://cdn.discordapp.com/attachments/756945125568938045/758237832954249216/image0.jpg']
@@ -61,6 +71,46 @@ async def on_guild_join(guild):
         server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': ''}}, upsert=True)
 
 
+@bot.event
+async def on_guild_join(guild):
+    with open('prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+
+    prefixes[str(guild.id)] = 'k!'
+
+    with open('prefixes.json', 'w') as f:
+        json.dump(prefixes, f, indent=4)
+
+
+@bot.event
+async def on_guild_remove(guild):
+    with open('prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+
+    prefixes.pop(str(guild.id))
+
+    with open('prefixes.json', 'w') as f:
+        json.dump(prefixes, f, indent=4)
+
+@defaultbot.command(aliases = ['pref'])
+async def prefix(ctx, prefix=None):
+    with open('prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+    if prefix:
+        if ctx.author.guild_permissions.administrator:
+            prefixes[str(ctx.guild.id)] = prefix
+
+            with open('prefixes.json', 'w') as f:
+                json.dump(prefixes, f, indent=4)
+            await ctx.send(f'Changed server prefix to `{prefix}`')
+
+        else: 
+            await ctx.send('Missing permissions')
+    else:
+        await ctx.send(f'The current server prefix is `{prefixes[str(ctx.guild.id)]}`')
+            
+        
+        
 @bot.command()
 async def ping(ctx):
     start = time.time()
@@ -85,7 +135,7 @@ async def support(ctx):
         'title': '**Support Killua**',
         'thumbnail':{
             'url': 'https://cdn.discordapp.com/avatars/758031913788375090/e44c0de4678c544e051be22e74bc502d.png?size=1024'},
-        'description': 'Hey, do you have too much money? I have a solution for that! I now have a Patreon account where you can donate to support me and get special stuff, helping with bulding Killua. No that I expect anyone to do this, but I have it set up now.\n\n https://www.patreon.com/KileAlkuri',
+        'description': 'Hey, do you have too much money? I have a solution for that! I now have a Patreon account where you can donate to support me and get special stuff, helping with building Killua. Not that I expect anyone to do this, but I have it set up now.\n\n https://www.patreon.com/KileAlkuri',
         'color': 0x1400ff
     })
     await ctx.send(embed=embed)
