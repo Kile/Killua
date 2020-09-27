@@ -32,7 +32,7 @@ server = db['guilds']
 
 def get_prefix(bot, message):
     y = server.find({'id': message.guild.id})
-    if y.len != 0:
+    if len(y) != 0:
         prefix = y[0]['prefix']
         return prefix
     else:
