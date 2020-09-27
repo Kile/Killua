@@ -70,12 +70,6 @@ async def on_guild_join(guild):
 
 
 
-@bot.event
-async def on_guild_remove(guild):
-    with open('prefixes.json', 'r') as f:
-        prefixes = json.load(f)
-
-
 @bot.command(aliases = ['pref'])
 async def prefix(ctx, prefix=None):
     results = server.find({'id': ctx.server.id})
@@ -84,7 +78,7 @@ async def prefix(ctx, prefix=None):
     if prefix:
         if ctx.author.guild_permissions.administrator:
 
-            server.update_one({'id': guild.id},{'$set':{'prefix': str(pref)}}, upsert=True)
+            server.update_many({'id': guild.id},{'$set':{'prefix': str(pref)}}, upsert=True)
 
             await ctx.send(f'Changed server prefix to `{prefix}`')
 
@@ -96,7 +90,7 @@ async def prefix(ctx, prefix=None):
 @bot.event
 async def on_message(message):
     if message.content == 'k!default pref' and message.author.guild_permissions.administrator:
-        server.update_one({'id': guild.id},{'$set':{'prefix': 'k!'}}, upsert=True)
+        server.update_many({'id': message.guild.id},{'$set':{'prefix': 'k!'}}, upsert=True)
 
         await message.channel.send('Set prefix to default `k!`')   
             
