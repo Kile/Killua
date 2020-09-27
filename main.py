@@ -31,6 +31,7 @@ server = db['guilds']
 
 
 def get_prefix(bot, message):
+    print('This is not gonna print anything is it...')
     results = server.find({'id': message.guild.id})
     print(results)
     for result in results:
