@@ -95,7 +95,8 @@ async def on_message(message):
     if message.content == 'k!default pref' and message.author.guild_permissions.administrator:
         server.update_many({'id': message.guild.id},{'$set':{'prefix': 'k!'}}, upsert=True)
 
-        await message.channel.send('Set prefix to default `k!`')   
+        await message.channel.send('Set prefix to default `k!`')
+        await bot.process_commands(message)
             
         
         
