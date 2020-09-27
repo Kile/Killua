@@ -31,11 +31,10 @@ server = db['guilds']
 
 
 def get_prefix(bot, message):
-    results = server.find({'id': message.guild.id})
-    for result in results:
-        pref = result['prefix']
+    y = server.find({'id': message.guild.id})
     
-    return pref
+    prefix = y[0]['prefix']
+    return prefix
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
 bot.remove_command('help')
