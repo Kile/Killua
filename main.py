@@ -34,7 +34,8 @@ def get_prefix(bot, message):
     y = server.find({'id': message.guild.id})
     for x in y:
         prefix = x['prefix']
-    return prefix
+        return prefix
+    return 'k!
     
     
 
@@ -80,7 +81,7 @@ async def prefix(ctx, prefix=None):
     if prefix:
         if ctx.author.guild_permissions.administrator:
 
-            server.update_many({'id': ctx.guild.id},{'$set':{'prefix': str(pref)}}, upsert=True)
+            server.update_one({'id': ctx.guild.id},{'$set':{'prefix': f'{str(pref)}'}})
 
             await ctx.send(f'Changed server prefix to `{prefix}`')
 
