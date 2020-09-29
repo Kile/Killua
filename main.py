@@ -39,7 +39,7 @@ def get_prefix(bot, message):
     
     
 
-bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True)
+bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True, intents = discord.Intents.default())
 bot.remove_command('help')
 
 
@@ -57,7 +57,7 @@ async def on_ready():
         
 @bot.event
 async def on_guild_join(guild):
-    
+    await p()
     general = find(lambda x: x.name == 'general',  guild.text_channels)
     if general and general.permissions_for(guild.me).send_messages:
         await general.send('Hello {}!'.format(guild.name))
@@ -226,9 +226,6 @@ async def on_connect():
     await p()
     days.start()
     
-@bot.event
-async def on_guild_join(guild):
-    await p()
 
 @bot.event
 async def on_guild_remove(guild):
