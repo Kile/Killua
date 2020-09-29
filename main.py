@@ -81,8 +81,7 @@ async def prefix(ctx, prefix=None):
     if prefix:
         if ctx.author.guild_permissions.administrator:
 
-            server.update_one({'id': ctx.guild.id},{'$set':{'prefix': str(pref)}}, upsert=True)
-
+            server.update_many({'id': ctx.guild.id},{'$set':{'prefix': str(prefix)}}, upsert=True)
             await ctx.send(f'Changed server prefix to `{prefix}`')
 
         else: 
