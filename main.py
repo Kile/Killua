@@ -129,7 +129,7 @@ async def support(ctx):
     await ctx.send(embed=embed)
 
 
-@bot.command(aliases=['c'])
+@bot.command(aliases=['c', 'help'])
 async def commands(ctx):
 
     embed = discord.Embed.from_dict({
@@ -145,7 +145,7 @@ async def commands(ctx):
 async def info(ctx):
     embed = discord.Embed(
         title = 'Info',
-        description = ' This is Killua, Kile\'s bot version 0.2.2, the first features simply include ~this command, `k!ping`, `k!hi`, `k!invite`, `k!hug <user>` and `k!topic`, relatively self-explanatory, also a team mode already implemented but not yet finsihed\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time restarted:**\n '+ str(bot.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
+        description = ' This is Killua, Kile\'s bot version 0.4, the first features simply include ~this command, `k!ping`, `k!hi`, `k!invite`, `k!hug <user>` and `k!topic`, relatively self-explanatory, also a team mode already implemented but not yet finsihed\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time restarted:**\n '+ str(bot.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
         color = 0x1400ff
     )
     await ctx.send(embed=embed) 
@@ -247,6 +247,12 @@ async def p():
 async def team(ctx):
     pass
 
+@bot.command()
+async def points(ctx):
+    results = collection.find({'id': ctx.author.id})
+    for result in results:
+        p1 = result['points']
+    await ctx.send(f'You currently hold on to {p1} points!')
 
 @team.command(name="killua")
 async def killua(ctx):
@@ -370,6 +376,193 @@ async def info(ctx, text= None):
         )
         embed.set_thumbnail(url='https://imgix.ranker.com/user_node_img/3683/73654539/original/hunter-x-hunter-u47?fm=pjpg&q=80.img')
         await ctx.send(embed=embed)
+                              
+                              
+@bot.command()
+async def rps(ctx, member: discord.User, points: int):
+    t2 = None
+    p2 = 0
+
+    resultsopp = collection.find({'id': member.id})
+    for resulte in resultsopp:
+        p2 = resulte['points']
+        t2 = resulte['team']
+
+    results = collection.find({'id': ctx.author.id})
+    for result in results:
+        p1 = result['points']
+        t1 = result['team']
+
+    try:
+
+        if t1 == None:
+            await ctx.send('You need to join a team to play Rock Paper Scissors')
+            return
+
+        if points <= 0 or points > 100:
+            await ctx.send(f'You can only play using 1-100 points')
+            return
+
+        if p1 < points or p1 is None:
+            await ctx.send(f'You do not have enough points for that. Your current balance is `{str(p1)}`')
+            return
+
+        
+        channel = ctx.message.channel
+       
+
+        if member.id == 756206646396452975:
+            await ctx.author.send('You chose to play Rock Paper Scissors against me, what\'s your choice? [Rock] [Paper] [Scissors]')
+
+            embed = discord.Embed.from_dict({
+                'title': f'{ctx.author.name} against Killua: **Rock... Paper... Scissors!**',
+                'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
+                'color': 0x1400ff
+                })
+
+            await ctx.send(embed= embed)
+            def check(m):
+                return m.content.lower() == 'scissors' or m.content.lower() == 'paper' or m.content.lower() == 'rock' and m.author == ctx.author
+                
+            msg = await bot.wait_for('message', check=check, timeout=60) 
+
+            winlose = await rpsf(msg.content, random.choice(['paper', 'rock', 'scissors']))
+            
+            if winlose == 1:
+                result = botemote(msg.content, 1)
+                collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 + points}})
+                await channel.send(f'{rpsemote(msg.content.lower())} > {rpsemote(result)}: {ctx.author.mention} won against <@756206646396452975> winning {points} points')
+            if winlose == 2:
+                result = botemote(msg.content, 2)
+                await channel.send(f'{rpsemote(msg.content.lower())} = {rpsemote(result)}: {ctx.author.mention} tied against <@756206646396452975>')
+            if winlose == 3:
+                result = botemote(msg.content, 3)
+                collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 - points}})
+                await channel.send(f'{rpsemote(msg.content.lower())} < {rpsemote(result)}: {ctx.author.mention} lost against <@756206646396452975> losing {points} points')
+        else:
+            
+            if t2 is None:
+
+                await ctx.send(f'{member.mention} is not part of a team yet')
+                return
+
+            if int(p2) < points or p2 is None:
+
+                await ctx.send(f'{member.mention} does not have enough points for that. Their current balance is `{str(p2)}`')
+
+            else:
+
+                await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Papaper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
+                def check(m1):
+                    return m1.content.lower() in ["n", "y"] and m1.author.id == member.id
+
+                try:
+                    confirmmsg = await bot.wait_for('message', check=check, timeout=60)
+
+                except asyncio.TimeoutError:
+
+                    await ctx.send('Sadly no answer, try it later bud')
+
+                else:
+                    if confirmmsg.content.lower() == 'y':
+
+                        embed = discord.Embed.from_dict({
+                            'title': f'{ctx.author.name} against {member.name}: **Rock... Paper... Scissors!**',
+                            'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
+                            'color': 0x1400ff
+                        })
+                        
+                        await ctx.send(embed= embed)
+                        await ctx.author.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
+                        await member.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
+
+                        def checkauthor(m2):
+                        
+                            return  m2.content.lower() in ["rock", "paper", "scissors"] and m2.author == ctx.author and m2.guild is None
+                        def checkopp(m3):
+                       
+                            return  m3.content.lower() in ["rock", "paper", "scissors"] and m3.author == member and m3.guild is None
+
+                        done, pending = await asyncio.wait([
+                            bot.wait_for('message', check= checkauthor),
+                            bot.wait_for('message', check= checkopp)
+                        ], return_when=asyncio.ALL_COMPLETED)
+
+                        r1, r2 = [r.result() for r in done]
+                              
+                        winlose = await rpsf(str(r1.content), str(r2.content))
+                        if winlose == 1:
+                            collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 + points}})
+                            collection.update_one({'id': member.id}, {'$set':{'points': p2 - points}})
+                            await channel.send(f'{rpsemote(r1.content.lower())} > {rpsemote(r2.content.lower())}: {ctx.author.mention} won against {member.mention} winning {points} points')
+                        if winlose == 2:
+                            await channel.send(f'{rpsemote(r1.content.lower())} = {rpsemote(r2.content.lower())}: {ctx.author.mention} tied against {member.mention}')
+                        if winlose == 3:
+                            collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 - points}})
+                            collection.update_one({'id': member.id}, {'$set':{'points': p2 + points}})
+                            await channel.send(f'{rpsemote(r2.content.lower())} < {rpsemote(r1.content.lower())}: {ctx.author.mention} lost against {member.mention} losing {points} points')
+                    else:
+
+                        await ctx.send(f'{member.name} does not want to play...')
+
+    except Exception as e:
+        await ctx.send(e)
+    
+def rpsemote(choice):
+    if choice == 'paper':
+        return '📄'
+    if choice == 'rock':
+        return '🗿'
+    if choice == 'scissors':
+        return ':scissors:'
+
+def botemote(playeremote, winlose):
+    print(playeremote)
+    if playeremote.lower() == 'paper':
+        if winlose == 1:
+            return 'rock'
+        if winlose == 2:
+            return 'paper'
+        if winlose == 3:
+            return 'scissors'
+
+    if playeremote.lower() == 'rock':
+        if winlose == 1:
+            return 'scissors'
+        if winlose == 2:
+            return 'rock'
+        if winlose == 3:
+            return 'paper'
+
+    if playeremote.lower() == 'scissors':
+        if winlose == 1:
+            return 'paper'
+        if winlose == 2:
+            return 'scissors'
+        if winlose == 3:
+            return 'rock'
+
+async def rpsf(choice1, choice2):
+
+    if choice1.lower() == 'rock' and choice2.lower() == 'scissors':
+        return 1
+    if choice1.lower() == 'rock' and choice2.lower() == 'rock':
+        return 2
+    if choice1.lower() == 'rock' and choice2.lower() == 'paper':
+        return 3
+    if choice1.lower() == 'paper' and choice2.lower() == 'rock':
+        return 1
+    if choice1.lower() == 'paper' and choice2.lower() == 'paper':
+        return 2
+    if choice1.lower() == 'paper' and choice2.lower() == 'scissors':
+        return 3
+    if choice1.lower() == 'scissors' and choice2.lower() == 'paper':
+        return 1
+    if choice1.lower() == 'scissors' and choice2.lower() == 'scissors':
+        return 2
+    if choice1.lower() == 'scissors' and choice2.lower() == 'rock':
+        return 3
+
 
 @bot.command(aliases=['eval'])
 async def exec(ctx, *, c):
