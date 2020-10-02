@@ -134,7 +134,7 @@ async def commands(ctx):
 
     embed = discord.Embed.from_dict({
         'title': '**Bot commands**',
-        'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n If you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
+        'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n`team info` gives you info about team mode\n\n`rps <@user> <amount> play using points, you must be registered in a team and have points before using this\n\nIf you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
         'color': 0x1400ff 
     })
         
