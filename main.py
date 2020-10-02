@@ -500,7 +500,7 @@ async def rps(ctx, member: discord.User, points: int):
                         if winlose == 3:
                             collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 - points}})
                             collection.update_one({'id': member.id}, {'$set':{'points': p2 + points}})
-                            await channel.send(f'{rpsemote(r2.content.lower())} < {rpsemote(r1.content.lower())}: {ctx.author.mention} lost against {member.mention} losing {points} points')
+                            await channel.send(f'{rpsemote(r1.content.lower())} < {rpsemote(r2.content.lower())}: {ctx.author.mention} lost against {member.mention} losing {points} points')
                     else:
 
                         await ctx.send(f'{member.name} does not want to play...')
