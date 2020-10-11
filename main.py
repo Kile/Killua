@@ -657,6 +657,15 @@ async def source(ctx, name):
         func = bot.get_command(name).callback
         code = inspect.getsource(func)
         await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
+
+@bot.command()
+async def codeinfo(ctx, content):
+    if ctx.author.id == 606162661184372736:
+        func = bot.get_command(name).callback
+        code = inspect.getsource(func)
+        await ctx.send(f'''Command \'{content}\'
+    Characters: {len(code)}
+    Lines: {code.count('\n')}''')
                               
 
 async def procont(team):
