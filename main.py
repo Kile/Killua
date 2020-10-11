@@ -661,7 +661,7 @@ async def source(ctx, name):
 @bot.command()
 async def codeinfo(ctx, content):
     if ctx.author.id == 606162661184372736:
-        func = bot.get_command(name).callback
+        func = bot.get_command(content).callback
         code = inspect.getsource(func)
         await ctx.send('Command \'{content}\' \n'+ 
     f'Characters: {len(code)}\n' +
