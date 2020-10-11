@@ -1,4 +1,5 @@
 from discord.ext import commands
+import aiohttp
 import time
 import discord
 import random
@@ -44,7 +45,7 @@ bot.remove_command('help')
 
 
 huggif = [f'https://i.pinimg.com/originals/66/9b/67/669b67ae57452f7afbbe5252b6230f85.gif', f'https://i.pinimg.com/originals/70/83/0d/70830dfba718d62e7af95e74955867ac.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/756945463432839168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945308381872168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945151191941251/image0.gif', 'https://pbs.twimg.com/media/Dl4PPE4UUAAsb7c.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSJgTjRyQW3NzmDzlvskIS7GMjlFpyS7yt_SQ&usqp=CAU', 'https://static.zerochan.net/Hunter.x.Hunter.full.1426317.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQJjVWplBdqrasz8Fh-7nDkxRjnnNBqk0bZlQ&usqp=CAU', 'https://i.pinimg.com/originals/75/2e/0a/752e0a5f813400dfebe322fc8b0ad0ae.jpg', 'https://thumbs.gfycat.com/IllfatedComfortableAplomadofalcon-small.gif', 'https://steamuserimages-a.akamaihd.net/ugc/492403625757327002/9B089509DDCB6D9F8E11446C7F1BC29B9BA57384/', f'https://cdn.discordapp.com/attachments/756945125568938045/758235270524698634/image0.gif', f'https://cdn.discordapp.com/attachments/756945125568938045/758236571974762547/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758236721216749638/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237072975855626/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237082484473856/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237352756903936/image0.png', 'https://cdn.discordapp.com/attachments/756945125568938045/758237832954249216/image0.jpg']
-topics = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?']
+topics = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?', 'What motivates you?', 'What is the best thing about school/work?', 'What\'s better, having high expectations or having low expectations?', 'What was the last movie you saw?', 'Have you read anything good recently?', 'What is your favorite day of the year?', 'What kind of music do you like to listen to?', 'What things are you passionate about?', 'What is your favorite childhood memory?', 'If you could acquire any skill, what would you choose?', 'What is the first thing that you think of in the morning?', 'What was the biggest life change you have gone through?', 'What is your favorite song of all time?', 'If you won $1 million playing the lottery, what would you do?', 'How would you know if you were in love?', 'If you could choose to have any useless super power, what would you pick?']
 
 
 @bot.event
@@ -128,13 +129,66 @@ async def support(ctx):
     })
     await ctx.send(embed=embed)
 
+@bot.command()
+async def urban(ctx, content):
+    session = aiohttp.ClientSession() 
+    headers = {'Content-Type': 'application/json',
+        'Authorization': 'Bearer 16c6fa735e974848ea8395a4160b8'} 
+    body = {
+        'args': { 'text': content }
+      } 
+    
+    async with session.post('https://fapi.wrmsr.io/urban', headers=headers, json=body) as r: 
+        response = await r.json()
+
+    if response == []:
+        return await ctx.send(':x: Not found')
+
+    
+    desc = urbandesc(response)
+    embed = discord.Embed.from_dict({
+            'title': f'Results for **{content}**',
+            'description': desc,
+
+            'color': 0x1400ff
+            })
+    await ctx.send(embed=embed)
+    session.close
+    
+def urbandesc(array):  
+    desc = f'''**__{array[0]["header"]}__**
+**Meaning** \n{array[0]["meaning"]}\n
+**Example** \n{array[0]["example"]}\n'''
+    
+    try:
+        desc = desc + f'''\n**__{array[2]["header"]}__**
+    **Meaning** \n{array[2]["meaning"]}\n
+    **Example** \n{array[2]["example"]}\n\n'''
+    except Exception as e:
+        print('no')
+    try:
+        desc = desc + f'''\n**__{array[3]["header"]}__**
+    **Meaning** \n{array[3]["meaning"]}\n
+    **Example** \n{array[3]["example"]}\n\n'''
+    except Exception as e:
+        print('no')
+
+    return desc
+    
+@bot.command()
+async def say(ctx, *, content):
+    if ctx.author.id == 606162661184372736:
+        await ctx.message.delete()
+        await ctx.send(content)
+
+
 
 @bot.command(aliases=['c', 'help'])
 async def commands(ctx):
 
     embed = discord.Embed.from_dict({
         'title': '**Bot commands**',
-        'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n`team info` gives you info about team mode\n\n`rps <@user> <amount> play using points, you must be registered in a team and have points before using this\n\nIf you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
+        'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n`team info` gives you info about team mode\n\n`rps <@user> <amountoptional>` play using points, you must be registered in a team before playing for points\n\n`urban <term>` gives the definition of the terms from an urban dictionary\n\\n\If you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
         'color': 0x1400ff 
     })
         
@@ -145,7 +199,7 @@ async def commands(ctx):
 async def info(ctx):
     embed = discord.Embed(
         title = 'Info',
-        description = ' This is Killua, Kile\'s bot version 0.4, the first features simply include ~this command, `k!ping`, `k!hi`, `k!invite`, `k!hug <user>` and `k!topic`, relatively self-explanatory, also a team mode already implemented but not yet finsihed\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time restarted:**\n '+ str(bot.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
+        description = ' This is Killua, Kile\'s bot version 0.4.1, the first features simply include ~this command, `k!ping`, `k!hi`, `k!invite`, `k!hug <user>` and `k!topic`, relatively self-explanatory, also a team mode already implemented but not yet finsihed\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time restarted:**\n '+ str(bot.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
         color = 0x1400ff
     )
     await ctx.send(embed=embed) 
@@ -379,7 +433,7 @@ async def info(ctx, text= None):
                               
                               
 @bot.command()
-async def rps(ctx, member: discord.User, points: int):
+async def rps(ctx, member: discord.User, points: int=None):
     t2 = None
     p2 = 0
 
@@ -388,6 +442,8 @@ async def rps(ctx, member: discord.User, points: int):
         p2 = resulte['points']
         t2 = resulte['team']
 
+    print(t2)
+
     results = collection.find({'id': ctx.author.id})
     for result in results:
         p1 = result['points']
@@ -395,27 +451,29 @@ async def rps(ctx, member: discord.User, points: int):
 
     try:
 
-        if t1 == None:
+        if t1 == None and points:
             await ctx.send('You need to join a team to play Rock Paper Scissors')
             return
+        
+        if points:
+            if points <= 0 or points > 100:
+                await ctx.send(f'You can only play using 1-100 points')
+                return
 
-        if points <= 0 or points > 100:
-            await ctx.send(f'You can only play using 1-100 points')
-            return
-
-        if p1 < points or p1 is None:
-            await ctx.send(f'You do not have enough points for that. Your current balance is `{str(p1)}`')
-            return
+        if points:
+            if p1 < points or p1 is None:
+                await ctx.send(f'You do not have enough points for that. Your current balance is `{str(p1)}`')
+                return
 
         
         channel = ctx.message.channel
        
 
         if member.id == 756206646396452975:
-            await ctx.author.send('You chose to play Rock Paper Scissors against me, what\'s your choice? [Rock] [Paper] [Scissors]')
+            await ctx.author.send('You chose to play Rock Paper Scissors against me, what\'s your choice? **[Rock] [Paper] [Scissors]**')
 
             embed = discord.Embed.from_dict({
-                'title': f'{ctx.author.name} against Killua: **Rock... Paper... Scissors!**',
+                'title': f'{ctx.author.name} against Killua-dev: **Rock... Paper... Scissors!**',
                 'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
                 'color': 0x1400ff
                 })
@@ -430,83 +488,103 @@ async def rps(ctx, member: discord.User, points: int):
             
             if winlose == 1:
                 result = botemote(msg.content, 1)
-                collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 + points}})
-                await channel.send(f'{rpsemote(msg.content.lower())} > {rpsemote(result)}: {ctx.author.mention} won against <@756206646396452975> winning {points} points')
+                if points:
+                    collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 + points}})
+                    await channel.send(f'{rpsemote(msg.content.lower())} > {rpsemote(result)}: {ctx.author.mention} won against <@756206646396452975> winning {points} points')
+                else:
+                    await channel.send(f'{rpsemote(msg.content.lower())} > {rpsemote(result)}: {ctx.author.mention} won against <@756206646396452975>')
             if winlose == 2:
                 result = botemote(msg.content, 2)
                 await channel.send(f'{rpsemote(msg.content.lower())} = {rpsemote(result)}: {ctx.author.mention} tied against <@756206646396452975>')
             if winlose == 3:
                 result = botemote(msg.content, 3)
-                collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 - points}})
-                await channel.send(f'{rpsemote(msg.content.lower())} < {rpsemote(result)}: {ctx.author.mention} lost against <@756206646396452975> losing {points} points')
+                if points:
+                    collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 - points}})
+                    await channel.send(f'{rpsemote(msg.content.lower())} < {rpsemote(result)}: {ctx.author.mention} lost against <@756206646396452975> losing {points} points')
+                else:
+                    await channel.send(f'{rpsemote(msg.content.lower())} < {rpsemote(result)}: {ctx.author.mention} lost against <@756206646396452975>')
         else:
             
-            if t2 is None:
+            
+            if t2 is None and points:
 
                 await ctx.send(f'{member.mention} is not part of a team yet')
                 return
 
-            if int(p2) < points or p2 is None:
+            if points:
+                if int(p2) < points or p2 is None and points:
 
-                await ctx.send(f'{member.mention} does not have enough points for that. Their current balance is `{str(p2)}`')
+                    await ctx.send(f'{member.mention} does not have enough points for that. Their current balance is `{str(p2)}`')
+                    return
+            
 
-            else:
-
-                await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Papaper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
-                def check(m1):
+            await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Papaper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
+            def check(m1):
                     return m1.content.lower() in ["n", "y"] and m1.author.id == member.id
 
-                try:
+            try:
                     confirmmsg = await bot.wait_for('message', check=check, timeout=60)
 
-                except asyncio.TimeoutError:
+            except asyncio.TimeoutError:
 
-                    await ctx.send('Sadly no answer, try it later bud')
+                await ctx.send('Sadly no answer, try it later bud')
 
-                else:
-                    if confirmmsg.content.lower() == 'y':
+            else:
+                if confirmmsg.content.lower() == 'y':
 
-                        embed = discord.Embed.from_dict({
-                            'title': f'{ctx.author.name} against {member.name}: **Rock... Paper... Scissors!**',
-                            'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
-                            'color': 0x1400ff
-                        })
+                    embed = discord.Embed.from_dict({
+                        'title': f'{ctx.author.name} against {member.name}: **Rock... Paper... Scissors!**',
+                        'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
+                        'color': 0x1400ff
+                    })
                         
-                        await ctx.send(embed= embed)
-                        await ctx.author.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
-                        await member.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
+                    await ctx.send(embed= embed)
+                    await ctx.author.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
+                    await member.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
 
-                        def checkauthor(m2):
+
+                    def checkauthor(m2):
                         
-                            return  m2.content.lower() in ["rock", "paper", "scissors"] and m2.author == ctx.author and m2.guild is None
-                        def checkopp(m3):
+                        return  m2.content.lower() in ["rock", "paper", "scissors"] and m2.author == ctx.author and m2.guild is None
+                    def checkopp(m3):
                        
-                            return  m3.content.lower() in ["rock", "paper", "scissors"] and m3.author == member and m3.guild is None
+                        return  m3.content.lower() in ["rock", "paper", "scissors"] and m3.author == member and m3.guild is None
+                    
 
-                        done, pending = await asyncio.wait([
-                            bot.wait_for('message', check= checkauthor),
-                            bot.wait_for('message', check= checkopp)
-                        ], return_when=asyncio.ALL_COMPLETED)
+                    done, pending = await asyncio.wait([
+                        bot.wait_for('message', check= checkauthor),
+                        bot.wait_for('message', check= checkopp)
+                    ], return_when=asyncio.ALL_COMPLETED)
 
-                        r1, r2 = [r.result() for r in done]
-                              
-                        winlose = await rpsf(str(r1.content), str(r2.content))
-                        if winlose == 1:
+                    
+                    
+                    r1, r2 = [r.result() for r in done]
+
+                    
+                    
+                    winlose = await rpsf(str(r1.content), str(r2.content))
+                    if winlose == 1:
+                        if points:
                             collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 + points}})
                             collection.update_one({'id': member.id}, {'$set':{'points': p2 - points}})
                             await channel.send(f'{rpsemote(r1.content.lower())} > {rpsemote(r2.content.lower())}: {ctx.author.mention} won against {member.mention} winning {points} points')
-                        if winlose == 2:
-                            await channel.send(f'{rpsemote(r1.content.lower())} = {rpsemote(r2.content.lower())}: {ctx.author.mention} tied against {member.mention}')
-                        if winlose == 3:
+                        else:
+                             await channel.send(f'{rpsemote(r1.content.lower())} > {rpsemote(r2.content.lower())}: {ctx.author.mention} won against {member.mention}')
+                    if winlose == 2:
+                        await channel.send(f'{rpsemote(r1.content.lower())} = {rpsemote(r2.content.lower())}: {ctx.author.mention} tied against {member.mention}')
+                    if winlose == 3:
+                        if points:
                             collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 - points}})
                             collection.update_one({'id': member.id}, {'$set':{'points': p2 + points}})
-                            await channel.send(f'{rpsemote(r1.content.lower())} < {rpsemote(r2.content.lower())}: {ctx.author.mention} lost against {member.mention} losing {points} points')
-                    else:
-
-                        await ctx.send(f'{member.name} does not want to play...')
+                            await channel.send(f'{rpsemote(r1.content.lower())} < {rpsemote(r2.content.lower())}: {ctx.author.mention} lost against {member.mention} losing {points } points')
+                        else:
+                            await channel.send(f'{rpsemote(r1.content.lower())} < {rpsemote(r2.content.lower())}: {ctx.author.mention} lost against {member.mention}')
+                else:
+                    await ctx.send(f'{member.name} does not want to play...')
 
     except Exception as e:
         await ctx.send(e)
+
     
 def rpsemote(choice):
     if choice == 'paper':
