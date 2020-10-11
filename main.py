@@ -663,9 +663,9 @@ async def codeinfo(ctx, content):
     if ctx.author.id == 606162661184372736:
         func = bot.get_command(name).callback
         code = inspect.getsource(func)
-        await ctx.send(f'''Command \'{content}\'
-    Characters: {len(code)}
-    Lines: {code.count('\n')}''')
+        await ctx.send('Command \'{content}\' \n'+ 
+    f'Characters: {len(code)}\n' +
+    'Lines: ' + {code.count('\n')})
                               
 
 async def procont(team):
