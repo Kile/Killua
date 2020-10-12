@@ -1,4 +1,5 @@
 from discord.ext import commands
+import io
 import aiohttp
 import time
 import discord
@@ -76,6 +77,9 @@ async def on_guild_join(guild):
 
 @bot.command(aliases = ['pref'])
 async def prefix(ctx, prefix=None):
+    #r to the guild administrator
+    #t Around 2-4 hours
+    #c Custom prefixes!
     results = server.find({'id': ctx.guild.id})
     for result in results:
             pref = result['prefix']
@@ -102,6 +106,9 @@ async def on_message(message):
         
 @bot.command()
 async def ping(ctx):
+    #c pong
+    #t 5 min
+    
     start = time.time()
     msg = await ctx.send('Pong!')
     end = time.time()
@@ -110,16 +117,20 @@ async def ping(ctx):
 
 @bot.command(name='topic')
 async def topic(ctx):
+    #c constantly updating!
     await ctx.send(random.choice(topics))
 
     
 @bot.command()
 async def hi(ctx):
+    #c The first command on Killua...
+    #t 5 min
     await ctx.send("Hello " + str(ctx.author)) 
     
 @bot.command(aliases=['patreon'])
 async def support(ctx):
-
+    #c :3
+    #t 30 minutes
     embed = discord.Embed.from_dict({
         'title': '**Support Killua**',
         'thumbnail':{
@@ -137,6 +148,8 @@ async def urban(ctx, content):
     body = {
         'args': { 'text': content }
       } 
+    #t 2-3 hours
+    #c Using fAPI
     
     async with session.post('https://fapi.wrmsr.io/urban', headers=headers, json=body) as r: 
         response = await r.json()
@@ -174,9 +187,28 @@ def urbandesc(array):
         print('no')
 
     return desc
+
+@bot.command()
+async def cmm(ctx, *, content):
+    #c Change my mind!
+    #t Around 1-2 hours
+    session = aiohttp.ClientSession() 
+    headers = {'Content-Type': 'application/json',
+        'Authorization': 'Bearer 16c6fa735e974848ea8395a4160b8'} 
+    body = {
+        'args': { 'text': content }
+      } 
+    
+    async with session.post('https://fapi.wrmsr.io/changemymind', headers=headers, json=body) as r: 
+        image_bytes = await r.read()
+        file = discord.File(io.BytesIO(image_bytes), filename="image.png")
+    await ctx.send(file=file)
+    
     
 @bot.command()
 async def say(ctx, *, content):
+    #r user ID: 606162661184372736
+    #t 5 minutes
     if ctx.author.id == 606162661184372736:
         await ctx.message.delete()
         await ctx.send(content)
@@ -185,7 +217,8 @@ async def say(ctx, *, content):
 
 @bot.command(aliases=['c', 'help'])
 async def commands(ctx):
-
+    #c help command
+    #t 20 minutes, constantly updating
     embed = discord.Embed.from_dict({
         'title': '**Bot commands**',
         'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n`team info` gives you info about team mode\n\n`rps <@user> <amountoptional>` play using points, you must be registered in a team before playing for points\n\n`urban <term>` gives the definition of the terms from an urban dictionary\n\\n\If you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
@@ -203,9 +236,14 @@ async def info(ctx):
         color = 0x1400ff
     )
     await ctx.send(embed=embed) 
+    #c help command
+    #t 20 minutes, constantly updating
 
 @bot.command()
 async def daily(ctx):
+    #c I didn't know a daily command was that complicated
+    #t one hour
+    
     now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
     results = collection.find({'id': ctx.author.id})
     for result in results:
@@ -227,6 +265,7 @@ async def daily(ctx):
 
 @bot.command()
 async def invite(ctx):
+    #t 5 minutes
     embed = discord.Embed(
         title = 'Invite',
         description = 'Invite the bot to your server **today** [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=1342531648)',
@@ -236,6 +275,8 @@ async def invite(ctx):
 
 @bot.command()
 async def guilds(ctx):
+    #r user ID: 606162661184372736 or 383790610727043085
+    #t 15 minutes
     if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
         embed = discord.Embed(
             title = 'Guilds',
@@ -246,6 +287,8 @@ async def guilds(ctx):
 
 @bot.command()
 async def hug(ctx,  *, content=None):
+    #c Best hug command out there
+    #t 1-3 hours
     if ctx.message.mentions:
         if ctx.author == ctx.message.mentions[0]:
             return await ctx.send(f'Someone hug {ctx.author.name}!')
@@ -303,6 +346,7 @@ async def team(ctx):
 
 @bot.command()
 async def points(ctx):
+    #t 5 minutes
     results = collection.find({'id': ctx.author.id})
     for result in results:
         p1 = result['points']
@@ -378,6 +422,7 @@ async def current(ctx):
 
 @team.command(name="info")
 async def info(ctx, text= None):
+    #t 30 minutes
     if text:
         if text == 'Killua':
             embed = discord.Embed.from_dict({
@@ -434,6 +479,9 @@ async def info(ctx, text= None):
                               
 @bot.command()
 async def rps(ctx, member: discord.User, points: int=None):
+    #c The most complicated command I ever made
+    #t a week
+    
     t2 = None
     p2 = 0
 
@@ -644,6 +692,8 @@ async def rpsf(choice1, choice2):
 
 @bot.command(aliases=['eval'])
 async def exec(ctx, *, c):
+    #t 5 minutes
+    #r user ID: 606162661184372736 or 383790610727043085
     if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
         try:
             global bot
@@ -653,6 +703,8 @@ async def exec(ctx, *, c):
                               
 @bot.command()
 async def source(ctx, name):
+    #t 5 minutes
+    #r user ID: 606162661184372736 or 383790610727043085
     if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
         func = bot.get_command(name).callback
         code = inspect.getsource(func)
@@ -660,12 +712,54 @@ async def source(ctx, name):
 
 @bot.command()
 async def codeinfo(ctx, content):
-    if ctx.author.id == 606162661184372736:
+    
+    
+    try:
         func = bot.get_command(content).callback
         code = inspect.getsource(func)
-        await ctx.send('Command \'{content}\' \n'+ 
-    f'Characters: {len(code)}\n' +
-    'Lines: ' + {code.count('\n')})
+        linecount = code.splitlines()
+        time= ''
+        restricted = ''
+        comment = ''
+
+        for item in linecount:
+            firstt, middlet, lastt = item.partition("#t")
+            firstr, middler, lastr = item.partition("#r")
+            firstc, middlec, lastc = item.partition("#c")
+            if lastt == '':
+                pass
+            else:
+                time = lastt
+            if lastr == '':
+                pass
+            else:
+                restricted = lastr
+            if lastc == '':
+                pass
+            else:
+                comment = lastc
+
+            #c this very code
+            #t 1-2 hours
+        if restricted == '' or restricted is None or restricted == '")':
+            realrestricted = ''
+        else:
+            realrestricted = f'**Restricted to:** {restricted}'
+
+        embed= discord.Embed.from_dict({
+            'title': f'Command **{content}**',
+            'color': 0x1400ff,
+            'description': f'''**Characters:** {len(code)}
+            **Lines:**  {len(linecount)}
+
+            **Time spend on code:** {time or 'No time provided'}
+            **Comments:** {comment or 'No comment'}
+            
+            {realrestricted}'''
+            })
+        await ctx.send(embed=embed)
+    except Exception as e:
+        await ctx.send('Invalid command')
                               
 
 async def procont(team):
