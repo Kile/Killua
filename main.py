@@ -204,6 +204,36 @@ async def cmm(ctx, *, content):
         file = discord.File(io.BytesIO(image_bytes), filename="image.png")
     await ctx.send(file=file)
     
+@bot.command()
+async def quote(ctx, quotist: discord.Member, *, content):
+    #t 1-2 hours
+    #c powered by fAPI
+    name = ''
+    now = datetime.now()
+    hours = f"{now:%I}"
+    if int(hours) < 10:
+        hours = hours[1:]
+    
+    if quotist.nick:
+        name = quotist.nick
+    else: 
+        name = quotist.name
+    session = aiohttp.ClientSession() 
+    headers = {'Content-Type': 'application/json',
+        'Authorization': 'Bearer 16c6fa735e974848ea8395a4160b8'} 
+    body = {
+        'args': { 'message': {'content': content},
+        'author': {'color': str(quotist.color),
+        'bot': quotist.bot,
+        'username': str(name),
+        'avatarURL': str(quotist.avatar_url)},
+        'timestamp':  f'Today at {hours}:{now:%M %p}'}
+      } 
+    
+    async with session.post('https://fapi.wrmsr.io/quote', headers=headers, json=body) as r: 
+        image_bytes = await r.read()
+        file = discord.File(io.BytesIO(image_bytes), filename="absolutelyreal.png")
+    await ctx.send(file=file)
     
 @bot.command()
 async def say(ctx, *, content):
