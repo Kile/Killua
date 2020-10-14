@@ -66,6 +66,7 @@ async def on_guild_join(guild):
             'title': 'Hello {}!'.format(guild.name),
             'description': 'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `k!info`\n\nTo change the server prefix, use `k!prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `k!help` to see every command',
             'color': 0x1400ff
+        })
         await general.send(embed=embed)
 
     try:
