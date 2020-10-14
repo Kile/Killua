@@ -62,7 +62,11 @@ async def on_guild_join(guild):
     await p()
     general = find(lambda x: x.name == 'general',  guild.text_channels)
     if general and general.permissions_for(guild.me).send_messages:
-        await general.send('Hello {}!'.format(guild.name))
+        embed = discord.Embed.from_dict({
+            'title': 'Hello {}!'.format(guild.name),
+            'description': 'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `k!info`\n\nTo change the server prefix, use `k!prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `k!help` to see every command',
+            'color': 0x1400ff
+        await general.send(embed=embed)
 
     try:
         print('Please work')
@@ -206,14 +210,39 @@ async def cmm(ctx, *, content):
     
 @bot.command()
 async def quote(ctx, quotist: discord.Member, *, content):
-    #t 1-2 hours
+    #t 2 hours
     #c powered by fAPI
+    light = False
+    compact = False
     name = ''
     now = datetime.now()
+    message = content
+    realcolor = quotist.color
     hours = f"{now:%I}"
     if int(hours) < 10:
         hours = hours[1:]
-    
+    if str(quotist.color) == '#000000':
+        realcolor = '#ffffff'
+    else:
+        realcolor = str(quotist.color)
+
+    if content.startswith('-l'):
+        light = True
+        message = content[2:]
+        if realcolor == '#ffffff':
+            realcolor = '#000000'
+    if content.startswith('-c'):
+        compact = True
+        message = content[2:]
+    if message.startswith(' -c'):
+        compact = True
+        message = message[3:]
+    if message.startswith(' -l'):
+        light = True
+        message = message[3:]
+        if realcolor == '#ffffff':
+            realcolor = '#000000'
+
     if quotist.nick:
         name = quotist.nick
     else: 
@@ -222,18 +251,21 @@ async def quote(ctx, quotist: discord.Member, *, content):
     headers = {'Content-Type': 'application/json',
         'Authorization': 'Bearer 16c6fa735e974848ea8395a4160b8'} 
     body = {
-        'args': { 'message': {'content': content},
-        'author': {'color': str(quotist.color),
+        'args': { 'message': {'content': message},
+        'author': {'color': realcolor,
         'bot': quotist.bot,
         'username': str(name),
         'avatarURL': str(quotist.avatar_url)},
-        'timestamp':  f'Today at {hours}:{now:%M %p}'}
+        'timestamp':  f'Today at {hours}:{now:%M %p}',
+        'light': light,
+        'compact': compact}
       } 
     
     async with session.post('https://fapi.wrmsr.io/quote', headers=headers, json=body) as r: 
         image_bytes = await r.read()
         file = discord.File(io.BytesIO(image_bytes), filename="absolutelyreal.png")
     await ctx.send(file=file)
+
     
 @bot.command()
 async def say(ctx, *, content):
@@ -251,7 +283,7 @@ async def commands(ctx):
     #t 20 minutes, constantly updating
     embed = discord.Embed.from_dict({
         'title': '**Bot commands**',
-        'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n`team info` gives you info about team mode\n\n`rps <@user> <amountoptional>` play using points, you must be registered in a team before playing for points\n\n`urban <term>` gives the definition of the terms from an urban dictionary\n\\n\If you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
+        'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n`team info` gives you info about team mode\n\n`rps <@user> <amountoptional>` play using points, you must be registered in a team before playing for points\n\n`urban <term>` gives the definition of the terms from an urban dictionary\n\\n``quote <user> <text>` sends a screenshot of a user saying something you provided (pro tip: use -l for light mode and -c for compact mode at the start of the text or both with a space in between)\n\nIf you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
         'color': 0x1400ff 
     })
         
