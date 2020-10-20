@@ -276,7 +276,40 @@ async def say(ctx, *, content):
         await ctx.message.delete()
         await ctx.send(content)
 
+@bot.command()
+async def function(ctx, *, function):
+    #t 1-2days (wtf)
+    #r ID: 606162661184372736
+    #c Could break Killua atm so restricted
+    if ctx.author.id == 606162661184372736:
+        try:
+            x = np.linspace(-5,5,100)
+            y = ne.evaluate(function)
 
+            # setting the axes at the centre
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1)
+            ax.spines['left'].set_position('center')
+            ax.spines['bottom'].set_position('center')
+            ax.spines['right'].set_color('none')
+            ax.spines['top'].set_color('none')
+            ax.xaxis.set_ticks_position('bottom')
+            ax.yaxis.set_ticks_position('left')
+
+            # plot the function
+            plt.plot(x,y, 'g')
+            plt.title(str(function))
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png')
+            buf.seek(0)
+    
+            graph = discord.File(buf, filename= 'graph.png')
+    
+
+    
+            await ctx.send(file=graph)
+        except Exception as e:
+            await ctx.send(e)
 
 @bot.command(aliases=['c', 'help'])
 async def commands(ctx):
