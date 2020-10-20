@@ -20,7 +20,11 @@ from datetime import date
 from discord.utils import find
 from discord import client
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
-
+from numpy import *
+from matplotlib.pyplot import *
+import matplotlib.pyplot as plt
+import numpy as np
+import numexpr as ne
 
 
 
