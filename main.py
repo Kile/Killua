@@ -861,7 +861,21 @@ async def codeinfo(ctx, content):
     except Exception as e:
         await ctx.send('Invalid command')
                               
-
+@bot.command()
+async def permissions(ctx):
+    #t 30 min
+    perms = ctx.me.guild_permissions
+    permissions = '\n'.join([f"{v} {n}" for n, v in perms])
+    prettier = permissions.replace('_', ' ').replace('True', '<:CheckMark:771754620673982484>').replace('False', '<:x_:771754157623214080>')
+    embed = discord.Embed.from_dict({
+            'title': 'Bot permissions',
+            'description': prettier,
+            'color': 0x1400ff,
+            'thumbnail': {'url': str(ctx.me.avatar_url)}
+        })
+    await ctx.send(embed=embed)
+    
+    
 async def procont(team):
     amountteam = collection.count_documents({"team": team})
     amounttotal = collection.count_documents({})
