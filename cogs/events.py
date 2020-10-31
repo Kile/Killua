@@ -17,7 +17,7 @@ class events(commands.Cog):
     
   @commands.Cog.listener()
   async def on_guild_join(self, guild):
-    await p()
+    await p(self)
     general = find(lambda x: x.name == 'general',  guild.text_channels)
     if general and general.permissions_for(guild.me).send_messages:
         embed = discord.Embed.from_dict({
@@ -36,19 +36,19 @@ class events(commands.Cog):
         
   @commands.Cog.listener()
   async def on_connect(self):
-    await p()
+    await p(self)
     days.start()
     
 
   @commands.Cog.listener()
   async def on_guild_remove(self, guild):
-    await p()
+    await p(self)
     
     
     
     
 
-async def p():
+async def p(self):
   a = date.today()
   b = date(2020,9,17)
   delta = a - b
