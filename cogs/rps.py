@@ -73,7 +73,7 @@ class rps(commands.Cog):
             def check(m):
                 return m.content.lower() == 'scissors' or m.content.lower() == 'paper' or m.content.lower() == 'rock' and m.author == ctx.author
                 
-            msg = await bot.wait_for('message', check=check, timeout=60) 
+            msg = await self.client.wait_for('message', check=check, timeout=60) 
 
             winlose = await rpsf(msg.content, random.choice(['paper', 'rock', 'scissors']))
             
@@ -114,7 +114,7 @@ class rps(commands.Cog):
                     return m1.content.lower() in ["n", "y"] and m1.author.id == member.id
 
             try:
-                    confirmmsg = await bot.wait_for('message', check=check, timeout=60)
+                    confirmmsg = await self.client.wait_for('message', check=check, timeout=60)
 
             except asyncio.TimeoutError:
 
@@ -143,8 +143,8 @@ class rps(commands.Cog):
                     
 
                     done, pending = await asyncio.wait([
-                        bot.wait_for('message', check= checkauthor),
-                        bot.wait_for('message', check= checkopp)
+                        self.client.wait_for('message', check= checkauthor),
+                        self.client.wait_for('message', check= checkopp)
                     ], return_when=asyncio.ALL_COMPLETED)
 
                     
