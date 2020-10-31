@@ -24,7 +24,7 @@ class prefix(commands.Cog):
       await bot.process_commands(message)
 
     @commands.command(aliases = ['pref'])
-    async def prefix(self, prefix=None):
+    async def prefix(self, ctx, prefix=None):
         #r to the guild administrator
         #t Around 2-4 hours
         #c Custom prefixes!
