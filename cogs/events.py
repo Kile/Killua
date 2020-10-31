@@ -1,6 +1,6 @@
 import discord
 from datetime import datetime
-import date
+import time
 from discord.ext import commands
 
 class events(commands.Cog):
