@@ -1,4 +1,6 @@
 import discord
+from datetime import datetime
+import date
 from discord.ext import commands
 
 class events(commands.Cog):
@@ -9,7 +11,7 @@ class events(commands.Cog):
   @commands.Cog.listener()
   async def on_ready(self):
     print('------')
-    print('Logged in as: ' + bot.user.name + f" (ID: {bot.user.id})")
+    print('Logged in as: ' + self.client.user.name + f" (ID: {self.client.user.id})")
     print('------')
     bot.startup_datetime = datetime.now()
     
