@@ -7,8 +7,6 @@ class devstuff(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_ready(self):
 
     @commands.command(aliases=['eval'])
     async def exec(self, ctx, *, c):
