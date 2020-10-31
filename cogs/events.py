@@ -37,7 +37,6 @@ class events(commands.Cog):
   @commands.Cog.listener()
   async def on_connect(self):
     await p(self)
-    days.start()
     
 
   @commands.Cog.listener()
