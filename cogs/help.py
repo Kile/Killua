@@ -20,6 +20,7 @@ class help(commands.Cog):
   #c 155 lines, help
     if group is None and command is None:
         results = server.find({'id': ctx.guild.id})
+        pref = ''
         for result in results:
             pref = result['prefix']
         embed = discord.Embed.from_dict({
