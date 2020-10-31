@@ -61,7 +61,7 @@ async def update(ctx, extension):
             bot.unload_extensions(f'cogs{extension}')
             bot.load_extension(f'cogs.{extension}')
             await ctx.send(f'Sucessfully updated the cog `{extension}`')
-         except Exception as e:
+        except Exception as e:
             await ctx.send(e)
 
 
