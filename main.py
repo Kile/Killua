@@ -58,7 +58,7 @@ async def update(ctx, extension):
     #r Author ID 606162661184372736
     if ctx.author.id == 606162661184372736:
         try:
-            bot.unload_extensions(f'cogs{extension}')
+            bot.unload_extension(f'cogs{extension}')
             bot.load_extension(f'cogs.{extension}')
             await ctx.send(f'Sucessfully updated the cog `{extension}`')
         except Exception as e:
