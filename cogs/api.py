@@ -134,5 +134,5 @@ def urbandesc(array):
 
     return desc
 
-  def setup(client):
-    client.add_cog(api(client))
+def setup(client):
+  client.add_cog(api(client))
