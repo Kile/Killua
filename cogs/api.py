@@ -1,6 +1,8 @@
 import discord
 import io
 import aiohttp
+import time
+from datetime import datetime, timedelta
 from discord.ext import commands
 
 class api(commands.Cog):
