@@ -39,8 +39,8 @@ class prefix(commands.Cog):
 
           else: 
             await ctx.send('Missing permissions')
-      else:
-        await ctx.send(f'The current server prefix is `{pref}`')
+        else:
+            await ctx.send(f'The current server prefix is `{pref}`')
 
 
 
