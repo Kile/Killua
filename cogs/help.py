@@ -18,7 +18,6 @@ class help(commands.Cog):
   #h This command is the one hopefully letting you know what Killua can do and what his features are, I hope you like how it looks!
   #t 2 hours
   #c 155 lines, help
-    pref = 'k!'
     if group is None and command is None:
         results = server.find({'id': ctx.guild.id})
         
@@ -26,7 +25,7 @@ class help(commands.Cog):
             pref = result['prefix']
         embed = discord.Embed.from_dict({
             'title': 'Bot commands',
-            'description': f'''Current server Prefix: `{pref}`
+            'description': f'''Current server Prefix: `{pref or 'k!'}`
             Command groups for {ctx.me.name}:
 
             :tools: `Moderation`
