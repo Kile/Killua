@@ -16,7 +16,7 @@ class rps(commands.Cog):
   def __init__(self, client):
     self.client = client
     
-  @bot.command()
+  @commands.command()
   async def rps(self, ctx, member: discord.User, points: int=None):
     #c The most complicated command I ever made
     #t a week
