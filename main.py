@@ -88,32 +88,7 @@ async def on_guild_join(guild):
 
 
 
-@bot.command(aliases = ['pref'])
-async def prefix(ctx, prefix=None):
-    #r to the guild administrator
-    #t Around 2-4 hours
-    #c Custom prefixes!
-    results = server.find({'id': ctx.guild.id})
-    for result in results:
-            pref = result['prefix']
-    if prefix:
-        if ctx.author.guild_permissions.administrator:
 
-            server.update_many({'id': ctx.guild.id},{'$set':{'prefix': str(prefix)}}, upsert=True)
-            await ctx.send(f'Changed server prefix to `{prefix}`')
-
-        else: 
-            await ctx.send('Missing permissions')
-    else:
-        await ctx.send(f'The current server prefix is `{pref}`')
-        
-@bot.event
-async def on_message(message):
-    if message.content == 'k!default pref' and message.author.guild_permissions.administrator:
-        server.update_many({'id': message.guild.id},{'$set':{'prefix': 'k!'}}, upsert=True)
-
-        await message.channel.send('Set prefix to default `k!`')
-    await bot.process_commands(message)
             
         
         
