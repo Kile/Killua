@@ -1,6 +1,12 @@
 import discord
 import inspect
+import pymongo
+from pymongo import MongoClient
 from discord.ext import commands
+
+cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
+db = cluster['Killua']
+server = db['guilds']
 
 class help(commands.Cog):
 
