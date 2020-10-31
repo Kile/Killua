@@ -22,8 +22,7 @@ class help(commands.Cog):
         results = server.find({'id': ctx.guild.id})
         for result in results:
             pref = result['prefix']
-            print('2)' pref)
-        print('2)' pref)
+            
         embed = discord.Embed.from_dict({
             'title': 'Bot commands',
             'description': f'''Current server Prefix: `{pref}`
