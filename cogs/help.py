@@ -1,4 +1,5 @@
 import discord
+import inspect
 from discord.ext import commands
 
 class help(commands.Cog):
@@ -153,3 +154,6 @@ def commands(commandgroup):
             Killua lists his permissions on this server'''
         })
         return embed
+
+def setup(client):
+  client.add_cog(help(client))
