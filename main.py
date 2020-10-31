@@ -47,7 +47,7 @@ def get_prefix(bot, message):
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True, intents = discord.Intents.default())
 bot.remove_command('help')
-cogs = ['devstuff']
+cogs = ['devstuff', 'prefixes']
 
 for cog in cogs:
     bot.load_extension(f"cogs.{cog}")
