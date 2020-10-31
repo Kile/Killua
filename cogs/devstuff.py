@@ -17,12 +17,6 @@ class devstuff(commands.Cog):
             except Exception as e:
                 await ctx.channel.send(str(e))
 
-    @commands.command()
-    async def source(self, ctx, name):
-        if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
-            func = client.get_command(name).callback
-            code = inspect.getsource(func)
-            await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
 
 
 
