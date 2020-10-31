@@ -13,7 +13,7 @@ class events(commands.Cog):
     print('------')
     print('Logged in as: ' + self.client.user.name + f" (ID: {self.client.user.id})")
     print('------')
-    bot.startup_datetime = datetime.now()
+    self.client.startup_datetime = datetime.now()
     
   @commands.Cog.listener()
   async def on_guild_join(self, guild):
