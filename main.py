@@ -47,7 +47,7 @@ def get_prefix(bot, message):
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True, intents = discord.Intents.default())
 bot.remove_command('help')
-cogs = ['devstuff', 'prefixes', 'smallcommands', 'rps', 'api', 'events']
+cogs = ['devstuff', 'prefixes', 'smallcommands', 'rps', 'api', 'events', 'help']
 
 for cog in cogs:
     bot.load_extension(f"cogs.{cog}")
@@ -106,18 +106,6 @@ async def function(ctx, *, function):
         except Exception as e:
             await ctx.send(e)
 
-@bot.command(aliases=['c', 'help'])
-async def commands(ctx):
-    #c help command
-    #t 20 minutes, constantly updating
-    embed = discord.Embed.from_dict({
-        'title': '**Bot commands**',
-        'description': 'Prefix: `k!`\n\n `hi` makes Killua say hi to you \n\n `hug <@someone>` gives someone a Killua hug\n\n `info` displays info about the bot\n\n`invite` gives you the ability to invite Killua to your own server\n\n`ping` checks how fast Killua responds\n\n`topic` Killua gives you a random topic to talk about\n\n`patreon` gives you my Patreon account in case you want to support me and give me motivation :)\n\n`team info` gives you info about team mode\n\n`rps <@user> <amountoptional>` play using points, you must be registered in a team before playing for points\n\n`urban <term>` gives the definition of the terms from an urban dictionary\n\\n``quote <user> <text>` sends a screenshot of a user saying something you provided (pro tip: use -l for light mode and -c for compact mode at the start of the text or both with a space in between)\n\nIf you have suggestions or bugs to report or unanswered questions, join the support server: https://discord.gg/zXqDHkm',
-        'color': 0x1400ff 
-    })
-        
-    await ctx.author.send(embed=embed)
-    await ctx.send('Check your dms ;)')
 
 @bot.command()
 async def info(ctx):
