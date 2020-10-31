@@ -5,18 +5,14 @@ import time
 import discord
 import random
 import json
-import pymongo
 from random import randint
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from discord.ext import tasks
 import pymongo
 from pymongo import MongoClient
-from datetime import datetime
-from datetime import datetime, timedelta
 from pprint import pprint
 import asyncio
 import inspect
-from datetime import date
 from discord.utils import find
 from discord import client
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
