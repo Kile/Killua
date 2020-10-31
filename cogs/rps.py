@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 import random
 from random import randint
+import asyncio
 
 cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
 db = cluster['Killua']
@@ -20,6 +21,9 @@ class rps(commands.Cog):
   async def rps(self, ctx, member: discord.User, points: int=None):
     #c The most complicated command I ever made
     #t a week
+    
+    if member.id == ctx.author.id:
+      return await ctx.send('Baka! You can\'t play against yourself')
     
     t2 = None
     p2 = 0
