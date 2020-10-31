@@ -47,7 +47,7 @@ def get_prefix(bot, message):
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True, intents = discord.Intents.default())
 bot.remove_command('help')
-cogs = ['devstuff', 'prefixes', 'smallcommands', 'rps', 'api']
+cogs = ['devstuff', 'prefixes', 'smallcommands', 'rps', 'api', 'events']
 
 for cog in cogs:
     bot.load_extension(f"cogs.{cog}")
@@ -55,41 +55,8 @@ for cog in cogs:
 
 huggif = [f'https://i.pinimg.com/originals/66/9b/67/669b67ae57452f7afbbe5252b6230f85.gif', f'https://i.pinimg.com/originals/70/83/0d/70830dfba718d62e7af95e74955867ac.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/756945463432839168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945308381872168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945151191941251/image0.gif', 'https://pbs.twimg.com/media/Dl4PPE4UUAAsb7c.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSJgTjRyQW3NzmDzlvskIS7GMjlFpyS7yt_SQ&usqp=CAU', 'https://static.zerochan.net/Hunter.x.Hunter.full.1426317.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQJjVWplBdqrasz8Fh-7nDkxRjnnNBqk0bZlQ&usqp=CAU', 'https://i.pinimg.com/originals/75/2e/0a/752e0a5f813400dfebe322fc8b0ad0ae.jpg', 'https://thumbs.gfycat.com/IllfatedComfortableAplomadofalcon-small.gif', 'https://steamuserimages-a.akamaihd.net/ugc/492403625757327002/9B089509DDCB6D9F8E11446C7F1BC29B9BA57384/', f'https://cdn.discordapp.com/attachments/756945125568938045/758235270524698634/image0.gif', f'https://cdn.discordapp.com/attachments/756945125568938045/758236571974762547/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758236721216749638/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237072975855626/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237082484473856/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237352756903936/image0.png', 'https://cdn.discordapp.com/attachments/756945125568938045/758237832954249216/image0.jpg']
 
-
-@bot.event
-async def on_ready():
-    print('------')
-    print('Logged in as: ' + bot.user.name + f" (ID: {bot.user.id})")
-    print('------')
-    bot.startup_datetime = datetime.now()
         
-        
-@bot.event
-async def on_guild_join(guild):
-    await p()
-    general = find(lambda x: x.name == 'general',  guild.text_channels)
-    if general and general.permissions_for(guild.me).send_messages:
-        embed = discord.Embed.from_dict({
-            'title': 'Hello {}!'.format(guild.name),
-            'description': 'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `k!info`\n\nTo change the server prefix, use `k!prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `k!help` to see every command',
-            'color': 0x1400ff
-        })
-        await general.send(embed=embed)
 
-    try:
-        print('Please work')
-        results = server.find({'id': guild.id})
-        for result in results:
-            t = result['points']
-        print(t)     
-    except Exception as e:
-        server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
-
-
-
-
-            
-    
 @bot.command(aliases=['patreon'])
 async def support(ctx):
     #c :3
@@ -242,27 +209,7 @@ async def hug(ctx,  *, content=None):
             })
         await ctx.send(embed=embed) 
 
-@bot.event
-async def on_connect():
-    await p()
-    days.start()
-    
 
-@bot.event
-async def on_guild_remove(guild):
-    await p()
-    
-@tasks.loop(hours=1)
-async def days():
-   await  p()
-
-
-async def p():
-    a = date.today()
-    b = date(2020,9,17)
-    delta = a - b
-    playing = discord.Activity(name=f'over {len(bot.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
-    await bot.change_presence(status=discord.Status.online, activity=playing)
 
 @bot.group(name='team', invoke_without_command=True)
 async def team(ctx):
