@@ -41,4 +41,4 @@ class smallcommands(commands.Cog):
         
         
 def setup(client):
-    client.add_cog(devstuff(client))
+    client.add_cog(smallcommands(client))
