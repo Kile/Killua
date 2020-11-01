@@ -51,20 +51,26 @@ class help(commands.Cog):
                     code = inspect.getsource(func)
                     linecount = code.splitlines()
 
+                    restricted = ''
+                    desc = 'No description yet'
+
+
                     for item in linecount:
                         first, middle, last = item.partition("#h")
                         firstr, middler, lastr = item.partition("#r")
 
-                    restricted = ''
+                        if lastr is None or lastr == '':
+                            restricted = ''
+                        else:
+                            retricted = f'\n\nCommand restricted to: {lastr}'
 
-                    if lastr is None or lastr == '':
-                        restricted = ''
-                    else:
-                        retricted = f'\n\nCommand restricted to: {lastr}'
+                        if last:
+                            desc = last
+
 
                     embed = discord.Embed.from_dict({
                         'title': f'Info about command `k!{command}`',
-                        'description': f'{last} {restricted}',
+                        'description': f'{desc} {restricted}',
                         'color': 0x1400ff,
                         'thumbnail': {'url': str(ctx.me.avatar_url)}
                         })
@@ -95,7 +101,13 @@ def commands(commandgroup):
             Sets a new prefix for Killua for the server, can only be used by admins
 
             ```css\nk!default pref```
-            If you should have forgotten your prefix, run this command to reset it to `k!`'''
+            If you should have forgotten your prefix, run this command to reset it to `k!`
+            
+            ```css\ban <@user> <optionalreason>```
+            Bans a member and deletes their messages of the last 24 hours
+            
+            ```css\nunban <userId/Nameandtag>```
+            Unbans a user with id or something like `Kile#0606`'''
         })
         return embed
 
