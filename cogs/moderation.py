@@ -5,7 +5,7 @@ from discord.ext import commands
 class moderation(commands.Cog):
 
 
-  __init__(self, client):
+  def __init__(self, client):
     self.client = client
     
   @commands.command()
