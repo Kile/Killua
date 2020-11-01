@@ -35,7 +35,7 @@ class simplereplies(commands.Cog):
     #t 5 minutes
     embed = discord.Embed(
         title = 'Invite',
-        description = 'Invite the bot to your server **today** [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=1342531648)',
+        description = 'Invite the bot to your server [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=1574431991). Thank you a lot for supporting my Beta phase!',
         color = 0x1400ff
     )
     await ctx.send(embed=embed) 
