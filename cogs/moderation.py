@@ -84,7 +84,7 @@ class moderation(commands.Cog):
                 return await ctx.send('User is not currently banned')
               
   @commands.command()
-  async def kick(ctx, member: discord.Member, *,reason=None):
+  async def kick(self, ctx, member: discord.Member, *,reason=None):
     #t 10 minutes
     #h What you would expect of a kick command, kicks a user, optional reason
     #c Literally copy pasted ban command and changed a view things
