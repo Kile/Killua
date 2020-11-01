@@ -9,11 +9,14 @@ class moderation(commands.Cog):
     self.client = client
     
   @commands.command()
-  async def ban(self, ctx, member: discord.Member, reason=None):
+  async def ban(self, ctx, member: discord.Member, *,reason=None):
     #t 30 minutes
     #h What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason
 
     if ctx.channel.permissions_for(ctx.author).ban_members == True:
+        if member.id == ctx.me.id:
+            return await ctx.send('Hey!'
+      
         if member.id == ctx.author.id:
             return await ctx.send('You can\'t ban yourself!')
 
@@ -79,6 +82,36 @@ class moderation(commands.Cog):
             loopround = loopround+1
             if loopround == bannedtotal:
                 return await ctx.send('User is not currently banned')
+              
+  @commands.command()
+  async def kick(ctx, member: discord.Member, *,reason=None):
+    #t 10 minutes
+    #h What you would expect of a kick command, kicks a user, optional reason
+    #c Literally copy pasted ban command and changed a view things
+
+    if ctx.channel.permissions_for(ctx.author).kick_members == True:
+
+        if member.id == ctx.me.id:
+            return await ctx.send('Hey!')
+
+        if member.id == ctx.author.id:
+            return await ctx.send('You can\'t kick yourself!')
+
+        if ctx.author.top_role < member.top_role:
+            return await ctx.send('You can\'t kick someone with a higher role than you')
+
+        if ctx.me.top_role < member.top_role:
+            return await ctx.send('My role needs to be moved higher up to grant me permission to kick this person')
+
+        if ctx.channel.permissions_for(ctx.me).kick_members == False:
+            return await ctx.send('I don\t have the permission to kick members yet')
+
+        await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
+        await member.kick(reason=reason)
+        await ctx.send(f':hammer: Kicked **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
+    else:
+        await ctx.send('Nice try but you don\'t have the required permission (`kick members`) to execute this command')
+
               
               
 def setup(client):
