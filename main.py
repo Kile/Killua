@@ -43,7 +43,7 @@ def get_prefix(bot, message):
 
 bot = commands.Bot(command_prefix= get_prefix, description="default prefix", case_insensitive=True, intents = discord.Intents.default())
 bot.remove_command('help')
-cogs = ['devstuff', 'prefixes', 'smallcommands', 'rps', 'api', 'events', 'help', 'simplereplies']
+cogs = ['devstuff', 'prefixes', 'smallcommands', 'rps', 'api', 'events', 'help', 'simplereplies', 'moderation']
 
 for cog in cogs:
     bot.load_extension(f"cogs.{cog}")
@@ -64,7 +64,17 @@ async def update(ctx, extension):
         except Exception as e:
             await ctx.send(e)
 
+@bot.command()
+async def load(ctx, extension):
+    if ctx.author.id == 606162661184372736:
+        bot.load_extension(f'cogs.{extension}')
+        await ctx.send(f'Loaded cog `{extension}`')
 
+@bot.command()
+async def unload(ctx, extension):
+    if ctx.author.id == 606162661184372736:
+        bot.unload_extension(f'cogs.{extension}')
+        await ctx.send(f'Unloaded cog `{extension}`')
 
 
 
