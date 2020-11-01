@@ -15,7 +15,7 @@ class moderation(commands.Cog):
 
     if ctx.channel.permissions_for(ctx.author).ban_members == True:
         if member.id == ctx.me.id:
-            return await ctx.send('Hey!'
+            return await ctx.send('Hey!')
       
         if member.id == ctx.author.id:
             return await ctx.send('You can\'t ban yourself!')
