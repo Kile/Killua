@@ -79,3 +79,7 @@ class moderation(commands.Cog):
             loopround = loopround+1
             if loopround == bannedtotal:
                 return await ctx.send('User is not currently banned')
+              
+              
+def setup(client):
+  client.add_cog(moderation(client))
