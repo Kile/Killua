@@ -14,7 +14,7 @@ class moderation(commands.Cog):
     #h What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason
 
     if ctx.channel.permissions_for(ctx.author).ban_members == True:
-        if member.id == ctx.me.id:
+        if member.id == self.client.id:
             return await ctx.send('Hey!')
       
         if member.id == ctx.author.id:
@@ -91,7 +91,7 @@ class moderation(commands.Cog):
 
     if ctx.channel.permissions_for(ctx.author).kick_members == True:
 
-        if member.id == ctx.me.id:
+        if member.id == self.client.id:
             return await ctx.send('Hey!')
 
         if member.id == ctx.author.id:
