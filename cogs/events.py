@@ -27,13 +27,7 @@ class events(commands.Cog):
             'color': 0x1400ff
         })
         await general.send(embed=embed)
-
-    try:
-        results = server.find({'id': guild.id})
-        for result in results:
-            t = result['points']     
-    except Exception as e:
-        server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
+        server.update_many({'id': guild.id},{'$set':{'points' ,'items' ,'badges', 'prefix': 'k!'}}, upsert=True)
         
   @commands.Cog.listener()
   async def on_connect(self):
