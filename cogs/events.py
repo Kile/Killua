@@ -3,6 +3,13 @@ from datetime import datetime, date, timedelta
 import time
 from discord.utils import find
 from discord.ext import commands
+import pymongo
+from pymongo import MongoClient
+
+
+cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
+db = cluster['Killua']
+server = db['guilds']
 
 class events(commands.Cog):
   
