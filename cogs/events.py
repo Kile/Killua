@@ -26,7 +26,7 @@ class events(commands.Cog):
   @commands.Cog.listener()
   async def on_guild_join(self, guild):
     await p(self)
-   results = server.find({'id': guild.id})
+    results = server.find({'id': guild.id})
     
     for result in results:
       ID = result
