@@ -35,7 +35,7 @@ class events(commands.Cog):
         })
         await general.send(embed=embed)
         
-  exist = server.find('id': guild.id)
+  exist = server.find(guild.id)
   print(exist)
   
   if exist is None:
