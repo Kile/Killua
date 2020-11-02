@@ -39,8 +39,10 @@ class events(commands.Cog):
     
     for result in results:
       ID = result
-      
-    if ID is None or ID == '':
+    
+    try:
+      print(ID)
+    except UnboundLocalError:
       server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
         
   @commands.Cog.listener()
