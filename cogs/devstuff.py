@@ -1,6 +1,34 @@
-import inspect
-import discord
 from discord.ext import commands
+import io
+import aiohttp
+import time
+import discord
+import random
+import json
+from random import randint
+from datetime import datetime, date, timedelta
+from discord.ext import tasks
+import pymongo
+from pymongo import MongoClient
+from pprint import pprint
+import asyncio
+import inspect
+from discord.utils import find
+from discord import client
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from numpy import *
+from matplotlib.pyplot import *
+import matplotlib.pyplot as plt
+import numpy as np
+import numexpr as ne
+
+
+
+cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
+db = cluster['Killua']
+collection = db['teams']
+top =db['teampoints']
+server = db['guilds']
 
 class devstuff(commands.Cog):
 
