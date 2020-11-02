@@ -35,13 +35,13 @@ class events(commands.Cog):
         })
         await general.send(embed=embed)
         
-  exist = server.find({}, 'id')
-  print(exist)
+    exist = server.find({}, 'id')
+    print(exist)
  
-  if self.guild.id in exist:
-    pass
-  else:
-    server.update_many({'id': self.guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
+    if guild.id in exist:
+      pass
+    else:
+      server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
         
   @commands.Cog.listener()
   async def on_connect(self):
