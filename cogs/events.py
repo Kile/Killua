@@ -41,7 +41,7 @@ class events(commands.Cog):
       ID = result
       
     if ID is None or ID == '':
-    server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
+      server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
         
   @commands.Cog.listener()
   async def on_connect(self):
