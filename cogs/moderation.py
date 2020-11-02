@@ -77,7 +77,7 @@ class moderation(commands.Cog):
         
             if (user.name, user.discriminator) == (member_name, member_discriminator):
                 await ctx.guild.unban(user)
-                await ctx.send(f':ok_hand: Unbanned {user.mention}\nOperating moderator: **{ctx.author}**')
+                return await ctx.send(f':ok_hand: Unbanned {user.mention}\nOperating moderator: **{ctx.author}**')
 
             loopround = loopround+1
             if loopround == bannedtotal:
