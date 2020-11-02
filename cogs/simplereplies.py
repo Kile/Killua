@@ -41,7 +41,7 @@ class simplereplies(commands.Cog):
     await ctx.send(embed=embed) 
     
   @commands.command()
-  async def guilds(ctx):
+  async def guilds(self, ctx):
     #r user ID: 606162661184372736 or 383790610727043085
     #t 15 minutes
     if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
