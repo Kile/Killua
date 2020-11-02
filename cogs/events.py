@@ -34,14 +34,14 @@ class events(commands.Cog):
             'color': 0x1400ff
         })
         await general.send(embed=embed)
-    try:   
-      results = server.find({'id': guild.id})
-      for result in results:
-        ID = result
-        print(result)
-    except Excetpion as e:
-      print(e)
-      server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
+  
+     results = server.find({'id': guild.id})
+    
+     for result in results:
+       ID = result
+      
+     if ID is None or ID == '':
+     server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
         
   @commands.Cog.listener()
   async def on_connect(self):
