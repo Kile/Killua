@@ -37,6 +37,9 @@ class events(commands.Cog):
         
     exist = server.find({}, 'id')
     print(exist)
+    print(exist['id'])
+    print(exist.id)
+    print(exist[guild.id])
  
     if guild.id in exist:
       pass
