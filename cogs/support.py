@@ -8,6 +8,8 @@ class support(commands.Cog):
     
   @commands.command()
   async def bug(self, ctx, command=None, *, bug=None):
+    #h Report Killua bugs with this command! For more info on how to report a bug, use `k!bug`.
+    #t 1 hour
     if command and bug:
         
         try:
