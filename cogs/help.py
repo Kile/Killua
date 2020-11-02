@@ -64,8 +64,10 @@ class help(commands.Cog):
                         else:
                             retricted = f'\n\nCommand restricted to: {lastr}'
 
-                        if last:
+                        if last and last != '")':
                             desc = last
+                        
+                          
 
 
                     embed = discord.Embed.from_dict({
