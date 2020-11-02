@@ -12,10 +12,11 @@ class moderation(commands.Cog):
   async def ban(self, ctx, member: discord.Member, *,reason=None):
     #t 30 minutes
     #h What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason
+    
+    if member.id == 756206646396452975:
+            return await ctx.send('Hey!')
 
     if ctx.channel.permissions_for(ctx.author).ban_members == True:
-        if member.id == 756206646396452975:
-            return await ctx.send('Hey!')
       
         if member.id == ctx.author.id:
             return await ctx.send('You can\'t ban yourself!')
@@ -88,11 +89,11 @@ class moderation(commands.Cog):
     #t 10 minutes
     #h What you would expect of a kick command, kicks a user, optional reason
     #c Literally copy pasted ban command and changed a view things
+   
+    if member.id == 756206646396452975:
+        return await ctx.send('Hey!')
 
     if ctx.channel.permissions_for(ctx.author).kick_members == True:
-
-        if member.id == 756206646396452975:
-            return await ctx.send('Hey!')
 
         if member.id == ctx.author.id:
             return await ctx.send('You can\'t kick yourself!')
