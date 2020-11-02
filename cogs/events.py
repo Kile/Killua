@@ -38,10 +38,10 @@ class events(commands.Cog):
   exist = server.find({}, 'id')
   print(exist)
  
-  if guild.id in exist:
+  if self.guild.id in exist:
     pass
   else:
-    server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
+    server.update_many({'id': self.guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
         
   @commands.Cog.listener()
   async def on_connect(self):
