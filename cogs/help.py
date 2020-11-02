@@ -172,7 +172,10 @@ def commands(commandgroup):
             Gives you some more insights to a command like how long it took me etc
             
             ```css\npermissions```
-            Killua lists his permissions on this server'''
+            Killua lists his permissions on this server
+            
+            ```css\nbug <commandname/other> <bug>```
+            You can report bigs with this command, abuse or spam will result in being blacklisted'''
         })
         return embed
 
