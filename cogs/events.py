@@ -35,13 +35,13 @@ class events(commands.Cog):
         })
         await general.send(embed=embed)
   
-     results = server.find({'id': guild.id})
+    results = server.find({'id': guild.id})
     
-     for result in results:
-       ID = result
+    for result in results:
+      ID = result
       
-     if ID is None or ID == '':
-     server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
+    if ID is None or ID == '':
+    server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
         
   @commands.Cog.listener()
   async def on_connect(self):
