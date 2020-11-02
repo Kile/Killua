@@ -29,7 +29,7 @@ class support(commands.Cog):
         embed = discord.Embed.from_dict({
             'title': f'Bug report from guild {ctx.guild.name} (ID: {ctx.guild.id})',
             'description': f'''{matter}  \n\n**Provided information:**\n\n{bug}\n\nReported by **{ctx.author}**''',
-            'color': 0xc21a1a
+            'color': 0x1400ff
         })
         
         channel = bot.get_channel(757201547204493381)
