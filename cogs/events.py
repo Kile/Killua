@@ -35,7 +35,7 @@ class events(commands.Cog):
       prefix = ID['prefix']
     except UnboundLocalError:
       server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
-      prefix = 'k!
+      prefix = 'k!'
       
     general = find(lambda x: x.name == 'general',  guild.text_channels)
     if general and general.permissions_for(guild.me).send_messages:
