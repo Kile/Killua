@@ -32,7 +32,7 @@ class support(commands.Cog):
             'color': 0x1400ff
         })
         
-        channel = bot.get_channel(757201547204493381)
+        channel = self.client.get_channel(757201547204493381)
 
         message = await channel.send(embed=embed)
         await message.add_reaction('\U00002705')
