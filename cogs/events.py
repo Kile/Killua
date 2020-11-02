@@ -41,7 +41,7 @@ class events(commands.Cog):
     if general and general.permissions_for(guild.me).send_messages:
         embed = discord.Embed.from_dict({
             'title': 'Hello {}!'.format(guild.name),
-            'description': 'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{prefix}info`\n\nTo change the server prefix, use `{prefix}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{prefix}help` to see every command',
+            'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{prefix}info`\n\nTo change the server prefix, use `{prefix}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{prefix}help` to see every command',
             'color': 0x1400ff
         })
         await general.send(embed=embed)
