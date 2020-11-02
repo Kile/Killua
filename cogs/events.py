@@ -27,7 +27,11 @@ class events(commands.Cog):
             'color': 0x1400ff
         })
         await general.send(embed=embed)
-        server.update_many({'id': guild.id},{'$set':{'points' ,'items' ,'badges', 'prefix': 'k!'}}, upsert=True)
+        
+  exist = server.find('id': guild.id)
+  
+  if exist is None:
+    server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
         
   @commands.Cog.listener()
   async def on_connect(self):
