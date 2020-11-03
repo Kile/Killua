@@ -1,4 +1,5 @@
 import discord
+from discord.ext.commands.cooldowns import BucketType
 from discord.ext import commands
 
 class support(commands.Cog):
