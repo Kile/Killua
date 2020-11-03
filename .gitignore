@@ -1,1 +1,5 @@
+# Mac OS Stuff
 /.DS_Store
+
+# Configuration
+/config.json

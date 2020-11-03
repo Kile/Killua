@@ -22,9 +22,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
 
+with open('config.json', 'r') as config_file:
+    config = json.loads(config_file.read())
 
-
-cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
+cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 collection = db['teams']
 top =db['teampoints']
@@ -375,4 +376,4 @@ async def procont(team):
     except Exception as e:
         return 0
 
-bot.run('NzU2MjA2NjQ2Mzk2NDUyOTc1.X2OeUg.mt0HJ8nW3ADNMGz0xNAwhvsgJ-c')
+bot.run(config['token'])
