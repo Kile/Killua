@@ -7,6 +7,7 @@ class support(commands.Cog):
     self.client = client
     
   @commands.command()
+  @commands.cooldown(rate=1, per=3600, type=commands.BucketType.guild)
   async def bug(self, ctx, command=None, *, bug=None):
     #h Report Killua bugs with this command! For more info on how to report a bug, use `k!bug`.
     #t 1 hour
