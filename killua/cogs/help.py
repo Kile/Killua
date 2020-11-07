@@ -179,5 +179,7 @@ def commands(commandgroup):
         })
         return embed
 
+__cog__ = help
+
 def setup(client):
   client.add_cog(help(client))

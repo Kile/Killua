@@ -69,5 +69,8 @@ async def p(self):
   await self.client.change_presence(status=discord.Status.online, activity=playing)
   
   
+__cog__ = events
+
+
 def setup(client):
   client.add_cog(events(client))

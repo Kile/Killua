@@ -113,6 +113,8 @@ class moderation(commands.Cog):
     else:
         await ctx.send('Nice try but you don\'t have the required permission (`kick members`) to execute this command')
 
+__cog__ = moderation
+
               
               
 def setup(client):
