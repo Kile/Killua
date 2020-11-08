@@ -23,7 +23,7 @@ class translate(commands.Cog):
 
     embed = discord.Embed.from_dict({ 'title': f'Translation',
     'description': f'```\n{args}```\n`{source}` -> `{target}`\n',
-    'color': 0xc21a1a})
+    'color': 0x1400ff})
 
     try:
         translated = GoogleTranslator(source=source, target=target).translate(text=args)
