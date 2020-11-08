@@ -105,11 +105,17 @@ def commands(commandgroup):
             ```css\nk!default pref```
             If you should have forgotten your prefix, run this command to reset it to `k!`
             
-            ```css\ban <@user> <optionalreason>```
+            ```css\nban <@user> <optionalreason>```
             Bans a member and deletes their messages of the last 24 hours
             
             ```css\nunban <userId/Nameandtag>```
-            Unbans a user with id or something like `Kile#0606`'''
+            Unbans a user with id or something like `Kile#0606`
+            
+            ```css\nmute <@user> <optionaltimeinminutes> <optionalreason>```
+            Mutes a user for the given amount of time or you specify as `unlimited`
+            
+            ```css\nunmute <@user> <optionalreason>```
+            Unmutes a user'''
         })
         return embed
 
@@ -130,8 +136,11 @@ def commands(commandgroup):
 
             ```css\ntopic```
             You suck at small talk? Get a topic with this command!
+            
+            ```css\ntranslate <sourcelanguage/auto> <targetlanguage> <text>```
+            Translates given text to the targetlanguage
 
-            *8 ball and heads or tails in planned*
+            *8 ball and heads or tails in plan*
             '''
         })
         return embed
