@@ -43,6 +43,7 @@ class smallcommands(commands.Cog):
       #t 5 min
       await ctx.send("Hello " + str(ctx.author)) 
         
-        
+Cog = smallcommands
+
 def setup(client):
     client.add_cog(smallcommands(client))

@@ -66,6 +66,9 @@ class simplereplies(commands.Cog):
         })
     await ctx.send(embed=embed)
     
+
+Cog = simplereplies
+
     
 def setup(client):
   client.add_cog(simplereplies(client))

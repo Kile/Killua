@@ -53,7 +53,7 @@ class devstuff(commands.Cog):
             await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
 
 
-
+Cog = devstuff
 
 def setup(client):
     client.add_cog(devstuff(client))
