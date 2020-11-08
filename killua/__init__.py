@@ -1,30 +1,30 @@
 from . import cogs
-from discord.ext.commands import command as discord_command, group as discord_group
+from datetime import datetime, timedelta
+from discord import Embed, File
+from discord.ext.commands import command as discord_command, \
+	group as discord_group
 from discord.ext import commands
+from inspect import getsource
+from io import BytesIO
+from json import loads
+from matplotlib.pyplot import figure, plot, savefig, title
+from numexpr import evaluate
+from numpy import linspace
+from pymongo import MongoClient
+from random import choice, randint
 from typing import Callable, Coroutine
 
-import io
-import aiohttp
-import time
-import discord
-import random
-import json
-from random import randint
-from datetime import datetime, date, timedelta
-from discord.ext import tasks
-import pymongo
-from pymongo import MongoClient
-from pprint import pprint
-import asyncio
-import inspect
-from discord.utils import find
-from discord import client
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
-from numpy import *
-from matplotlib.pyplot import *
-import matplotlib.pyplot as plt
-import numpy as np
-import numexpr as ne
+# These imports were unused.
+# from datetime import date
+# from discord.ext import tasks
+# import pymongo
+# from pprint import pprint
+# from discord.utils import find
+# import asyncio
+# import aiohttp
+# import time
+# from discord import client
+# from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 all_commands = []
 
@@ -49,7 +49,7 @@ def group(*args, **kwargs):
 	return decorator
 
 with open('config.json', 'r') as config_file:
-	config = json.loads(config_file.read())
+	config = loads(config_file.read())
 
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
@@ -97,11 +97,11 @@ async def function(ctx, *, function):
 	#c Could break Killua atm so restricted
 	if ctx.author.id == 606162661184372736:
 		try:
-			x = np.linspace(-5,5,100)
-			y = ne.evaluate(function)
+			x = linspace(-5,5,100)
+			y = evaluate(function)
 
 			# setting the axes at the centre
-			fig = plt.figure()
+			fig = figure()
 			ax = fig.add_subplot(1, 1, 1)
 			ax.spines['left'].set_position('center')
 			ax.spines['bottom'].set_position('center')
@@ -111,13 +111,13 @@ async def function(ctx, *, function):
 			ax.yaxis.set_ticks_position('left')
 
 			# plot the function
-			plt.plot(x,y, 'g')
-			plt.title(str(function))
-			buf = io.BytesIO()
-			plt.savefig(buf, format='png')
+			plot(x,y, 'g')
+			title(str(function))
+			buf = BytesIO()
+			savefig(buf, format='png')
 			buf.seek(0)
 
-			graph = discord.File(buf, filename= 'graph.png')
+			graph = File(buf, filename= 'graph.png')
 
 
 
@@ -157,10 +157,10 @@ async def hug(ctx, *, content=None):
 			return await ctx.send(f'Someone hug {ctx.author.name}!')
 
 		hugtext = [f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** as strong as they can', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** and makes sure to not let go', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** the longest hug they have ever seen', f'**{ctx.author.name}** cuddles **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** uses **{ctx.message.mentions[0].name}** as a teddybear', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** until all their worries are gone and 5 minutes longer',f'**{ctx.author.name}** clones themself and together they hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** jumps in **{ctx.message.mentions[0].name}**\'s arms', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** a bearhug', f'**{ctx.author.name}** finds a lamp with a Jinn and gets a wish. So they wish to hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** asks **{ctx.message.mentions[0].name}** for motivation and gets a hug']
-		embed = discord.Embed.from_dict({
-			'title': random.choice(hugtext),
+		embed = Embed.from_dict({
+			'title': choice(hugtext),
 			'image':{
-				'url': random.choice(huggif)
+				'url': choice(huggif)
 			},
 			'color': 0x1400ff
 			})
@@ -172,10 +172,10 @@ async def hug(ctx, *, content=None):
 
 		msg = await ctx.bot.wait_for('message', check=check, timeout=60)
 		hugtextself = [f'**Killua** hugs **{ctx.author.name}** as strong as they can', f'**Killua** hugs **{ctx.author.name}** and makes sure to not let go', f'**Killua** gives **{ctx.author.name}** the longest hug they have ever seen', f'**Killua** cuddles **{ctx.author.name}**', f'**Killua** uses **{ctx.author.name}** as a teddybear', f'**Killua** hugs **{ctx.author.name}** until all their worries are gone and 5 minutes longer',f'**Killua** clones themself and together they hug **{ctx.author.name}**', f'**Killua** jumps in **{ctx.author.name}**\'s arms', f'**Killua** gives **{ctx.author.name}** a bearhug', f'**Killua** finds a lamp with a Jinn and gets a wish. So they wish to hug **{ctx.author.name}**', f'**Killua** asks **{ctx.author.name}** for motivation and gets a hug']
-		embed = discord.Embed.from_dict({
-			'title': random.choice(hugtextself),
+		embed = Embed.from_dict({
+			'title': choice(hugtextself),
 			'image':{
-				'url': random.choice(huggif)
+				'url': choice(huggif)
 			},
 			'color': 0x1400ff
 			})
@@ -262,7 +262,7 @@ async def info(ctx, text= None):
 	#t 30 minutes
 	if text:
 		if text == 'Killua':
-			embed = discord.Embed.from_dict({
+			embed = Embed.from_dict({
 			'title': 'Information about team Killua',
 			'description': 'Hi, my name is Killua! I\'ve been trained by my family to be an assasin, long hard training, I\'ve killed lots of people already. When the only thing I want is being friends with Gon... I would be glad to so you in my team fighting by my side for the first place! \n\n Attributes: **power, intelligent, strong, putting friends always first**',
 			'thumbnail':{
@@ -272,7 +272,7 @@ async def info(ctx, text= None):
 			})
 			return await ctx.send(embed=embed)
 		if text == 'Gon':
-			embed = discord.Embed.from_dict({
+			embed = Embed.from_dict({
 			'title': 'Information about team Gon',
 			'description': 'Hello, I am Gon! I am glad to be here, to have made so many friends on the search for my father and I love making more. I am kind to everyone unless someone hurts one of my friends, then I can get a bit... protective. Let\'s win this thing, together and make new friends on the way! \n\n Attributes: **kind, open hearted, protective**',
 			'thumbnail':{
@@ -282,7 +282,7 @@ async def info(ctx, text= None):
 			})
 			return await ctx.send(embed=embed)
 		if text == 'Leorio':
-			embed = discord.Embed.from_dict({
+			embed = Embed.from_dict({
 			'title': 'Information about team Leorio',
 			'description': 'Hi my name is Leorio! Originally I was planning to get my license to sell it, because as I say, money rules the world when all I want is being a doctor and able to help peoplle for free.. Then I met friends who helped my get my license and I love to spend time with them! For now I gotta learn for my exams though\n\n Attributes: **smart, money oriented**',
 			'thumbnail':{
@@ -292,7 +292,7 @@ async def info(ctx, text= None):
 			})
 			return await ctx.send(embed=embed)
 		if text == 'Kurapika':
-			embed = discord.Embed.from_dict({
+			embed = Embed.from_dict({
 			'title': 'Information about team Kurapika',
 			'description': 'Hello kind person, my name is Kurapika. I am the last surviving member of the Kurta-clan, the rest has been killed by a group called the Phantom Troupe and I\'ve made it my goal to ill every one of them. But unless I find one I am nice and kind but always searching for them \n\n Attributes: **excellent in cooking, experienced, powerfull, risiking everything**',
 			'thumbnail':{
@@ -305,7 +305,7 @@ async def info(ctx, text= None):
 		await ctx.send('Not an existing team')
 	else:
 		teaminfo = '\n'.join([f"{x['_id']}: {x['count']}" for x in list(collection.aggregate([{"$group": {"_id": "$team", "count": {"$sum": 1}}}]))])
-		embed = discord.Embed(
+		embed = Embed(
 			title = '**Teams info**',
 			color = 0x00FF80,
 			description = f'Introducing team mode!\n 4 teams are available to join\n Once you join a team, you collect points for it to get it on global rank 1!\n\n Join a team with `k!team <team name>`\n Teams: \n\nGon\n Killua\n Kurapika\n Leorio\n\n *For more info about each team and what it resembles, use `k!team info <team name>`*\n\nTeam ratio:\n {teaminfo}'
@@ -317,7 +317,7 @@ async def info(ctx, text= None):
 async def codeinfo(ctx, content):
 	try:
 		func = ctx.bot.get_command(content).callback
-		code = inspect.getsource(func)
+		code = getsource(func)
 		linecount = code.splitlines()
 		time= ''
 		restricted = ''
@@ -347,7 +347,7 @@ async def codeinfo(ctx, content):
 		else:
 			realrestricted = f'**Restricted to:** {restricted}'
 
-		embed= discord.Embed.from_dict({
+		embed= Embed.from_dict({
 			'title': f'Command **{content}**',
 			'color': 0x1400ff,
 			'description': f'''**Characters:** {len(code)}
