@@ -47,6 +47,7 @@ bot = commands.Bot(command_prefix= 'kil!', description="default prefix", case_in
 bot.remove_command('help')
 cogs = ['ping']
 
+
 for cog in cogs:
     bot.load_extension(f"Cogs.{cog}")
 
