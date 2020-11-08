@@ -21,6 +21,7 @@ class rps(commands.Cog):
   async def rps(self, ctx, member: discord.User, points: int=None):
     #c The most complicated command I ever made
     #t a week
+    #h Play Rock Paper Scissors with your friends! You can play investing points or just for fun.
     
     if member.id == ctx.author.id:
       return await ctx.send('Baka! You can\'t play against yourself')
