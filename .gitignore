@@ -3,3 +3,6 @@
 
 # Configuration
 /config.json
+
+# Python cache
+**/__pycache__
