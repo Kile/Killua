@@ -143,10 +143,8 @@ class moderation(commands.Cog):
             return await ctx.send('There is no rule called `muted` (Case sensitive!) so I can\'t mute that user')
 
         await member.remove_roles(muted, reason=reason or "No reason provided")
-
-        await member.send(f'You have been unmuted in {ctx.guild.name} by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
-
-        return await ctx.send(f':lips: Unmuted **{member}** Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
+        await ctx.send(f':lips: Unmuted **{member}** Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
+        await member.send(f'You have been unmuted in {ctx.guild.name} by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')
 
 
 @commands.command()
@@ -196,9 +194,8 @@ async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
             if string is True:
                 await member.add_roles(muted, reason=reason or "No reason provided")
 
-                await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
-
                 return await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
+                await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
 
             if int(timem) > 1440 or int(timem) < 0:
                 return await ctx.send('The most time a user can be muted is a day or unlimited')
@@ -208,8 +205,12 @@ async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
                     
                     
 
-            await member.send(f'You have been muted in {ctx.guild.name} for the duration of `{timem}` minutes by `{ctx.author}`')
+            
             await ctx.send(f':pinching_hand: Muted **{member}** for  `{timem}` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
+            try:
+              await member.send(f'You have been muted in {ctx.guild.name} for the duration of `{timem}` minutes by `{ctx.author}`')
+            except HTTPException:
+              pass
 
             await asyncio.sleep(int(timem) * 60)
 
@@ -219,10 +220,10 @@ async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
             except Exception as a:
                 pass
         else:
-            await member.add_roles(muted,reason=reason or "No reason"), 
-            await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
+            await member.add_roles(muted,reason=reason or "No reason")  
 
-            await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')    
+            await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**') 
+            await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')
             
         
     else:
