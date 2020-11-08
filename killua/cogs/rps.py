@@ -232,7 +232,7 @@ async def rpsf(choice1, choice2):
     if choice1.lower() == 'scissors' and choice2.lower() == 'rock':
         return 3
 
-__cog__ = rps
+Cog = rps
 
 def setup(client):
     client.add_cog(rps(client))

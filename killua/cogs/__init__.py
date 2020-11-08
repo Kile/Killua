@@ -2,7 +2,7 @@ from importlib.abc import MetaPathFinder
 import pkgutil
 
 # This module's submodules.
-__all__ = []
+all_cogs = []
 
 for loader, name, pkg in pkgutil.walk_packages(__path__):
 	# Load the module.
@@ -13,4 +13,4 @@ for loader, name, pkg in pkgutil.walk_packages(__path__):
 	# Make it a global.
 	globals()[name] = module
 	# Put it in the list.
-	__all__.append(module)
+	all_cogs.append(module)

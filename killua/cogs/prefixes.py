@@ -42,7 +42,7 @@ class prefix(commands.Cog):
         else:
             await ctx.send(f'The current server prefix is `{pref}`')
 
-__cog__ = prefix
+Cog = prefix
 
 def setup(client):
     client.add_cog(prefix(client))

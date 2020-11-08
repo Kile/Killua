@@ -55,7 +55,7 @@ Reproduction: ban a member without providing a reason```''',
 
         await ctx.send(embed=embed)
         
-__cog__ = support
+Cog = support
 
 def setup(client):
   client.add_cog(support(client))
