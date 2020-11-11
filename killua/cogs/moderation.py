@@ -120,8 +120,8 @@ class moderation(commands.Cog):
         await ctx.send('Nice try but you don\'t have the required permission (`kick members`) to execute this command')
         
         
- @commands.command()
- async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
+  @commands.command()
+  async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
 
     if member.id == ctx.me.id:
         return await ctx.send('Hey!')
@@ -202,8 +202,8 @@ class moderation(commands.Cog):
     else:
         await ctx.send('Nice try but you don\'t have the required permission (`manage roles`) to execute this command')
                            
- @commands.command()
- async def unmute(self, ctx, member: discord.Member, *, reason=None):
+  @commands.command()
+  async def unmute(self, ctx, member: discord.Member, *, reason=None):
 
     if ctx.channel.permissions_for(ctx.author).manage_roles == True:
 
