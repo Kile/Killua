@@ -1,3 +1,3 @@
-import . from init
+from . import main
 
 main()
