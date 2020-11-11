@@ -13,7 +13,7 @@ batch_detection)
 class translate(commands.Cog):
 
   def __init__(self, client):
-    client = self.client
+    self.client = client
     
   @commands.command()
   async def translate(self, ctx, source, target, *,args):
