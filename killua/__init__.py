@@ -1,4 +1,4 @@
-import cogs
+from . import cogs
 from datetime import datetime, timedelta
 from discord import Embed, File
 from discord.ext.commands import command as discord_command, \
