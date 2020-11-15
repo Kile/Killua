@@ -1,5 +1,8 @@
 import discord 
+<<<<<<< HEAD
+=======
 import asyncio
+>>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
 from discord.ext import commands
 
 
@@ -30,11 +33,16 @@ class moderation(commands.Cog):
 
         if ctx.channel.permissions_for(ctx.me).ban_members == False:
             return await ctx.send('I don\t have the permission to ban members yet')
+<<<<<<< HEAD
+
+        await member.send(f'You have been banned from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
+=======
         
         try:
           await member.send(f'You have been banned from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
         except HTTPException:
           pass
+>>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
         await member.ban(reason=reason, delete_message_days=1)
         await ctx.send(f':hammer: Banned **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
     else:
@@ -110,15 +118,22 @@ class moderation(commands.Cog):
 
         if ctx.channel.permissions_for(ctx.me).kick_members == False:
             return await ctx.send('I don\t have the permission to kick members yet')
+<<<<<<< HEAD
+
+        await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
+=======
         
         try:
           await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
         except HTTPException:
           pass
+>>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
         await member.kick(reason=reason)
         await ctx.send(f':hammer: Kicked **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
     else:
         await ctx.send('Nice try but you don\'t have the required permission (`kick members`) to execute this command')
+<<<<<<< HEAD
+=======
         
         
   @commands.command()
@@ -233,6 +248,7 @@ class moderation(commands.Cog):
         return await ctx.send(f':lips: Unmuted **{member}** Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
 
 
+>>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
 
 Cog = moderation
 
