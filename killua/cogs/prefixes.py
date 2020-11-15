@@ -46,9 +46,3 @@ Cog = prefix
 
 def setup(client):
     client.add_cog(prefix(client))
-<<<<<<< HEAD
-
-
-        
-=======
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
