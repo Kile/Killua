@@ -27,19 +27,9 @@ class help(commands.Cog):
             'title': 'Bot commands',
             'description': f'''Current server Prefix: `{pref}`
             Command groups for {ctx.me.name}:
-<<<<<<< HEAD
-
-            :tools: `Moderation`
-
-            :clown: `Fun`
-
-            :trophy: `Economy/teams`
-
-=======
             :tools: `Moderation`
             :clown: `Fun`
             :trophy: `Economy/teams`
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
             <:killua_wink:769919176110112778> `Other`
             
             To see a groups commands, use```css\nhelp <groupname>```
@@ -107,10 +97,6 @@ def commands(commandgroup):
             'title': 'Moderation commands',
             'description': '''```css\nprefix <string>```
             Sets a new prefix for Killua for the server, can only be used by admins
-<<<<<<< HEAD
-
-=======
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
             ```css\nk!default pref```
             If you should have forgotten your prefix, run this command to reset it to `k!`
             
@@ -133,34 +119,17 @@ def commands(commandgroup):
             'title': 'Fun commands',
             'description': '''```css\nquote <@user> <text>```
             Send a screenshot of a user saying what you defined. Use `-c`ast the start of `text` for compact mode or `-l` for light mode or both
-<<<<<<< HEAD
-
-            ```css\ncmm <text>```
-            Sends the *Change My Mind* meme with the text you defined
-
-            ```css\nrps <@user> <optional integer>```
-            Challenges someone to a game of Rock Paper Scissors. If you specify an amount you play with points and the winner gets them all
-
-            ```css\nhug <@user>```
-            We all need  more hugs in our life, this hugs the user specified
-
-=======
             ```css\ncmm <text>```
             Sends the *Change My Mind* meme with the text you defined
             ```css\nrps <@user> <optional integer>```
             Challenges someone to a game of Rock Paper Scissors. If you specify an amount you play with points and the winner gets them all
             ```css\nhug <@user>```
             We all need  more hugs in our life, this hugs the user specified
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
             ```css\ntopic```
             You suck at small talk? Get a topic with this command!
             
             ```css\ntranslate <sourcelanguage/auto> <targetlanguage> <text>```
             Translates given text to the targetlanguage
-<<<<<<< HEAD
-
-=======
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
             *8 ball and heads or tails in plan*
             '''
         })
@@ -171,15 +140,8 @@ def commands(commandgroup):
             'title': 'Economy/Teams commands',
             'description': '''```css\nteam <teamname>```
             Lets you join a team to collect points for it. Use `team current` to see your current Team
-<<<<<<< HEAD
-
             ```css\nteaminfo <optional team>``
             Gives you more info about the Team system or individual Teams
-
-=======
-            ```css\nteaminfo <optional team>``
-            Gives you more info about the Team system or individual Teams
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
             ```css\ndaily```
             Gives you your daily points
             
@@ -193,10 +155,6 @@ def commands(commandgroup):
             'title': 'Other commands',
             'description': '''```css\nhi```
             Replies `Hi username, usertag` I am leaving this in because it was the first Killua command
-<<<<<<< HEAD
-
-=======
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
             ```css\ninfo```
             Gives you some info about the bot
             
