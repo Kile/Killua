@@ -4,6 +4,11 @@ import aiohttp
 import time
 from datetime import datetime, timedelta
 from discord.ext import commands
+import json
+from json import loads
+
+with open('config.json', 'r') as config_file:
+	config = json.loads(config_file.read())
 
 class api(commands.Cog):
   
@@ -14,7 +19,7 @@ class api(commands.Cog):
   async def urban(self, ctx, content):
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-        'Authorization': 'Bearer 16c6fa735e974848ea8395a4160b8'} 
+        'Authorization': f'Bearer {config['fapi']}'}
     body = {
         'args': { 'text': content }
       } 
@@ -46,7 +51,7 @@ class api(commands.Cog):
     #t Around 1-2 hours
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-        'Authorization': 'Bearer 16c6fa735e974848ea8395a4160b8'} 
+        'Authorization': 'Bearer {config['fapi']}'} 
     body = {
         'args': { 'text': content }
       } 
@@ -98,7 +103,7 @@ class api(commands.Cog):
         name = quotist.name
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-        'Authorization': 'Bearer 16c6fa735e974848ea8395a4160b8'} 
+        'Authorization': 'Bearer {config['fapi']}'} 
     body = {
         'args': { 'message': {'content': message},
         'author': {'color': realcolor,
