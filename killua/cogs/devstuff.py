@@ -36,8 +36,8 @@ class devstuff(commands.Cog):
         self.client = client
 
 
-    @commands.command(aliases=['eval'])
-    async def exec(self, ctx, *, c):
+    @commands.command()
+    async def eval(self, ctx, *, c):
         if ctx.author.id == 606162661184372736:
             try:
                 global bot

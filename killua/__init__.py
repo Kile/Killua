@@ -50,6 +50,7 @@ def group(*args, **kwargs):
 
 
 
+
 cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
 db = cluster['Killua']
 collection = db['teams']
@@ -344,15 +345,21 @@ async def codeinfo(ctx, content):
 		if restricted == '' or restricted is None or restricted == '")':
 			realrestricted = ''
 		else:
-			realrestricted = f'**Restricted to:** {restricted}'
+
+			realrestricted = f'**Restricted to:** {restricted}'
+
+
 
 		embed= Embed.from_dict({
 			'title': f'Command **{content}**',
 			'color': 0x1400ff,
 			'description': f'''**Characters:** {len(code)}
 			**Lines:**  {len(linecount)}
+
+
 			**Time spend on code:** {time or 'No time provided'}
 			**Comments:** {comment or 'No comment'}
+
 			{realrestricted}'''
 			})
 		await ctx.send(embed=embed)
@@ -386,4 +393,7 @@ def main():
 		bot.add_cog(cog.Cog(bot))
 
 	# Start the bot.
+
 	bot.run('NzU2MjA2NjQ2Mzk2NDUyOTc1.X2OeUg.mt0HJ8nW3ADNMGz0xNAwhvsgJ-c')
+
+
