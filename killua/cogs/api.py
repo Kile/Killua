@@ -23,7 +23,7 @@ class api(commands.Cog):
   async def urban(self, ctx, content):
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-        'Authorization': f'Bearer 16c6fa735e974848ea8395a4160b8'}
+        'Authorization': f'Bearer {config['fapi']}'}
     body = {
         'args': { 'text': content }
       } 
