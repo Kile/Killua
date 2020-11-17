@@ -5,6 +5,7 @@ import time
 import discord
 import random
 import json
+from json import loads
 from random import randint
 from datetime import datetime, date, timedelta
 from discord.ext import tasks
@@ -21,10 +22,11 @@ from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
+with open('config.json', 'r') as config_file:
+	config = json.loads(config_file.read())
 
 
-
-cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
+cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 collection = db['teams']
 top =db['teampoints']
