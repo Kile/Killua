@@ -13,11 +13,8 @@ batch_detection)
 class translate(commands.Cog):
 
   def __init__(self, client):
-<<<<<<< HEAD
-    client = self.client
-=======
     self.client = client
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
+
     
   @commands.command()
   async def translate(self, ctx, source, target, *,args):
@@ -47,11 +44,9 @@ class translate(commands.Cog):
     
     await ctx.send(embed=embed)
     
-<<<<<<< HEAD
-    
-=======
+
 Cog = translate
->>>>>>> 421ffb1f7ad894f88306cbee6df575b439e5a206
+
     
 def setup(client):
   client.add_cog(translate(client))
