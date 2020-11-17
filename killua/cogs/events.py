@@ -65,7 +65,7 @@ async def p(self):
   a = date.today()
   b = date(2020,9,17)
   delta = a - b
-<<<<<<< HEAD
+
 
   playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
 
