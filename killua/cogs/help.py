@@ -138,9 +138,11 @@ def commands(commandgroup):
     if commandgroup.lower() == 'economy' or commandgroup.lower() == 'teams':
         embed = discord.Embed.from_dict({
             'title': 'Economy/Teams commands',
-            'description': '''```css\nteam <teamname>```
+            'description': '''**CURRENTLY DISABLED, WILL BE REPLACED SOON**
+            
+            ```css\nteam <teamname>```
             Lets you join a team to collect points for it. Use `team current` to see your current Team
-            ```css\nteaminfo <optional team>``
+            ```css\nteaminfo <optional team>```
             Gives you more info about the Team system or individual Teams
             ```css\ndaily```
             Gives you your daily points
