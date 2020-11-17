@@ -68,9 +68,7 @@ async def p(self):
 <<<<<<< HEAD
 
   playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
-=======
-  playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days} | Running on emergency repo' , type=discord.ActivityType.watching)
->>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
+
   await self.client.change_presence(status=discord.Status.online, activity=playing)
   
   
