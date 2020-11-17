@@ -48,11 +48,17 @@ def group(*args, **kwargs):
 		return group
 	return decorator
 
+<<<<<<< HEAD
 
 
 
 cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
 
+=======
+
+
+cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
 db = cluster['Killua']
 collection = db['teams']
 top = db['teampoints']
@@ -346,20 +352,29 @@ async def codeinfo(ctx, content):
 		if restricted == '' or restricted is None or restricted == '")':
 			realrestricted = ''
 		else:
+<<<<<<< HEAD
 			realrestricted = f'**Restricted to:** {restricted}'
 
+=======
+			realrestricted = f'**Restricted to:** {restricted}'
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
 
 		embed= Embed.from_dict({
 			'title': f'Command **{content}**',
 			'color': 0x1400ff,
 			'description': f'''**Characters:** {len(code)}
 			**Lines:**  {len(linecount)}
+<<<<<<< HEAD
 
 
 			**Time spend on code:** {time or 'No time provided'}
 			**Comments:** {comment or 'No comment'}
 
 
+=======
+			**Time spend on code:** {time or 'No time provided'}
+			**Comments:** {comment or 'No comment'}
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
 			{realrestricted}'''
 			})
 		await ctx.send(embed=embed)
@@ -393,6 +408,10 @@ def main():
 		bot.add_cog(cog.Cog(bot))
 
 	# Start the bot.
+<<<<<<< HEAD
 
 	bot.run('NzU2MjA2NjQ2Mzk2NDUyOTc1.X2OeUg.mt0HJ8nW3ADNMGz0xNAwhvsgJ-c')
 
+=======
+	bot.run('NzU2MjA2NjQ2Mzk2NDUyOTc1.X2OeUg.mt0HJ8nW3ADNMGz0xNAwhvsgJ-c')
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf

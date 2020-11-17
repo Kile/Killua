@@ -1,7 +1,11 @@
 import discord 
+<<<<<<< HEAD
 
 import asyncio
 
+=======
+import asyncio
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
 from discord.ext import commands
 
 
@@ -37,7 +41,10 @@ class moderation(commands.Cog):
           await member.send(f'You have been banned from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
         except HTTPException:
           pass
+<<<<<<< HEAD
 
+=======
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
         await member.ban(reason=reason, delete_message_days=1)
         await ctx.send(f':hammer: Banned **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
     else:
@@ -113,17 +120,27 @@ class moderation(commands.Cog):
 
         if ctx.channel.permissions_for(ctx.me).kick_members == False:
             return await ctx.send('I don\t have the permission to kick members yet')
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
         try:
           await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
         except HTTPException:
           pass
+<<<<<<< HEAD
 
+=======
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
         await member.kick(reason=reason)
         await ctx.send(f':hammer: Kicked **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
     else:
         await ctx.send('Nice try but you don\'t have the required permission (`kick members`) to execute this command')
+<<<<<<< HEAD
 
+=======
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
         
         
   @commands.command()
@@ -238,7 +255,10 @@ class moderation(commands.Cog):
         return await ctx.send(f':lips: Unmuted **{member}** Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
 
 Cog = moderation
 

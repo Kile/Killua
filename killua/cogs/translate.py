@@ -14,7 +14,10 @@ class translate(commands.Cog):
 
   def __init__(self, client):
     self.client = client
+<<<<<<< HEAD
 
+=======
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
     
   @commands.command()
   async def translate(self, ctx, source, target, *,args):
@@ -44,9 +47,13 @@ class translate(commands.Cog):
     
     await ctx.send(embed=embed)
     
+<<<<<<< HEAD
 
 Cog = translate
 
+=======
+Cog = translate
+>>>>>>> ea404b285b0ca4aaf61355811118727e8a1affaf
     
 def setup(client):
   client.add_cog(translate(client))
