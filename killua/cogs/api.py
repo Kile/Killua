@@ -9,6 +9,10 @@ from json import loads
 
 with open('config.json', 'r') as config_file:
   config = json.loads(config_file.read())
+  print(config)
+  print(config['fapi'])
+  
+print(config['fapi'])
 
 class api(commands.Cog):
   
