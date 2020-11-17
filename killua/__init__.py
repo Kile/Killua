@@ -49,7 +49,8 @@ def group(*args, **kwargs):
 	return decorator
 
 
-
+with open('config.json', 'r') as config_file:
+    config = json.loads(config_file.read())
 
 cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
 db = cluster['Killua']
@@ -394,6 +395,6 @@ def main():
 
 	# Start the bot.
 
-	bot.run('NzU2MjA2NjQ2Mzk2NDUyOTc1.X2OeUg.mt0HJ8nW3ADNMGz0xNAwhvsgJ-c')
+	bot.run(config['token'])
 
 
