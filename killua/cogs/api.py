@@ -7,21 +7,22 @@ from discord.ext import commands
 import json
 from json import loads
 
-with open('config.json', 'r') as config_file:
-  config = json.loads(config_file.read())
 
-fAPI = 'Bearer ', config['fapi']
+
 
 class api(commands.Cog):
   
   def __init_(self, client):
     self.client = client
+    
+  with open('config.json', 'r') as config_file:
+    config = json.loads(config_file.read())
   
   @commands.command()
   async def urban(self, ctx, content):
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-        'Authorization': fAPI}
+        'Authorization': f'Bearer {config['fapi']}'}
     body = {
         'args': { 'text': content }
       } 
