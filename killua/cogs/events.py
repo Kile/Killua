@@ -5,9 +5,13 @@ from discord.utils import find
 from discord.ext import commands
 import pymongo
 from pymongo import MongoClient
+import json
+from json import loads
+with open('config.json', 'r') as config_file:
+	config = json.loads(config_file.read())
 
 
-cluster = MongoClient('mongodb+srv://Kile:Kile2-#2@cluster0.q9qss.mongodb.net/teams?retryWrites=true&w=majority')
+cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
 
