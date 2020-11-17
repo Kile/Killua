@@ -7,6 +7,7 @@ from discord.ext import commands
 from inspect import getsource
 from io import BytesIO
 from json import loads
+import json
 from matplotlib.pyplot import figure, plot, savefig, title
 from numexpr import evaluate
 from numpy import linspace
