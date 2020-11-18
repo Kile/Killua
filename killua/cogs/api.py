@@ -58,6 +58,7 @@ class api(commands.Cog):
         'args': { 'text': content }
       } 
     
+    
     async with session.post('https://fapi.wrmsr.io/changemymind', headers=headers, json=body) as r: 
         image_bytes = await r.read()
         file = discord.File(io.BytesIO(image_bytes), filename="image.png")
