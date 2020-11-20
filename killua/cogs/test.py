@@ -8,7 +8,7 @@ class test(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        await ctx.send('Test complete (this doesn\'t actually do anything, just means that Killua it out of the emergency state and back!)')
+        await ctx.send('Test complete (this doesn\'t actually do anything, just means that I am trying to test some stuff!)')
 
 Cog = test
 
