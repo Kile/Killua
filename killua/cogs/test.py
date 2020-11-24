@@ -27,15 +27,15 @@ class test(commands.Cog):
     async with aiohttp.ClientSession() as session:
         async with session.post(API_ADDR, data=json.dumps(request)) as resp:
             answer = await resp.json()
-    if "error" not in answer or "result" not in answer:
-        return await ctx.error_reply(
-            "Sorry, could not complete your request.\n"
-            "An unknown error occurred during calculation!"
-        )
-    if answer["error"]:
-        await ctx.reply("The following error occured while calculating:\n`{}`".format(answer["error"]))
-        return
-    await ctx.reply("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
+        if "error" not in answer or "result" not in answer:
+            return await ctx.error_reply(
+                "Sorry, could not complete your request.\n"
+                "An unknown error occurred during calculation!"
+            )
+        if answer["error"]:
+            await ctx.reply("The following error occured while calculating:\n`{}`".format(answer["error"]))
+            return
+        await ctx.reply("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
 
     @commands.command()
