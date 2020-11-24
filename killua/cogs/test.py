@@ -21,7 +21,7 @@ class test(commands.Cog):
                 "Please give me something to evaluate.\n"
             
         )
-        exprs = ctx.args.split('\n')
+        exprs = str(ctx.args).split('\n')
         request = {"expr": exprs,
                "precision": 14}
         async with aiohttp.ClientSession() as session:
