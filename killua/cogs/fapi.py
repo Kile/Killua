@@ -10,18 +10,20 @@ from json import loads
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
 
+bearer= config['fapi']
+
 
 class api(commands.Cog):
   
   def __init_(self, client):
     self.client = client
-    
-  
+     
+
   @commands.command()
   async def urban(self, ctx, content):
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-        'Authorization': f"Bearer {config['fapi']}"}
+            'Authorization': f'Bearer {bearer}'}
     body = {
         'args': { 'text': content }
       } 
