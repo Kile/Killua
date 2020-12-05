@@ -10,20 +10,21 @@ from json import loads
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
 
-bearer= config['fapi']
-
 
 class api(commands.Cog):
   
   def __init_(self, client):
     self.client = client
+
+  with open('config.json', 'r') as config_file:
+    config = json.loads(config_file.read())
      
 
   @commands.command()
   async def urban(self, ctx, content):
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-            'Authorization': f'Bearer {bearer}'}
+            'Authorization': f'Bearer {config["fapi"]}'}
     body = {
         'args': { 'text': content }
       } 
@@ -55,7 +56,7 @@ class api(commands.Cog):
     #t Around 1-2 hours
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-        'Authorization': 'Bearer {config['fapi']}'} 
+        'Authorization': f'Bearer {config["fapi"]}'} 
     body = {
         'args': { 'text': content }
       } 
@@ -108,7 +109,7 @@ class api(commands.Cog):
         name = quotist.name
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
-        'Authorization': 'Bearer {config['fapi']}'} 
+        'Authorization': f'Bearer {config["fapi"]}'} 
     body = {
         'args': { 'message': {'content': message},
         'author': {'color': realcolor,
