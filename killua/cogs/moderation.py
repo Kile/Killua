@@ -160,7 +160,7 @@ class moderation(commands.Cog):
 
             else:
 
-                if timem.lower() == 'unlimited' or timem.lower() == 'standart':
+                if timem.lower() == 'unlimited' or timem.lower() == 'standart' or timem.lower() == 'u' or timem.lower() == 's':
                     string = True
 
                 else:
