@@ -54,6 +54,59 @@ class devstuff(commands.Cog):
             code = inspect.getsource(func)
             await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
 
+    @commands.command()
+    async def codeinfo(self, ctx, content):
+	    try:
+		    func = ctx.bot.get_command(content).callback
+		    code = getsource(func)
+		    linecount = code.splitlines()
+		    time= ''
+		    restricted = ''
+		    comment = ''
+
+		    for item in linecount:
+			    firstt, middlet, lastt = item.partition("#t")
+			    firstr, middler, lastr = item.partition("#r")
+			    firstc, middlec, lastc = item.partition("#c")
+			    if lastt == '':
+				    pass
+			    else:
+				    time = lastt
+			    if lastr == '':
+				    pass
+			    else:
+				    restricted = lastr
+			    if lastc == '':
+				    pass
+			    else:
+				    comment = lastc
+
+			    #c this very code
+			    #t 1-2 hours
+		    if restricted == '' or restricted is None or restricted == '")':
+			    realrestricted = ''
+		    else:
+			    realrestricted = f'**Restricted to:** {restricted}'
+
+
+
+		    embed= Embed.from_dict({
+			    'title': f'Command **{content}**',
+			    'color': 0x1400ff,
+			    'description': f'''**Characters:** {len(code)}
+			    **Lines:**  {len(linecount)}
+
+
+			    **Time spend on code:** {time or 'No time provided'}
+			    **Comments:** {comment or 'No comment'}
+
+			    {realrestricted}'''
+			})
+		    await ctx.send(embed=embed)
+	    except Exception as e:
+		    await ctx.send('Invalid command')
+
+
 
 Cog = devstuff
 
