@@ -14,14 +14,14 @@ class test(commands.Cog):
 
 
     @commands.command()
-    async def calc(self, ctx):
+    async def calc(self, ctx, *,args):
     
-        if not ctx.args:
+        if not args:
             return await ctx.send(
                 "Please give me something to evaluate.\n"
             
         )
-        exprs = str(ctx.args).split('\n')
+        exprs = str(args).split('\n')
         request = {"expr": exprs,
                "precision": 14}
         async with aiohttp.ClientSession() as session:
