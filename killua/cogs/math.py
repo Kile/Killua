@@ -19,6 +19,7 @@ class test(commands.Cog):
 
     @commands.command()
     async def calc(self, ctx, *,args):
+        #h Calculates any equasion you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)
     
         if not args:
             return await ctx.send(
@@ -46,6 +47,7 @@ class test(commands.Cog):
 	#t 1-2days (wtf)
 	#r ID: 606162661184372736
 	#c Could break Killua atm so restricted
+    #h This plots a graph after my wish but since you can break Killua with it it is restricted to me until I find a solution
 	    if ctx.author.id != 606162661184372736:
             return await ctx.send('Restricted command')
 		try:

@@ -16,6 +16,7 @@ class smallcommands(commands.Cog):
         
     @commands.command()
     async def say(self, ctx, *, content):
+      #h Let's Killua say what is specified with this command. Possible abuse leads to this being restricted 
       #r user ID: 606162661184372736
       #t 5 minutes
       if ctx.author.id == 606162661184372736:
@@ -26,6 +27,7 @@ class smallcommands(commands.Cog):
     async def ping(self, ctx):
       #c pong
       #t 5 min
+      #h Standart of seeing if the bot is working
     
       start = time.time()
       msg = await ctx.send('Pong!')
@@ -35,12 +37,14 @@ class smallcommands(commands.Cog):
     @commands.command(name='topic')
     async def topic(self, ctx):
       #c constantly updating!
+      #h From a constatnly updating list of topics to talk about one is chosen here
       await ctx.send(random.choice(topics))
       
     @commands.command()
     async def hi(self, ctx):
       #c The first command on Killua...
       #t 5 min
+      #h This is just here because it was Killua's first command and I can't take that from him :3
       await ctx.send("Hello " + str(ctx.author)) 
         
 Cog = smallcommands

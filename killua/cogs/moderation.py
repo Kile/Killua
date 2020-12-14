@@ -125,6 +125,7 @@ class moderation(commands.Cog):
         
   @commands.command()
   async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
+    #h Mutes a user for the specified duration or unlimited. Requirements: You need to have a role named `muted` (Case sensitve) set up already (Deny this role permission to send messages in every channel)
 
     if member.id == ctx.me.id:
         return await ctx.send('Hey!')
@@ -204,6 +205,7 @@ class moderation(commands.Cog):
                            
   @commands.command()
   async def unmute(self, ctx, member: discord.Member, *, reason=None):
+      #h Unmutes a user if they have a `muted` (case sensitve) role
 
     if ctx.channel.permissions_for(ctx.author).manage_roles == False:
         return await ctx.send('Nice try but you don\'t have the required permission (`manage roles`) to execute this command')

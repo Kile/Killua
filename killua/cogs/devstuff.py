@@ -40,6 +40,7 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def eval(self, ctx, *, c):
+        #h Standart eval command, me restricted ofc
         if ctx.author.id == 606162661184372736:
             try:
                 global bot
@@ -49,6 +50,7 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def source(self, ctx, name):
+        #h Displays the source code to a command, once Killua is open source this will be unrestricted
         if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
             func = self.client.get_command(name).callback
             code = inspect.getsource(func)
@@ -56,6 +58,7 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def codeinfo(self, ctx, content):
+        #h Gives you some information to a specific command like how many lines, how much time I spend on it etc
 	    try:
 		    func = ctx.bot.get_command(content).callback
 		    code = getsource(func)

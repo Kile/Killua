@@ -32,6 +32,7 @@ class prefix(commands.Cog):
         #r to the guild administrator
         #t Around 2-4 hours
         #c Custom prefixes!
+        #h Set your server prefix with this command
         results = server.find({'id': ctx.guild.id})
         for result in results:
             pref = result['prefix']

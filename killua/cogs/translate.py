@@ -20,6 +20,8 @@ class translate(commands.Cog):
   async def translate(self, ctx, source, target, *,args):
 
     langs_list = GoogleTranslator.get_supported_languages()
+    #h Translate anything to 20+ languages with this command! 
+    #t Around 1 hour
     
 
     embed = discord.Embed.from_dict({ 'title': f'Translation',

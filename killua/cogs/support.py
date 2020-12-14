@@ -42,6 +42,7 @@ class support(commands.Cog):
 
         await ctx.send(':white_check_mark: thanks for reporting a bug! The bug will be looked at as soon as possible!')
     else:
+        ctx.command.reset_cooldown(ctx)
         embed = discord.Embed.from_dict({
             'title': f'Bug reporting',
             'description': f'''Report a Killua bug by providing the command where the bug occurs, if it is no command use `other`

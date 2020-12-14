@@ -10,6 +10,7 @@ class simplereplies(commands.Cog):
   async def patreon(self, ctx):
     #c :3
     #t 30 minutes
+    #h Get infos about my Patreon and feel free to donate for some perks!
     embed = discord.Embed.from_dict({
         'title': '**Support Killua**',
         'thumbnail':{
@@ -29,10 +30,12 @@ class simplereplies(commands.Cog):
     await ctx.send(embed=embed) 
     #c help command
     #t 20 minutes, constantly updating
+    #h Gives you some outdated infos about Killua
     
   @commands.command()
   async def invite(self, ctx):
     #t 5 minutes
+    #h Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**
     embed = discord.Embed(
         title = 'Invite',
         description = 'Invite the bot to your server [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=1574431991). Thank you a lot for supporting my Beta phase!',
@@ -44,6 +47,7 @@ class simplereplies(commands.Cog):
   async def guilds(self, ctx):
     #r user ID: 606162661184372736 or 383790610727043085
     #t 15 minutes
+    #h Shows a list of the guilds Killua is on
     if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
         embed = discord.Embed(
             title = 'Guilds',
@@ -55,6 +59,7 @@ class simplereplies(commands.Cog):
   @commands.command()
   async def permissions(self, ctx):
     #t 30 min
+    #h Displays the permissions Killua has and has not, useful for checking if Killua has the permissions he needs
     perms = ctx.me.guild_permissions
     permissions = '\n'.join([f"{v} {n}" for n, v in perms])
     prettier = permissions.replace('_', ' ').replace('True', '<:CheckMark:771754620673982484>').replace('False', '<:x_:771754157623214080>')

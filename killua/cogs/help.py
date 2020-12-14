@@ -67,9 +67,6 @@ class help(commands.Cog):
                         if last and last != '")':
                             desc = last
                         
-                          
-
-
                     embed = discord.Embed.from_dict({
                         'title': f'Info about command `k!{command}`',
                         'description': f'{desc} {restricted}',
@@ -131,7 +128,8 @@ def commands(commandgroup):
             We all need  more hugs in our life, this hugs the user specified
             ```css\ntopic```
             You suck at small talk? Get a topic with this command!
-            
+            ```css\ncalc <mathsstuff>```
+            Stuck with some math problem or just bored? Use this calculator!
             ```css\ntranslate <sourcelanguage/auto> <targetlanguage> <text>```
             Translates given text to the targetlanguage
             *8 ball and heads or tails in plan*
@@ -142,7 +140,7 @@ def commands(commandgroup):
     if commandgroup.lower() == 'economy' or commandgroup.lower() == 'teams':
         embed = discord.Embed.from_dict({
             'title': 'Economy/Teams commands',
-            'description': '''**CURRENTLY DISABLED, WILL BE REPLACED SOON**
+            'description': '''**CURRENTLY DISABLED, WILL BE REPLACED SOON:tm:**
             
             ```css\nteam <teamname>```
             Lets you join a team to collect points for it. Use `team current` to see your current Team
