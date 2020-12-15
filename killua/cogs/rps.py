@@ -6,7 +6,7 @@ import random
 from random import randint
 import asyncio
 import json
-from .devstuff import blcheck
+from devstuff import blcheck
 
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())

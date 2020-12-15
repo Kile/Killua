@@ -3,7 +3,8 @@ from discord.ext.commands.cooldowns import BucketType
 from discord.ext import commands
 import pymongo
 from pymongo import MongoClient
-from .devstuff import blcheck
+from devstuff import blcheck
+import json
 
 
 with open('config.json', 'r') as config_file:

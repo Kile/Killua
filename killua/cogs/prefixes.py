@@ -3,7 +3,7 @@ from discord.ext import commands
 import pymongo
 import json
 from json import loads
-from .devstuff import blcheck
+from devstuff import blcheck
 from pymongo import MongoClient
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())

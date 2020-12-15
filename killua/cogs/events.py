@@ -7,7 +7,7 @@ import pymongo
 from pymongo import MongoClient
 import json
 from json import loads
-from .devstuff import blcheck
+from devstuff import blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 

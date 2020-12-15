@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 import pymongo
 from pymongo import MongoClient
-from .devstuff import blcheck
+from devstuff import blcheck
+import json
 from deep_translator import (GoogleTranslator,
 PonsTranslator,
 LingueeTranslator,
