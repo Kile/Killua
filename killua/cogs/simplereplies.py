@@ -1,5 +1,14 @@
 import discord
 from discord.ext import commands
+import pymongo
+from pymongo import MongoClient
+from .devstuff import blcheck
+
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class simplereplies(commands.Cog):
 
@@ -8,6 +17,8 @@ class simplereplies(commands.Cog):
     
   @commands.command()
   async def patreon(self, ctx):
+    if blcheck(ctx.author.id) is True:
+      return
     #c :3
     #t 30 minutes
     #h Get infos about my Patreon and feel free to donate for some perks!
@@ -22,6 +33,8 @@ class simplereplies(commands.Cog):
     
   @commands.command()
   async def info(self, ctx):
+    if blcheck(ctx.author.id) is True:
+      return
     embed = discord.Embed(
         title = 'Info',
         description = ' This is Killua, Kile\'s bot version 0.4.1, the first features simply include ~this command, `k!ping`, `k!hi`, `k!invite`, `k!hug <user>` and `k!topic`, relatively self-explanatory, also a team mode already implemented but not yet finsihed\n I hope to be adding a lot more soon while I figure Python out on the go\n\n **Last time restarted:**\n '+ str(self.client.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
@@ -34,6 +47,8 @@ class simplereplies(commands.Cog):
     
   @commands.command()
   async def invite(self, ctx):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 5 minutes
     #h Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**
     embed = discord.Embed(
@@ -45,6 +60,8 @@ class simplereplies(commands.Cog):
     
   @commands.command()
   async def guilds(self, ctx):
+    if blcheck(ctx.author.id) is True:
+      return
     #r user ID: 606162661184372736 or 383790610727043085
     #t 15 minutes
     #h Shows a list of the guilds Killua is on
@@ -58,6 +75,8 @@ class simplereplies(commands.Cog):
         
   @commands.command()
   async def permissions(self, ctx):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 30 min
     #h Displays the permissions Killua has and has not, useful for checking if Killua has the permissions he needs
     perms = ctx.me.guild_permissions

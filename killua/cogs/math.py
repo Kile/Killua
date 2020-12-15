@@ -6,7 +6,15 @@ from matplotlib.pyplot import figure, plot, savefig, title
 from numexpr import evaluate
 from numpy import linspace
 from io import BytesIO
+import pymongo
+from pymongo import MongoClient
+from .devstuff import blcheck
 
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 API_ADDR = 'http://api.mathjs.org/v4/'
 
@@ -19,6 +27,8 @@ class test(commands.Cog):
 
     @commands.command()
     async def calc(self, ctx, *,args):
+        if blcheck(ctx.author.id) is True:
+            return
         #h Calculates any equasion you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)
     
         if not args:
@@ -44,6 +54,8 @@ class test(commands.Cog):
 
     @command()
     async def function(self, ctx, *, function):
+        if blcheck(ctx.author.id) is True:
+            return
 	#t 1-2days (wtf)
 	#r ID: 606162661184372736
 	#c Could break Killua atm so restricted

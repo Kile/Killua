@@ -1,7 +1,15 @@
 import discord 
 import asyncio
 from discord.ext import commands
+import pymongo
+from pymongo import MongoClient
+from .devstuff import blcheck
 
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class moderation(commands.Cog):
 
@@ -11,6 +19,8 @@ class moderation(commands.Cog):
     
   @commands.command()
   async def ban(self, ctx, member: discord.Member, *,reason=None):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 30 minutes
     #h What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason
     
@@ -44,6 +54,8 @@ class moderation(commands.Cog):
 
   @commands.command()
   async def unban(self, ctx, *, member):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 1 hour
     #h Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work :3
     banned_users = await ctx.guild.bans()
@@ -91,6 +103,8 @@ class moderation(commands.Cog):
               
   @commands.command()
   async def kick(self, ctx, member: discord.Member, *,reason=None):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 10 minutes
     #h What you would expect of a kick command, kicks a user, optional reason
     #c Literally copy pasted ban command and changed a view things
@@ -125,6 +139,8 @@ class moderation(commands.Cog):
         
   @commands.command()
   async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
+    if blcheck(ctx.author.id) is True:
+      return
     #h Mutes a user for the specified duration or unlimited. Requirements: You need to have a role named `muted` (Case sensitve) set up already (Deny this role permission to send messages in every channel)
 
     if member.id == ctx.me.id:
@@ -205,6 +221,8 @@ class moderation(commands.Cog):
                            
   @commands.command()
   async def unmute(self, ctx, member: discord.Member, *, reason=None):
+    if blcheck(ctx.author.id) is True:
+      return
       #h Unmutes a user if they have a `muted` (case sensitve) role
 
     if ctx.channel.permissions_for(ctx.author).manage_roles == False:

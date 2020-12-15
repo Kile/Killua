@@ -7,6 +7,7 @@ import pymongo
 from pymongo import MongoClient
 import json
 from json import loads
+from .devstuff import blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
@@ -14,6 +15,8 @@ with open('config.json', 'r') as config_file:
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class events(commands.Cog):
   

@@ -31,6 +31,8 @@ db = cluster['Killua']
 collection = db['teams']
 top =db['teampoints']
 server = db['guilds']
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class devstuff(commands.Cog):
 
@@ -40,6 +42,8 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def eval(self, ctx, *, c):
+        if blcheck(ctx.author.id) is True:
+            return
         #h Standart eval command, me restricted ofc
         if ctx.author.id == 606162661184372736:
             try:
@@ -50,6 +54,8 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def source(self, ctx, name):
+        if blcheck(ctx.author.id) is True:
+            return
         #h Displays the source code to a command, once Killua is open source this will be unrestricted
         if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
             func = self.client.get_command(name).callback
@@ -58,6 +64,8 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def codeinfo(self, ctx, content):
+        if blcheck(ctx.author.id) is True:
+            return
         #h Gives you some information to a specific command like how many lines, how much time I spend on it etc
 	    try:
 		    func = ctx.bot.get_command(content).callback
@@ -109,7 +117,60 @@ class devstuff(commands.Cog):
 	    except Exception as e:
 		    await ctx.send('Invalid command')
 
+    @commands.command()
+    async def update(self, ctx, *, update):
+        if blcheck(ctx.author.id) is True:
+            return
+        #h Allows me to publish Killua updates in a handy formart 
+        #r user ID 606162661184372736
+        if ctx.author.id != 606162661184372736:
+            return
+        embed = discord.Embed.from_dict({
+                        'title': 'Killua Update',
+                        'description': update,
+                        'color': 0x1400ff,
+                        'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar_url)},
+                        'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
+                    })
+        channel = self.client.get_channel(757170264294424646)
+        msg = await channel.send(embed=embed)
+        await msg.publish()
 
+    @commands.command()
+    async def blacklist(self, ctx, id:int, *,reason=None):
+        if blcheck(ctx.author.id) is True:
+            return
+        if ctx.author.id != 606162661184372736:
+            return
+        try:
+            user = await self.client.fetch_user(id)
+        except Exception as e:
+            return await ctx.send(e)
+        today = date.today()
+        blacklist.insert_one({'id': id, 'reason':reason or "No reason provided", 'date': today.strftime("%B %d, %Y")})
+
+        await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
+        
+    @commands.command()
+    async def whitelist(self, ctx, id:int):
+        if ctx.author.id != 606162661184372736:
+            return
+        try:
+            user = await self.client.fetch_user(id)
+        except Exception as e:
+            return await ctx.send(e)
+
+        blacklist.delete_one({'id': id})
+        await ctx.send(f'Successfully whitelisted `{user}`')
+
+
+def blcheck(userid:int):
+    result = blacklist.find_one({'id': userid})
+
+    if result is None:
+        return False
+    else:
+        return True
 
 Cog = devstuff
 

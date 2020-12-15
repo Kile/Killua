@@ -1,6 +1,17 @@
 import discord
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext import commands
+import pymongo
+from pymongo import MongoClient
+from .devstuff import blcheck
+
+
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
+
 
 class support(commands.Cog):
 
@@ -10,6 +21,8 @@ class support(commands.Cog):
   @commands.command()
   @commands.cooldown(rate=1, per=3600, type=commands.BucketType.guild)
   async def bug(self, ctx, command=None, *, bug=None):
+    if blcheck(ctx.author.id) is True:
+        return
     #h Report Killua bugs with this command! For more info on how to report a bug, use `k!bug`.
     #t 1 hour
     if command and bug:
