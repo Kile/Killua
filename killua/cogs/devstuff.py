@@ -64,8 +64,6 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def codeinfo(self, ctx, content):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Gives you some information to a specific command like how many lines, how much time I spend on it etc
 	    try:
 		    func = ctx.bot.get_command(content).callback
