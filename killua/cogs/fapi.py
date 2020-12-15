@@ -6,22 +6,26 @@ from datetime import datetime, timedelta
 from discord.ext import commands
 import json
 from json import loads
+import pymongo
+from pymongo import MongoClient
+from .devstuff import blcheck
 
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
-
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class api(commands.Cog):
   
   def __init_(self, client):
     self.client = client
 
-  with open('config.json', 'r') as config_file:
-    config = json.loads(config_file.read())
-     
 
   @commands.command()
   async def urban(self, ctx, content):
+    if blcheck(ctx.author.id) is True:
+      return
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
             'Authorization': f'Bearer {config["fapi"]}'}
@@ -30,6 +34,7 @@ class api(commands.Cog):
       } 
     #t 2-3 hours
     #c Using fAPI
+    #h Use this command to get the definition of a word from the urban dictionary, use "" around more than one word if you want to search for that
     
     async with session.post('https://fapi.wrmsr.io/urban', headers=headers, json=body) as r: 
         response = await r.json()
@@ -52,8 +57,11 @@ class api(commands.Cog):
 
   @commands.command()
   async def cmm(self, ctx, *, content):
+    if blcheck(ctx.author.id) is True:
+      return
     #c Change my mind!
     #t Around 1-2 hours
+    #h Craft your Change My Mind meme with this command
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
         'Authorization': f'Bearer {config["fapi"]}'} 
@@ -70,8 +78,11 @@ class api(commands.Cog):
     
   @commands.command()
   async def quote(self, ctx, quotist: discord.Member, *, content):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 2 hours
     #c powered by fAPI
+    #h Fake a user saying something with this command by specifying who, what and some other stuff
     light = False
     compact = False
     name = ''

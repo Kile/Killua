@@ -7,6 +7,7 @@ import pymongo
 from pymongo import MongoClient
 import json
 from json import loads
+from .devstuff import blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
@@ -14,6 +15,8 @@ with open('config.json', 'r') as config_file:
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class events(commands.Cog):
   
@@ -50,7 +53,13 @@ class events(commands.Cog):
         })
         await general.send(embed=embed)
   
-  
+  @commands.Cog.listener()
+  async def on_command_error(self, ctx, error):
+    if isinstance(error, discord.ext.commands.CommandOnCooldown):
+      m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
+
+      await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again :3')
+
         
   @commands.Cog.listener()
   async def on_connect(self):

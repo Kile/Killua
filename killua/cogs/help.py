@@ -5,12 +5,15 @@ import json
 from json import loads
 from pymongo import MongoClient
 from discord.ext import commands
+from .devstuff import blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class help(commands.Cog):
 
@@ -19,6 +22,8 @@ class help(commands.Cog):
     
   @commands.command()
   async def help(self, ctx, group=None, command=None):
+    if blcheck(ctx.author.id) is True:
+      return
   #h This command is the one hopefully letting you know what Killua can do and what his features are, I hope you like how it looks!
   #t 2 hours
   #c 155 lines, help
@@ -67,9 +72,6 @@ class help(commands.Cog):
                         if last and last != '")':
                             desc = last
                         
-                          
-
-
                     embed = discord.Embed.from_dict({
                         'title': f'Info about command `k!{command}`',
                         'description': f'{desc} {restricted}',
@@ -131,7 +133,8 @@ def commands(commandgroup):
             We all need  more hugs in our life, this hugs the user specified
             ```css\ntopic```
             You suck at small talk? Get a topic with this command!
-            
+            ```css\ncalc <mathsstuff>```
+            Stuck with some math problem or just bored? Use this calculator!
             ```css\ntranslate <sourcelanguage/auto> <targetlanguage> <text>```
             Translates given text to the targetlanguage
             *8 ball and heads or tails in plan*
@@ -142,7 +145,7 @@ def commands(commandgroup):
     if commandgroup.lower() == 'economy' or commandgroup.lower() == 'teams':
         embed = discord.Embed.from_dict({
             'title': 'Economy/Teams commands',
-            'description': '''**CURRENTLY DISABLED, WILL BE REPLACED SOON**
+            'description': '''**CURRENTLY DISABLED, WILL BE REPLACED SOON:tm:**
             
             ```css\nteam <teamname>```
             Lets you join a team to collect points for it. Use `team current` to see your current Team

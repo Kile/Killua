@@ -1,5 +1,8 @@
 import discord
 from discord.ext import commands
+import pymongo
+from pymongo import MongoClient
+from .devstuff import blcheck
 from deep_translator import (GoogleTranslator,
 PonsTranslator,
 LingueeTranslator,
@@ -10,6 +13,12 @@ QCRI,
 single_detection,
 batch_detection)
 
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
+
 class translate(commands.Cog):
 
   def __init__(self, client):
@@ -18,9 +27,13 @@ class translate(commands.Cog):
     
   @commands.command()
   async def translate(self, ctx, source, target, *,args):
+    if blcheck(ctx.author.id) is True:
+      return
 
     langs_list = GoogleTranslator.get_supported_languages()
-    
+    #h Translate anything to 20+ languages with this command! 
+    #t Around 1 hour
+
 
     embed = discord.Embed.from_dict({ 'title': f'Translation',
     'description': f'```\n{args}```\n`{source}` -> `{target}`\n',

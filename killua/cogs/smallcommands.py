@@ -5,6 +5,15 @@ import time
 from datetime import datetime, timedelta
 import random
 from random import randint
+import pymongo
+from pymongo import MongoClient
+from .devstuff import blcheck
+
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 topics = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?', 'What motivates you?', 'What is the best thing about school/work?', 'What\'s better, having high expectations or having low expectations?', 'What was the last movie you saw?', 'Have you read anything good recently?', 'What is your favorite day of the year?', 'What kind of music do you like to listen to?', 'What things are you passionate about?', 'What is your favorite childhood memory?', 'If you could acquire any skill, what would you choose?', 'What is the first thing that you think of in the morning?', 'What was the biggest life change you have gone through?', 'What is your favorite song of all time?', 'If you won $1 million playing the lottery, what would you do?', 'How would you know if you were in love?', 'If you could choose to have any useless super power, what would you pick?']
 
@@ -16,6 +25,9 @@ class smallcommands(commands.Cog):
         
     @commands.command()
     async def say(self, ctx, *, content):
+      if blcheck(ctx.author.id) is True:
+        return
+      #h Let's Killua say what is specified with this command. Possible abuse leads to this being restricted 
       #r user ID: 606162661184372736
       #t 5 minutes
       if ctx.author.id == 606162661184372736:
@@ -24,8 +36,11 @@ class smallcommands(commands.Cog):
         
     @commands.command()
     async def ping(self, ctx):
+      if blcheck(ctx.author.id) is True:
+        return
       #c pong
       #t 5 min
+      #h Standart of seeing if the bot is working
     
       start = time.time()
       msg = await ctx.send('Pong!')
@@ -34,13 +49,19 @@ class smallcommands(commands.Cog):
       
     @commands.command(name='topic')
     async def topic(self, ctx):
+      if blcheck(ctx.author.id) is True:
+        return
       #c constantly updating!
+      #h From a constatnly updating list of topics to talk about one is chosen here
       await ctx.send(random.choice(topics))
       
     @commands.command()
     async def hi(self, ctx):
+      if blcheck(ctx.author.id) is True:
+        return
       #c The first command on Killua...
       #t 5 min
+      #h This is just here because it was Killua's first command and I can't take that from him :3
       await ctx.send("Hello " + str(ctx.author)) 
         
 Cog = smallcommands

@@ -6,6 +6,7 @@ import random
 from random import randint
 import asyncio
 import json
+from .devstuff import blcheck
 
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
@@ -15,6 +16,8 @@ db = cluster['Killua']
 collection = db['teams']
 top =db['teampoints']
 server = db['guilds']
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class rps(commands.Cog):
 
@@ -23,6 +26,8 @@ class rps(commands.Cog):
     
   @commands.command()
   async def rps(self, ctx, member: discord.User, points: int=None):
+    if blcheck(ctx.author.id) is True:
+      return
     #c The most complicated command I ever made
     #t a week
     #h Play Rock Paper Scissors with your friends! You can play investing points or just for fun.

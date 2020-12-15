@@ -1,7 +1,15 @@
 import discord 
 import asyncio
 from discord.ext import commands
+import pymongo
+from pymongo import MongoClient
+from .devstuff import blcheck
 
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class moderation(commands.Cog):
 
@@ -11,39 +19,43 @@ class moderation(commands.Cog):
     
   @commands.command()
   async def ban(self, ctx, member: discord.Member, *,reason=None):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 30 minutes
     #h What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason
     
     if member.id == 756206646396452975:
             return await ctx.send('Hey!')
 
-    if ctx.channel.permissions_for(ctx.author).ban_members == True:
+    if ctx.channel.permissions_for(ctx.author).ban_members == False:
+        return await ctx.send('Nice try but you don\'t have the required permission (`ban members`) to execute this command')
       
-        if member.id == ctx.author.id:
-            return await ctx.send('You can\'t ban yourself!')
+    if member.id == ctx.author.id:
+        return await ctx.send('You can\'t ban yourself!')
 
-        if ctx.author.top_role < member.top_role:
-            return await ctx.send('You can\'t ban someone with a higher role than you')
+    if ctx.author.top_role < member.top_role:
+        return await ctx.send('You can\'t ban someone with a higher role than you')
 
-        if ctx.me.top_role < member.top_role:
-            return await ctx.send('My role needs to be moved higher up to grant me permission to ban this person')
+    if ctx.me.top_role < member.top_role:
+        return await ctx.send('My role needs to be moved higher up to grant me permission to ban this person')
 
-        if ctx.channel.permissions_for(ctx.me).ban_members == False:
-            return await ctx.send('I don\t have the permission to ban members yet')
+    if ctx.channel.permissions_for(ctx.me).ban_members == False:
+        return await ctx.send('I don\t have the permission to ban members yet')
         
-        try:
-          await member.send(f'You have been banned from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
-        except HTTPException:
-          pass
+    try:
+        await member.send(f'You have been banned from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
+    except discord.Forbidden:
+        pass
 
-        await member.ban(reason=reason, delete_message_days=1)
-        await ctx.send(f':hammer: Banned **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
-    else:
-        await ctx.send('Nice try but you don\'t have the required permission (`ban members`) to execute this command')
+    await member.ban(reason=reason, delete_message_days=1)
+    await ctx.send(f':hammer: Banned **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
+    
     
 
   @commands.command()
   async def unban(self, ctx, *, member):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 1 hour
     #h Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work :3
     banned_users = await ctx.guild.bans()
@@ -91,6 +103,8 @@ class moderation(commands.Cog):
               
   @commands.command()
   async def kick(self, ctx, member: discord.Member, *,reason=None):
+    if blcheck(ctx.author.id) is True:
+      return
     #t 10 minutes
     #h What you would expect of a kick command, kicks a user, optional reason
     #c Literally copy pasted ban command and changed a view things
@@ -98,142 +112,144 @@ class moderation(commands.Cog):
     if member.id == 756206646396452975:
         return await ctx.send('Hey!')
 
-    if ctx.channel.permissions_for(ctx.author).kick_members == True:
+    if ctx.channel.permissions_for(ctx.author).kick_members == False:
+        return await ctx.send('Nice try but you don\'t have the required permission (`kick members`) to execute this command')
 
-        if member.id == ctx.author.id:
-            return await ctx.send('You can\'t kick yourself!')
+    if member.id == ctx.author.id:
+        return await ctx.send('You can\'t kick yourself!')
 
-        if ctx.author.top_role < member.top_role:
-            return await ctx.send('You can\'t kick someone with a higher role than you')
+    if ctx.author.top_role < member.top_role:
+        return await ctx.send('You can\'t kick someone with a higher role than you')
 
-        if ctx.me.top_role < member.top_role:
-            return await ctx.send('My role needs to be moved higher up to grant me permission to kick this person')
+    if ctx.me.top_role < member.top_role:
+        return await ctx.send('My role needs to be moved higher up to grant me permission to kick this person')
 
-        if ctx.channel.permissions_for(ctx.me).kick_members == False:
-            return await ctx.send('I don\t have the permission to kick members yet')
+    if ctx.channel.permissions_for(ctx.me).kick_members == False:
+        return await ctx.send('I don\t have the permission to kick members yet')
 
-        try:
-          await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
-        except HTTPException:
-          pass
+    try:
+        await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
+    except discord.Forbidden:
+        pass
 
-        await member.kick(reason=reason)
-        await ctx.send(f':hammer: Kicked **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
-    else:
-        await ctx.send('Nice try but you don\'t have the required permission (`kick members`) to execute this command')
+    await member.kick(reason=reason)
+    await ctx.send(f':hammer: Kicked **{member}** because of: ```\n{reason}```Operating moderator: **{ctx.author}**')
 
         
         
   @commands.command()
   async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
+    if blcheck(ctx.author.id) is True:
+      return
+    #h Mutes a user for the specified duration or unlimited. Requirements: You need to have a role named `muted` (Case sensitve) set up already (Deny this role permission to send messages in every channel)
 
     if member.id == ctx.me.id:
         return await ctx.send('Hey!')
 
-    if ctx.channel.permissions_for(ctx.author).manage_roles == True:
+    if ctx.channel.permissions_for(ctx.author).manage_roles == False:
+        return await ctx.send('Nice try but you don\'t have the required permission (`manage roles`) to execute this command')
 
-        if member.id == ctx.author.id:
-            return await ctx.send('You can\'t mute yourself!')
+    if member.id == ctx.author.id:
+        return await ctx.send('You can\'t mute yourself!')
 
-        if ctx.author.top_role < member.top_role:
-            return await ctx.send('You can\'t mute someone with a higher role than you')
+    if ctx.author.top_role < member.top_role:
+        return await ctx.send('You can\'t mute someone with a higher role than you')
 
-        if ctx.me.top_role < member.top_role:
-            return await ctx.send('My role needs to be moved higher up to grant me permission to mute this person')
+    if ctx.me.top_role < member.top_role:
+        return await ctx.send('My role needs to be moved higher up to grant me permission to mute this person')
 
-        if ctx.channel.permissions_for(ctx.me).manage_roles == False:
-            return await ctx.send('I don\t have the permission to assign roles yet')
+    if ctx.channel.permissions_for(ctx.me).manage_roles == False:
+        return await ctx.send('I don\t have the permission to assign roles yet')
 
-        muted = discord.utils.get(ctx.guild.roles, name='muted')
+    muted = discord.utils.get(ctx.guild.roles, name='muted')
 
-        if muted > ctx.me.top_role:
-            return await ctx.send('I need to be moved on top of the muted role or higher')
+    if muted > ctx.me.top_role:
+        return await ctx.send('I need to be moved on top of the muted role or higher')
 
-        if muted is None:
-            return await ctx.send('There is no rule called `muted` (Case sensitive!) so I can\'t mute that user')
+    if muted is None:
+        return await ctx.send('There is no rule called `muted` (Case sensitive!) so I can\'t mute that user')
         
-        if timem:
-            string = False
+    if timem:
+        string = False
 
-            if timem.isdigit() is True:
-                pass
+        if timem.isdigit() is True:
+            pass
 
-            else:
-
-                if timem.lower() == 'unlimited' or timem.lower() == 'standart' or timem.lower() == 'u' or timem.lower() == 's':
-                    string = True
-
-                else:
-            
-                    return await ctx.send('The `time`argument needs to be an integer between 1440 and null or `unlimited`')
-
-            if string is True:
-                await member.add_roles(muted, reason=reason or "No reason provided")
-                try:
-                  await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')
-                except HTTPException:
-                  pass
-
-                return await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
-
-            if int(timem) > 1440 or int(timem) < 0:
-                return await ctx.send('The most time a user can be muted is a day or unlimited')
-
-                    
-            await member.add_roles(muted, reason=reason or "No reason")
-                    
-                    
-
-            await member.send(f'You have been muted in {ctx.guild.name} for the duration of `{timem}` minutes by `{ctx.author}`')
-            await ctx.send(f':pinching_hand: Muted **{member}** for  `{timem}` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
-
-            await asyncio.sleep(int(timem) * 60)
-
-            try:
-                await member.remove_roles(muted, reason='Mute time expired')
-                await member.send(f'You have been unmuted in {ctx.guild.name}, reason: mute time expired')
-            except Exception as a:
-                pass
         else:
-            await member.add_roles(muted,reason=reason or "No reason")
+            if timem.lower() == 'unlimited' or timem.lower() == 'standart' or timem.lower() == 'u' or timem.lower() == 's':
+                string = True
+            else:
+                return await ctx.send('The `time`argument needs to be an integer between 1440 and null or `unlimited`')
+
+        if string is True:
+            await member.add_roles(muted, reason=reason or "No reason provided")
             try:
-              await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
-            except HTTPException:
-              pass
-            await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')    
-            
-        
+                await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')
+            except discord.Forbidden:
+                pass
+
+            return await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
+
+        if int(timem) > 1440 or int(timem) < 0:
+            return await ctx.send('The most time a user can be muted is a day or unlimited')
+
+                    
+        await member.add_roles(muted, reason=reason or "No reason") 
+                    
+        try:
+            await member.send(f'You have been muted in {ctx.guild.name} for the duration of `{timem}` minutes by `{ctx.author}`')
+        except discord.Forbidden:
+            pass
+        await ctx.send(f':pinching_hand: Muted **{member}** for  `{timem}` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
+
+        await asyncio.sleep(int(timem) * 60)
+
+        try:
+            await member.remove_roles(muted, reason='Mute time expired')
+            await member.send(f'You have been unmuted in {ctx.guild.name}, reason: mute time expired')
+        except discord.Forbidden:
+            pass
     else:
-        await ctx.send('Nice try but you don\'t have the required permission (`manage roles`) to execute this command')
+        await member.add_roles(muted,reason=reason or "No reason")
+        try:
+            await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
+        except discord.Forbidden:
+            pass
+        await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')    
+        
                            
   @commands.command()
   async def unmute(self, ctx, member: discord.Member, *, reason=None):
+    if blcheck(ctx.author.id) is True:
+      return
+      #h Unmutes a user if they have a `muted` (case sensitve) role
 
-    if ctx.channel.permissions_for(ctx.author).manage_roles == True:
+    if ctx.channel.permissions_for(ctx.author).manage_roles == False:
+        return await ctx.send('Nice try but you don\'t have the required permission (`manage roles`) to execute this command')
 
-        if ctx.author.top_role < member.top_role:
-            return await ctx.send('You can\'t unmute someone with a higher role than you')
+    if ctx.author.top_role < member.top_role:
+        return await ctx.send('You can\'t unmute someone with a higher role than you')
 
-        if ctx.me.top_role < member.top_role:
-            return await ctx.send('My role needs to be moved higher up to grant me permission to unmute this person')
+    if ctx.me.top_role < member.top_role:
+        return await ctx.send('My role needs to be moved higher up to grant me permission to unmute this person')
 
-        if ctx.channel.permissions_for(ctx.me).manage_roles == False:
-            return await ctx.send('I don\t have the permission to assign roles yet')
+    if ctx.channel.permissions_for(ctx.me).manage_roles == False:
+        return await ctx.send('I don\t have the permission to assign roles yet')
 
-        muted = discord.utils.get(ctx.guild.roles, name='muted')
+    muted = discord.utils.get(ctx.guild.roles, name='muted')
 
-        if muted > ctx.me.top_role:
-            return await ctx.send('I need to be moved on top of the muted role or higher')
+    if muted > ctx.me.top_role:
+        return await ctx.send('I need to be moved on top of the muted role or higher')
 
-        if muted is None:
-            return await ctx.send('There is no rule called `muted` (Case sensitive!) so I can\'t mute that user')
+    if muted is None:
+        return await ctx.send('There is no rule called `muted` (Case sensitive!) so I can\'t mute that user')
 
-        await member.remove_roles(muted, reason=reason or "No reason provided")
-        try:
-          await member.send(f'You have been unmuted in {ctx.guild.name} by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
-        except HTTPException:
-          pass
-        return await ctx.send(f':lips: Unmuted **{member}** Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
+    await member.remove_roles(muted, reason=reason or "No reason provided")
+    try:
+        await member.send(f'You have been unmuted in {ctx.guild.name} by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
+    except discord.Forbidden:
+        pass
+    return await ctx.send(f':lips: Unmuted **{member}** Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
 
 
 

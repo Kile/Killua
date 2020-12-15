@@ -8,24 +8,10 @@ from inspect import getsource
 from io import BytesIO
 from json import loads
 import json
-from matplotlib.pyplot import figure, plot, savefig, title
-from numexpr import evaluate
-from numpy import linspace
 from pymongo import MongoClient
 from random import choice, randint
 from typing import Callable, Coroutine
 
-# These imports were unused.
-# from datetime import date
-# from discord.ext import tasks
-# import pymongo
-# from pprint import pprint
-# from discord.utils import find
-# import asyncio
-# import aiohttp
-# import time
-# from discord import client
-# from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 all_commands = []
 
@@ -81,40 +67,6 @@ async def unload(ctx, extension):
 		ctx.bot.unload_extension(f'cogs.{extension}')
 		await ctx.send(f'Unloaded cog `{extension}`')
 
-@command()
-async def function(ctx, *, function):
-	#t 1-2days (wtf)
-	#r ID: 606162661184372736
-	#c Could break Killua atm so restricted
-	if ctx.author.id == 606162661184372736:
-		try:
-			x = linspace(-5,5,100)
-			y = evaluate(function)
-
-			# setting the axes at the centre
-			fig = figure()
-			ax = fig.add_subplot(1, 1, 1)
-			ax.spines['left'].set_position('center')
-			ax.spines['bottom'].set_position('center')
-			ax.spines['right'].set_color('none')
-			ax.spines['top'].set_color('none')
-			ax.xaxis.set_ticks_position('bottom')
-			ax.yaxis.set_ticks_position('left')
-
-			# plot the function
-			plot(x,y, 'g')
-			title(str(function))
-			buf = BytesIO()
-			savefig(buf, format='png')
-			buf.seek(0)
-
-			graph = File(buf, filename= 'graph.png')
-
-
-
-			await ctx.send(file=graph)
-		except Exception as e:
-			await ctx.send(e)
 
 @command()
 async def daily(ctx):
@@ -308,68 +260,6 @@ async def info(ctx, text= None):
 		)
 		embed.set_thumbnail(url='https://imgix.ranker.com/user_node_img/3683/73654539/original/hunter-x-hunter-u47?fm=pjpg&q=80.img')
 		await ctx.send(embed=embed)
-
-@command()
-async def codeinfo(ctx, content):
-	try:
-		func = ctx.bot.get_command(content).callback
-		code = getsource(func)
-		linecount = code.splitlines()
-		time= ''
-		restricted = ''
-		comment = ''
-
-		for item in linecount:
-			firstt, middlet, lastt = item.partition("#t")
-			firstr, middler, lastr = item.partition("#r")
-			firstc, middlec, lastc = item.partition("#c")
-			if lastt == '':
-				pass
-			else:
-				time = lastt
-			if lastr == '':
-				pass
-			else:
-				restricted = lastr
-			if lastc == '':
-				pass
-			else:
-				comment = lastc
-
-			#c this very code
-			#t 1-2 hours
-		if restricted == '' or restricted is None or restricted == '")':
-			realrestricted = ''
-		else:
-
-			realrestricted = f'**Restricted to:** {restricted}'
-
-
-
-		embed= Embed.from_dict({
-			'title': f'Command **{content}**',
-			'color': 0x1400ff,
-			'description': f'''**Characters:** {len(code)}
-			**Lines:**  {len(linecount)}
-
-
-			**Time spend on code:** {time or 'No time provided'}
-			**Comments:** {comment or 'No comment'}
-
-			{realrestricted}'''
-			})
-		await ctx.send(embed=embed)
-	except Exception as e:
-		await ctx.send('Invalid command')
-
-async def procont(team):
-	amountteam = collection.count_documents({"team": team})
-	amounttotal = collection.count_documents({})
-	try:
-		procentage = amountteam/amounttotal
-		return procentage
-	except Exception as e:
-		return 0
 
 def main():
 	# Create the bot instance.
