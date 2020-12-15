@@ -178,7 +178,6 @@ class moderation(commands.Cog):
         else:
             if timem.lower() == 'unlimited' or timem.lower() == 'standart' or timem.lower() == 'u' or timem.lower() == 's':
                 string = True
-
             else:
                 return await ctx.send('The `time`argument needs to be an integer between 1440 and null or `unlimited`')
 

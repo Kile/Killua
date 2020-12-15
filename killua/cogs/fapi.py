@@ -21,6 +21,7 @@ class api(commands.Cog):
   def __init_(self, client):
     self.client = client
 
+
   @commands.command()
   async def urban(self, ctx, content):
     if blcheck(ctx.author.id) is True:
