@@ -69,29 +69,6 @@ async def unload(ctx, extension):
 
 
 @command()
-async def daily(ctx):
-	#c I didn't know a daily command was that complicated
-	#t one hour
-	return await ctx.send('Currently disabled')
-	now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-	results = collection.find({'id': ctx.author.id})
-	for result in results:
-		nexttime = result['cooldowndaily']
-		balance = result['points']
-		team = result['team']
-	results = top.find({'team': team})
-	for result in results:
-		points = result['points']
-	if str(nexttime) < str(now):
-		later = (datetime.now() + timedelta(hours=24)).strftime('%Y-%m-%d-%H:%M:%S')
-		daily = randint(50, 100)
-		collection.update_many({'id': ctx.author.id},{'$set':{'cooldowndaily':later, 'points': balance + daily}}, upsert=True)
-		top.update_one({'team': team}, {'$set':{'points': points + daily}})
-		await ctx.send(f'You claimed your {daily} daily points and hold now on to {int(balance) + int(daily)}')
-	else:
-		await ctx.send(f'You can claim your points the next time: {nexttime}')
-
-@command()
 async def hug(ctx, *, content=None):
 	#c Best hug command out there
 	#t 1-3 hours
@@ -128,13 +105,6 @@ async def hug(ctx, *, content=None):
 async def team(ctx):
 	pass
 
-@command()
-async def points(ctx):
-	#t 5 minutes
-	results = collection.find({'id': ctx.author.id})
-	for result in results:
-		p1 = result['points']
-	await ctx.send(f'You currently hold on to {p1} points!')
 
 @team.command(name="killua")
 async def killua(ctx):
@@ -197,12 +167,6 @@ async def leorio(ctx):
 	else:
 		await ctx.send('The team currently has too many members, please join another team or wait for a spot to get free')
 
-@team.command(name="current")
-async def current(ctx):
-	results = collection.find({'id': ctx.author.id})
-	for result in results:
-		team = result['team']
-	await ctx.send(f'You are currently member of the `{team}` team!')
 
 @team.command(name="info")
 async def info(ctx, text= None):
@@ -281,5 +245,3 @@ def main():
 	# Start the bot.
 
 	bot.run(config['token'])
-
-

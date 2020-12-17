@@ -64,8 +64,6 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def codeinfo(self, ctx, content):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Gives you some information to a specific command like how many lines, how much time I spend on it etc
 	    try:
 		    func = ctx.bot.get_command(content).callback
@@ -118,6 +116,16 @@ class devstuff(commands.Cog):
 		    await ctx.send('Invalid command')
 
     @commands.command()
+    async def resetdaily(self, ctx, user:discord.User):
+        if ctx.author.id != 606162661184372736:
+            return
+        try:
+            teams.update_many({'id': user.id},{'$set':{'cooldowndaily': datetime.today()}}, upsert=True)
+            await ctx.send(f'Success! `{user}` can their daily points again')
+        except Exception as e:
+            await ctx.send(e)
+
+    @commands.command()
     async def update(self, ctx, *, update):
         if blcheck(ctx.author.id) is True:
             return
@@ -165,6 +173,17 @@ class devstuff(commands.Cog):
 
 
 def blcheck(userid:int):
+    import pymongo
+    from pymongo import MongoClient
+    import json
+    from json import loads
+
+    with open('config.json', 'r') as config_file:
+	    config = json.loads(config_file.read())
+
+    cluster = MongoClient(config['mongodb'])
+    generaldb = cluster['general']
+    blacklist = generaldb['blacklist']
     result = blacklist.find_one({'id': userid})
 
     if result is None:

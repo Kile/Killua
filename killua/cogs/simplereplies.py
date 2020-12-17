@@ -1,14 +1,8 @@
 import discord
 from discord.ext import commands
-import pymongo
-from pymongo import MongoClient
 from .devstuff import blcheck
 
-with open('config.json', 'r') as config_file:
-  config = json.loads(config_file.read())
-cluster = MongoClient(config['mongodb'])
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
+
 
 class simplereplies(commands.Cog):
 

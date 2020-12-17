@@ -6,15 +6,10 @@ from datetime import datetime, timedelta
 from discord.ext import commands
 import json
 from json import loads
-import pymongo
-from pymongo import MongoClient
 from .devstuff import blcheck
 
 with open('config.json', 'r') as config_file:
-    config = json.loads(config_file.read())
-cluster = MongoClient(config['mongodb'])
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
+	config = json.loads(config_file.read())
 
 class api(commands.Cog):
   

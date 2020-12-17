@@ -1,15 +1,8 @@
 import discord 
 import asyncio
 from discord.ext import commands
-import pymongo
-from pymongo import MongoClient
 from .devstuff import blcheck
 
-with open('config.json', 'r') as config_file:
-  config = json.loads(config_file.read())
-cluster = MongoClient(config['mongodb'])
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
 
 class moderation(commands.Cog):
 
@@ -192,7 +185,6 @@ class moderation(commands.Cog):
 
         if int(timem) > 1440 or int(timem) < 0:
             return await ctx.send('The most time a user can be muted is a day or unlimited')
-
                     
         await member.add_roles(muted, reason=reason or "No reason") 
                     

@@ -12,8 +12,6 @@ with open('config.json', 'r') as config_file:
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
 
 class help(commands.Cog):
 
@@ -49,7 +47,7 @@ class help(commands.Cog):
             })
         await ctx.send(embed=embed)
     elif group:
-        if group.lower() in ['moderation', 'fun', 'economy', 'teams', 'other', 'command']:
+        if group.lower() in ['moderation', 'fun', 'economy', 'other', 'command']:
             if command and group.lower() == 'command':
                 try:
                     func = self.client.get_command(command).callback
@@ -137,25 +135,18 @@ def commands(commandgroup):
             Stuck with some math problem or just bored? Use this calculator!
             ```css\ntranslate <sourcelanguage/auto> <targetlanguage> <text>```
             Translates given text to the targetlanguage
-            *8 ball and heads or tails in plan*
+            ```css\n8ball <question>```
+            Killua will answer the provided question
+            *heads or tails in plan*
             '''
         })
         return embed
 
-    if commandgroup.lower() == 'economy' or commandgroup.lower() == 'teams':
+    if commandgroup.lower() == 'economy':
         embed = discord.Embed.from_dict({
-            'title': 'Economy/Teams commands',
-            'description': '''**CURRENTLY DISABLED, WILL BE REPLACED SOON:tm:**
-            
-            ```css\nteam <teamname>```
-            Lets you join a team to collect points for it. Use `team current` to see your current Team
-            ```css\nteaminfo <optional team>```
-            Gives you more info about the Team system or individual Teams
-            ```css\ndaily```
-            Gives you your daily points
-            
-            ```css\ndaily```
-            See how many points you hold on to'''
+            'title': 'Economy commands',
+            'description': '''```css\ndaily```
+            Gives you your daily points'''
         })
         return embed
 
@@ -167,6 +158,9 @@ def commands(commandgroup):
             ```css\ninfo```
             Gives you some info about the bot
             
+            ```css\nprofile <user_id/mention>```
+            Shows you info about a specific user, some discord info and some info like how many points they have
+
             ```css\npatreon```
             Gives you a link to my Patreon profile, feel free to help me and Killua out a bit <:killua_wink:769919176110112778>
             
