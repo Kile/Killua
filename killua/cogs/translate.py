@@ -11,11 +11,6 @@ QCRI,
 single_detection,
 batch_detection)
 
-with open('config.json', 'r') as config_file:
-  config = json.loads(config_file.read())
-cluster = MongoClient(config['mongodb'])
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
 
 class translate(commands.Cog):
 
