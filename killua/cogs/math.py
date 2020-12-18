@@ -7,7 +7,6 @@ from numpy import linspace
 from io import BytesIO
 from functions import custom_cooldown, blcheck
 
-
 API_ADDR = 'http://api.mathjs.org/v4/'
 
 class test(commands.Cog):
@@ -44,6 +43,7 @@ class test(commands.Cog):
             await ctx.reply("The following error occured while calculating:\n`{}`".format(answer["error"]))
             return
         await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
+
 
     @command()
     async def function(self, ctx, *, function):
@@ -83,6 +83,7 @@ class test(commands.Cog):
 			await ctx.send(file=graph)
 		except Exception as e:
 			await ctx.send(e)
+
 
 
 Cog = test

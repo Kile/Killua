@@ -8,6 +8,7 @@ import asyncio
 import json
 from functions import custom_cooldown, blcheck
 
+
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
 
@@ -16,6 +17,8 @@ db = cluster['Killua']
 collection = db['teams']
 top =db['teampoints']
 server = db['guilds']
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 
 class rps(commands.Cog):

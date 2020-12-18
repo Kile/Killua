@@ -173,6 +173,7 @@ class devstuff(commands.Cog):
         await ctx.send(f'Successfully whitelisted `{user}`')
 
 
+
 Cog = devstuff
 
 def setup(client):

@@ -4,6 +4,12 @@ from discord.ext import commands
 from functions import custom_cooldown, blcheck
 
 
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
+
 class moderation(commands.Cog):
 
 
@@ -180,6 +186,7 @@ class moderation(commands.Cog):
                 await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')
             except discord.Forbidden:
                 pass
+
 
             return await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
 

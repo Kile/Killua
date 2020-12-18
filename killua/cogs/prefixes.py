@@ -14,6 +14,8 @@ collection = db['teams']
 top =db['teampoints']
 server = db['guilds']
 items = db['items']
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 
 class prefix(commands.Cog):

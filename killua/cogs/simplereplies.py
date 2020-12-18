@@ -3,7 +3,6 @@ from discord.ext import commands
 from functions import custom_cooldown, blcheck
 
 
-
 class simplereplies(commands.Cog):
 
   def __init__(self, client):
