@@ -1,9 +1,7 @@
 import discord 
 import asyncio
 from discord.ext import commands
-from killua.cogs.functions import custom_cooldown, blcheck
-
-
+from killua.functions import custom_cooldown, blcheck
 
 class moderation(commands.Cog):
 
