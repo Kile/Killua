@@ -6,6 +6,8 @@ from killua.functions import custom_cooldown, blcheck
 import json
 from json import loads
 import typing
+from random import randint
+import random
 
 
 with open('config.json', 'r') as config_file:
@@ -13,7 +15,7 @@ with open('config.json', 'r') as config_file:
 
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
-collection = db['teams']
+teams = db['teams']
 top = db['teampoints']
 server = db['guilds']
 
