@@ -7,7 +7,7 @@ import pymongo
 from pymongo import MongoClient
 import json
 from json import loads
-from devstuff import blcheck
+from functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
@@ -41,7 +41,7 @@ class events(commands.Cog):
     try:
       prefix = ID['prefix']
     except UnboundLocalError:
-      server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': '', 'prefix': 'k!'}}, upsert=True)
+      server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': ['early supporter'], 'prefix': 'k!'}}, upsert=True)
       prefix = 'k!'
       
     general = find(lambda x: x.name == 'general',  guild.text_channels)

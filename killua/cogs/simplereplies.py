@@ -1,15 +1,7 @@
 import discord
 from discord.ext import commands
-import pymongo
-from pymongo import MongoClient
-from devstuff import blcheck
-import json
+from functions import custom_cooldown, blcheck
 
-with open('config.json', 'r') as config_file:
-  config = json.loads(config_file.read())
-cluster = MongoClient(config['mongodb'])
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
 
 class simplereplies(commands.Cog):
 
@@ -75,6 +67,7 @@ class simplereplies(commands.Cog):
         await ctx.send(embed=embed)
         
   @commands.command()
+  @custom_cooldown(6)
   async def permissions(self, ctx):
     if blcheck(ctx.author.id) is True:
       return

@@ -1,10 +1,8 @@
 import discord 
 import asyncio
 from discord.ext import commands
-import pymongo
-from pymongo import MongoClient
-from devstuff import blcheck
-import json
+from functions import custom_cooldown, blcheck
+
 
 with open('config.json', 'r') as config_file:
   config = json.loads(config_file.read())
@@ -189,11 +187,11 @@ class moderation(commands.Cog):
             except discord.Forbidden:
                 pass
 
+
             return await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
 
         if int(timem) > 1440 or int(timem) < 0:
             return await ctx.send('The most time a user can be muted is a day or unlimited')
-
                     
         await member.add_roles(muted, reason=reason or "No reason") 
                     

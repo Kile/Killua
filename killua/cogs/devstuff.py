@@ -22,6 +22,7 @@ from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
+from functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
@@ -116,6 +117,16 @@ class devstuff(commands.Cog):
 		    await ctx.send('Invalid command')
 
     @commands.command()
+    async def resetdaily(self, ctx, user:discord.User):
+        if ctx.author.id != 606162661184372736:
+            return
+        try:
+            teams.update_many({'id': user.id},{'$set':{'cooldowndaily': datetime.today()}}, upsert=True)
+            await ctx.send(f'Success! `{user}` can their daily points again')
+        except Exception as e:
+            await ctx.send(e)
+
+    @commands.command()
     async def update(self, ctx, *, update):
         if blcheck(ctx.author.id) is True:
             return
@@ -162,13 +173,6 @@ class devstuff(commands.Cog):
         await ctx.send(f'Successfully whitelisted `{user}`')
 
 
-def blcheck(userid:int):
-    result = blacklist.find_one({'id': userid})
-
-    if result is None:
-        return False
-    else:
-        return True
 
 Cog = devstuff
 

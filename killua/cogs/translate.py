@@ -1,9 +1,6 @@
 import discord
 from discord.ext import commands
-import pymongo
-from pymongo import MongoClient
-from devstuff import blcheck
-import json
+from functions import custom_cooldown, blcheck
 from deep_translator import (GoogleTranslator,
 PonsTranslator,
 LingueeTranslator,
@@ -27,6 +24,7 @@ class translate(commands.Cog):
 
     
   @commands.command()
+  @custom_cooldown(10)
   async def translate(self, ctx, source, target, *,args):
     if blcheck(ctx.author.id) is True:
       return

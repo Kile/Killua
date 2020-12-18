@@ -6,7 +6,8 @@ import random
 from random import randint
 import asyncio
 import json
-from devstuff import blcheck
+from functions import custom_cooldown, blcheck
+
 
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
@@ -19,12 +20,14 @@ server = db['guilds']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
+
 class rps(commands.Cog):
 
   def __init__(self, client):
     self.client = client
     
   @commands.command()
+  @custom_cooldown(30)
   async def rps(self, ctx, member: discord.User, points: int=None):
     if blcheck(ctx.author.id) is True:
       return
@@ -65,11 +68,9 @@ class rps(commands.Cog):
             if p1 < points or p1 is None:
                 await ctx.send(f'You do not have enough points for that. Your current balance is `{str(p1)}`')
                 return
-
-        
+      
         channel = ctx.message.channel
        
-
         if member.id == 756206646396452975:
             await ctx.author.send('You chose to play Rock Paper Scissors against me, what\'s your choice? **[Rock] [Paper] [Scissors]**')
 
@@ -84,7 +85,6 @@ class rps(commands.Cog):
                 return m.content.lower() == 'scissors' or m.content.lower() == 'paper' or m.content.lower() == 'rock' and m.author == ctx.author
                 
             msg = await self.client.wait_for('message', check=check, timeout=60) 
-
             winlose = await rpsf(msg.content, random.choice(['paper', 'rock', 'scissors']))
             
             if winlose == 1:
@@ -105,8 +105,7 @@ class rps(commands.Cog):
                 else:
                     await channel.send(f'{rpsemote(msg.content.lower())} < {rpsemote(result)}: {ctx.author.mention} lost against <@756206646396452975>')
         else:
-            
-            
+               
             if t2 is None and points:
 
                 await ctx.send(f'{member.mention} is not part of a team yet')
@@ -143,26 +142,20 @@ class rps(commands.Cog):
                     await ctx.author.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
                     await member.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
 
-
                     def checkauthor(m2):
                         
                         return  m2.content.lower() in ["rock", "paper", "scissors"] and m2.author == ctx.author and m2.guild is None
                     def checkopp(m3):
                        
                         return  m3.content.lower() in ["rock", "paper", "scissors"] and m3.author == member and m3.guild is None
-                    
 
                     done, pending = await asyncio.wait([
                         self.client.wait_for('message', check= checkauthor),
                         self.client.wait_for('message', check= checkopp)
                     ], return_when=asyncio.ALL_COMPLETED)
 
-                    
-                    
                     r1, r2 = [r.result() for r in done]
 
-                    
-                    
                     winlose = await rpsf(str(r1.content), str(r2.content))
                     if winlose == 1:
                         if points:

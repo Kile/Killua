@@ -6,15 +6,10 @@ from datetime import datetime, timedelta
 from discord.ext import commands
 import json
 from json import loads
-import pymongo
-from pymongo import MongoClient
-from devstuff import blcheck
+from functions import custom_cooldown, blcheck
 
 with open('config.json', 'r') as config_file:
-    config = json.loads(config_file.read())
-cluster = MongoClient(config['mongodb'])
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
+	config = json.loads(config_file.read())
 
 class api(commands.Cog):
   
@@ -23,6 +18,7 @@ class api(commands.Cog):
 
 
   @commands.command()
+  @custom_cooldown(15)
   async def urban(self, ctx, content):
     if blcheck(ctx.author.id) is True:
       return
@@ -56,6 +52,7 @@ class api(commands.Cog):
     
 
   @commands.command()
+  @custom_cooldown(15)
   async def cmm(self, ctx, *, content):
     if blcheck(ctx.author.id) is True:
       return
@@ -77,6 +74,7 @@ class api(commands.Cog):
     session.close
     
   @commands.command()
+  @custom_cooldown(20)
   async def quote(self, ctx, quotist: discord.Member, *, content):
     if blcheck(ctx.author.id) is True:
       return

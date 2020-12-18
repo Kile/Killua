@@ -3,7 +3,7 @@ from discord.ext import commands
 import pymongo
 import json
 from json import loads
-from devstuff import blcheck
+from functions import custom_cooldown, blcheck
 from pymongo import MongoClient
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -16,6 +16,7 @@ server = db['guilds']
 items = db['items']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
+
 
 class prefix(commands.Cog):
 
