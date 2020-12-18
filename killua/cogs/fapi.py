@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from discord.ext import commands
 import json
 from json import loads
-from killua.cogs.functions import custom_cooldown, blcheck
+from killua.functions import custom_cooldown, blcheck
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
