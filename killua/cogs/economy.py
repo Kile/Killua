@@ -2,7 +2,10 @@ import discord
 from discord.ext import commands
 import pymongo
 from pymongo import MongoClient
-from functions import custom_cooldown, blcheck
+from killua.cogs.functions import custom_cooldown, blcheck
+import json
+from json import loads
+import typing
 
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())

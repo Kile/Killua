@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from functions import custom_cooldown, blcheck
+from killua.cogs.functions import custom_cooldown, blcheck
 
 
 class simplereplies(commands.Cog):
