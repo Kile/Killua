@@ -5,7 +5,7 @@ from matplotlib.pyplot import figure, plot, savefig, title
 from numexpr import evaluate
 from numpy import linspace
 from io import BytesIO
-from killua.cogs.functions import custom_cooldown, blcheck
+from killua.functions import custom_cooldown, blcheck
 
 API_ADDR = 'http://api.mathjs.org/v4/'
 

@@ -6,7 +6,7 @@ import random
 from random import randint
 import asyncio
 import json
-from killua.cogs.functions import custom_cooldown, blcheck
+from killua.functions import custom_cooldown, blcheck
 
 
 with open('config.json', 'r') as config_file:

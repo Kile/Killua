@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import pymongo
 from pymongo import MongoClient
-from killua.cogs.functions import custom_cooldown, blcheck
+from killua.functions import custom_cooldown, blcheck
 import json
 from json import loads
 import typing

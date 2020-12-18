@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timedelta
 import random
 from random import randint
-from killua.cogs.functions import custom_cooldown, blcheck
+from killua.functions import custom_cooldown, blcheck
 
 
 answers = ['You are kidding, right?', 'I think you know that better than me', 'I am sorry to break it to you but... no', 'I don\'t think so', 'Yes, no more info needed', 'No! Why would you ask that?', 'Let\'s do it!', 'Did you ask your mom?', 'I seriously don\'t think that is a good idea', 'Could you repeat that?', 'Well... maybe', 'Anything is possible']

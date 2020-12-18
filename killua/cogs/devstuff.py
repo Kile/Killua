@@ -22,7 +22,7 @@ from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
-from killua.cogs.functions import custom_cooldown, blcheck
+from killua.functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 

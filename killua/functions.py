@@ -11,7 +11,7 @@ def blcheck(userid:int):
     with open('config.json', 'r') as config_file:
 	    config = json.loads(config_file.read())
 
-    c = MongoClient(json['mongodb'])
+    c = MongoClient(config['mongodb'])
     gdb = c['general']
     bl = gdb['blacklist']
     result = bl.find_one({'id': userid})
