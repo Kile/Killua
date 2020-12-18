@@ -22,6 +22,7 @@ from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
+from functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
@@ -171,25 +172,6 @@ class devstuff(commands.Cog):
         blacklist.delete_one({'id': id})
         await ctx.send(f'Successfully whitelisted `{user}`')
 
-
-def blcheck(userid:int):
-    import pymongo
-    from pymongo import MongoClient
-    import json
-    from json import loads
-
-    with open('config.json', 'r') as config_file:
-	    config = json.loads(config_file.read())
-
-    cluster = MongoClient(config['mongodb'])
-    generaldb = cluster['general']
-    blacklist = generaldb['blacklist']
-    result = blacklist.find_one({'id': userid})
-
-    if result is None:
-        return False
-    else:
-        return True
 
 Cog = devstuff
 

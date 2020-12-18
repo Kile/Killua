@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from .devstuff import blcheck
+from functions import custom_cooldown, blcheck
 from deep_translator import (GoogleTranslator,
 PonsTranslator,
 LingueeTranslator,
@@ -18,6 +18,7 @@ class translate(commands.Cog):
 
     
   @commands.command()
+  @custom_cooldown(10)
   async def translate(self, ctx, source, target, *,args):
     if blcheck(ctx.author.id) is True:
       return

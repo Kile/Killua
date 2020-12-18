@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import pymongo
 from pymongo import MongoClient
-from .devstuff import blcheck
+from functions import custom_cooldown, blcheck
 
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
@@ -19,6 +19,7 @@ class economy(commands.Cog):
         self.client = client
 
     @commands.command()
+    @custom_cooldown(6)
     async def profile(self, ctx,user: typing.Union[discord.User, int]=None):
         #h Get infos about a certain discord user with ID or mention
         #t Around 2 hours

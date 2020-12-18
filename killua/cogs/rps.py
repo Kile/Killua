@@ -6,7 +6,7 @@ import random
 from random import randint
 import asyncio
 import json
-from .devstuff import blcheck
+from functions import custom_cooldown, blcheck
 
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
@@ -24,6 +24,7 @@ class rps(commands.Cog):
     self.client = client
     
   @commands.command()
+  @custom_cooldown(30)
   async def rps(self, ctx, member: discord.User, points: int=None):
     if blcheck(ctx.author.id) is True:
       return

@@ -5,7 +5,7 @@ import json
 from json import loads
 from pymongo import MongoClient
 from discord.ext import commands
-from .devstuff import blcheck
+from functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 

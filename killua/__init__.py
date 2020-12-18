@@ -243,5 +243,5 @@ def main():
 		bot.add_cog(cog.Cog(bot))
 
 	# Start the bot.
-
+	bot.load_extension("jishaku")
 	bot.run(config['token'])

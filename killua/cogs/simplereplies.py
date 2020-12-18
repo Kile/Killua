@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from .devstuff import blcheck
+from functions import custom_cooldown, blcheck
 
 
 
@@ -68,6 +68,7 @@ class simplereplies(commands.Cog):
         await ctx.send(embed=embed)
         
   @commands.command()
+  @custom_cooldown(6)
   async def permissions(self, ctx):
     if blcheck(ctx.author.id) is True:
       return

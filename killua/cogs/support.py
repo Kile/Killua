@@ -1,7 +1,7 @@
 import discord
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext import commands
-from .devstuff import blcheck
+from functions import custom_cooldown, blcheck
 
 class support(commands.Cog):
 

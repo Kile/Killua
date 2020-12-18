@@ -5,7 +5,7 @@ from matplotlib.pyplot import figure, plot, savefig, title
 from numexpr import evaluate
 from numpy import linspace
 from io import BytesIO
-from .devstuff import blcheck
+from functions import custom_cooldown, blcheck
 
 
 API_ADDR = 'http://api.mathjs.org/v4/'
@@ -18,6 +18,7 @@ class test(commands.Cog):
 
 
     @commands.command()
+    @custom_cooldown(6)
     async def calc(self, ctx, *,args):
         if blcheck(ctx.author.id) is True:
             return

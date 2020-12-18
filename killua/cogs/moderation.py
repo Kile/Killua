@@ -1,7 +1,7 @@
 import discord 
 import asyncio
 from discord.ext import commands
-from .devstuff import blcheck
+from functions import custom_cooldown, blcheck
 
 
 class moderation(commands.Cog):
