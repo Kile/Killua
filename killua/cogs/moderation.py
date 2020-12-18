@@ -187,7 +187,6 @@ class moderation(commands.Cog):
             except discord.Forbidden:
                 pass
 
-
             return await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
 
         if int(timem) > 1440 or int(timem) < 0:

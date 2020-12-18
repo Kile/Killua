@@ -21,6 +21,7 @@ generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
 
+
 class rps(commands.Cog):
 
   def __init__(self, client):

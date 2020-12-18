@@ -18,6 +18,7 @@ generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
 
+
 class prefix(commands.Cog):
 
     def __init__(self, client):

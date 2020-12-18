@@ -42,11 +42,11 @@ class math(commands.Cog):
         if answer["error"]:
             await ctx.reply("The following error occured while calculating:\n`{}`".format(answer["error"]))
             return
-        await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"]))
+        await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
 
 
-#Cog = math
+Cog = math
 
 def setup(client):
     client.add_cog(math(client))
