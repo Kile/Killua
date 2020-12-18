@@ -1,7 +1,8 @@
 import discord
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext import commands
-from functions import custom_cooldown, blcheck
+from killua.cogs.functions import custom_cooldown, blcheck
+
 
 class support(commands.Cog):
 

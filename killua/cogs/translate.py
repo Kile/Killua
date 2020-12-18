@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from functions import custom_cooldown, blcheck
+from killua.cogs.functions import custom_cooldown, blcheck
 from deep_translator import (GoogleTranslator,
 PonsTranslator,
 LingueeTranslator,
@@ -10,6 +10,12 @@ DeepL,
 QCRI,
 single_detection,
 batch_detection)
+
+with open('config.json', 'r') as config_file:
+  config = json.loads(config_file.read())
+cluster = MongoClient(config['mongodb'])
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class translate(commands.Cog):
 

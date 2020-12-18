@@ -12,6 +12,8 @@ with open('config.json', 'r') as config_file:
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
+generaldb = cluster['general']
+blacklist = generaldb['blacklist']
 
 class help(commands.Cog):
 
@@ -144,9 +146,11 @@ def commands(commandgroup):
 
     if commandgroup.lower() == 'economy':
         embed = discord.Embed.from_dict({
+
             'title': 'Economy commands',
             'description': '''```css\ndaily```
             Gives you your daily points'''
+
         })
         return embed
 
