@@ -63,7 +63,7 @@ Reproduction: ban a member without providing a reason```''',
         await ctx.send(embed=embed)
 
   @commands.command(aliases=['fb'])
-  @commands.cooldown(rate=1, per=3600, type=commands.BucketType.User)
+  @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
   async def feedback(self, ctx, Type=None, *, feedback=None):
     if blcheck(ctx.author.id) is True:
         return
