@@ -6,6 +6,7 @@ from numexpr import evaluate
 from numpy import linspace
 from io import BytesIO
 from killua.functions import custom_cooldown, blcheck
+import json
 
 API_ADDR = 'http://api.mathjs.org/v4/'
 

@@ -35,15 +35,17 @@ class help(commands.Cog):
         embed = discord.Embed.from_dict({
             'title': 'Bot commands',
             'description': f'''Current server Prefix: `{pref}`
-            Command groups for {ctx.me.name}:
-            :tools: `Moderation`
-            :clown: `Fun`
-            :trophy: `Economy/teams`
-            <:killua_wink:769919176110112778> `Other`
+Command groups for {ctx.me.name}:
+:tools: `Moderation`
+:clown: `Fun`
+:trophy: `Economy/teams`
+<:killua_wink:769919176110112778> `Other`
             
-            To see a groups commands, use```css\nhelp <groupname>```
-            For more info to a specific command, use
-            ```css\nhelp command <commandname>```''',
+To see a groups commands, use```css\nhelp <groupname>```
+For more info to a specific command, use
+```css\nhelp command <commandname>```
+
+[Support server](https://discord.gg/be4nvwq7rZ)''',
             'color': 0x1400ff,
             'thumbnail': {'url': str(ctx.me.avatar_url)}
             })
@@ -102,21 +104,19 @@ def commands(commandgroup):
         embed = discord.Embed.from_dict({
             'title': 'Moderation commands',
             'description': '''```css\nprefix <string>```
-            Sets a new prefix for Killua for the server, can only be used by admins
-            ```css\nk!default pref```
-            If you should have forgotten your prefix, run this command to reset it to `k!`
+Sets a new prefix for Killua for the server, can only be used by admins
             
-            ```css\nban <@user> <optionalreason>```
-            Bans a member and deletes their messages of the last 24 hours
+```css\nban <@user> <optionalreason>```
+Bans a member and deletes their messages of the last 24 hours
             
-            ```css\nunban <userId/Nameandtag>```
-            Unbans a user with id or something like `Kile#0606`
+```css\nunban <userId/Nameandtag>```
+Unbans a user with id or something like `Kile#0606`
             
-            ```css\nmute <@user> <optionaltimeinminutes> <optionalreason>```
-            Mutes a user for the given amount of time or you specify as `unlimited`
+```css\nmute <@user> <optionaltimeinminutes> <optionalreason>```
+Mutes a user for the given amount of time or you specify as `unlimited`
             
-            ```css\nunmute <@user> <optionalreason>```
-            Unmutes a user'''
+```css\nunmute <@user> <optionalreason>```
+Unmutes a user'''
         })
         return embed
 
@@ -124,22 +124,26 @@ def commands(commandgroup):
         embed = discord.Embed.from_dict({
             'title': 'Fun commands',
             'description': '''```css\nquote <@user> <text>```
-            Send a screenshot of a user saying what you defined. Use `-c`ast the start of `text` for compact mode or `-l` for light mode or both
-            ```css\ncmm <text>```
-            Sends the *Change My Mind* meme with the text you defined
-            ```css\nrps <@user> <optional integer>```
-            Challenges someone to a game of Rock Paper Scissors. If you specify an amount you play with points and the winner gets them all
-            ```css\nhug <@user>```
-            We all need  more hugs in our life, this hugs the user specified
-            ```css\ntopic```
-            You suck at small talk? Get a topic with this command!
-            ```css\ncalc <mathsstuff>```
-            Stuck with some math problem or just bored? Use this calculator!
-            ```css\ntranslate <sourcelanguage/auto> <targetlanguage> <text>```
-            Translates given text to the targetlanguage
-            ```css\n8ball <question>```
-            Killua will answer the provided question
-            *heads or tails in plan*
+Send a screenshot of a user saying what you defined. Use `-c`ast the start of `text` for compact mode or `-l` for light mode or both
+
+```css\ncmm <text>```
+Sends the *Change My Mind* meme with the text you defined
+
+```css\nhug <@user>```
+We all need  more hugs in our life, this hugs the user specified
+
+```css\ntopic```
+You suck at small talk? Get a topic with this command!
+
+```css\ncalc <mathsstuff>```
+Stuck with some math problem or just bored? Use this calculator!
+            
+```css\ntranslate <sourcelanguage/auto> <targetlanguage> <text>```
+Translates given text to the targetlanguage
+
+```css\n8ball <question>```
+Killua will answer the provided question
+*heads or tails in plan*
             '''
         })
         return embed
@@ -149,7 +153,14 @@ def commands(commandgroup):
 
             'title': 'Economy commands',
             'description': '''```css\ndaily```
-            Gives you your daily points'''
+Gives you your daily points
+
+```css\nrps <@user> <optional integer>```
+Challenges someone to a game of Rock Paper Scissors. If you specify an amount you play with points and the winner gets them all
+
+```css\nprofile <user_id/mention>```
+Shows you info about a specific user, some discord info and some info like how many points they have
+'''
 
         })
         return embed
@@ -157,28 +168,23 @@ def commands(commandgroup):
     if commandgroup.lower() == 'other':
         embed = discord.Embed.from_dict({
             'title': 'Other commands',
-            'description': '''```css\nhi```
-            Replies `Hi username, usertag` I am leaving this in because it was the first Killua command
-            ```css\ninfo```
-            Gives you some info about the bot
+            'description': '''```css\ninfo```
+Gives you some info about the bot
             
-            ```css\nprofile <user_id/mention>```
-            Shows you info about a specific user, some discord info and some info like how many points they have
-
-            ```css\npatreon```
-            Gives you a link to my Patreon profile, feel free to help me and Killua out a bit <:killua_wink:769919176110112778>
+```css\npatreon```
+Gives you a link to my Patreon profile, feel free to help me and Killua out a bit <:killua_wink:769919176110112778>
             
-            ```css\ninvite```
-            Gives you the invite link to the bot
+```css\ninvite```
+Gives you the invite link to the bot
             
-            ```css\ncodeinfo <command>```
-            Gives you some more insights to a command like how long it took me etc
+```css\ncodeinfo <command>```
+Gives you some more insights to a command like how long it took me etc
             
-            ```css\npermissions```
-            Killua lists his permissions on this server
+```css\npermissions```
+Killua lists his permissions on this server
             
-            ```css\nbug <commandname/other> <bug>```
-            You can report bigs with this command, abuse or spam will result in being blacklisted'''
+```css\nbug <commandname/other> <bug>```
+You can report bigs with this command, abuse or spam will result in being blacklisted'''
         })
         return embed
 

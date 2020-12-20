@@ -114,7 +114,7 @@ class devstuff(commands.Cog):
 			})
 		    await ctx.send(embed=embed)
 	    except Exception as e:
-		    await ctx.send('Invalid command')
+		    await ctx.send(f'Invalid command. Error: {e}')
 
     @commands.command()
     async def resetdaily(self, ctx, user:discord.User):

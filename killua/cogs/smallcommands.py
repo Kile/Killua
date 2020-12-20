@@ -67,7 +67,7 @@ class smallcommands(commands.Cog):
       #t 15 minutes
       embed = discord.Embed.from_dict({
         'title': f'8ball has spoken 🎱',
-          'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n{random.choice(answers)}',
+          'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n```\n{random.choice(answers)}```',
           'footer': {'icon_url': str(ctx.author.avatar_url), 'text': f'Asked by {ctx.author}'},
           'color': 0x1400ff
       })

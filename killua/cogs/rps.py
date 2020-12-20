@@ -7,19 +7,15 @@ from random import randint
 import asyncio
 import json
 from killua.functions import custom_cooldown, blcheck
-
+from json import loads
 
 with open('config.json', 'r') as config_file:
-    config = json.loads(config_file.read())
+	config = json.loads(config_file.read())
 
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
-collection = db['teams']
-top =db['teampoints']
+teams = db['teams']
 server = db['guilds']
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
-
 
 
 class rps(commands.Cog):
@@ -39,146 +35,88 @@ class rps(commands.Cog):
     if member.id == ctx.author.id:
       return await ctx.send('Baka! You can\'t play against yourself')
     
-    t2 = None
-    p2 = 0
 
-    resultsopp = collection.find({'id': member.id})
-    for resulte in resultsopp:
-        p2 = resulte['points']
-        t2 = resulte['team']
 
-    print(t2)
+    resultsopp = teams.find_one({'id': member.id})
+    if resultsopp is None and member != ctx.me and points:
+        return await ctx.send('The opponed needs to be registered to play with points (use `k!daily` once)')
 
-    results = collection.find({'id': ctx.author.id})
-    for result in results:
-        p1 = result['points']
-        t1 = result['team']
+    p2 = resultsopp['points']
 
-    try:
+    results = teams.find_one({'id': ctx.author.id})
+    if results is None and points:
+        return await ctx.send('You need to be registered to play with points (use `k!daily` once)')
 
-        if t1 == None and points:
-            await ctx.send('You need to join a team to play Rock Paper Scissors')
-            return
+    p1 = results['points']
+ 
         
-        if points:
-            if points <= 0 or points > 100:
-                await ctx.send(f'You can only play using 1-100 points')
-                return
+    if points:
+        if points <= 0 or points > 100:
+            return await ctx.send(f'You can only play using 1-100 points')
 
-        if points:
-            if p1 < points or p1 is None:
-                await ctx.send(f'You do not have enough points for that. Your current balance is `{str(p1)}`')
-                return
-      
-        channel = ctx.message.channel
-       
-        if member.id == 756206646396452975:
-            await ctx.author.send('You chose to play Rock Paper Scissors against me, what\'s your choice? **[Rock] [Paper] [Scissors]**')
-
-            embed = discord.Embed.from_dict({
-                'title': f'{ctx.author.name} against Killua-dev: **Rock... Paper... Scissors!**',
-                'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
-                'color': 0x1400ff
-                })
-
-            await ctx.send(embed= embed)
-            def check(m):
-                return m.content.lower() == 'scissors' or m.content.lower() == 'paper' or m.content.lower() == 'rock' and m.author == ctx.author
+ 
+        if p1 < points or p2 < points:
+            return await ctx.send(f'You or your oppenent do not have enough points for that. Your current balance is `{p1}`, your opponents balance is {p2}')
                 
-            msg = await self.client.wait_for('message', check=check, timeout=60) 
-            winlose = await rpsf(msg.content, random.choice(['paper', 'rock', 'scissors']))
-            
-            if winlose == 1:
-                result = botemote(msg.content, 1)
-                if points:
-                    collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 + points}})
-                    await channel.send(f'{rpsemote(msg.content.lower())} > {rpsemote(result)}: {ctx.author.mention} won against <@756206646396452975> winning {points} points')
-                else:
-                    await channel.send(f'{rpsemote(msg.content.lower())} > {rpsemote(result)}: {ctx.author.mention} won against <@756206646396452975>')
-            if winlose == 2:
-                result = botemote(msg.content, 2)
-                await channel.send(f'{rpsemote(msg.content.lower())} = {rpsemote(result)}: {ctx.author.mention} tied against <@756206646396452975>')
-            if winlose == 3:
-                result = botemote(msg.content, 3)
-                if points:
-                    collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 - points}})
-                    await channel.send(f'{rpsemote(msg.content.lower())} < {rpsemote(result)}: {ctx.author.mention} lost against <@756206646396452975> losing {points} points')
-                else:
-                    await channel.send(f'{rpsemote(msg.content.lower())} < {rpsemote(result)}: {ctx.author.mention} lost against <@756206646396452975>')
+       
+    if member == ctx.me:
+        await ctx.author.send('You chose to play Rock Paper Scissors against me, what\'s your choice? **[Rock] [Paper] [Scissors]**')
+
+        embed = discord.Embed.from_dict({
+            'title': f'{ctx.author.name} against Killua-dev: **Rock... Paper... Scissors!**',
+            'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
+            'color': 0x1400ff
+        })
+
+        await ctx.send(embed= embed)
+    
+        def check(m):
+            return m.content.lower() == 'scissors' or m.content.lower() == 'paper' or m.content.lower() == 'rock' and m.author == ctx.author
+                
+        msg = await self.client.wait_for('message', check=check, timeout=60) 
+        c2 = random.choice(['paper', 'rock', 'scissors'])
+        winlose = await rpsf(msg.content, c2)
+        await evaluate(ctx, winlose, msg.content.lower(), c2, ctx.author, ctx.me, points)
+    else:
+        await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Papaper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
+        def check(m1):
+            return m1.content.lower() in ["n", "y"] and m1.author.id == member.id
+
+        try:
+            confirmmsg = await self.client.wait_for('message', check=check, timeout=60)
+        except asyncio.TimeoutError:
+            return await ctx.send('Sadly no answer, try it later bud')
+
         else:
-               
-            if t2 is None and points:
+            if confirmmsg.content.lower() == 'y':
 
-                await ctx.send(f'{member.mention} is not part of a team yet')
-                return
+                embed = discord.Embed.from_dict({
+                    'title': f'{ctx.author.name} against {member.name}: **Rock... Paper... Scissors!**',
+                    'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
+                    'color': 0x1400ff
+                })
+                        
+                await ctx.send(embed= embed)
+                await ctx.author.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
+                await member.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
 
-            if points:
-                if int(p2) < points or p2 is None and points:
+                def checkauthor(m2): 
+                    return  m2.content.lower() in ["rock", "paper", "scissors"] and m2.author == ctx.author and m2.guild is None
 
-                    await ctx.send(f'{member.mention} does not have enough points for that. Their current balance is `{str(p2)}`')
-                    return
-            
+                def checkopp(m3):
+                    return  m3.content.lower() in ["rock", "paper", "scissors"] and m3.author == member and m3.guild is None
 
-            await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Papaper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
-            def check(m1):
-                    return m1.content.lower() in ["n", "y"] and m1.author.id == member.id
+                done, pending = await asyncio.wait([
+                    self.client.wait_for('message', check= checkauthor),
+                    self.client.wait_for('message', check= checkopp)
+                ], return_when=asyncio.ALL_COMPLETED)
 
-            try:
-                    confirmmsg = await self.client.wait_for('message', check=check, timeout=60)
-
-            except asyncio.TimeoutError:
-
-                await ctx.send('Sadly no answer, try it later bud')
-
+                r1, r2 = [r.result() for r in done]
+                winlose = await rpsf(r1.content, r2.content)
+                await evaluate(ctx, winlose, r1.content.lower(), r2.content.lower(), r1.author, r2.author, points)
             else:
-                if confirmmsg.content.lower() == 'y':
+                await ctx.send(f'{member.name} does not want to play...')
 
-                    embed = discord.Embed.from_dict({
-                        'title': f'{ctx.author.name} against {member.name}: **Rock... Paper... Scissors!**',
-                        'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
-                        'color': 0x1400ff
-                    })
-                        
-                    await ctx.send(embed= embed)
-                    await ctx.author.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
-                    await member.send('You chose to play Rock Paper Scissors, what\'s your choice Hunter? **[Rock] [Paper] [Scissors]**') 
-
-                    def checkauthor(m2):
-                        
-                        return  m2.content.lower() in ["rock", "paper", "scissors"] and m2.author == ctx.author and m2.guild is None
-                    def checkopp(m3):
-                       
-                        return  m3.content.lower() in ["rock", "paper", "scissors"] and m3.author == member and m3.guild is None
-
-                    done, pending = await asyncio.wait([
-                        self.client.wait_for('message', check= checkauthor),
-                        self.client.wait_for('message', check= checkopp)
-                    ], return_when=asyncio.ALL_COMPLETED)
-
-                    r1, r2 = [r.result() for r in done]
-
-                    winlose = await rpsf(str(r1.content), str(r2.content))
-                    if winlose == 1:
-                        if points:
-                            collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 + points}})
-                            collection.update_one({'id': member.id}, {'$set':{'points': p2 - points}})
-                            await channel.send(f'{rpsemote(r1.content.lower())} > {rpsemote(r2.content.lower())}: {ctx.author.mention} won against {member.mention} winning {points} points')
-                        else:
-                             await channel.send(f'{rpsemote(r1.content.lower())} > {rpsemote(r2.content.lower())}: {ctx.author.mention} won against {member.mention}')
-                    if winlose == 2:
-                        await channel.send(f'{rpsemote(r1.content.lower())} = {rpsemote(r2.content.lower())}: {ctx.author.mention} tied against {member.mention}')
-                    if winlose == 3:
-                        if points:
-                            collection.update_one({'id': ctx.author.id}, {'$set':{'points': p1 - points}})
-                            collection.update_one({'id': member.id}, {'$set':{'points': p2 + points}})
-                            await channel.send(f'{rpsemote(r1.content.lower())} < {rpsemote(r2.content.lower())}: {ctx.author.mention} lost against {member.mention} losing {points } points')
-                        else:
-                            await channel.send(f'{rpsemote(r1.content.lower())} < {rpsemote(r2.content.lower())}: {ctx.author.mention} lost against {member.mention}')
-                else:
-                    await ctx.send(f'{member.name} does not want to play...')
-
-    except Exception as e:
-        await ctx.send(e)
 
     
 def rpsemote(choice):
@@ -187,33 +125,8 @@ def rpsemote(choice):
     if choice == 'rock':
         return '🗿'
     if choice == 'scissors':
-        return ':scissors:'
+        return '✂️'
 
-def botemote(playeremote, winlose):
-    print(playeremote)
-    if playeremote.lower() == 'paper':
-        if winlose == 1:
-            return 'rock'
-        if winlose == 2:
-            return 'paper'
-        if winlose == 3:
-            return 'scissors'
-
-    if playeremote.lower() == 'rock':
-        if winlose == 1:
-            return 'scissors'
-        if winlose == 2:
-            return 'rock'
-        if winlose == 3:
-            return 'paper'
-
-    if playeremote.lower() == 'scissors':
-        if winlose == 1:
-            return 'paper'
-        if winlose == 2:
-            return 'scissors'
-        if winlose == 3:
-            return 'rock'
 
 async def rpsf(choice1, choice2):
 
@@ -236,6 +149,28 @@ async def rpsf(choice1, choice2):
     if choice1.lower() == 'scissors' and choice2.lower() == 'rock':
         return 3
 
+async def evaluate(ctx, winlose:int, choice1, choice2, player1:discord.User, player2:discord.User, points:int=None):
+    p1 = teams.find_one({'id': player1.id})
+    p2 = teams.find_one({'id': player2.id})
+    if winlose == 1:
+        if points:
+            teams.update_one({'id': player1.id}, {'$set':{'points': p1['points'] + points}})
+            if player2 != ctx.me:
+                teams.update_one({'id': player2.id}, {'$set':{'points': p2['points'] - points}})
+            return await ctx.send(f'{rpsemote(choice1)} > {rpsemote(choice2)}: {player1.mention} won against {player2.mention} winning {points} points which adds to a total of {p1["points"]+ points}')
+        else:
+            return await ctx.send(f'{rpsemote(choice1)} > {rpsemote(choice2)}: {player1.mention} won against {player2.mention}')
+    if winlose == 2:
+        return await ctx.send(f'{rpsemote(choice1)} = {rpsemote(choice2)}: {player1.mention} tied against {player2.mention}')
+    if winlose == 3:
+        if points:
+            teams.update_one({'id': player1.id}, {'$set':{'points': p1['points'] - points}})
+            if player2 != ctx.me:
+                teams.update_one({'id': player2.id}, {'$set':{'points': p2['points'] + points}})
+            return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention} losing {points} points whcih leaves them a total of {p1["points"]- points}')
+        else:
+            return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention}')
+       
 Cog = rps
 
 def setup(client):
