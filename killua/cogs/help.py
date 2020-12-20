@@ -184,11 +184,14 @@ Gives you some more insights to a command like how long it took me etc
 Killua lists his permissions on this server
             
 ```css\nbug <commandname/other> <bug>```
-You can report bigs with this command, abuse or spam will result in being blacklisted'''
+You can report bigs with this command, abuse or spam will result in being blacklisted
+
+```css\nfb <typeoffeedback> <feedback>```
+Send feeback directly to me with this command. Abuse or spam will result in being blacklisted'''
         })
         return embed
 
 Cog = help
 
 def setup(client):
-  client.add_cog(help(client))
+    client.add_cog(help(client))

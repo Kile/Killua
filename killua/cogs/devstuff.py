@@ -14,6 +14,7 @@ from pymongo import MongoClient
 from pprint import pprint
 import asyncio
 import inspect
+from inspect import getsource
 from discord.utils import find
 from discord import client
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -100,7 +101,7 @@ class devstuff(commands.Cog):
 
 
 
-		    embed= Embed.from_dict({
+		    embed= discord.Embed.from_dict({
 			    'title': f'Command **{content}**',
 			    'color': 0x1400ff,
 			    'description': f'''**Characters:** {len(code)}
