@@ -63,7 +63,7 @@ Reproduction: ban a member without providing a reason```''',
         await ctx.send(embed=embed)
 
   @commands.command(aliases=['fb'])
-  @commands.cooldown(rate=1, per=3600, type=commands.BucketType.guild)
+  @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
   async def feedback(self, ctx, Type=None, *, feedback=None):
     if blcheck(ctx.author.id) is True:
         return
@@ -72,6 +72,7 @@ Reproduction: ban a member without providing a reason```''',
     if Type and feedback:
         
         if not Type.lower() in ['topic', '8ball', 'hug', 'apply', 'general', 'idea', 'feature-request', 'complain', 'compliment']:
+            ctx.command.reset_cooldown(ctx)
             return ctx.send('Type not found. To see what types of feeback you can submit, use `k!fb`')
 
         if feedback is None:
