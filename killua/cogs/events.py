@@ -2,7 +2,7 @@ import discord
 from datetime import datetime, date, timedelta
 import time
 from discord.utils import find
-from discord.ext import commands
+from discord.ext import commands, tasks
 import pymongo
 from pymongo import MongoClient
 import json
@@ -29,6 +29,10 @@ class events(commands.Cog):
     print('Logged in as: ' + self.client.user.name + f" (ID: {self.client.user.id})")
     print('------')
     self.client.startup_datetime = datetime.now()
+
+  @tasks.loop(hours=12)
+  async def status(self):
+    await p(self)
     
   @commands.Cog.listener()
   async def on_guild_join(self, guild):
@@ -48,7 +52,7 @@ class events(commands.Cog):
     if general and general.permissions_for(guild.me).send_messages:
         embed = discord.Embed.from_dict({
             'title': 'Hello {}!'.format(guild.name),
-            'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{prefix}info`\n\nTo change the server prefix, use `{prefix}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{prefix}help` to see every command',
+            'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{prefix}info`\n\nTo change the server prefix, use `{prefix}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{prefix}help` to see every command\n\nPlease consider leaving feeback with `k!fb` as this helps me improve Killua',
             'color': 0x1400ff
         })
         await general.send(embed=embed)
@@ -58,7 +62,7 @@ class events(commands.Cog):
     if isinstance(error, discord.ext.commands.CommandOnCooldown):
       m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
 
-      await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again :3')
+      await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again, thank you for helping to improve killua :3')
 
         
   @commands.Cog.listener()
