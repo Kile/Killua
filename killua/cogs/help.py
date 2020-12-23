@@ -143,6 +143,12 @@ Translates given text to the targetlanguage
 
 ```css\n8ball <question>```
 Killua will answer the provided question
+
+```css\navatar```
+What you'd expect from an avatar command, provide a mention or ID
+
+```css\nbook <bookname>```
+Get infos about the book providet
 *heads or tails in plan*
             '''
         })
@@ -184,7 +190,7 @@ Gives you some more insights to a command like how long it took me etc
 Killua lists his permissions on this server
             
 ```css\nbug <commandname/other> <bug>```
-You can report bigs with this command, abuse or spam will result in being blacklisted
+You can report bugs with this command, abuse or spam will result in being blacklisted
 
 ```css\nfb <typeoffeedback> <feedback>```
 Send feeback directly to me with this command. Abuse or spam will result in being blacklisted'''

@@ -72,7 +72,36 @@ class smallcommands(commands.Cog):
           'color': 0x1400ff
       })
       await ctx.send(embed=embed)
+
+    @commands.command(aliases=['av', 'a'])
+    async def avatar(self, ctx, user: typing.Union[discord.User, int]=None):
+      if blcheck(ctx.author.id) is True:
+        return
+      if not user:
+        embed = avatar(ctx.author)
+        return await ctx.send(embed=embed)
+        #Showing the avatar of the author if no user is provided
+      if isinstance(user, discord.User):
+        embed = avatar(user)
+        return await ctx.send(embed=embed)
+        #If the user args is a mention the bot can just get everything from there
+      try:
+        newuser = await self.client.fetch_user(user)
+        embed = avatar(newuser)
+        return await ctx.send(embed=embed)
+        #If the args is an integer the bot will try to get a user with the integer as ID
+      except:
+        return await ctx.send('Invalid user')
         
+def avatar(user):
+    #constructing the avatar embed
+    embed = discord.Embed.from_dict({
+        'title': f'Avatar of {user}',
+        'image': {'url': str(user.avatar_url)},
+        'color': 0x1400ff
+    })
+    return embed
+
 Cog = smallcommands
 
 def setup(client):
