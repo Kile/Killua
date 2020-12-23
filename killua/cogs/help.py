@@ -143,6 +143,12 @@ Translates given text to the targetlanguage
 
 ```css\n8ball <question>```
 Killua will answer the provided question
+
+```css\navatar```
+What you'd expect from an avatar command, provide a mention or ID
+
+```css\nbook <bookname>```
+Get infos about the book providet
 *heads or tails in plan*
             '''
         })
