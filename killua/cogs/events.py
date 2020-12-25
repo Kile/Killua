@@ -34,7 +34,11 @@ class events(commands.Cog):
   @tasks.loop(hours=12)
   async def status(self):
     await p(self)
-    
+
+  @status.before_loop
+  async def before_status(self):
+      await self.client.wait_until_ready()
+
   @commands.Cog.listener()
   async def on_guild_join(self, guild):
     await p(self)
