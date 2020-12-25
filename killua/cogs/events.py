@@ -83,8 +83,6 @@ async def p(self):
   a = date.today()
   b = date(2020,9,17)
   delta = a - b
-
-
   playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
 
   await self.client.change_presence(status=discord.Status.online, activity=playing)
