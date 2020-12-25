@@ -4,6 +4,7 @@ from discord.ext import commands
 import time
 from datetime import datetime, timedelta
 import random
+import typing
 from random import randint
 from killua.functions import custom_cooldown, blcheck
 
