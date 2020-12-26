@@ -43,6 +43,8 @@ class rps(commands.Cog):
 
     if member != ctx.me:
         p2 = resultsopp['points']
+    else:
+        p2 = False
 
     results = teams.find_one({'id': ctx.author.id})
     if results is None and points:
@@ -56,9 +58,11 @@ class rps(commands.Cog):
             return await ctx.send(f'You can only play using 1-100 points')
 
  
-        if p1 < points or p2 < points:
-            return await ctx.send(f'You or your oppenent do not have enough points for that. Your current balance is `{p1}`, your opponents balance is {p2}')
-                
+        if p1 < points:
+            return await ctx.send(f'You do not have enough points for that. Your current balance is `{p1}`')
+        if not p2 is False and p2 < points:
+            return await ctx.send(f'Your opponent does not have enough points for that. Their current balance is `{p2}`')
+  
        
     if member == ctx.me:
         await ctx.author.send('You chose to play Rock Paper Scissors against me, what\'s your choice? **[Rock] [Paper] [Scissors]**')
@@ -168,7 +172,7 @@ async def evaluate(ctx, winlose:int, choice1, choice2, player1:discord.User, pla
             teams.update_one({'id': player1.id}, {'$set':{'points': p1['points'] - points}})
             if player2 != ctx.me:
                 teams.update_one({'id': player2.id}, {'$set':{'points': p2['points'] + points}})
-            return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention} losing {points} points whcih leaves them a total of {p1["points"]- points}')
+            return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention} losing {points} points which leaves them a total of {p1["points"]- points}')
         else:
             return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention}')
        
