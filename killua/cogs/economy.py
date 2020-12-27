@@ -106,7 +106,7 @@ class economy(commands.Cog):
         teams.update_one({'id': user.id},{'$set':{'points': otherguy['points'] + amount}}, upsert=True)
         await ctx.send(f'You gave {user} {amount} points! How very nice :3 Their new balance is `{otherguy["points"]+amount}`, yours `{balance["points"] - amount}`')
 
-   @commands.command(aliases=['ghosthunter'])
+    @commands.command(aliases=['ghosthunter'])
     @custom_cooldown(240)
     async def gh(self, ctx):
         #h Catch the ghosts fast enough! The faster the more points you get! This command is restricted to premium guilds as it is not fully developed
