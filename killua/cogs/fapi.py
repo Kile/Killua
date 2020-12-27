@@ -19,7 +19,7 @@ class api(commands.Cog):
 
     @commands.command(aliases=['ej', 'emojimosaic'])
     @custom_cooldown(15)
-    async def emojaic(self, ctx, image:typing.Union[discord.User, int, str]):
+    async def emojaic(self, ctx, image:typing.Union[discord.User, int, str]=None):
         if blcheck(ctx.author.id) is True:
             return
         #cEmoji mosaic an image!
@@ -33,6 +33,8 @@ class api(commands.Cog):
                 image = str(user.avatar_url)
             except:
                 return await ctx.send('Invalid ID')
+        if not image:
+            image = str(ctx.author.avatar_url)
 
         session = aiohttp.ClientSession() 
         headers = {'Content-Type': 'application/json',
