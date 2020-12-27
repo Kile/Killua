@@ -149,6 +149,9 @@ What you'd expect from an avatar command, provide a mention or ID
 
 ```css\nbook <bookname>```
 Get infos about the book providet
+
+```\nemojaic <user/id/link>````
+Changes provided image into emojis (seriously try this one!)
 *heads or tails in plan*
             '''
         })
@@ -166,7 +169,9 @@ Challenges someone to a game of Rock Paper Scissors. If you specify an amount yo
 
 ```css\nprofile <user_id/mention>```
 Shows you info about a specific user, some discord info and some info like how many points they have
-'''
+
+```css\ngive <user> <points>```
+Give a fellow user some points'''
 
         })
         return embed
