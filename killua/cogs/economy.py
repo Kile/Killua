@@ -106,7 +106,7 @@ class economy(commands.Cog):
         teams.update_one({'id': user.id},{'$set':{'points': otherguy['points'] + amount}}, upsert=True)
         await ctx.send(f'You gave {user} {amount} points! How very nice :3 Their new balance is `{otherguy["points"]+amount}`, yours `{balance["points"] - amount}`')
 
-   @commands.command(aliases=['ghosthunter'])
+    @commands.command(aliases=['ghosthunter'])
     @custom_cooldown(240)
     async def gh(self, ctx):
         #h Catch the ghosts fast enough! The faster the more points you get! This command is restricted to premium guilds as it is not fully developed
@@ -147,7 +147,7 @@ class economy(commands.Cog):
 Points added to your account: {score or 0}
 Balance: {points+score}
 -------------------------------------''',
-                'color': 0xc21a1a
+                'color': 0x1400ff
             })
             await msg.edit(embed=embed)
             
@@ -202,11 +202,11 @@ def embedgenerator(slots:list):
 ┊ {' ::: '.join(slots)}    ┊
 
 ╰ -------------------------------------╯''',
-        'color': 0xc21a1a
+        'color': 0x1400ff
         })
     return embed
 
-sync def addemojis(msg:discord.Message):
+async def addemojis(msg:discord.Message):
     await msg.add_reaction('1\N{variation selector-16}\N{combining enclosing keycap}')
     await msg.add_reaction('2\N{variation selector-16}\N{combining enclosing keycap}')
     await msg.add_reaction('3\N{variation selector-16}\N{combining enclosing keycap}')

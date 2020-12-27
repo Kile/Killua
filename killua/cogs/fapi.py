@@ -33,6 +33,7 @@ class api(commands.Cog):
                 image = str(user.avatar_url)
             except:
                 return await ctx.send('Invalid ID')
+
         if not image:
             image = str(ctx.author.avatar_url)
 
