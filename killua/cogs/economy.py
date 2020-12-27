@@ -20,6 +20,18 @@ db = cluster['Killua']
 teams = db['teams']
 server = db['guilds']
 
+numbers = {
+    1: '1️⃣',
+    2: '2️⃣',
+    3: '3️⃣',
+    4: '4️⃣',
+    5: '5️⃣',
+    6: '6️⃣',
+    7: '7️⃣',
+    8: '8️⃣',
+    9: '9️⃣'
+}
+
 class economy(commands.Cog):
 
     def __init__(self, client):
@@ -61,13 +73,11 @@ class economy(commands.Cog):
 
 	    if result is None:
 		    teams.insert_one({'id': ctx.author.id, 'points': daily, 'badges': [], 'cooldowndaily': later})
-		    await ctx.send(f'You can claim your points the next time in {cooldown}')    
+		    await ctx.send(f'You claimed your {daily} daily points and hold now on to {daily}')   
 	    else:
-        
 		    if str(result['cooldowndaily']) < str(now):
  
 			    teams.update_many({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': result['points'] + daily}}, upsert=True)
-
 			    await ctx.send(f'You claimed your {daily} daily points and hold now on to {int(result["points"]) + int(daily)}')
 		    else:
 
@@ -96,10 +106,10 @@ class economy(commands.Cog):
         teams.update_one({'id': user.id},{'$set':{'points': otherguy['points'] + amount}}, upsert=True)
         await ctx.send(f'You gave {user} {amount} points! How very nice :3 Their new balance is `{otherguy["points"]+amount}`, yours `{balance["points"] - amount}`')
 
-    @commands.command(aliases=['ghosthunter'])
+   @commands.command(aliases=['ghosthunter'])
     @custom_cooldown(240)
     async def gh(self, ctx):
-        #h Only for premium servers as it is a beta command. Chase after the ghoset and catch it in time! Depending on how long you take your points vary
+        #h Catch the ghosts fast enough! The faster the more points you get! This command is restricted to premium guilds as it is not fully developed
         guild = server.find_one({'id': ctx.guild.id})
         if guild is None or not 'partner' in guild['badges'] and not 'premium' in guild['badges']:
             return await ctx.send('Beta commands are a premium feature')
@@ -137,21 +147,12 @@ class economy(commands.Cog):
 Points added to your account: {score or 0}
 Balance: {points+score}
 -------------------------------------''',
-                'color': 0x1400ff
+                'color': 0xc21a1a
             })
             await msg.edit(embed=embed)
             
-async def addemojis(msg:discord.Message):
-    await msg.add_reaction('1\N{variation selector-16}\N{combining enclosing keycap}')
-    await msg.add_reaction('2\N{variation selector-16}\N{combining enclosing keycap}')
-    await msg.add_reaction('3\N{variation selector-16}\N{combining enclosing keycap}')
-    await msg.add_reaction('4\N{variation selector-16}\N{combining enclosing keycap}')
-    await msg.add_reaction('5\N{variation selector-16}\N{combining enclosing keycap}')
-    await msg.add_reaction('6\N{variation selector-16}\N{combining enclosing keycap}')
-    await msg.add_reaction('7\N{variation selector-16}\N{combining enclosing keycap}')
-    await msg.add_reaction('8\N{variation selector-16}\N{combining enclosing keycap}')
-    await msg.add_reaction('9\N{variation selector-16}\N{combining enclosing keycap}')
-    return 
+
+
 
 async def game(self, ctx, msg:discord.Message, score:int, later):
 
@@ -176,7 +177,8 @@ async def game(self, ctx, msg:discord.Message, score:int, later):
     except asyncio.TimeoutError:
         await ctx.send('Sadly too late...', delete_after=2)
         await asyncio.sleep(2)
-        await game(self, ctx, msg, score, later)
+        s:int = await game(self, ctx, msg, score, later)
+        return s
     else:
         afterwards = datetime.now()
         timetaken = afterwards-before
@@ -186,12 +188,10 @@ async def game(self, ctx, msg:discord.Message, score:int, later):
         await asyncio.sleep(2)
         try:
             await msg.remove_reaction(numbers[ghost], ctx.author)
-        except Exception as e:
-            print(e)
-        s = await game(self, ctx, msg, score+points, later)
+        except:
+            pass
+        s:int = await game(self, ctx, msg, score+(points or 0), later)
         return s
-
-
 
 def embedgenerator(slots:list):
     embed = discord.Embed.from_dict({
@@ -205,6 +205,18 @@ def embedgenerator(slots:list):
         'color': 0xc21a1a
         })
     return embed
+
+sync def addemojis(msg:discord.Message):
+    await msg.add_reaction('1\N{variation selector-16}\N{combining enclosing keycap}')
+    await msg.add_reaction('2\N{variation selector-16}\N{combining enclosing keycap}')
+    await msg.add_reaction('3\N{variation selector-16}\N{combining enclosing keycap}')
+    await msg.add_reaction('4\N{variation selector-16}\N{combining enclosing keycap}')
+    await msg.add_reaction('5\N{variation selector-16}\N{combining enclosing keycap}')
+    await msg.add_reaction('6\N{variation selector-16}\N{combining enclosing keycap}')
+    await msg.add_reaction('7\N{variation selector-16}\N{combining enclosing keycap}')
+    await msg.add_reaction('8\N{variation selector-16}\N{combining enclosing keycap}')
+    await msg.add_reaction('9\N{variation selector-16}\N{combining enclosing keycap}')
+    return 
 
 
 Cog = economy

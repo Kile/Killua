@@ -41,9 +41,9 @@ class rps(commands.Cog):
     if resultsopp is None and member != ctx.me and points:
         return await ctx.send('The opponed needs to be registered to play with points (use `k!daily` once)')
 
-    if member != ctx.me:
+    if member != ctx.me and not resultsopp is None:
         p2 = resultsopp['points']
-    else:
+    elif member == ctx.me:
         p2 = False
 
     results = teams.find_one({'id': ctx.author.id})
