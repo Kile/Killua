@@ -206,7 +206,7 @@ def embedgenerator(slots:list):
         })
     return embed
 
-sync def addemojis(msg:discord.Message):
+async def addemojis(msg:discord.Message):
     await msg.add_reaction('1\N{variation selector-16}\N{combining enclosing keycap}')
     await msg.add_reaction('2\N{variation selector-16}\N{combining enclosing keycap}')
     await msg.add_reaction('3\N{variation selector-16}\N{combining enclosing keycap}')
