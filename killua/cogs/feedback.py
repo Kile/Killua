@@ -57,7 +57,7 @@ class feedback(commands.Cog):
 k!bug ban Expectation: when I provide no reason the bot says 'no reason' Reality: The bot says 'None' as the reason
         
 Reproduction: ban a member without providing a reason```''',
-            'color': 0xc21a1a
+            'color': 0x1400ff
         })
 
         await ctx.send(embed=embed)

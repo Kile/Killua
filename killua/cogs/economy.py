@@ -202,7 +202,7 @@ def embedgenerator(slots:list):
 ┊ {' ::: '.join(slots)}    ┊
 
 ╰ -------------------------------------╯''',
-        'color': 0xc21a1a
+        'color': 0x1400ff
         })
     return embed
 

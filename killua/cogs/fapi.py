@@ -36,6 +36,9 @@ class api(commands.Cog):
         if not image:
             image = str(ctx.author.avatar_url)
 
+        if not image:
+            image = str(ctx.author.avatar_url)
+
         session = aiohttp.ClientSession() 
         headers = {'Content-Type': 'application/json',
             'Authorization': f'Bearer {config["fapi"]}'} 
