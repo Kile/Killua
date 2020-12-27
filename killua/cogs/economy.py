@@ -147,7 +147,7 @@ class economy(commands.Cog):
 Points added to your account: {score or 0}
 Balance: {points+score}
 -------------------------------------''',
-                'color': 0x1400ff
+                'color': 0xc21a1a
             })
             await msg.edit(embed=embed)
             

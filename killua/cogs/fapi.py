@@ -17,6 +17,7 @@ class api(commands.Cog):
   def __init_(self, client):
     self.client = client
 
+
   @commands.command(aliases=['ej', 'emojimosaic'])
   @custom_cooldown(15)
   async def emojaic(self, ctx, image:typing.Union[discord.User, int, str]=None):
