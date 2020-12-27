@@ -17,44 +17,43 @@ class api(commands.Cog):
   def __init_(self, client):
     self.client = client
 
-    @commands.command(aliases=['ej', 'emojimosaic'])
-    @custom_cooldown(15)
-    async def emojaic(self, ctx, image:typing.Union[discord.User, int, str]=None):
-        if blcheck(ctx.author.id) is True:
-            return
-        #cEmoji mosaic an image!
-        #t Around 1 hour
-        #h Emoji mosaic an image; let emojis recreate an image you gave Killua! Takes in a mention, ID or image url
-        if isinstance(image, discord.User):
-            image = str(image.avatar_url)
-        if isinstance(image, int):
-            try:
-                user = await self.client.fetch_user(image)
-                image = str(user.avatar_url)
-            except:
-                return await ctx.send('Invalid ID')
-        if not image:
-            image = str(ctx.author.avatar_url)
 
-        if not image:
-            image = str(ctx.author.avatar_url)
-
-        session = aiohttp.ClientSession() 
-        headers = {'Content-Type': 'application/json',
-            'Authorization': f'Bearer {config["fapi"]}'} 
-        body = {
-            'images': [str(image)]
-        } 
-        
+  @commands.command(aliases=['ej', 'emojimosaic'])
+  @custom_cooldown(15)
+  async def emojaic(self, ctx, image:typing.Union[discord.User, int, str]=None):
+    if blcheck(ctx.author.id) is True:
+        return
+    #cEmoji mosaic an image!
+    #t Around 1 hour
+    #h Emoji mosaic an image; let emojis recreate an image you gave Killua! Takes in a mention, ID or image url
+    if isinstance(image, discord.User):
+        image = str(image.avatar_url)
+    if isinstance(image, int):
         try:
-            async with session.post('https://fapi.wrmsr.io/emojimosaic', headers=headers, json=body) as r: 
-                image_bytes = await r.read()
-                file = discord.File(io.BytesIO(image_bytes), filename="image.png")
-            await ctx.send(file=file)
-            await session.close()
-        except Exception as e:
-            await ctx.send('Invalid image url')
-            await session.close()
+            user = await self.client.fetch_user(image)
+            image = str(user.avatar_url)
+        except:
+            return await ctx.send('Invalid ID')
+
+    if not image:
+        image = str(ctx.author.avatar_url)
+
+    session = aiohttp.ClientSession() 
+    headers = {'Content-Type': 'application/json',
+        'Authorization': f'Bearer {config["fapi"]}'} 
+    body = {
+        'images': [str(image)]
+    } 
+        
+    try:
+        async with session.post('https://fapi.wrmsr.io/emojimosaic', headers=headers, json=body) as r: 
+            image_bytes = await r.read()
+            file = discord.File(io.BytesIO(image_bytes), filename="image.png")
+        await ctx.send(file=file)
+        await session.close()
+    except Exception as e:
+        await ctx.send('Invalid image url')
+        await session.close()
 
   @commands.command()
   @custom_cooldown(15)
