@@ -79,7 +79,7 @@ class moderation(commands.Cog):
             except discord.HTTPException as e:
                 if e.code == 10013:
                     return await ctx.send(f'No user with the user ID {member} found')
-                if: e.code == 10026:
+                if e.code == 10026:
                     return await ctx.send('The user is not currently banned')
 
         else:
@@ -175,7 +175,7 @@ class moderation(commands.Cog):
 
             else:
                 if timem.lower() == 'unlimited' or timem.lower() == 'standart' or timem.lower() == 'u' or timem.lower() == 's':
-                string = True
+                    string = True
                 else:
                     return await ctx.send('The `time`argument needs to be an integer between 1440 and null or `unlimited`')
 
