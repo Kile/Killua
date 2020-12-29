@@ -38,7 +38,7 @@ class help(commands.Cog):
 Command groups for {ctx.me.name}:
 :tools: `Moderation`
 :clown: `Fun`
-:trophy: `Economy/teams`
+:trophy: `Economy`
 <:killua_wink:769919176110112778> `Other`
             
 To see a groups commands, use```css\nhelp <groupname>```
@@ -150,8 +150,11 @@ What you'd expect from an avatar command, provide a mention or ID
 ```css\nbook <bookname>```
 Get infos about the book providet
 
-```\nemojaic <user/id/link>````
+```css\nemojaic <user/id/link>```
 Changes provided image into emojis (seriously try this one!)
+
+```css\nimage <title>```
+Gives you the best DuckDuckGo images for your title
 *heads or tails in plan*
             '''
         })
@@ -171,7 +174,10 @@ Challenges someone to a game of Rock Paper Scissors. If you specify an amount yo
 Shows you info about a specific user, some discord info and some info like how many points they have
 
 ```css\ngive <user> <points>```
-Give a fellow user some points'''
+Give a fellow user some points
+
+```css\nserver```
+Gives you infos about the current server'''
 
         })
         return embed

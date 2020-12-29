@@ -29,7 +29,10 @@ class api(commands.Cog):
         'args': { 'text': content, 'safetyLevel': 1}
     } 
 
-    async with session.post('https://fapi.wrmsr.io/duckduckgoimages', headers=headers, json=body) as r: 
+    async with session.post('https://fapi.wrmsr.io/duckduckgoimages', headers=headers, json=body) as r:
+        if r.status != 200:
+            await session.close()
+            return await ctx.send(f':x: Error: {r.status}') 
         urls = await r.json()
 
     embed = discord.Embed.from_dict({
@@ -69,15 +72,15 @@ class api(commands.Cog):
         'images': [str(image)]
     } 
         
-    try:
-        async with session.post('https://fapi.wrmsr.io/gay', headers=headers, json=body) as r: 
-            image_bytes = await r.read()
-            file = discord.File(io.BytesIO(image_bytes), filename="image.png")
-        await ctx.send(file=file)
-        await session.close()
-    except Exception as e:
-        await ctx.send('Invalid image url')
-        await session.close()
+    
+    async with session.post('https://fapi.wrmsr.io/gay', headers=headers, json=body) as r: 
+        if r.status != 200:
+            await session.close()
+            return await ctx.send(f':x: Error: {r.status}')
+        image_bytes = await r.read()
+        file = discord.File(io.BytesIO(image_bytes), filename="image.png")
+    await ctx.send(file=file)
+    await session.close()
 
   @commands.command(aliases=['fapi'])
   @custom_cooldown(15)
@@ -161,15 +164,15 @@ class api(commands.Cog):
         'images': [str(image)]
     } 
         
-    try:
-        async with session.post('https://fapi.wrmsr.io/emojimosaic', headers=headers, json=body) as r: 
-            image_bytes = await r.read()
-            file = discord.File(io.BytesIO(image_bytes), filename="image.png")
-        await ctx.send(file=file)
-        await session.close()
-    except Exception as e:
-        await ctx.send('Invalid image url')
-        await session.close()
+    
+    async with session.post('https://fapi.wrmsr.io/emojimosaic', headers=headers, json=body) as r:
+        if r.status != 200:
+            await session.close()
+            return await ctx.send(f':x: Error: {r.status}') 
+        image_bytes = await r.read()
+        file = discord.File(io.BytesIO(image_bytes), filename="image.png")
+    await ctx.send(file=file)
+    await session.close()
 
   @commands.command()
   @custom_cooldown(15)
@@ -187,13 +190,15 @@ class api(commands.Cog):
     #h Use this command to get the definition of a word from the urban dictionary, use "" around more than one word if you want to search for that
     
     async with session.post('https://fapi.wrmsr.io/urban', headers=headers, json=body) as r: 
+        if r.status != 200:
+            await session.close()
+            return await ctx.send(f':x: Error: {r.status}')
         response = await r.json()
 
     if response == []:
         await sesssion.close()
         return await ctx.send(':x: Not found')
 
-    
     desc = urbandesc(response)
     embed = discord.Embed.from_dict({
             'title': f'Results for **{content}**',
@@ -220,8 +225,10 @@ class api(commands.Cog):
         'args': { 'text': content }
       } 
     
-    
-    async with session.post('https://fapi.wrmsr.io/changemymind', headers=headers, json=body) as r: 
+    async with session.post('https://fapi.wrmsr.io/changemymind', headers=headers, json=body) as r:
+        if r.status != 200:
+            await session.close()
+            return await ctx.send(f':x: Error: {r.status}')
         image_bytes = await r.read()
         file = discord.File(io.BytesIO(image_bytes), filename="image.png")
     await ctx.send(file=file)
@@ -284,7 +291,10 @@ class api(commands.Cog):
         'compact': compact}
       } 
     
-    async with session.post('https://fapi.wrmsr.io/quote', headers=headers, json=body) as r: 
+    async with session.post('https://fapi.wrmsr.io/quote', headers=headers, json=body) as r:
+        if r.status != 200:
+            await session.close()
+            return await ctx.send(f':x: Error: {r.status}') 
         image_bytes = await r.read()
         file = discord.File(io.BytesIO(image_bytes), filename="absolutelyreal.png")
     await ctx.send(file=file)
