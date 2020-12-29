@@ -94,10 +94,10 @@ class api(commands.Cog):
     'kirby', 'lego', 'linus', 'logan', 'miranda', 'mistake', 'northkorea', 'oldguy', 'perfection', 
     'resize', 'russia', 'spain', 'stock', 'surpreme', 'thinking', 'trans', 'trump', 'uk', 'ussr', 
     'wheeze', 'yusuke', 'zuckerberg']
-    optionsformatted = '\n'.join(options)
+    optionsformatted = ', '.join(options)
     if not t and not image:
         try:
-            await ctx.author.send(f'Available types for `k!a <type> <image>`:\n{optionsformatted}')
+            await ctx.author.send(f'Available types for `k!a <type> <image>`:```\n{optionsformatted}```')
             await ctx.send('Send you a list of available types for `k!a` :3')
             return
         except:

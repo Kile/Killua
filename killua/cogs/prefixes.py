@@ -21,30 +21,30 @@ blacklist = generaldb['blacklist']
 
 class prefix(commands.Cog):
 
-    def __init__(self, client):
-        self.client = client
+  def __init__(self, client):
+    self.client = client
 
-    @commands.command(aliases = ['pref'])
-    async def prefix(self, ctx, prefix=None):
-      if blcheck(ctx.author.id) is True:
-        return
-        #r to the guild administrator
-        #t Around 2-4 hours
-        #c Custom prefixes!
-        #h Set your server prefix with this command
-      results = server.find({'id': ctx.guild.id})
-      for result in results:
-        pref = result['prefix']
-      if prefix:
-        if ctx.author.guild_permissions.administrator:
+  @commands.command(aliases = ['pref'])
+  async def prefix(self, ctx, prefix=None):
+    if blcheck(ctx.author.id) is True:
+      return
+      #r to the guild administrator
+      #t Around 2-4 hours
+      #c Custom prefixes!
+      #h Set your server prefix with this command
+    results = server.find({'id': ctx.guild.id})
+    for result in results:
+      pref = result['prefix']
+    if prefix:
+      if ctx.author.guild_permissions.administrator:
 
-          server.update_many({'id': ctx.guild.id},{'$set':{'prefix': str(prefix)}}, upsert=True)
-          await ctx.send(f'Changed server prefix to `{prefix}`')
+        server.update_many({'id': ctx.guild.id},{'$set':{'prefix': str(prefix)}}, upsert=True)
+        await ctx.send(f'Changed server prefix to `{prefix}`')
 
-        else: 
-          await ctx.send('Missing permissions')
-      else:
-        await ctx.send(f'The current server prefix is `{pref}`')
+      else: 
+        await ctx.send('Missing permissions')
+    else:
+      await ctx.send(f'The current server prefix is `{pref}`')
 
 Cog = prefix
 

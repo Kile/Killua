@@ -155,6 +155,9 @@ Changes provided image into emojis (seriously try this one!)
 
 ```css\nimage <title>```
 Gives you the best DuckDuckGo images for your title
+
+```\nf <type> <user/id/link>```
+To get a list with available types just use `k!f`
 *heads or tails in plan*
             '''
         })
