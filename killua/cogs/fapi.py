@@ -17,6 +17,7 @@ class api(commands.Cog):
   def __init_(self, client):
     self.client = client
 
+
   @commands.command(aliases=['image', 'i'])
   @custom_cooldown(15)
   async def img(self, ctx, *, content):
@@ -53,6 +54,7 @@ class api(commands.Cog):
   async def gay(self, ctx, image:typing.Union[discord.User, int, str]=None):
     if blcheck(ctx.author.id) is True:
         return
+
     if isinstance(image, discord.User):
         image = str(image.avatar_url)
     if isinstance(image, int):
@@ -71,8 +73,7 @@ class api(commands.Cog):
     body = {
         'images': [str(image)]
     } 
-        
-    
+
     async with session.post('https://fapi.wrmsr.io/gay', headers=headers, json=body) as r: 
         if r.status != 200:
             await session.close()
