@@ -10,7 +10,7 @@ class web_scraping(commands.Cog):
         self.client = client
 
     @commands.command(aliases=['b'])
-    @custom_cooldown(10)
+    @custom_cooldown(240)
     async def book(self, ctx, *,book):
         #checking if the user is blacklisted
         #h With this command you can search for books! Just say the book title and look through the results
@@ -79,15 +79,15 @@ async def pageturn(msg:discord.Message, page:int, book:str, self, ctx):
 def getBookCount(name):
     #This function gets the number of total book results by taking in the books name
     # get the web page (id only for this website)
-    page = BeautifulSoup(requests.get('https://www.bookshare.org/search?keyword=' + name).content, 'html.parser')
-    return len(page.find_all('span', class_="displayHidden titleInstanceIdHolder"))
+    page = BeautifulSoup(requests.get('https://www.goodreads.com/search?q=' + name).content, 'html.parser')
+    return len(page.find_all('div', class_="u-anchorTarget"))
 
 def getBook(name:str, nr:int):
     #This is the essential function getting infos about a book by taking the name and the number of the result list
     # get the id of the book (id only for this website)
-    page = BeautifulSoup(requests.get('https://www.bookshare.org/search?keyword=' + name).content, 'html.parser')
+    page = BeautifulSoup(requests.get('https://www.goodreads.com/search?q=' + name).content, 'html.parser')
     try:
-        bookNr = page.find_all('span', class_="displayHidden titleInstanceIdHolder")[nr].text
+        bookNr = page.find_all('div', class_="u-anchorTarget")[nr].attrs['id']
         #If there are no results this will raise an error, in that case Killua will say so
     except Exception as e: 
         print(e)
@@ -99,38 +99,42 @@ def getBook(name:str, nr:int):
 
     bookn = getBookCount(name)
     # get the book
-    book = BeautifulSoup(requests.get('https://www.bookshare.org/browse/book/' + bookNr).content, 'html.parser')
+    book = BeautifulSoup(requests.get('https://www.goodreads.com/book/show/' + bookNr).content, 'html.parser')
     # get the book values
     try:
-        isbn = " ".join((str)(book.find_all('dd', itemprop="isbn")[0].text).split())
+        rating = starRating = " ".join((str)(book.find('span', itemprop="ratingValue").text).split())
+    except: 
+        rating = "-"
+    try:
+        isbn = " ".join((str)(book.find_all('div', class_="infoBoxRowItem")[1].text).split())
     except:
         isbn = '-'
     try:
-        name = " ".join((str)(book.find_all('h1', class_='bookDetail')[0].text).split())
+        name = " ".join((str)(book.find('div', class_="infoBoxRowItem").text).split())
     except:
         name = '-'
     try:
-        author = " ".join((str)(book.find_all('span', class_='author')[0].text).split())
+        author = " ".join((str)(book.find('a', class_="authorName").find_all('span')[0].text).split())
     except:
         author = '-'
     try:
-        description = " ".join((str)(book.find_all('dd', itemprop='description')[0].text).split())
+        description = " ".join((str)(book.find('div', id="description").find(style="display:none").text).split())
+        if description.startswith('Alternate cover for this ISBN can be found here'):
+            description = description.replace('Alternate cover for this ISBN can be found here', '')
     except:
         description = '-'
     try:
-        language = " ".join((str)(book.find_all('span', itemprop="inLanguage")[0].text).split())
+        language = " ".join((str)(book.find('div', itemprop="inLanguage").text).split())
     except:
         language = '-'
     try:
-        pages = book.find_all('span', itemprop='numberOfPages')[0].text
+        pages = " ".join((str)(book.find('span', itemprop="numberOfPages").text).split())
     except:
         pages = '-'
     #If a certain thing isn't specified such as number of pages, it is now replaced with '-'
 
     try:
-        img = book.find_all('img', class_='cover-image-full')[0]
-        img_url = ((str)(img)).replace('<img class="cover-image-full" src="', '') # Hardcoded
-        img_url = img_url.replace('"/>', '')
+        img_url = " ".join((str)(book.find('div', class_="bookCoverPrimary").find('img').attrs['src']).split())
     except:
         img_url = 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png';      
 
@@ -146,10 +150,11 @@ def getBook(name:str, nr:int):
         'title': f'Book: {name}',
         'thumbnail':{
             'url': img_url},
-        'description': f'{nr+1}/{bookn}\n**Author:** {author}\n**Language:** {language}\n**Number of pages:** {pages}\n**Book description:**\n{description}',
+        'description': f'{nr+1}/{bookn}\n**Rating:** {rating}/5\n**Author:** {author}\n**Language:** {language}\n**Number of pages:** {pages}\n**Book description:**\n{description}',
         'footer': {'text': f'ISBN: {isbn}'},
         'color': 0x1400ff
     }) #returning the fresh crafted embed with all the information
+
 
     
 

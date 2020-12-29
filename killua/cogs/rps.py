@@ -35,8 +35,6 @@ class rps(commands.Cog):
     if member.id == ctx.author.id:
       return await ctx.send('Baka! You can\'t play against yourself')
     
-
-
     resultsopp = teams.find_one({'id': member.id})
     if resultsopp is None and member != ctx.me and points:
         return await ctx.send('The opponed needs to be registered to play with points (use `k!daily` once)')
@@ -52,12 +50,10 @@ class rps(commands.Cog):
 
     p1 = results['points']
  
-        
     if points:
         if points <= 0 or points > 100:
             return await ctx.send(f'You can only play using 1-100 points')
 
- 
         if p1 < points:
             return await ctx.send(f'You do not have enough points for that. Your current balance is `{p1}`')
         if not p2 is False and p2 < points:
@@ -83,6 +79,11 @@ class rps(commands.Cog):
         winlose = await rpsf(msg.content, c2)
         await evaluate(ctx, winlose, msg.content.lower(), c2, ctx.author, ctx.me, points)
     else:
+        if await dmcheck(ctx.author) is False:
+            return await ctx.send(f'You need to open your dm to Killua to play {ctx.author.mention}')
+        if await dmcheck(member) is False:
+            return await ctx.send(f'{member.name} needs to open their dms to Killua to play')
+
         await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Papaper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
         def check(m1):
             return m1.content.lower() in ["n", "y"] and m1.author.id == member.id
@@ -176,6 +177,16 @@ async def evaluate(ctx, winlose:int, choice1, choice2, player1:discord.User, pla
         else:
             return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention}')
        
+async def dmcheck(user:discord.User):
+    try:
+        await user.send('')
+    except Exception as e:
+        if isinstance(e, discord.Forbidden):
+            return False
+        if isinstance(e, discord.HTTPException):
+            return True
+        return True
+
 Cog = rps
 
 def setup(client):

@@ -37,6 +37,40 @@ class economy(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @commands.command(aliases=['server'])
+    @custom_cooldown(6)
+    async def guild(self, ctx):
+        if blcheck(ctx.author.id) is True:
+            return
+        points = 0
+        top = {
+            'user': '',
+            'points': 0
+        }
+        for member in ctx.guild.members:
+            user = teams.find_one({'id': member.id})
+            if user is None:
+                pass
+            else:
+                points = points + (user['points'] or 0)
+                if user['points'] > top['points']:
+                    top = {
+                        'user': member,
+                        'points': user['points']
+                    }
+
+        guild = server.find_one({'id': ctx.guild.id})
+        if not guild is None:
+            badges = '\n'.join(guild['badges'])
+
+        embed = discord.Embed.from_dict({
+            'title': f'Information about {ctx.guild.name}',
+            'description': f'{ctx.guild.id}\n\n**Owner**\n{ctx.guild.owner}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Combined points**\n{points}\n\n**Richest member**\n{top["user"]} with {top["points"]} points\n\n**Server created at**\n{(ctx.guild.created_at).strftime("%b %d %Y %H:%M:%S")}\n\n**Members**\n{ctx.guild.member_count}',
+            'thumbnail': {'url': str(ctx.guild.icon_url)},
+            'color': 0x1400ff
+        })
+        await ctx.send(embed=embed)
+
     @commands.command()
     @custom_cooldown(6)
     async def profile(self, ctx,user: typing.Union[discord.User, int]=None):
