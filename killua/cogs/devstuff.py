@@ -145,6 +145,7 @@ class devstuff(commands.Cog):
         channel = self.client.get_channel(757170264294424646)
         msg = await channel.send(embed=embed)
         await msg.publish()
+        await ctx.message.delete()
 
     @commands.command()
     async def blacklist(self, ctx, id:int, *,reason=None):
