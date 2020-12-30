@@ -65,7 +65,7 @@ class economy(commands.Cog):
 
         embed = discord.Embed.from_dict({
             'title': f'Information about {ctx.guild.name}',
-            'description': f'{ctx.guild.id}\n\n**Owner**\n{ctx.guild.owner}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Combined points**\n{points}\n\n**Richest member**\n{top["user"]} with {top["points"]} points\n\n**Server created at**\n{(ctx.guild.created_at).strftime("%b %d %Y %H:%M:%S")}\n\n**Members**\n{ctx.guild.member_count}',
+            'description': f'{ctx.guild.id}\n\n**Owner**\n{ctx.guild.owner}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Combined points**\n{points}\n\n**Richest member**\n{top["user"] or "-"} with {top["points"] or "-"} points\n\n**Server created at**\n{(ctx.guild.created_at).strftime("%b %d %Y %H:%M:%S")}\n\n**Members**\n{ctx.guild.member_count}',
             'thumbnail': {'url': str(ctx.guild.icon_url)},
             'color': 0x1400ff
         })

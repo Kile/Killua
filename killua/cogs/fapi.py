@@ -8,6 +8,7 @@ import json
 from json import loads
 from killua.functions import custom_cooldown, blcheck
 import typing
+import asyncio
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -99,14 +100,14 @@ class api(commands.Cog):
     if not t and not image:
         try:
             await ctx.author.send(f'Available types for `k!a <type> <image>`:```\n{optionsformatted}```')
-            await ctx.send('Send you a list of available types for `k!a` :3')
+            await ctx.send('Send you a list of available types for `k!f` :3')
             return
         except:
             await ctx.send('I was not able to dm you, please open your dms to me')
             return
 
     if not t.lower() in options:
-        return await ctx.send('No valid type! Use `k!a <type> <mention/id/link>`. For a list of available types use `k!a`')
+        return await ctx.send('No valid type! Use `k!f <type> <mention/id/link>`. For a list of available types use `k!a`')
 
     if isinstance(image, discord.User):
         image = str(image.avatar_url)
