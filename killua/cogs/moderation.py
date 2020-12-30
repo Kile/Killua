@@ -7,8 +7,8 @@ import typing
 class moderation(commands.Cog):
 
 
-  def __init__(self, client):
-    self.client = client
+    def __init__(self, client):
+        self.client = client
     
     @commands.command()
     async def ban(self, ctx, member: typing.Union[discord.Member, int], *,reason=None):

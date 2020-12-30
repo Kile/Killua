@@ -68,6 +68,8 @@ class events(commands.Cog):
       m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
 
       await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again, thank you for helping to improve killua :3')
+    else:
+      print(error)
 
         
   @commands.Cog.listener()
