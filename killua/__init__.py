@@ -107,11 +107,13 @@ async def team(ctx):
 
 
 def main():
+	intents = discord.Intents.all()
 	# Create the bot instance.
 	bot = commands.Bot(
 		command_prefix=get_prefix,
 		description="default prefix",
-		case_insensitive=True
+		case_insensitive=True,
+		intents=intents
 	)
 
 	# Setup commands.

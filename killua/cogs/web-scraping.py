@@ -110,7 +110,7 @@ def getBook(name:str, nr:int):
     except:
         isbn = '-'
     try:
-        name = " ".join((str)(book.find('div', class_="infoBoxRowItem").text).split())
+        name = " ".join((str)(book.find('div', class_="bookCoverPrimary").find('img').attrs['alt']).split())
     except:
         name = '-'
     try:
