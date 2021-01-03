@@ -41,12 +41,13 @@ class events(commands.Cog):
 
   @commands.Cog.listener()
   async def on_guild_join(self, guild):
+    #Changing the status
     await p(self)
     results = server.find({'id': guild.id})
     
     for result in results:
       ID = result
-    
+    #Inserting the guild in the databse if it doesn't exist
     try:
       prefix = ID['prefix']
     except UnboundLocalError:
@@ -64,6 +65,7 @@ class events(commands.Cog):
   
   @commands.Cog.listener()
   async def on_command_error(self, ctx, error):
+    #This handels the k!bug cooldown
     if isinstance(error, discord.ext.commands.CommandOnCooldown):
       m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
 
@@ -74,19 +76,30 @@ class events(commands.Cog):
         
   @commands.Cog.listener()
   async def on_connect(self):
+    #Changing Killua's status
     await p(self)
     
 
   @commands.Cog.listener()
   async def on_guild_remove(self, guild):
+    #Changing Killua's status
     await p(self)
     
     
-    
-    
+'''function p
+Input:
+self: taking in self because it is outside of a function
+
+Returns:
+Nothing
+
+Purpose:
+Changing Killuas presence freqently if he is adeed to a guild, removed or 12 hour pass
+'''    
 
 async def p(self):
   a = date.today()
+  #The day Killua was born!!
   b = date(2020,9,17)
   delta = a - b
   playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)

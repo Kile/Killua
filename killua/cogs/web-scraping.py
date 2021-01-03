@@ -27,7 +27,20 @@ class web_scraping(commands.Cog):
         #function making the user able to go to the next result with reactions
         await pageturn(msg, 0, book, self, ctx)
 
-        
+'''function pageturn
+Input:
+msg (discord.Message): The message that is to be edited
+page (int): The current page the user is on
+book (str): The books name
+self: it needs self because it is outside of a cog
+ctx: to get access to stuff like ctx.author or ctx.send
+
+Returns:
+Itself
+
+Purpose:
+Makes the user to be able to go through results
+''' 
 
 async def pageturn(msg:discord.Message, page:int, book:str, self, ctx):
     def check(reaction, user):
@@ -39,6 +52,7 @@ async def pageturn(msg:discord.Message, page:int, book:str, self, ctx):
     except asyncio.TimeoutError:
         await msg.remove_reaction('\U000025c0', ctx.me)
         await msg.remove_reaction('\U000025b6', ctx.me)
+        return
     else:
         if reaction.emoji == '\U000025b6':
             #forward emoji
@@ -57,7 +71,7 @@ async def pageturn(msg:discord.Message, page:int, book:str, self, ctx):
             except:
                 pass
             #It calls itself so that we have a loop which makes the user able to turn pages as much as they want
-            await pageturn(msg, page, book, self, ctx)
+            return await pageturn(msg, page, book, self, ctx)
         if reaction.emoji == '\U000025c0':
             if page+1 == 1:
                 #Going back to the last result if 'back' is pressed on the first result
@@ -74,13 +88,36 @@ async def pageturn(msg:discord.Message, page:int, book:str, self, ctx):
             #Editing the embed to the right book
             await msg.edit(embed=embed)
             #function calls itself for the user to be able to press another reaction
-            await pageturn(msg, page, book, self, ctx)
+            return await pageturn(msg, page, book, self, ctx)
+
+'''functions getBookCount
+Input:
+name: The name of the book
+
+Returns:
+number of results
+
+Purpose:
+To get the number of results
+'''
 
 def getBookCount(name):
     #This function gets the number of total book results by taking in the books name
     # get the web page (id only for this website)
     page = BeautifulSoup(requests.get('https://www.goodreads.com/search?q=' + name).content, 'html.parser')
     return len(page.find_all('div', class_="u-anchorTarget"))
+
+'''function getBook
+Input:
+name (str): name of the book
+nr (int): number of result
+
+Returns:
+embed: the embed with the informations about the book
+
+Purpose:
+Get result x of book with title y
+'''
 
 def getBook(name:str, nr:int):
     #This is the essential function getting infos about a book by taking the name and the number of the result list

@@ -94,6 +94,17 @@ class smallcommands(commands.Cog):
       except:
         return await ctx.send('Invalid user')
         
+'''function avatar
+Input:
+user: the user to get the avatar from
+
+Returns:
+embed: an embed with the users avatar
+
+Purpose: 
+"outsourcing" a bit of the avatar command
+'''
+      
 def avatar(user):
     #constructing the avatar embed
     embed = discord.Embed.from_dict({

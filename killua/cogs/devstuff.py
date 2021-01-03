@@ -36,12 +36,13 @@ server = db['guilds']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
+
 class devstuff(commands.Cog):
 
     def __init__(self, client):
         self.client = client
 
-
+    #Eval command, unecessary with the jsk extension but useful for databse stuff
     @commands.command()
     async def eval(self, ctx, *, c):
         if blcheck(ctx.author.id) is True:
@@ -58,15 +59,17 @@ class devstuff(commands.Cog):
     async def source(self, ctx, name):
         if blcheck(ctx.author.id) is True:
             return
-        #h Displays the source code to a command, once Killua is open source this will be unrestricted
-        if ctx.author.id == 606162661184372736 or ctx.author.id == 383790610727043085:
-            func = self.client.get_command(name).callback
-            code = inspect.getsource(func)
-            await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
+        #h Displays the source code to a command, if discord allows it :3
+        # Idk what that does tbh
+        func = self.client.get_command(name).callback
+        code = inspect.getsource(func)
+        await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
 
     @commands.command()
     async def codeinfo(self, ctx, content):
         #h Gives you some information to a specific command like how many lines, how much time I spend on it etc
+
+        # Using the K!source principle I can get infos about code with this
 	    try:
 		    func = ctx.bot.get_command(content).callback
 		    code = getsource(func)
@@ -118,16 +121,6 @@ class devstuff(commands.Cog):
 		    await ctx.send(f'Invalid command. Error: {e}')
 
     @commands.command()
-    async def resetdaily(self, ctx, user:discord.User):
-        if ctx.author.id != 606162661184372736:
-            return
-        try:
-            teams.update_many({'id': user.id},{'$set':{'cooldowndaily': datetime.today()}}, upsert=True)
-            await ctx.send(f'Success! `{user}` can their daily points again')
-        except Exception as e:
-            await ctx.send(e)
-
-    @commands.command()
     async def update(self, ctx, *, update):
         if blcheck(ctx.author.id) is True:
             return
@@ -142,6 +135,7 @@ class devstuff(commands.Cog):
                         'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar_url)},
                         'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
                     })
+        # #updates in my dev
         channel = self.client.get_channel(757170264294424646)
         msg = await channel.send(embed=embed)
         await msg.publish()
@@ -149,6 +143,7 @@ class devstuff(commands.Cog):
 
     @commands.command()
     async def blacklist(self, ctx, id:int, *,reason=None):
+        #h Blacklisting bad people like Hisoka
         if blcheck(ctx.author.id) is True:
             return
         if ctx.author.id != 606162661184372736:
@@ -158,12 +153,15 @@ class devstuff(commands.Cog):
         except Exception as e:
             return await ctx.send(e)
         today = date.today()
+        # Inserting the bad person into my databse
         blacklist.insert_one({'id': id, 'reason':reason or "No reason provided", 'date': today.strftime("%B %d, %Y")})
 
         await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
         
     @commands.command()
     async def whitelist(self, ctx, id:int):
+        # One of the only commands I don't check the blacklist on because I couldn't whitelist myself if
+        # I'd have blacklisted myself for testing
         if ctx.author.id != 606162661184372736:
             return
         try:
