@@ -45,7 +45,8 @@ To see a groups commands, use```css\nhelp <groupname>```
 For more info to a specific command, use
 ```css\nhelp command <commandname>```
 
-[Support server](https://discord.gg/be4nvwq7rZ)''',
+[Support server](https://discord.gg/be4nvwq7rZ)
+Website: http://killua.dev (a work in progress)''',
             'color': 0x1400ff,
             'thumbnail': {'url': str(ctx.me.avatar_url)}
             })
@@ -92,7 +93,16 @@ For more info to a specific command, use
         else:
             await ctx.send('Not a valid group, please make sure you know what groups are available')
 
+'''function commands
+Input:
+commandgroup: The group specified using the command
 
+Returns:
+embed: Embed with a list of the commands in that group
+
+Purpose:
+To get the right command without having a giant help command
+'''
 
 def commands(commandgroup):
     if commandgroup.lower() == 'command':

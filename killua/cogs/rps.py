@@ -123,7 +123,15 @@ class rps(commands.Cog):
             else:
                 await ctx.send(f'{member.name} does not want to play...')
 
+'''function rpsemote
+Input: 
+choice: the choice a user made
 
+Returns:
+the fitting emoji
+
+Purpose: Display the users choices as emojis
+'''
     
 def rpsemote(choice):
     if choice == 'paper':
@@ -133,6 +141,17 @@ def rpsemote(choice):
     if choice == 'scissors':
         return '✂️'
 
+'''function rpsf
+Input:
+choice1: The choice of the first player
+choice2: The choice of the second player
+
+Returns: 
+Either 1, 2 or 3; 1 stands for choice1 > choice2, 2 for choice1 = choice2 and 3 for choice1 < choice2
+
+Purpose:
+Evaluating who won
+'''
 
 async def rpsf(choice1, choice2):
 
@@ -154,6 +173,23 @@ async def rpsf(choice1, choice2):
         return 2
     if choice1.lower() == 'scissors' and choice2.lower() == 'rock':
         return 3
+
+'''function evaluate
+Input:
+ctx: to get author and ctx.me
+winlose (int): the result who won and lost
+choice1: Player one's choice
+choice2: Player two's choice
+player1 (discord.User): a discord.User object of player 1
+player2 (discord.User): a discord.User object of player 2
+points (int); amount of points the game is about
+
+Returns:
+Sending an embed
+
+Purpose:
+To evaluate the outcome, inform the players and handle the points
+'''
 
 async def evaluate(ctx, winlose:int, choice1, choice2, player1:discord.User, player2:discord.User, points:int=None):
     p1 = teams.find_one({'id': player1.id})
@@ -177,6 +213,18 @@ async def evaluate(ctx, winlose:int, choice1, choice2, player1:discord.User, pla
         else:
             return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention}')
        
+'''function dmcheck
+Input:
+user (discord.User): the user the check will be used on
+
+Returns:
+True or False
+
+Purpose:
+Checks if a users dms are open by sending them an empty message and either recieving an error for can't send
+an empty message or for not allowed; dms closed
+'''
+
 async def dmcheck(user:discord.User):
     try:
         await user.send('')

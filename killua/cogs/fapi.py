@@ -15,7 +15,7 @@ with open('config.json', 'r') as config_file:
 
 class api(commands.Cog):
   
-  def __init_(self, client):
+  def __init__(self, client):
     self.client = client
 
 
@@ -24,17 +24,22 @@ class api(commands.Cog):
   async def img(self, ctx, *, content):
     if blcheck(ctx.author.id) is True:
         return
-    session = aiohttp.ClientSession() 
+    #h Get DuckDuckGo Images with this command! Use n or b to go back and forth between sides
+    # Creating a session
+    session = aiohttp.ClientSession()
+    # Inserting api details
     headers = {'Content-Type': 'application/json',
         'Authorization': f'Bearer {config["fapi"]}'}
     body = {
         'args': { 'text': content, 'safetyLevel': 1}
     } 
-
+    # Making the api request
     async with session.post('https://fapi.wrmsr.io/duckduckgoimages', headers=headers, json=body) as r:
         if r.status != 200:
+            # r.status is 200 when everyting is fine, if that isn't the case it returns an error
             await session.close()
             return await ctx.send(f':x: Error: {r.status}') 
+        #Getting a list of the image results urls
         urls = await r.json()
 
     embed = discord.Embed.from_dict({
@@ -46,37 +51,42 @@ class api(commands.Cog):
     })
         
     msg = await ctx.send(embed=embed)
-    await imagepage(self, msg,ctx.author,1,urls,content)
+    # Making the user able to go through the images
+    await imagepage(self,msg,ctx.author,1,urls, content)
     await session.close()
 
 
   @commands.command()
   @custom_cooldown(15)
   async def gay(self, ctx, image:typing.Union[discord.User, int, str]=None):
+    #h Lays a pride flag over a user's pfp by mentioning them, their Id or over a url to an image you provide
     if blcheck(ctx.author.id) is True:
         return
-
+    # Looking if the argument is a user, then we just need the avatar url
     if isinstance(image, discord.User):
         image = str(image.avatar_url)
+    # If the argument is an integer, we try to fetch a user with that integer as ID and get their avatar url
     if isinstance(image, int):
         try:
             user = await self.client.fetch_user(image)
             image = str(user.avatar_url)
         except:
             return await ctx.send('Invalid ID')
-
+    # If no argument is provided we take the authors pfp
     if not image:
         image = str(ctx.author.avatar_url)
-
+    # Creating a session
     session = aiohttp.ClientSession() 
+    # Inserting api details
     headers = {'Content-Type': 'application/json',
         'Authorization': f'Bearer {config["fapi"]}'} 
     body = {
         'images': [str(image)]
     } 
-
+    # Making the api request
     async with session.post('https://fapi.wrmsr.io/gay', headers=headers, json=body) as r: 
         if r.status != 200:
+            # r.status is 200 when everyting is fine, if that isn't the case it returns an error
             await session.close()
             return await ctx.send(f':x: Error: {r.status}')
         image_bytes = await r.read()
@@ -84,11 +94,13 @@ class api(commands.Cog):
     await ctx.send(file=file)
     await session.close()
 
-  @commands.command(aliases=['fapi'])
+  @commands.command(aliases=['fapi', 'api'])
   @custom_cooldown(15)
   async def f(self, ctx, t:str=None, image:typing.Union[discord.User, int, str]=None):
+    #h Get any feature of the API Killua uses! Provide a type and then ID, mention or url to let the API do it's thing. For a list of available types, use k!f
     if blcheck(ctx.author.id) is True:
         return
+    # All the options the api I use provides that I consider SFW
     options = ['adidas', 'ajit', 'america', 'analasys', 'austin', 'autism', 
     'bandicam', 'bernie', 'blackify', 'blackpanther', 'bobross', 'coolguy', 'deepfry',
     'dork', 'excuse', 'eyes', 'gaben', 'gay', 'glitch', 'glow', 'god', 'goldstar', 'hawking', 
@@ -97,6 +109,7 @@ class api(commands.Cog):
     'resize', 'russia', 'spain', 'stock', 'surpreme', 'thinking', 'trans', 'trump', 'uk', 'ussr', 
     'wheeze', 'yusuke', 'zuckerberg']
     optionsformatted = ', '.join(options)
+    # Sending options if there are no further args
     if not t and not image:
         try:
             await ctx.author.send(f'Available types for `k!a <type> <image>`:```\n{optionsformatted}```')
@@ -105,23 +118,25 @@ class api(commands.Cog):
         except:
             await ctx.send('I was not able to dm you, please open your dms to me')
             return
-
+    # If the type is no available
     if not t.lower() in options:
         return await ctx.send('No valid type! Use `k!f <type> <mention/id/link>`. For a list of available types use `k!a`')
-
+    # Looking if the argument is a user, then we just need the avatar url
     if isinstance(image, discord.User):
         image = str(image.avatar_url)
+     # If the argument is an integer, we try to fetch a user with that integer as ID and get their avatar url
     if isinstance(image, int):
         try:
             user = await self.client.fetch_user(image)
             image = str(user.avatar_url)
         except:
             return await ctx.send('Invalid ID')
-
+    # If no argument is provided we take the authors pfp
     if not image:
         image = str(ctx.author.avatar_url)
-
+    # Creating a session
     session = aiohttp.ClientSession() 
+    # Inserting API details
     headers = {'Content-Type': 'application/json',
         'Authorization': f'Bearer {config["fapi"]}'} 
     body = {
@@ -301,6 +316,16 @@ class api(commands.Cog):
         file = discord.File(io.BytesIO(image_bytes), filename="absolutelyreal.png")
     await ctx.send(file=file)
 
+'''function urbandesc
+Input: 
+array: a list with results from the search term from the command
+
+Returns:
+embed: a discord embed with the first 2 urban dictionary results
+
+Function:
+"outsources" the making of the embed with the results
+'''
     
 def urbandesc(array):  
     desc = f'''**__{array[0]["header"]}__**
@@ -330,6 +355,22 @@ def avatar(user):
         'color': 0xc21a1a
     })
     return embed
+
+'''function imagepage
+Input:
+self: because the function is outside of a cog we need to pass it self
+msg (discord.Message): the message we send the first result with so we can edit it
+author (discord.Member): the author so we make sure only the author can turn pages
+page (int): The current page the user is on
+array (list): The list of the image urls so we only have to make one API request
+content (str): The search name so it can be displayed as a title
+
+Returns:
+The function itself
+
+Purpose:
+For the user to be able to look through results of their image search
+'''
 
 async def imagepage(self, msg:discord.Message, author:discord.Member, page:int, array:list, content:str):
     def check(m):

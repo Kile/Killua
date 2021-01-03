@@ -186,46 +186,77 @@ Balance: {points+score}
             await msg.edit(embed=embed)
             
 
+''' function game
+Input:
+self: because it is outside of a cog
+ctx: to be able to use ctx.send()
+msg (discord.Message): the message on which the game runs, used to edit it's content
+score (int): to keep track of the score so far
+later: to check if the game goes on for longer than 2 min
 
+Returns:
+s (int): resembeling the total game score
+
+Purpose:
+Calling itself until the game is over, making a user able to play and calculating their points
+'''
 
 async def game(self, ctx, msg:discord.Message, score:int, later):
-
+    # If the time is up it will return the final score
     if later < datetime.now():
         return score
     slots = ['o','o','o','o','o','o','o','o','o']
 
     await msg.edit(embed=embedgenerator(slots))
+    # Waits 5-20 seconds until a ghost spawns
     await asyncio.sleep(randint(5, 20))
+    # Decides where the ghost is going to spawn
     ghost = randint(1,9)
     slots[ghost-1] = '<:ghosty:768253382665699329>'
-
     before = datetime.now()
-
+    # Edits the ghost in 
     await msg.edit(embed=embedgenerator(slots))
 
     def check(reaction, user):
         return user == ctx.author and str(reaction.emoji) == numbers[ghost] and reaction.message.id == msg.id
 
     try:
+        # 5 seconds to catch the ghost
         reaction, user = await self.client.wait_for('reaction_add', timeout=5, check=check)
     except asyncio.TimeoutError:
+        # Gives you no points if you miss the ghost
         await ctx.send('Sadly too late...', delete_after=2)
         await asyncio.sleep(2)
         s:int = await game(self, ctx, msg, score, later)
         return s
     else:
+        # Calculates the points based on how fast you were
         afterwards = datetime.now()
         timetaken = afterwards-before
         points = int((5-timetaken.seconds)*15)
+        # Marks the ghost as hit
         slots[ghost-1] = ':x:'
         await msg.edit(embed=embedgenerator(slots))
         await asyncio.sleep(2)
         try:
+            # If permission, removes the authors reaction
             await msg.remove_reaction(numbers[ghost], ctx.author)
         except:
             pass
+        # Calls itself
         s:int = await game(self, ctx, msg, score+(points or 0), later)
         return s
+
+'''function embedgenerator
+input:
+slots (list): Gives the embedgenerator the list where the ghost is in one of the spots
+
+returns:
+embed: a discord embed
+
+Purpose:
+Making the game work with just a list with 9 items
+'''
 
 def embedgenerator(slots:list):
     embed = discord.Embed.from_dict({
@@ -239,6 +270,18 @@ def embedgenerator(slots:list):
         'color': 0x1400ff
         })
     return embed
+
+'''function addemojis
+Input:
+msg (discord.Message): the messages reactions should be added to
+
+Returns:
+Nothing
+
+Purpose:
+After my knowledge dpy doesn't have a add_reactions so I have to have 9 lines for 9 reactions,
+to make it less messy I made it into a function
+'''
 
 async def addemojis(msg:discord.Message):
     await msg.add_reaction('1\N{variation selector-16}\N{combining enclosing keycap}')
@@ -254,6 +297,17 @@ async def addemojis(msg:discord.Message):
 
 
 Cog = economy
+
+'''function getuser
+Input: 
+user (discord.User): the user to get info about and return it
+
+Returns:
+embed: An embed with the users information
+
+Purpose:
+To have a function handle getting infos about a user for less messy code
+'''
 
 def getuser(user: discord.User):
     av = user.avatar_url
