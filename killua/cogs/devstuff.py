@@ -137,7 +137,7 @@ class devstuff(commands.Cog):
                     })
         # #updates in my dev
         channel = self.client.get_channel(757170264294424646)
-        msg = await channel.send(embed=embed)
+        msg = await channel.send(content= '<@&795422783261114398>', embed=embed)
         await msg.publish()
         await ctx.message.delete()
 
