@@ -5,6 +5,7 @@ from discord.utils import find
 from discord.ext import commands, tasks
 import pymongo
 from pymongo import MongoClient
+import dbl
 import json
 from json import loads
 from killua.functions import custom_cooldown, blcheck
@@ -22,6 +23,8 @@ class events(commands.Cog):
   
   def __init__(self, client):
     self.client = client
+    self.token = config['dbl']
+    self.dblpy = dbl.DBLClient(self.client, self.token, autopost=True)
     self.status.start()
     
   @commands.Cog.listener()

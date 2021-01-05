@@ -178,7 +178,7 @@ class api(commands.Cog):
     headers = {'Content-Type': 'application/json',
         'Authorization': f'Bearer {config["fapi"]}'} 
     body = {
-        'images': [str(image)]
+        'images': [str(image)], 'args':{'text': 72}
     } 
         
     
