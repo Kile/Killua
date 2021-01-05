@@ -25,6 +25,7 @@ cooldowndic = {}
 
 def custom_cooldown(time:int):
     async def predicate(ctx):
+        global cooldowndic
         import pymongo
         from pymongo import MongoClient
         import json
@@ -42,22 +43,26 @@ def custom_cooldown(time:int):
         now = datetime.today()
         later = datetime.now()+timedelta(seconds=time)
         try:
-            cdwn = cooldowndic[ctx.author.id]
-        except KeyError:
-            cooldowndic[ctx.author.id] = later
-            return True
+            cdwn = cooldowndic[ctx.author.id][ctx.command.name]
+            print(cdwn)
+        except KeyError as e:
+            error = e.args[0]
+            if error == ctx.author.id:
+                cooldowndic = {ctx.author.id: {ctx.command.name: later}}
+                return True
+            if error == ctx.command.name:
+                cooldowndic[ctx.author.id][ctx.command.name] = later
+                return True
 
         cd = cdwn-now 
 
         if str(cdwn) < str(now):
-            cooldowndic[ctx.author.id] = later
+            cooldowndic[ctx.author.id][ctx.command.name] = later
             return True 
 
         else:
             user = t.find_one({'id': ctx.author.id})
             guild = g.find_one({'id': ctx.guild.id})
-
-
 
             if cd.seconds < time:
                 t = -1*(6-time-cd.seconds)
@@ -68,7 +73,7 @@ def custom_cooldown(time:int):
                         await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds', delete_after=5)
                         return False
                     else:
-                        cooldowndic[ctx.author.id] = later
+                        cooldowndic[ctx.author.id][ctx.command.name] = later
                         return True
 
                 if user is None:
@@ -79,10 +84,11 @@ def custom_cooldown(time:int):
                         await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds', delete_after=5)
                         return False
                     else:
-                        cooldowndic[ctx.author.id] = later
+                        cooldowndic[ctx.author.id][ctx.command.name] = later
                         return True
                 
                 await ctx.send(f':x: Command on cooldown! Try again after `{t}` seconds', delete_after=5)
                 return False
+            return True
       
     return commands.check(predicate)

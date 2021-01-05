@@ -23,7 +23,7 @@ class events(commands.Cog):
   
   def __init__(self, client):
     self.client = client
-    self.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijc1NjIwNjY0NjM5NjQ1Mjk3NSIsImJvdCI6dHJ1ZSwiaWF0IjoxNjA5Njc2NTA4fQ.zlAa_xAyxck-K_Am47l5hytJ2Nams3CxmXWLiyz1y3M' # set this to your DBL token
+    self.token = config['dbl']
     self.dblpy = dbl.DBLClient(self.client, self.token, autopost=True)
     self.status.start()
     
