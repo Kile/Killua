@@ -105,7 +105,7 @@ class api(commands.Cog):
     'bandicam', 'bernie', 'blackify', 'blackpanther', 'bobross', 'coolguy', 'deepfry',
     'dork', 'excuse', 'eyes', 'gaben', 'gay', 'glitch', 'glow', 'god', 'goldstar', 'hawking', 
     'hypercam', 'ifunny', 'isis', 'israel', 'jack' , 'jesus', 'keemstar', 'keemstar2', 'kekistan', 
-    'kirby', 'lego', 'linus', 'logan', 'miranda', 'mistake', 'northkorea', 'oldguy', 'perfection', 
+    'kirby', 'lego', 'linus', 'logan', 'miranda', 'northkorea', 'oldguy', 'perfection', 
     'resize', 'russia', 'spain', 'stock', 'surpreme', 'thinking', 'trans', 'trump', 'uk', 'ussr', 
     'wheeze', 'yusuke', 'zuckerberg']
     optionsformatted = ', '.join(options)
