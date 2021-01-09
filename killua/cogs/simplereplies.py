@@ -88,7 +88,7 @@ class simplereplies(commands.Cog):
   async def vote(self, ctx):
     if blcheck(ctx.author.id) is True:
         return
-    await ctx.send('Thanks for supporting Killua! Vote for him here: https://top.gg/bot/756206646396452975/vote')
+    await ctx.send('Thanks for supporting Killua! Vote for him here: https://top.gg/bot/756206646396452975/vote \nAnd here: https://discordbotlist.com/bots/killua/upvote')
 
     
 

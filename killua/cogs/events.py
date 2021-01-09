@@ -54,7 +54,7 @@ class events(commands.Cog):
     try:
       prefix = ID['prefix']
     except UnboundLocalError:
-      server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': ['early supporter'], 'prefix': 'k!'}}, upsert=True)
+      server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': [], 'prefix': 'k!'}}, upsert=True)
       prefix = 'k!'
       
     general = find(lambda x: x.name == 'general',  guild.text_channels)
@@ -87,6 +87,7 @@ class events(commands.Cog):
   async def on_guild_remove(self, guild):
     #Changing Killua's status
     await p(self)
+    server.delete_one({'id': guild.id})
     
     
 '''function p
