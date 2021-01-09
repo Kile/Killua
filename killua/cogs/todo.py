@@ -1006,7 +1006,7 @@ async def single_todo_info_embed_generator(self, ctx, todo_id:int, list_id):
         return await ctx.send('No todo list with the specified id found')
     td = todo_list['todos']
     if todo_list['status'] == 'private':
-        if not todo_list['owner'] == ctx.author.id and not ctx.author.id in todo_list['viewer']:
+        if not todo_list['owner'] == ctx.author.id and not ctx.author.id in todo_list['viewer'] and ctx.author.id not in todo_list['editor']:
             return await ctx.send('You don\'t have the permissiont to view this todo task')
     if todo_id == 0:
         return await ctx.send('You have no todo number 0 on your list..') 
