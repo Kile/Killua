@@ -15,7 +15,7 @@ server = db['guilds']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
-class commands(commands.Cog):
+class h(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -259,12 +259,12 @@ Takes every permission from the user specified, you need to be list owner to use
 ```css\nexit```
 Exits the todo list you are currently in
 
-**These are not all todo commands, they are only the most essential. Find all todo commands [here](https://killua.dev/todo_docs)''',
+**These are not all todo commands, they are only the most essential. Find all todo commands [here](https://killua.dev/todo-docs)**''',
             'color': 0x1400ff
         })
         return embed
 
-Cog = commands
+Cog = h
 
 def setup(client):
-    client.add_cog(commands(client))
+    client.add_cog(h(client))

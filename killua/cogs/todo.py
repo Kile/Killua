@@ -831,7 +831,7 @@ async def buy_space(self, ctx):
     user = teams.find_one({'id': ctx.author.id})
 
     if user['points'] < (todo_list['spots'] * 100):
-        return await ctx.send(f'You don\'t have enough points to buy more space for your todo list. You need {todo_list["spots"]*1000} points')
+        return await ctx.send(f'You don\'t have enough points to buy more space for your todo list. You need {todo_list["spots"]*100} points')
 
     if todo_list['spots'] >= 100:
         return await ctx.send('You can\'t buy more than 100 spots')
