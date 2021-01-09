@@ -94,7 +94,7 @@ Reproduction: ban a member without providing a reason```''',
     else:
         ctx.command.reset_cooldown(ctx)
         embed = discord.Embed.from_dict({
-            'title': f'Sedning feedback',
+            'title': f'Sending feedback',
             'description': f'''Since this bot is in its early stages, feedback of users is of highest importance
         
 You can submit 9 types of feedback:

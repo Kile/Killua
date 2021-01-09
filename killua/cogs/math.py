@@ -15,8 +15,6 @@ class math(commands.Cog):
     def __init__(self, client):
         self.client = client
        
-
-
     @commands.command()
     @custom_cooldown(6)
     async def calc(self, ctx, *,args):

@@ -15,7 +15,7 @@ server = db['guilds']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
-class help(commands.Cog):
+class commands(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -39,6 +39,7 @@ Command groups for {ctx.me.name}:
 :tools: `Moderation`
 :clown: `Fun`
 :trophy: `Economy`
+:scroll: `todo`
 <:killua_wink:769919176110112778> `Other`
             
 To see a groups commands, use```css\nhelp <groupname>```
@@ -46,13 +47,13 @@ For more info to a specific command, use
 ```css\nhelp command <commandname>```
 
 [Support server](https://discord.gg/be4nvwq7rZ)
-Website: http://killua.dev (a work in progress)''',
+Website: https://killua.dev (a work in progress)''',
             'color': 0x1400ff,
             'thumbnail': {'url': str(ctx.me.avatar_url)}
             })
         await ctx.send(embed=embed)
     elif group:
-        if group.lower() in ['moderation', 'fun', 'economy', 'other', 'command']:
+        if group.lower() in ['moderation', 'fun', 'economy', 'other', 'command', 'todo']:
             if command and group.lower() == 'command':
                 try:
                     func = self.client.get_command(command).callback
@@ -84,7 +85,7 @@ Website: http://killua.dev (a work in progress)''',
                     await ctx.send(embed=embed)                    
 
                 except Exception as e:
-                    await ctx.send(e)
+                    await ctx.send('Command not found')
             else:
                 embed = commands(group)
                 embed.color = 0x1400ff
@@ -221,7 +222,49 @@ Send feeback directly to me with this command. Abuse or spam will result in bein
         })
         return embed
 
-Cog = help
+    if commandgroup.lower() == 'todo':
+        embed = discord.Embed.from_dict({
+            'title': 'todo commands',
+            'description': '''**Every command on this list starts with `<prefix>todo`**
+```css\ncreate```
+Creates a todo list in an interactive setup
+
+```css\nlists```
+Shows all lists you have permission to view, edit or own
+
+```css\nshop```
+Gives you a list of items you can purchase for your todo list
+
+```css\nedit <list_id>```
+Brings you in edit mode for the list specified if you have permission, you will have to be in this mode if you want to change anything on your todo list
+
+```css\nadd <thing>```
+Let\'s you add a todo task to the list you are currently in
+
+```css\nremove <todo_number>```
+Removes a task from your todo list you are currently in
+
+```css\nmark <todo_number> <comment>```
+Mark a todo task with a comment like "in progress". If you have specified that todos should be deleted when they are marked as "done" then it will delete todos you mark as "done". To remove a comment, simply type `-rm` instead of the comment
+
+```css\ninvite <mention/user_id> <editor/viewer>```
+Invite someone to edit or view your todo list. Viewing permissions only need ot be granted when the list is marked as `private`
+
+```css\nview <id/custom_id>```
+Lets you see the todos on a list if permission
+
+```css\nkick <mention/user_id>```
+Takes every permission from the user specified, you need to be list owner to use this command
+
+```css\nexit```
+Exits the todo list you are currently in
+
+**These are not all todo commands, they are only the most essential. Find all todo commands [here](https://killua.dev/todo_docs)''',
+            'color': 0x1400ff
+        })
+        return embed
+
+Cog = commands
 
 def setup(client):
-    client.add_cog(help(client))
+    client.add_cog(commands(client))

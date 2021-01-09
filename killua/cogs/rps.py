@@ -83,6 +83,10 @@ class rps(commands.Cog):
             return await ctx.send(f'You need to open your dm to Killua to play {ctx.author.mention}')
         if await dmcheck(member) is False:
             return await ctx.send(f'{member.name} needs to open their dms to Killua to play')
+        if blcheck(member.id) is True:
+            return await ctx.send('You can\'t play against someone blacklisted')
+        if member.bot is True:
+            return await ctx.send('Beep-boop, if you wanna play against a bot, play against me!')
 
         await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Papaper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
         def check(m1):
