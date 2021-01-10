@@ -1,0 +1,154 @@
+import inspect
+import discord
+from discord.ext import commands
+import time
+from datetime import datetime, timedelta
+import random
+import typing
+from random import randint
+from killua.functions import custom_cooldown, blcheck
+
+
+answers = ['You are kidding, right?', 'I think you know that better than me', 'I am sorry to break it to you but... no', 'I don\'t think so', 'Yes, no more info needed', 'No! Why would you ask that?', 'Let\'s do it!', 'Did you ask your mom?', 'I seriously don\'t think that is a good idea', 'Could you repeat that?', 'Well... maybe', 'Anything is possible']
+topics = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?', 'What motivates you?', 'What is the best thing about school/work?', 'What\'s better, having high expectations or having low expectations?', 'What was the last movie you saw?', 'Have you read anything good recently?', 'What is your favorite day of the year?', 'What kind of music do you like to listen to?', 'What things are you passionate about?', 'What is your favorite childhood memory?', 'If you could acquire any skill, what would you choose?', 'What is the first thing that you think of in the morning?', 'What was the biggest life change you have gone through?', 'What is your favorite song of all time?', 'If you won $1 million playing the lottery, what would you do?', 'How would you know if you were in love?', 'If you could choose to have any useless super power, what would you pick?']
+huggif = [f'https://i.pinimg.com/originals/66/9b/67/669b67ae57452f7afbbe5252b6230f85.gif', f'https://i.pinimg.com/originals/70/83/0d/70830dfba718d62e7af95e74955867ac.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/756945463432839168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945308381872168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945151191941251/image0.gif', 'https://pbs.twimg.com/media/Dl4PPE4UUAAsb7c.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSJgTjRyQW3NzmDzlvskIS7GMjlFpyS7yt_SQ&usqp=CAU', 'https://static.zerochan.net/Hunter.x.Hunter.full.1426317.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQJjVWplBdqrasz8Fh-7nDkxRjnnNBqk0bZlQ&usqp=CAU', 'https://i.pinimg.com/originals/75/2e/0a/752e0a5f813400dfebe322fc8b0ad0ae.jpg', 'https://thumbs.gfycat.com/IllfatedComfortableAplomadofalcon-small.gif', 'https://steamuserimages-a.akamaihd.net/ugc/492403625757327002/9B089509DDCB6D9F8E11446C7F1BC29B9BA57384/', f'https://cdn.discordapp.com/attachments/756945125568938045/758235270524698634/image0.gif', f'https://cdn.discordapp.com/attachments/756945125568938045/758236571974762547/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758236721216749638/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237082484473856/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237352756903936/image0.png', 'https://cdn.discordapp.com/attachments/756945125568938045/758237832954249216/image0.jpg']
+
+
+class smallcommands(commands.Cog):
+
+    def __init__(self, client):
+        self.client = client
+        
+    @commands.command()
+    async def say(self, ctx, *, content):
+      if blcheck(ctx.author.id) is True:
+        return
+      #h Let's Killua say what is specified with this command. Possible abuse leads to this being restricted 
+      #r user ID: 606162661184372736
+      #t 5 minutes
+      if ctx.author.id == 606162661184372736:
+        await ctx.message.delete()
+        await ctx.send(content)
+        
+    @commands.command()
+    async def ping(self, ctx):
+      if blcheck(ctx.author.id) is True:
+        return
+      #c pong
+      #t 5 min
+      #h Standart of seeing if the bot is working
+    
+      start = time.time()
+      msg = await ctx.send('Pong!')
+      end = time.time()
+      await msg.edit(content = str('Pong in `' + str(1000 * (end - start))) + '` ms')
+      
+    @commands.command(name='topic')
+    async def topic(self, ctx):
+      if blcheck(ctx.author.id) is True:
+        return
+      #c constantly updating!
+      #h From a constatnly updating list of topics to talk about one is chosen here
+      await ctx.send(random.choice(topics))
+      
+    @commands.command()
+    async def hi(self, ctx):
+      if blcheck(ctx.author.id) is True:
+        return
+      #c The first command on Killua...
+      #t 5 min
+      #h This is just here because it was Killua's first command and I can't take that from him :3
+      await ctx.send("Hello " + str(ctx.author)) 
+
+    @commands.command(aliases=['8ball'])
+    @custom_cooldown(2)
+    async def ball(self, ctx, *, question):
+      if blcheck(ctx.author.id) is True:
+        return
+      #h Ask Killua anything and he will answer
+      #t 15 minutes
+      embed = discord.Embed.from_dict({
+        'title': f'8ball has spoken 🎱',
+          'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n```\n{random.choice(answers)}```',
+          'footer': {'icon_url': str(ctx.author.avatar_url), 'text': f'Asked by {ctx.author}'},
+          'color': 0x1400ff
+      })
+      await ctx.send(embed=embed)
+
+    @commands.command(aliases=['av', 'a'])
+    async def avatar(self, ctx, user: typing.Union[discord.User, int]=None):
+      if blcheck(ctx.author.id) is True:
+        return
+      if not user:
+        embed = avatar(ctx.author)
+        return await ctx.send(embed=embed)
+        #Showing the avatar of the author if no user is provided
+      if isinstance(user, discord.User):
+        embed = avatar(user)
+        return await ctx.send(embed=embed)
+        #If the user args is a mention the bot can just get everything from there
+      try:
+        newuser = await self.client.fetch_user(user)
+        embed = avatar(newuser)
+        return await ctx.send(embed=embed)
+        #If the args is an integer the bot will try to get a user with the integer as ID
+      except:
+        return await ctx.send('Invalid user')
+
+    @commands.command()
+    async def hug(self, ctx, *, content=None):
+	  #c Best hug command out there
+	  #t 1-3 hours
+      if ctx.message.mentions:
+        if ctx.author == ctx.message.mentions[0]:
+          return await ctx.send(f'Someone hug {ctx.author.name}!')
+
+        hugtext = [f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** as strong as they can', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** and makes sure to not let go', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** the longest hug they have ever seen', f'**{ctx.author.name}** cuddles **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** uses **{ctx.message.mentions[0].name}** as a teddybear', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** until all their worries are gone and 5 minutes longer',f'**{ctx.author.name}** clones themself and together they hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** jumps in **{ctx.message.mentions[0].name}**\'s arms', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** a bearhug', f'**{ctx.author.name}** finds a lamp with a Jinn and gets a wish. So they wish to hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** asks **{ctx.message.mentions[0].name}** for motivation and gets a hug']
+        embed = discord.Embed.from_dict({
+          'title': random.choice(hugtext),
+          'image':{
+            'url': random.choice(huggif)
+          },
+          'color': 0x1400ff
+          })
+        await ctx.send(embed=embed)
+      else:
+        await ctx.send('Invalid user.. Should- I hug you?')
+        def check(m):
+          return m.content.lower() == 'yes' and m.author == ctx.author
+
+        msg = await self.client.wait_for('message', check=check, timeout=60)
+        hugtextself = [f'**Killua** hugs **{ctx.author.name}** as strong as they can', f'**Killua** hugs **{ctx.author.name}** and makes sure to not let go', f'**Killua** gives **{ctx.author.name}** the longest hug they have ever seen', f'**Killua** cuddles **{ctx.author.name}**', f'**Killua** uses **{ctx.author.name}** as a teddybear', f'**Killua** hugs **{ctx.author.name}** until all their worries are gone and 5 minutes longer',f'**Killua** clones themself and together they hug **{ctx.author.name}**', f'**Killua** jumps in **{ctx.author.name}**\'s arms', f'**Killua** gives **{ctx.author.name}** a bearhug', f'**Killua** finds a lamp with a Jinn and gets a wish. So they wish to hug **{ctx.author.name}**', f'**Killua** asks **{ctx.author.name}** for motivation and gets a hug']
+        embed = discord.Embed.from_dict({
+          'title': random.choice(hugtextself),
+          'image':{
+            'url': random.choice(huggif)
+          },
+          'color': 0x1400ff
+          })
+        await ctx.send(embed=embed)
+        
+'''function avatar
+Input:
+user: the user to get the avatar from
+
+Returns:
+embed: an embed with the users avatar
+
+Purpose: 
+"outsourcing" a bit of the avatar command
+'''
+      
+def avatar(user):
+    #constructing the avatar embed
+    embed = discord.Embed.from_dict({
+        'title': f'Avatar of {user}',
+        'image': {'url': str(user.avatar_url)},
+        'color': 0x1400ff
+    })
+    return embed
+
+Cog = smallcommands
+
+def setup(client):
+    client.add_cog(smallcommands(client))
