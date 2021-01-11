@@ -64,7 +64,7 @@ class rps(commands.Cog):
         await ctx.author.send('You chose to play Rock Paper Scissors against me, what\'s your choice? **[Rock] [Paper] [Scissors]**')
 
         embed = discord.Embed.from_dict({
-            'title': f'{ctx.author.name} against Killua-dev: **Rock... Paper... Scissors!**',
+            'title': f'{ctx.author.name} against Killua: **Rock... Paper... Scissors!**',
             'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
             'color': 0x1400ff
         })
@@ -72,7 +72,7 @@ class rps(commands.Cog):
         await ctx.send(embed= embed)
     
         def check(m):
-            return m.content.lower() == 'scissors' or m.content.lower() == 'paper' or m.content.lower() == 'rock' and m.author == ctx.author
+            return (m.content.lower() == 'scissors' or m.content.lower() == 'paper' or m.content.lower() == 'rock') and m.author == ctx.author
                 
         msg = await self.client.wait_for('message', check=check, timeout=60) 
         c2 = random.choice(['paper', 'rock', 'scissors'])

@@ -16,6 +16,7 @@ with open('config.json', 'r') as config_file:
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
+teams = db['teams']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
@@ -88,6 +89,36 @@ class events(commands.Cog):
     #Changing Killua's status
     await p(self)
     server.delete_one({'id': guild.id})
+
+  @commands.Cog.listener()
+  async def on_member_update(self, before, after):
+    try:
+      if not before.guild.id == 715358111472418908:
+        return
+      except:
+        pass
+
+      s = list(premium.keys())
+
+      b = []
+      a = []
+
+      for role in before.roles:
+        b.append(role.id)
+      for role in after.roles:
+        a.append(role.id)
+
+      common_elements = set(s).intersection(b)
+      if common_elements:
+        for element in common_elements:
+          if element in s and not element in a:
+            await remove_premium(before, element)
+
+      common_elements = set(s).intersection(a)
+      if common_elements:
+        for element in common_elements:
+          if element in s and not element in b:
+            await add_premium(after, element)
     
     
 '''function p
@@ -110,6 +141,30 @@ async def p(self):
 
   await self.client.change_presence(status=discord.Status.online, activity=playing)
   
+async def remove_premium(member:discord.Member, s_id:int):
+  user = teams.find_one({'id': member.id})
+  badges = user['badges']
+  badges.remove('premium')
+  badges.remove(premium[s_id])
+  teams.update_one({'id': member.id}, {'$set': {'badges': badges}})
+  try:
+    await member.send('Your Killua premium subscription ran out! Your premium permissions have sadly been taken :c. I hope you enjoyed your time as Killua supporter. (If you see this message after this you left Killuas server please rejoin to get Premium permissions again as you need to be on the server for that)')
+  except:
+    pass
+  return
+
+async def add_premium(member:discord.Member, s_id:int):
+  user = teams.find_one({'id': member.id})
+  badges = user['badges']
+  if not "premium" in user["badges"]:
+    badges.append('premium')
+  badges.append(premium[s_id])
+  teams.update_one({'id': member.id}, {'$set': {'badges': badges}})
+  try:
+    await member.send('Thank you for beinga premium supporter! Check out your shiney badges with `k!profile` and have fun with your new perks!')
+  except:
+    pass
+  return
   
 Cog = events
 
