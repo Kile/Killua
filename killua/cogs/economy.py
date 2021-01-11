@@ -327,7 +327,7 @@ def getuser(user: discord.User):
             else:
                 f.append(flag[0])
     
-    flags = (' '.join(f)).replace('staff', '<:DiscordStaff:788508648245952522>').replace('partner', '<a:PartnerBadgeShining:788508883144015892>').replace('hhypesquad', '<a:HypesquadShiny:788508580101488640>').replace('bug_hunter', '<:BugHunter:788508715241963570>').replace('hypesquad_bravery', '<:BraveryLogo:788509874085691415>').replace('hypesquad_brilliance', '<:BrillianceLogo:788509874517442590>').replace('hypesquad_balance', '<:BalanceLogo:788509874245074989>').replace('early_supporter', '<:EarlySupporter:788509000005451776>').replace('team_user', 'Contact Kile#0606').replace('system', 'Contact Kile#0606').replace('bug_hunter_level_2', '<:BugHunterGold:788508764339830805>').replace('vb', '<:verifiedBot:788508495846047765>').replace('early_bot_developer', '<:EarlyBotDev:788508428779388940>')
+    flags = (' '.join(f)).replace('staff', '<:DiscordStaff:788508648245952522>').replace('partner', '<a:PartnerBadgeShining:788508883144015892>').replace('hhypesquad', '<a:HypesquadShiny:788508580101488640>').replace('bug_hunter', '<:BugHunter:788508715241963570>').replace('hypesquad_bravery', '<:BraveryLogo:788509874085691415>').replace('hypesquad_brilliance', '<:BrillianceLogo:788509874517442590>').replace('hypesquad_balance', '<:BalanceLogo:788509874245074989>').replace('early_supporter', '<:EarlySupporter:788509000005451776>').replace('team_user', 'Contact Kile#0606').replace('system', 'Contact Kile#0606').replace('bug_hunter_level_2', '<:BugHunterGold:788508764339830805>').replace('vb', '<:verifiedBot:788508495846047765>').replace('verified_bot_developer', '<:EarlyBotDev:788508428779388940>')
     
     if info is None:
         points = 0
@@ -336,7 +336,7 @@ def getuser(user: discord.User):
 
     else:
         points = info['points']
-        badges = ' '.join(info['badges'])
+        badges = ', '.join(info['badges']).replace('one_star_hunter', '<:badge_one_star_hunter:788935576836374548>').replace('two_star_hunter', '<:badge_double_star_hunter:788935576120066048>').replace('triple_star_hunter', '<:badge_triple_star_hunter:788935576925372417>')
         if str(datetime.now()) > str(info['cooldowndaily']):
             cooldown = 'Ready to claim!'
         else:
