@@ -161,7 +161,7 @@ async def add_premium(member:discord.Member, s_id:int):
   badges.append(premium[s_id])
   teams.update_one({'id': member.id}, {'$set': {'badges': badges}})
   try:
-    await member.send('Thank you for beinga premium supporter! Check out your shiney badges with `k!profile` and have fun with your new perks!')
+    await member.send('Thank you for becoming a premium supporter! Check out your shiney badges with `k!profile` and have fun with your new perks!')
   except:
     pass
   return
