@@ -12,6 +12,12 @@ from killua.functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
+premium = {
+    759891477269839926 : "one_star_hunter",
+    798279223344889957 : "two_star_hunter",
+    798279346389254174 : "triple_star_hunter",
+    769622564648648744 : "server_booster"
+}
 
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
