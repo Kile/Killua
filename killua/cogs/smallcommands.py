@@ -13,6 +13,8 @@ answers = ['You are kidding, right?', 'I think you know that better than me', 'I
 topics = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?', 'What motivates you?', 'What is the best thing about school/work?', 'What\'s better, having high expectations or having low expectations?', 'What was the last movie you saw?', 'Have you read anything good recently?', 'What is your favorite day of the year?', 'What kind of music do you like to listen to?', 'What things are you passionate about?', 'What is your favorite childhood memory?', 'If you could acquire any skill, what would you choose?', 'What is the first thing that you think of in the morning?', 'What was the biggest life change you have gone through?', 'What is your favorite song of all time?', 'If you won $1 million playing the lottery, what would you do?', 'How would you know if you were in love?', 'If you could choose to have any useless super power, what would you pick?']
 huggif = [f'https://i.pinimg.com/originals/66/9b/67/669b67ae57452f7afbbe5252b6230f85.gif', f'https://i.pinimg.com/originals/70/83/0d/70830dfba718d62e7af95e74955867ac.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/756945463432839168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945308381872168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945151191941251/image0.gif', 'https://pbs.twimg.com/media/Dl4PPE4UUAAsb7c.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSJgTjRyQW3NzmDzlvskIS7GMjlFpyS7yt_SQ&usqp=CAU', 'https://static.zerochan.net/Hunter.x.Hunter.full.1426317.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQJjVWplBdqrasz8Fh-7nDkxRjnnNBqk0bZlQ&usqp=CAU', 'https://i.pinimg.com/originals/75/2e/0a/752e0a5f813400dfebe322fc8b0ad0ae.jpg', 'https://thumbs.gfycat.com/IllfatedComfortableAplomadofalcon-small.gif', 'https://steamuserimages-a.akamaihd.net/ugc/492403625757327002/9B089509DDCB6D9F8E11446C7F1BC29B9BA57384/', f'https://cdn.discordapp.com/attachments/756945125568938045/758235270524698634/image0.gif', f'https://cdn.discordapp.com/attachments/756945125568938045/758236571974762547/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758236721216749638/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237082484473856/image0.jpg', 
 'https://cdn.discordapp.com/attachments/756945125568938045/758237352756903936/image0.png', 'https://cdn.discordapp.com/attachments/756945125568938045/758237832954249216/image0.jpg', 'https://i.pinimg.com/originals/22/66/3e/22663e7f60734f141c72ca659a3a90cc.jpg', 'https://i.pinimg.com/originals/c5/38/d5/c538d54e493b118683c48ccbd0020311.jpg', 'https://wallpapercave.com/wp/wp6522234.jpg', 'https://i.pinimg.com/originals/48/db/98/48db98dac9d67143c4244991cb84b4f1.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQjXQW8tVJfFmPz8qokH3u7maX6haz_6Uyx2w&usqp=CAU', 'https://i.pinimg.com/originals/f3/17/1b/f3171b2bb05b6c6ad90e6c094737d7e9.png', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrukypBFocf_oqpSSJmEpzx5sLjnpUJqMD4Q&usqp=CAU', 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/edb16fd5-2978-4a97-8568-7472c3205405/dbfi6uq-32adf5b9-e2d0-4892-8026-97012b9ae0d1.png/v1/fit/w_300,h_900,q_70,strp/happy_bday_killua_by_queijac_dbfi6uq-300w.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOiIsImlzcyI6InVybjphcHA6Iiwib2JqIjpbW3siaGVpZ2h0IjoiPD05MjkiLCJwYXRoIjoiXC9mXC9lZGIxNmZkNS0yOTc4LTRhOTctODU2OC03NDcyYzMyMDU0MDVcL2RiZmk2dXEtMzJhZGY1YjktZTJkMC00ODkyLTgwMjYtOTcwMTJiOWFlMGQxLnBuZyIsIndpZHRoIjoiPD05MDAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.ETgcZiDvdTQpDPQTQiMwW8ELS3xVXH_4nFYzEFpXJ8Y']
+hugtext = [f'**(a)** hugs **(u)** as strong as they can', f'**(a)** hugs **(u)** and makes sure to not let go', f'**(a)** gives **(u)** the longest hug they have ever seen', f'**(a)** cuddles **(u)**', f'**(a)** uses **(u)** as a teddybear', f'**(a)** hugs **(u)** until all their worries are gone and 5 minutes longer',f'**(a)** clones themself and together they hug **(u)**', f'**(a)** jumps in **(u)**\'s arms', f'**(a)** gives **(u)** a bearhug', f'**(a)** finds a lamp with a Jinn and gets a wish. So they wish to hug **(u)**', f'**(a)** asks **(u)** for motivation and gets a hug',
+'(a) looks at the floor, then up, then at the floor again and finnally hugs (u) with passion', '(a) looks deep into (u)\'s eyes and them gives them a hug', '(a) could do their homework but instead they decide to hug (u)']
 
 
 class smallcommands(commands.Cog):
@@ -97,37 +99,43 @@ class smallcommands(commands.Cog):
         return await ctx.send('Invalid user')
 
     @commands.command()
-    async def hug(self, ctx, *, content=None):
-	  #c Best hug command out there
-	  #t 1-3 hours
-      if ctx.message.mentions:
-        if ctx.author == ctx.message.mentions[0]:
-          return await ctx.send(f'Someone hug {ctx.author.name}!')
+    async def hug(self, ctx, members: commands.Greedy[discord.Member]=None):
+        if members:
+            if ctx.author == members[0]:
+                return await ctx.send(f'Someone hug {ctx.author.name}!')
 
-        hugtext = [f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** as strong as they can', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** and makes sure to not let go', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** the longest hug they have ever seen', f'**{ctx.author.name}** cuddles **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** uses **{ctx.message.mentions[0].name}** as a teddybear', f'**{ctx.author.name}** hugs **{ctx.message.mentions[0].name}** until all their worries are gone and 5 minutes longer',f'**{ctx.author.name}** clones themself and together they hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** jumps in **{ctx.message.mentions[0].name}**\'s arms', f'**{ctx.author.name}** gives **{ctx.message.mentions[0].name}** a bearhug', f'**{ctx.author.name}** finds a lamp with a Jinn and gets a wish. So they wish to hug **{ctx.message.mentions[0].name}**', f'**{ctx.author.name}** asks **{ctx.message.mentions[0].name}** for motivation and gets a hug']
-        embed = discord.Embed.from_dict({
-          'title': random.choice(hugtext),
-          'image':{
-            'url': random.choice(huggif)
-          },
-          'color': 0x1400ff
-          })
-        await ctx.send(embed=embed)
-      else:
-        await ctx.send('Invalid user.. Should- I hug you?')
-        def check(m):
-          return m.content.lower() == 'yes' and m.author == ctx.author
+            memberlist = ''
+            for member in list(dict.fromkeys(members)):
+                if list(dict.fromkeys(members))[-1] == member and len(list(dict.fromkeys(members))) != 1:
+                    memberlist = memberlist + f' and {member.name}'
+                else:
+                    if list(dict.fromkeys(members))[0] == member:
+                        memberlist = f'{member.name}'
+                    else:
+                        memberlist = memberlist + f', {member.name}'
 
-        msg = await self.client.wait_for('message', check=check, timeout=60)
-        hugtextself = [f'**Killua** hugs **{ctx.author.name}** as strong as they can', f'**Killua** hugs **{ctx.author.name}** and makes sure to not let go', f'**Killua** gives **{ctx.author.name}** the longest hug they have ever seen', f'**Killua** cuddles **{ctx.author.name}**', f'**Killua** uses **{ctx.author.name}** as a teddybear', f'**Killua** hugs **{ctx.author.name}** until all their worries are gone and 5 minutes longer',f'**Killua** clones themself and together they hug **{ctx.author.name}**', f'**Killua** jumps in **{ctx.author.name}**\'s arms', f'**Killua** gives **{ctx.author.name}** a bearhug', f'**Killua** finds a lamp with a Jinn and gets a wish. So they wish to hug **{ctx.author.name}**', f'**Killua** asks **{ctx.author.name}** for motivation and gets a hug']
-        embed = discord.Embed.from_dict({
-          'title': random.choice(hugtextself),
-          'image':{
-            'url': random.choice(huggif)
-          },
-          'color': 0x1400ff
-          })
-        await ctx.send(embed=embed)
+            embed = discord.Embed.from_dict({
+                'title': random.choice(hugtext).replace('(a)', ctx.author.name).replace('(u)', memberlist),
+                'image':{
+                    'url': random.choice(huggif)},
+
+                'color': 0xc21a1a
+                })
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send('You provided no one to hug.. Should- I hug you?')
+            def check(m):
+                return m.content.lower() == 'yes' and m.author == ctx.author
+
+            msg = await self.client.wait_for('message', check=check, timeout=60) 
+            embed = discord.Embed.from_dict({
+                'title': random.choice(hugtext).replace('(a)', 'Killua').replace('(u)',ctx.author.name),
+                'image':{
+                    'url': random.choice(huggif)
+                },
+                'color': 0xc21a1a
+                })
+            await ctx.send(embed=embed) 
         
 '''function avatar
 Input:
