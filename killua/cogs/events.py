@@ -101,13 +101,9 @@ class events(commands.Cog):
     try:
       if not before.guild.id == 715358111472418908:
         return
-<<<<<<< HEAD
-      except:
-        pass
-=======
     except:
       pass
->>>>>>> main
+
 
       s = list(premium.keys())
 
