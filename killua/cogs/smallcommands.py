@@ -119,7 +119,7 @@ class smallcommands(commands.Cog):
                 'image':{
                     'url': random.choice(huggif)},
 
-                'color': 0xc21a1a
+                'color': 0x1400ff
                 })
             await ctx.send(embed=embed)
         else:
@@ -133,7 +133,7 @@ class smallcommands(commands.Cog):
                 'image':{
                     'url': random.choice(huggif)
                 },
-                'color': 0xc21a1a
+                'color': 0x1400ff
                 })
             await ctx.send(embed=embed) 
         

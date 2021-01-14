@@ -12,6 +12,12 @@ from killua.functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
+premium = {
+    759891477269839926 : "one_star_hunter",
+    798279223344889957 : "two_star_hunter",
+    798279346389254174 : "triple_star_hunter",
+    769622564648648744 : "server_booster"
+}
 
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
@@ -95,13 +101,9 @@ class events(commands.Cog):
     try:
       if not before.guild.id == 715358111472418908:
         return
-<<<<<<< HEAD
-      except:
-        pass
-=======
     except:
       pass
->>>>>>> main
+
 
       s = list(premium.keys())
 
@@ -166,11 +168,9 @@ async def add_premium(member:discord.Member, s_id:int):
   badges.append(premium[s_id])
   teams.update_one({'id': member.id}, {'$set': {'badges': badges}})
   try:
-<<<<<<< HEAD
-    await member.send('Thank you for beinga premium supporter! Check out your shiney badges with `k!profile` and have fun with your new perks!')
-=======
+
     await member.send('Thank you for becoming a premium supporter! Check out your shiney badges with `k!profile` and have fun with your new perks!')
->>>>>>> main
+
   except:
     pass
   return
