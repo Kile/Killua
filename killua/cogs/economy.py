@@ -42,6 +42,7 @@ class economy(commands.Cog):
     async def guild(self, ctx):
         if blcheck(ctx.author.id) is True:
             return
+        return await ctx.send('Command currently under maintenance')
         points = 0
         top = {
             'user': '',
