@@ -23,7 +23,6 @@ from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
-from killua.cogs.events import p
 from killua.functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -185,6 +184,18 @@ class devstuff(commands.Cog):
         presence = status
         await p()
         await ctx.send(f'Succesfully changed Killua\'s status to `{status}`! (I hope people like it >-<)')
+
+async def p(self):
+      if presence:
+        playing = playing = discord.Activity(name=presence, type=discord.ActivityType.watching)
+        return await self.client.change_presence(status=discord.Status.online, activity=playing)
+      a = date.today()
+      #The day Killua was born!!
+      b = date(2020,9,17)
+      delta = a - b
+      playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
+
+      return await self.client.change_presence(status=discord.Status.online, activity=playing)
 
 Cog = devstuff
 
