@@ -47,11 +47,13 @@ top = db['teampoints']
 server = db['guilds']
 
 def get_prefix(bot, message):
-	y = server.find({'id': message.guild.id})
-	for x in y:
-		prefix = x['prefix']
-		return prefix
-	return 'k!'
+	y = server.find_one({'id': message.guild.id})
+	if y is None:
+		return 'k!'
+	try:
+		return y['prefix']
+	except KeyError:
+		return 'k!'
 
 @command()
 async def load(ctx, extension):

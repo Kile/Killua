@@ -30,7 +30,7 @@ class simplereplies(commands.Cog):
       return
     embed = discord.Embed(
         title = 'Info',
-        description = 'This is Killua, a bot designed to be a fun SFW bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua\'s status. This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n **Last time restarted:**\n '+ str(self.client.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
+        description = 'This is Killua, a bot designed to be a fun SFW bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua\'s status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n **Last time restarted:**\n '+ str(self.client.startup_datetime.strftime('%Y-%m-%d-%H:%M:%S')),
         color = 0x1400ff
     )
     await ctx.send(embed=embed) 

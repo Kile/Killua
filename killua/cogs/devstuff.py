@@ -23,6 +23,7 @@ from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
+from killua.cogs.events import p
 from killua.functions import custom_cooldown, blcheck
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -36,6 +37,7 @@ server = db['guilds']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
+presence = None
 
 class devstuff(commands.Cog):
 
@@ -172,6 +174,17 @@ class devstuff(commands.Cog):
         blacklist.delete_one({'id': id})
         await ctx.send(f'Successfully whitelisted `{user}`')
 
+    @commands.command()
+    async def presence(self, ctx, *, status):
+        if ctx.author.id != 606162661184372736:
+            return
+        if status == '-rm':
+            presence = None
+            return await p()
+
+        presence = status
+        await p()
+        await ctx.send(f'Succesfully changed Killua\'s status to `{status}`! (I hope people like it >-<)')
 
 Cog = devstuff
 

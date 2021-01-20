@@ -37,7 +37,7 @@ class rps(commands.Cog):
     
     resultsopp = teams.find_one({'id': member.id})
     if resultsopp is None and member != ctx.me and points:
-        return await ctx.send('The opponed needs to be registered to play with points (use `k!daily` once)')
+        return await ctx.send('The opponed needs to be registered to play with Jenny (use `k!daily` once)')
 
     if member != ctx.me and not resultsopp is None:
         p2 = resultsopp['points']
@@ -46,18 +46,18 @@ class rps(commands.Cog):
 
     results = teams.find_one({'id': ctx.author.id})
     if results is None and points:
-        return await ctx.send('You need to be registered to play with points (use `k!daily` once)')
+        return await ctx.send('You need to be registered to play with Jenny (use `k!daily` once)')
 
     p1 = results['points']
  
     if points:
         if points <= 0 or points > 100:
-            return await ctx.send(f'You can only play using 1-100 points')
+            return await ctx.send(f'You can only play using 1-100 Jenny')
 
         if p1 < points:
-            return await ctx.send(f'You do not have enough points for that. Your current balance is `{p1}`')
+            return await ctx.send(f'You do not have enough Jenny for that. Your current balance is `{p1}`')
         if not p2 is False and p2 < points:
-            return await ctx.send(f'Your opponent does not have enough points for that. Their current balance is `{p2}`')
+            return await ctx.send(f'Your opponent does not have enough Jenny for that. Their current balance is `{p2}`')
   
        
     if member == ctx.me:
@@ -145,7 +145,7 @@ def rpsemote(choice):
     if choice == 'scissors':
         return '✂️'
 
-'''function rpsf
+'''async function rpsf
 Input:
 choice1: The choice of the first player
 choice2: The choice of the second player
@@ -178,7 +178,7 @@ async def rpsf(choice1, choice2):
     if choice1.lower() == 'scissors' and choice2.lower() == 'rock':
         return 3
 
-'''function evaluate
+'''async function evaluate
 Input:
 ctx: to get author and ctx.me
 winlose (int): the result who won and lost
@@ -186,7 +186,7 @@ choice1: Player one's choice
 choice2: Player two's choice
 player1 (discord.User): a discord.User object of player 1
 player2 (discord.User): a discord.User object of player 2
-points (int); amount of points the game is about
+points (int); amount of Jenny the game is about
 
 Returns:
 Sending an embed
@@ -203,7 +203,7 @@ async def evaluate(ctx, winlose:int, choice1, choice2, player1:discord.User, pla
             teams.update_one({'id': player1.id}, {'$set':{'points': p1['points'] + points}})
             if player2 != ctx.me:
                 teams.update_one({'id': player2.id}, {'$set':{'points': p2['points'] - points}})
-            return await ctx.send(f'{rpsemote(choice1)} > {rpsemote(choice2)}: {player1.mention} won against {player2.mention} winning {points} points which adds to a total of {p1["points"]+ points}')
+            return await ctx.send(f'{rpsemote(choice1)} > {rpsemote(choice2)}: {player1.mention} won against {player2.mention} winning {points} Jenny which adds to a total of {p1["points"]+ points}')
         else:
             return await ctx.send(f'{rpsemote(choice1)} > {rpsemote(choice2)}: {player1.mention} won against {player2.mention}')
     if winlose == 2:
@@ -213,16 +213,16 @@ async def evaluate(ctx, winlose:int, choice1, choice2, player1:discord.User, pla
             teams.update_one({'id': player1.id}, {'$set':{'points': p1['points'] - points}})
             if player2 != ctx.me:
                 teams.update_one({'id': player2.id}, {'$set':{'points': p2['points'] + points}})
-            return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention} losing {points} points which leaves them a total of {p1["points"]- points}')
+            return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention} losing {points} Jenny which leaves them a total of {p1["points"]- points}')
         else:
             return await ctx.send(f'{rpsemote(choice1)} < {rpsemote(choice2)}: {player1.mention} lost against {player2.mention}')
        
-'''function dmcheck
+'''async function dmcheck
 Input:
 user (discord.User): the user the check will be used on
 
 Returns:
-True or False
+(boolean): if the user has their dms open or not
 
 Purpose:
 Checks if a users dms are open by sending them an empty message and either recieving an error for can't send

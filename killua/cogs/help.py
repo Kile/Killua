@@ -182,16 +182,19 @@ To get a list with available types just use `k!f`
 Gives you your daily points
 
 ```css\nrps <@user> <optional integer>```
-Challenges someone to a game of Rock Paper Scissors. If you specify an amount you play with points and the winner gets them all
+Challenges someone to a game of Rock Paper Scissors. If you specify an amount you play with Jenny and the winner gets them all
 
 ```css\nprofile <user_id/mention>```
-Shows you info about a specific user, some discord info and some info like how many points they have
+Shows you info about a specific user, some discord info and some info like how many Jenny they have
 
-```css\ngive <user> <points>```
-Give a fellow user some points
+```css\ngive <user> <Jenny>```
+Give a fellow user some Jenny
 
 ```css\nserver```
-Gives you infos about the current server'''
+Gives you infos about the current server (currently disabled)
+
+```css\nbal <optional_user>```
+Shows the balance of a user'''
 
         })
         return embed

@@ -112,7 +112,7 @@ class api(commands.Cog):
     # Sending options if there are no further args
     if not t and not image:
         try:
-            await ctx.author.send(f'Available types for `k!a <type> <image>`:```\n{optionsformatted}```')
+            await ctx.author.send(f'Available types for `k!f <type> <image>`:```\n{optionsformatted}```')
             await ctx.send('Send you a list of available types for `k!f` :3')
             return
         except:
@@ -356,7 +356,7 @@ def avatar(user):
     })
     return embed
 
-'''function imagepage
+'''async function imagepage
 Input:
 self: because the function is outside of a cog we need to pass it self
 msg (discord.Message): the message we send the first result with so we can edit it
