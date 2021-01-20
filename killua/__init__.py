@@ -47,7 +47,7 @@ top = db['teampoints']
 server = db['guilds']
 
 def get_prefix(bot, message):
-	y = server.find({'id': message.guild.id})
+	y = server.find_one({'id': message.guild.id})
 	if y is None:
 		return 'k!'
 	try:

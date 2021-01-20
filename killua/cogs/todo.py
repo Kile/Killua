@@ -31,12 +31,14 @@ class todo_system(commands.Cog):
 
     @commands.group()
     async def todo(self, ctx):
+        #h You most likely want info about another todo command. Use `k!help command todo <todo_command>` for that
         if blcheck(ctx.author.id) is True:
             return
 
     @custom_cooldown(20)
     @todo.command()
     async def create(self, ctx):
+        #h Let's you create your todo list in an interactive menu
         x = 0
         
         user_todo_lists = todo.find({'owner': ctx.author.id})
@@ -77,6 +79,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(5)
     @todo.command()
     async def view(self, ctx, todo_id=None):
+        #h Allows you to view what is on any todo list- provided you have the permissions
         if todo_id is None:
             try:
                 list_id = editing[ctx.author.id]
@@ -116,6 +119,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(5)
     @todo.command()
     async def info(self, ctx, todo_or_task_id=None, td:int=None):
+        #h This gives you info about either a todo task or list
             if td is None:
                 if todo_or_task_id is None:
                     try:
@@ -134,6 +138,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(5)
     @todo.command()
     async def edit(self, ctx, todo_id):
+        #h The command with which you can change stuff on your todo list
         if todo_id.isdigit():
             todo_id = int(todo_id)
             todo_list = todo.find_one({'_id': todo_id})
@@ -151,6 +156,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def name(self, ctx, new_name:str):
+        #h Rename your todo list with thsi command
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -164,6 +170,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def status(self, ctx, status):
+        #h Change the status of your todo list (public/private) with this command
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -176,6 +183,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def color(self, ctx, color):
+        #h Change your todo list's color with this command
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -199,6 +207,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def thumbnail(self, ctx, url):
+        #h Change your todo lists thumbnail with this command
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -226,6 +235,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def custom_id(self, ctx, custom_id):
+        #h Let's you change your todo lists custom id- provided you are premium supporter
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -246,6 +256,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def autodelete(self, ctx, on_or_off):
+        #h Let's you change if you mark a todo task as done if it should automatically delete it or not
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -269,6 +280,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(10)
     @todo.command()
     async def remove(self, ctx, todo_number:int):
+        #h Remove a todo with this command. YAY, GETTING THINGS DONE!!
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -288,6 +300,7 @@ class todo_system(commands.Cog):
     @custom_cooldown(5)
     @todo.command()
     async def mark(self, ctx, todo_number:int, *,marked_as:str):
+        #h Mark a todo with a comment like `done` or `too lazy`
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -330,13 +343,14 @@ class todo_system(commands.Cog):
     @custom_cooldown(10)
     @todo.command()
     async def buy(self, ctx, what):
+        #h Buy cool stuff for your todo list with this command!
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
             return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
         user = teams.find_one({'id': ctx.author.id})
         if user is None:
-            return await ctx.send('This is a feature you have to buy, to gain points claim `k!daily`')
+            return await ctx.send('This is a feature you have to buy, to gain Jenny claim `k!daily`')
         
         if not what.lower() in ['color', 'thumbnail', 'space', 'description']:
             return await ctx.send('You need to provide a valid thing you want to buy (color, thumbnail, space)')
@@ -353,17 +367,18 @@ class todo_system(commands.Cog):
     @custom_cooldown(2)
     @todo.command()
     async def shop(self, ctx):
+        #h Get some info about what cool stuff you can buy for your todo list with this command
         embed = discord.Embed.from_dict({
             'title': '**The todo shop**',
             'description': '''You can buy the following items with `k!todo buy <item>` while you are in the edit menu for the todo list you want to buy the item for
             
-**Cost**: 1000 points
+**Cost**: 1000 Jenny
 `color` change the color of the embed which displays your todo list!
 
-**Cost**: 1000 points
+**Cost**: 1000 Jenny
 `thumbnail` add a neat thumbnail to your todo list (small image on the top right)
 
-**Cost**: 1000 points
+**Cost**: 1000 Jenny
 `description` add a description to your todo list (recommended for public lists with custom id)
 
 **Cost**: number of current spots * 100
@@ -375,6 +390,7 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(4)
     @todo.command()
     async def add(self, ctx, *, td):
+        #h Add a todo to your list, *yay, more work*
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -397,6 +413,7 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(5)
     @todo.command()
     async def kick(self, ctx, user: typing.Union[discord.User, int]):
+        #h Kick someone with permissions from your todo list (this takes **every** permission)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -430,6 +447,7 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(4)
     @todo.command()
     async def exit(self, ctx):
+        #h Exit editing mode with this. I've never used it because it is pointless because my code is so good you realistically never need to be out of editing mode but it is here so use it 
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -441,6 +459,7 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(20)
     @todo.command()
     async def invite(self, ctx, user: typing.Union[discord.User, int], role):
+        #h Wanna let your friend add more todos for you? Invite them! You can also make people view your todo list when it is set on private
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -516,6 +535,7 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(5)
     @todo.command()
     async def assign(self, ctx, todo_number:int, user: typing.Union[discord.User, int], rm=None):
+        #h Assign someone a todo task with this to coordinate who does what
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -537,6 +557,7 @@ Buy 10 more spots for todos for your list''',
         try:
             if todo_number == 0:
                 raise 'Error!'
+                #Error!!!!
             t = todos[todo_number-1]
         except Exception as e:
             return await ctx.send(f'You don\'t have a number {todo_number} on your current todo list')
@@ -584,6 +605,7 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(20)
     @todo.command()
     async def delete(self, ctx, todo_id):
+        #h Use this command to delete your todo list. Make sure to say goodbye a last time
         if todo_id.isdigit():
             todo_id = int(todo_id)
             todo_list = todo.find_one({'_id': todo_id})
@@ -629,6 +651,18 @@ Buy 10 more spots for todos for your list''',
         })
         return await ctx.send(embed=embed)
 
+'''async function todo_name
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+
+Returns:
+title: title of the todo list
+
+Purpose: 
+outsourcing todo create in smaller functions
+'''
+
 async def todo_name(self, ctx):
     embed = discord.Embed.from_dict({
         'title': f'Creating of a todo list',
@@ -661,6 +695,18 @@ async def todo_name(self, ctx):
             return await todo_name(self, ctx)
         return title
 
+'''async function todo_status
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+
+Returns:
+status: if the todo list is public/private
+
+Purpose: 
+outsourcing todo create in smaller functions
+'''
+
 async def todo_status(self, ctx):
     embed = discord.Embed.from_dict({
         'title': f'Creating of a todo list',
@@ -687,6 +733,18 @@ async def todo_status(self, ctx):
             pass
         await step.delete()
         return status
+
+'''async function todo_done_delete
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+
+Returns:
+(boolean): If todos should be deleted when they are marketr as done
+
+Purpose: 
+outsourcing todo create in smaller functions
+'''
 
 async def todo_done_delete(self, ctx):
     embed = discord.Embed.from_dict({
@@ -716,6 +774,18 @@ async def todo_done_delete(self, ctx):
         elif confirmmsg.content.lower() == 'n':
             return False
 
+'''async function todo_custom_id
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+
+Returns:
+(boolean): if the todo list has been assigned to a custom status
+
+Purpose: 
+outsourcing todo create in smaller functions
+'''
+
 async def todo_custom_id(self, ctx, todo_id, title:str, status:str, done_delete:bool):
     embed = discord.Embed.from_dict({
         'title': f'Creating of a todo list',
@@ -744,12 +814,24 @@ async def todo_custom_id(self, ctx, todo_id, title:str, status:str, done_delete:
             await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{todo_id}` or your custom id `{confirmmsg.content}`')
             return True
 
+'''async function buy_color
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+
+Returns:
+(discord.Message)/itself: Either a confirm message or itself if something was invalid
+
+Purpose: 
+outsourcing todo buy in smaller functions
+'''
+
 async def buy_color(self, ctx):
     list_id = editing[ctx.author.id]
     todo_list = todo.find_one({'_id': list_id})
     user = teams.find_one({'id': ctx.author.id})
     if user['points'] < 1000:
-        return await ctx.send('You don\'t have enough points to buy a color for your todo list. You need 1000 points')
+        return await ctx.send('You don\'t have enough Jenny to buy a color for your todo list. You need 1000 Jenny')
     try:
         color = todo_list['color']
         return await ctx.send('You already have bought a color for this list! Update it with `k!todo color <color>`')
@@ -782,13 +864,25 @@ async def buy_color(self, ctx):
         todo.update_one({'_id': list_id},{'$set':{'color':int(c, 16)}})
         teams.update_one({'id': ctx.author.id}, {'$set':{'points': user['points']-1000}})
         return await ctx.send(f'Successfully bought the color {confirmmsg.content} for your list! You can change it with `k!todo color <url>`')
-    
+
+'''async function buy_thumbnail
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+
+Returns:
+(discord.Message)/itself: Either a confirm message or itself if something was invalid
+
+Purpose: 
+outsourcing todo buy in smaller functions
+'''
+
 async def buy_thumbnail(self, ctx):
     list_id = editing[ctx.author.id]
     todo_list = todo.find_one({'_id': list_id})
     user = teams.find_one({'id': ctx.author.id})
     if user['points'] < 1000:
-        return await ctx.send('You don\'t have enough points to buy a thumbnail for your todo list. You need 1000 points')
+        return await ctx.send('You don\'t have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny')
     try:
         thumbnail = todo_list['thumbnail']
         return await ctx.send('You already have bought a thumbnail for this list! Update it with `k!todo thumbnail <thumbnail_url>`')
@@ -825,13 +919,26 @@ async def buy_thumbnail(self, ctx):
             await ctx.send('You didn\'t provide a valid url with an image! Please make sure you do that')
             return await buy_thumbnail(self, ctx)
 
+'''async function buy_space
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+
+Returns:
+(discord.Message): Confirm message
+
+Purpose: 
+outsourcing todo buy in smaller functions
+'''
+
 async def buy_space(self, ctx):
+    # This is the best thing to buy from your Jenny
     list_id = editing[ctx.author.id]
     todo_list = todo.find_one({'_id': list_id})
     user = teams.find_one({'id': ctx.author.id})
 
     if user['points'] < (todo_list['spots'] * 100):
-        return await ctx.send(f'You don\'t have enough points to buy more space for your todo list. You need {todo_list["spots"]*100} points')
+        return await ctx.send(f'You don\'t have enough Jenny to buy more space for your todo list. You need {todo_list["spots"]*100} Jenny')
 
     if todo_list['spots'] >= 100:
         return await ctx.send('You can\'t buy more than 100 spots')
@@ -856,12 +963,25 @@ async def buy_space(self, ctx):
         todo.update_one({'_id': list_id}, {'$set':{'spots': todo_list['spots']+10 }})
         return await ctx.send('Congrats! You just bought 10 more todo spots for the current todo list!')
 
+'''async function buy_description
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+
+Returns:
+(discord.Message)/itself: Either a confirm message or itself if something was invalid
+
+Purpose: 
+outsourcing todo buy in smaller functions
+'''
+
 async def buy_description(self, ctx):
+    #Hi! You found a random comment! Now you have to vote for Killua :3 (Also thanks for checking out my code)
     list_id = editing[ctx.author.id]
     todo_list = todo.find_one({'_id': list_id})
     user = teams.find_one({'id': ctx.author.id})
     if user['points'] < 1000:
-        return await ctx.send('You don\'t have enough points to buy a thumbnail for your todo list. You need 1000 points')
+        return await ctx.send('You don\'t have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny')
     
     step = await ctx.send(f'What should the description of your todo list be? (max 200 characters)')
     def check(m):
@@ -883,7 +1003,20 @@ async def buy_description(self, ctx):
         teams.update_one({'id': ctx.author.id}, {'$set': {'points': user['points']-1000}})
         todo.update_one({'_id': list_id}, {'$set':{'description': confirmmsg.content}})
         return await ctx.send('Congrats! You bought a description for your current todo list')
-                
+
+'''async function todo_embed_generator
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+todo_id: the todo list's id
+
+Returns
+embed: An embed with todo tasks of a todo list
+
+Purpose: 
+outsourcing making of big embed
+'''
+
 async def todo_embed_generator(self, ctx, todo_id):
     if str(todo_id).isdigit():
         todo_id = int(todo_id)
@@ -929,6 +1062,19 @@ async def todo_embed_generator(self, ctx, todo_id):
     except KeyError:
         pass
     return embed
+
+'''async function todo_info_embed_generator
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+list_id (string): the todo list's id
+
+Returns:
+embed: An embed with infos about a todo list
+
+Purpose: 
+outsourcing big embed production 🛠
+'''
 
 async def todo_info_embed_generator(self, ctx, list_id:str):
     if str(list_id).isdigit():
@@ -995,6 +1141,20 @@ async def todo_info_embed_generator(self, ctx, list_id:str):
     if 'color' in todo_list:
         embed.color = todo_list['color']
     return await ctx.send(embed=embed)
+
+'''async function single_todo_info_embed_generator
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+todo_id (integer): the number of the todo task
+list_id: the id of the list the todo is from
+
+Returns:
+embed: An embed with infos about a todo task
+
+Purpose: 
+outsourcing big embed production 🛠
+'''
 
 async def single_todo_info_embed_generator(self, ctx, todo_id:int, list_id):
     if str(list_id).isdigit():
@@ -1065,6 +1225,24 @@ async def single_todo_info_embed_generator(self, ctx, todo_id:int, list_id):
     if 'color' in todo_list:
         embed.color = todo_list['color']
     return await ctx.send(embed=embed)
+
+
+'''async function todo_menu_embed_generator
+Input:
+self: inputting because function is outside of cog
+ctx: to have somthing to use .send() on
+todo_id: the todo list's id
+page (integer): the page the user is on
+msg: the current page's message
+
+Returns:
+itself/nothing: if it times out it returns nothing, else it allows you to go through the pages further
+
+Purpose: 
+outsourcing big embed production 🛠, also to not have a giant embed with todos on a list, so this is called
+when there are more than 10 todos on the list
+'''
+
 
 async def todo_menu_embed_generator(self, ctx, todo_id, page:int, msg=None):
     if str(todo_id).isdigit():
@@ -1152,7 +1330,18 @@ async def todo_menu_embed_generator(self, ctx, todo_id, page:int, msg=None):
                 pass
             return await todo_menu_embed_generator(self, ctx, todo_id, page-1, msg)  
 
-Cog = todo_system        
+Cog = todo_system     
+
+'''function generate_id
+Input:
+nothing
+
+Returns:
+(string): The fresh crafted todo id
+
+Purpose: 
+Creating a random id, checking if it exists and if it doesn't, return it, if it does, just make a new one!
+'''
 
 def generate_id():
     l = []

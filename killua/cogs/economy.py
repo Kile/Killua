@@ -66,7 +66,7 @@ class economy(commands.Cog):
 
         embed = discord.Embed.from_dict({
             'title': f'Information about {ctx.guild.name}',
-            'description': f'{ctx.guild.id}\n\n**Owner**\n{ctx.guild.owner}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Combined points**\n{points}\n\n**Richest member**\n{top["user"] or "-"} with {top["points"] or "-"} points\n\n**Server created at**\n{(ctx.guild.created_at).strftime("%b %d %Y %H:%M:%S")}\n\n**Members**\n{ctx.guild.member_count}',
+            'description': f'{ctx.guild.id}\n\n**Owner**\n{ctx.guild.owner}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Combined Jenny**\n{points}\n\n**Richest member**\n{top["user"] or "-"} with {top["points"] or "-"} points\n\n**Server created at**\n{(ctx.guild.created_at).strftime("%b %d %Y %H:%M:%S")}\n\n**Members**\n{ctx.guild.member_count}',
             'thumbnail': {'url': str(ctx.guild.icon_url)},
             'color': 0x1400ff
         })
@@ -94,6 +94,24 @@ class economy(commands.Cog):
                 except Exception as e:
                     await ctx.send(f'```diff\n-{e}\n```')
 
+    @commands.command(aliases=['bal', 'points', 'balance'])
+    async def jenny(self, ctx, user: typing.Union[discord.User, int]=None):
+        #h Gives you a users balance
+        if blcheck(ctx.author.id) is True:
+            return
+        if not user:
+            user = ctx.author
+        if isinstance(user, discord.User):
+            user_id = user.id
+        else:
+            user_id = user
+        real_user = teams.find_one({'id': user})
+
+        if real_user is None:
+            await return ctx.send('The user is not yet in the database')
+        return await ctx.send(f'{user}\'s balance is {real_user["points"]} Jenny')
+        
+
     @commands.command()
     async def daily(self, ctx):
 	    if blcheck(ctx.author.id) is True:
@@ -108,12 +126,12 @@ class economy(commands.Cog):
 
 	    if result is None:
 		    teams.insert_one({'id': ctx.author.id, 'points': daily, 'badges': [], 'cooldowndaily': later})
-		    await ctx.send(f'You claimed your {daily} daily points and hold now on to {daily}')   
+		    await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {daily}')   
 	    else:
 		    if str(result['cooldowndaily']) < str(now):
  
 			    teams.update_many({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': result['points'] + daily}}, upsert=True)
-			    await ctx.send(f'You claimed your {daily} daily points and hold now on to {int(result["points"]) + int(daily)}')
+			    await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(result["points"]) + int(daily)}')
 		    else:
 
 			    cd = result['cooldowndaily'] -datetime.now()
@@ -131,15 +149,15 @@ class economy(commands.Cog):
         if balance is None:
             return await ctx.send('You have not been registered in Killua\'s economy system. Do so with `k!daily`')
         if balance['points'] < amount:
-            return await ctx.send(f'Nice of you to try and send {user.name} some points, sadly you don\'t have enough points for that. Your current balance is `{balance}`')
+            return await ctx.send(f'Nice of you to try and send {user.name} some Jenny, sadly you don\'t have enough Jenny for that. Your current balance is `{balance}`')
 
         otherguy = teams.find_one({'id': user.id})
         if otherguy is None:
-            return ctx.send('The person you want to give points to is not yet registered. Tell them to do so with `k!daily`')
+            return ctx.send('The person you want to give Jenny to is not yet registered. Tell them to do so with `k!daily`')
 
         teams.update_one({'id': ctx.author.id},{'$set':{'points': balance['points'] - amount}}, upsert=True)
         teams.update_one({'id': user.id},{'$set':{'points': otherguy['points'] + amount}}, upsert=True)
-        await ctx.send(f'You gave {user} {amount} points! How very nice :3 Their new balance is `{otherguy["points"]+amount}`, yours `{balance["points"] - amount}`')
+        await ctx.send(f'You gave {user} {amount} Jenny! How very nice :3 Their new balance is `{otherguy["points"]+amount}`, yours `{balance["points"] - amount}`')
 
     @commands.command(aliases=['ghosthunter'])
     @custom_cooldown(240)
@@ -179,7 +197,7 @@ class economy(commands.Cog):
             embed = discord.Embed.from_dict({
                 'title': f'Results 🏆',
                 'description': f'''-------------------------------------
-Points added to your account: {score or 0}
+Jenny added to your account: {score or 0}
 Balance: {points+score}
 -------------------------------------''',
                 'color': 0xc21a1a
@@ -187,7 +205,7 @@ Balance: {points+score}
             await msg.edit(embed=embed)
             
 
-''' function game
+'''async function game
 Input:
 self: because it is outside of a cog
 ctx: to be able to use ctx.send()
@@ -272,7 +290,7 @@ def embedgenerator(slots:list):
         })
     return embed
 
-'''function addemojis
+'''async function addemojis
 Input:
 msg (discord.Message): the messages reactions should be added to
 
@@ -345,7 +363,7 @@ def getuser(user: discord.User):
             cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
     embed = discord.Embed.from_dict({
             'title': f'Information about {user}',
-            'description': f'{id}\n{flags}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Points**\n{points}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily`before"}',
+            'description': f'{id}\n{flags}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Jenny**\n{points}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily`before"}',
             'thumbnail': {'url': str(av)},
             'color': 0x1400ff
         })
