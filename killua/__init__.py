@@ -47,12 +47,15 @@ top = db['teampoints']
 server = db['guilds']
 
 def get_prefix(bot, message):
-	y = server.find_one({'id': message.guild.id})
-	if y is None:
-		return 'k!'
 	try:
-		return y['prefix']
-	except KeyError:
+		y = server.find_one({'id': message.guild.id})
+		if y is None:
+			return 'k!'
+		try:
+			return y['prefix']
+		except KeyError:
+			return 'k!'
+	except:
 		return 'k!'
 
 @command()

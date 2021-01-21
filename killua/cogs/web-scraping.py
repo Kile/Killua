@@ -3,6 +3,7 @@ from discord.ext import commands
 from killua.functions import custom_cooldown, blcheck
 import requests
 from bs4 import BeautifulSoup
+import asyncio
 
 class web_scraping(commands.Cog):
 

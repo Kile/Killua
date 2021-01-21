@@ -23,7 +23,8 @@ from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
-from killua.functions import custom_cooldown, blcheck
+import re
+from killua.functions import custom_cooldown, blcheck, p
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
@@ -35,6 +36,7 @@ top =db['teampoints']
 server = db['guilds']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
+pr = generaldb['presence']
 
 presence = None
 
@@ -67,7 +69,7 @@ class devstuff(commands.Cog):
         await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
 
     @commands.command()
-    async def codeinfo(self, ctx, content):
+    async def codeinfo(self, ctx, *,content):
         #h Gives you some information to a specific command like how many lines, how much time I spend on it etc
 
         # Using the K!source principle I can get infos about code with this
@@ -78,7 +80,6 @@ class devstuff(commands.Cog):
 		    time= ''
 		    restricted = ''
 		    comment = ''
-
 		    for item in linecount:
 			    firstt, middlet, lastt = item.partition("#t")
 			    firstr, middler, lastr = item.partition("#r")
@@ -95,15 +96,12 @@ class devstuff(commands.Cog):
 				    pass
 			    else:
 				    comment = lastc
-
 			    #c this very code
 			    #t 1-2 hours
 		    if restricted == '' or restricted is None or restricted == '")':
 			    realrestricted = ''
 		    else:
 			    realrestricted = f'**Restricted to:** {restricted}'
-
-
 
 		    embed= discord.Embed.from_dict({
 			    'title': f'Command **{content}**',
@@ -173,17 +171,29 @@ class devstuff(commands.Cog):
         blacklist.delete_one({'id': id})
         await ctx.send(f'Successfully whitelisted `{user}`')
 
-    @commands.command()
+    @commands.command(aliases=['st', 'pr', 'status'])
     async def presence(self, ctx, *, status):
         if ctx.author.id != 606162661184372736:
             return
         if status == '-rm':
-            presence = None
-            return await p()
+            pr.update_many({}, {'$set': {'text': None, 'activity': None, 'presence': None}})
+            await ctx.send('Done! reset Killua\'s presence')
+            return await p(self)
 
-        presence = status
-        await p()
-        await ctx.send(f'Succesfully changed Killua\'s status to `{status}`! (I hope people like it >-<)')
+        activity = re.search(r'as\(.*?\)ae', status)
+        if activity:
+            activity = activity[0].lower()[3:-3]
+            if not activity in ['playing', 'listening', 'watching']:
+                return await ctx.send('Invalid activity!')
+        presence = re.search(r'ps\(.*?\)pe', status)
+        if presence:
+            presence = presence[0].lower()[3:-3]
+            if not presence in ['dnd', 'idle', 'online']:
+                return await ctx.send('Invalid presence!')
+        text = re.search(r'ts\(.*?\)te', status)
+        pr.update_many({}, {'$set': {'text': text[0].lower()[3:-3], 'presence': presence, 'activity': activity}})
+        await p(self)
+        await ctx.send(f'Succesfully changed Killua\'s status to `{text[0].lower()[3:-3]}`! (I hope people like it >-<)')
 
 async def p(self):
       if presence:
