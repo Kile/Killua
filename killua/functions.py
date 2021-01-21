@@ -119,7 +119,8 @@ async def p(self):
     from pymongo import MongoClient
     import json
     from json import loads
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, date
+
 
     with open('config.json', 'r') as config_file:
 	    config = json.loads(config_file.read())
@@ -140,6 +141,7 @@ async def p(self):
             s = discord.Activity(name=status['text'], type=discord.ActivityType.listening)
         if status['activity'] == 'competing':
             s = discord.Activity(name=status['text'], type=discord.ActivityType.competing)
+
             
         if not status['presence']:
             status['presence'] = 'online'
@@ -153,5 +155,5 @@ async def p(self):
     #The day Killua was born!!
     b = date(2020,9,17)
     delta = a - b
-    playing = discord.Activity(name=f'over {len(bot.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
+    playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
     return await self.client.change_presence(status=discord.Status.online, activity=playing)

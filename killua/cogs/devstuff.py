@@ -183,6 +183,7 @@ class devstuff(commands.Cog):
         if activity:
             activity = activity[0].lower()[3:-3]
             if not activity in ['playing', 'listening', 'watching', 'competing']:
+
                 return await ctx.send('Invalid activity!')
         presence = re.search(r'ps\(.*?\)pe', status)
         if presence:
@@ -193,6 +194,7 @@ class devstuff(commands.Cog):
         pr.update_many({}, {'$set': {'text': text[0][3:-3], 'presence': presence, 'activity': activity}})
         await p(self)
         await ctx.send(f'Succesfully changed Killua\'s status to `{text[0][3:-3]}`! (I hope people like it >-<)')
+
 
 
 Cog = devstuff
