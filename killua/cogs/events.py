@@ -143,7 +143,7 @@ Changing Killuas presence freqently if he is adeed to a guild, removed or 12 hou
 async def p(self):
   if presence:
     playing = playing = discord.Activity(name=presence, type=discord.ActivityType.watching)
-    return await self.client..change_presence(status=discord.Status.online, activity=playing)
+    return await self.client.change_presence(status=discord.Status.online, activity=playing)
   a = date.today()
   #The day Killua was born!!
   b = date(2020,9,17)

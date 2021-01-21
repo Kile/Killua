@@ -108,7 +108,7 @@ class economy(commands.Cog):
         real_user = teams.find_one({'id': user})
 
         if real_user is None:
-            await return ctx.send('The user is not yet in the database')
+            return await  ctx.send('The user is not yet in the database')
         return await ctx.send(f'{user}\'s balance is {real_user["points"]} Jenny')
         
 
