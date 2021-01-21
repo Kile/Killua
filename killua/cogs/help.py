@@ -143,7 +143,9 @@ Sends the *Change My Mind* meme with the text you defined
 ```css\nhug <user>```
 We all need  more hugs in our life, this hugs the user specified
 
-```css\npat <user>````
+
+```css\npat <user>```
+
 Pats a user, pretty similar to `hug`
 
 ```css\ntopic```

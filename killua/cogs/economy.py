@@ -136,7 +136,7 @@ class economy(commands.Cog):
 
 			    cd = result['cooldowndaily'] -datetime.now()
 			    cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
-			    await ctx.send(f'You can claim your points the next time in {cooldown}')
+			    await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
 
     @commands.command()
     async def give(self, ctx, user:discord.User, amount:int=None):

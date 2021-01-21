@@ -38,7 +38,6 @@ generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 pr = generaldb['presence']
 
-presence = None
 
 class devstuff(commands.Cog):
 
@@ -183,7 +182,8 @@ class devstuff(commands.Cog):
         activity = re.search(r'as\(.*?\)ae', status)
         if activity:
             activity = activity[0].lower()[3:-3]
-            if not activity in ['playing', 'listening', 'watching']:
+            if not activity in ['playing', 'listening', 'watching', 'competing']:
+
                 return await ctx.send('Invalid activity!')
         presence = re.search(r'ps\(.*?\)pe', status)
         if presence:
@@ -191,21 +191,11 @@ class devstuff(commands.Cog):
             if not presence in ['dnd', 'idle', 'online']:
                 return await ctx.send('Invalid presence!')
         text = re.search(r'ts\(.*?\)te', status)
-        pr.update_many({}, {'$set': {'text': text[0].lower()[3:-3], 'presence': presence, 'activity': activity}})
+        pr.update_many({}, {'$set': {'text': text[0][3:-3], 'presence': presence, 'activity': activity}})
         await p(self)
-        await ctx.send(f'Succesfully changed Killua\'s status to `{text[0].lower()[3:-3]}`! (I hope people like it >-<)')
+        await ctx.send(f'Succesfully changed Killua\'s status to `{text[0][3:-3]}`! (I hope people like it >-<)')
 
-async def p(self):
-      if presence:
-        playing = playing = discord.Activity(name=presence, type=discord.ActivityType.watching)
-        return await self.client.change_presence(status=discord.Status.online, activity=playing)
-      a = date.today()
-      #The day Killua was born!!
-      b = date(2020,9,17)
-      delta = a - b
-      playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
 
-      return await self.client.change_presence(status=discord.Status.online, activity=playing)
 
 Cog = devstuff
 
