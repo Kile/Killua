@@ -138,6 +138,8 @@ async def p(self):
             s = discord.Activity(name=status['text'], type=discord.ActivityType.watching)
         if status['activity'] == 'listening':
             s = discord.Activity(name=status['text'], type=discord.ActivityType.listening)
+        if status['activity'] == 'competing':
+            s = discord.Activity(name=status['text'], type=discord.ActivityType.competing)
             
         if not status['presence']:
             status['presence'] = 'online'

@@ -177,8 +177,8 @@ def getBook(page, name:str, nr:int):
     except:
         img_url = 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png';      
 
-    if len(description) > 1700:
-        description = description[:1700]+ '...'
+    if len(description) > 1000:
+        description = description[:1000]+ '...'
     #Making sure embed limit isn't exceeded
     
     if len(name) > 256:
