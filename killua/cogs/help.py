@@ -21,7 +21,7 @@ class h(commands.Cog):
     self.client = client
     
   @commands.command()
-  async def help(self, ctx, group=None, command=None):
+  async def help(self, ctx, group=None, *,command=None):
     if blcheck(ctx.author.id) is True:
       return
   #h This command is the one hopefully letting you know what Killua can do and what his features are, I hope you like how it looks!
@@ -140,8 +140,11 @@ Send a screenshot of a user saying what you defined. Use `-c`ast the start of `t
 ```css\ncmm <text>```
 Sends the *Change My Mind* meme with the text you defined
 
-```css\nhug <@user>```
+```css\nhug <user>```
 We all need  more hugs in our life, this hugs the user specified
+
+```css\npat <user>````
+Pats a user, pretty similar to `hug`
 
 ```css\ntopic```
 You suck at small talk? Get a topic with this command!

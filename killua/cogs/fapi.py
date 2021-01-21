@@ -193,7 +193,7 @@ class api(commands.Cog):
 
   @commands.command()
   @custom_cooldown(15)
-  async def urban(self, ctx, content):
+  async def urban(self, ctx, *,content):
     if blcheck(ctx.author.id) is True:
       return
     session = aiohttp.ClientSession() 

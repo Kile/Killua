@@ -143,7 +143,7 @@ class smallcommands(commands.Cog):
     async def pat(self, ctx, members: commands.Greedy[discord.Member]=None):
         if members:
             if ctx.author == members[0]:
-                return await ctx.send(f'Someone hug {ctx.author.name}!')
+                return await ctx.send(f'Someone pat {ctx.author.name}!')
 
             memberlist = ''
             for member in list(dict.fromkeys(members)):

@@ -94,22 +94,22 @@ class economy(commands.Cog):
                 except Exception as e:
                     await ctx.send(f'```diff\n-{e}\n```')
 
-    @commands.command(aliases=['bal', 'points', 'balance'])
+    @commands.command(aliases=['bal', 'balance', 'points'])
     async def jenny(self, ctx, user: typing.Union[discord.User, int]=None):
         #h Gives you a users balance
         if blcheck(ctx.author.id) is True:
             return
         if not user:
-            user = ctx.author
+            user_id = ctx.author.id
         if isinstance(user, discord.User):
             user_id = user.id
-        else:
+        elif user:
             user_id = user
-        real_user = teams.find_one({'id': user})
+        real_user = teams.find_one({'id': user_id})
 
         if real_user is None:
-            return await  ctx.send('The user is not yet in the database')
-        return await ctx.send(f'{user}\'s balance is {real_user["points"]} Jenny')
+            return await ctx.send('The user is not yet in the database')
+        return await ctx.send(f'{user or ctx.author}\'s balance is {real_user["points"]} Jenny')
         
 
     @commands.command()
