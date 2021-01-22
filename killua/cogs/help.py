@@ -47,6 +47,7 @@ For more info to a specific command, use
 ```css\nhelp command <commandname>```
 
 [Support server](https://discord.gg/be4nvwq7rZ)
+[Source code](https://github.com/Kile/Killua)
 Website: https://killua.dev (a work in progress)''',
             'color': 0x1400ff,
             'thumbnail': {'url': str(ctx.me.avatar_url)}
