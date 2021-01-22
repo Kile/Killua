@@ -70,7 +70,7 @@ You will need the following mongodb structure where `#` resembles a database and
   
   -todo
   
-Note: you will have to create a mongodb accoun [here](https://www.mongodb.com)
+Note: you will have to create a mongodb account [here](https://www.mongodb.com)
   
 You will also need a file named `config.json` having the layout like this:
 
