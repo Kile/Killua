@@ -1,5 +1,10 @@
 ## Killua Discord Bot
 <p align="center">
+  <a href"https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
+     <img src="https://cdn.discordapp.com/avatars/756206646396452975/30c2da6b0a777658021cbac239fa5e66.png?size=256">
+  </a>
+</p>
+<p align="center">
   <a href="https://top.gg/bot/756206646396452975">
     <img src="https://top.gg/api/widget/756206646396452975.svg" alt="Killua" />
   </a>
@@ -38,6 +43,43 @@
 
 ## Details
 
-Hello and thanks for checking out Killua's source code! 
+Hello and thanks for checking out Killua's source code! I have been working on Killua for months and I learned Python by programming him. He is frequently updated with a team of 4 developers, each doing there part. Website: https://killua.dev
 
 Feel free to add issues or PRs, I would really appreciate it
+
+## What you need to do to copy my code
+
+`requirments.txt` contains the libraries you'll need and probably a few more, I was just too lazy to delete the ones I don't use
+
+You will need a mongodb account. Why do I use mongodb and not sql? In my opinion mongo is easier to use and you can manually add and remove data
+
+You will need the following structure mongodb structure where `#` resembles a database and `-` collections:
+
+**#Killua**
+
+  -teams
+  
+  -guilds
+  
+**#general**
+
+  -blacklist
+  
+  -presence
+  
+  -todo
+  
+You will also need a file named `config.json` having the layout like this:
+
+```json
+{
+  "token": "your_bots_token",
+  "mongodb": "your_mongodb_connection_details",
+  "fapi": "your_fapi_api_key",
+  "dbl": "your_dbl_bot_token"
+}
+```
+
+If you don't like me using one of your images for the hug or pat command, please contact me on discord `Kile#0606` or on `killua.bot.help@gmail.com`
+
+If you have any further questions, join my discord server or dm me!
