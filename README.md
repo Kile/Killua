@@ -43,7 +43,11 @@
 
 ## Details
 
-Hello and thanks for checking out Killua's source code! I have been working on Killua for months and I learned Python by programming him. He is frequently updated with a team of 4 developers, each doing there part. Website: https://killua.dev
+Hello and thanks for checking out Killua's source code! I have been working on Killua for months and I learned Python by programming him. He is frequently updated with a team of 4 developers, each doing there part. 
+
+Website: https://killua.dev
+
+Invite Killua to your guild [here](https://cdn.discordapp.com/avatars/756206646396452975/30c2da6b0a777658021cbac239fa5e66.png?size=1024)
 
 Feel free to add issues or PRs, I would really appreciate it
 
