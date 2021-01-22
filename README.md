@@ -21,9 +21,6 @@
   <a>
     <img scr="https://img.shields.io/github/commit-activity/w/Kile/Killua">
   </a>
-  <a>
-    <img src="https://img.shields.io/github/size/kile/Killua">
-  </a>
   <a href="https://github.com/Rapptz/discord.py/">
      <img src="https://img.shields.io/badge/discord-py-blue.svg" alt="discord.py">
   </a>
