@@ -73,9 +73,10 @@ async def unload(ctx, extension):
 
 def main():
 	intents = discord.Intents.all()
+	intents.presences = False
 	# Create the bot instance.
 	bot = commands.Bot(
-		command_prefix=get_prefix,
+		command_prefix=commands.when_mentioned_or(get_prefix),
 		description="default prefix",
 		case_insensitive=True,
 		intents=intents
