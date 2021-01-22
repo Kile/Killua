@@ -54,7 +54,7 @@ Feel free to add issues or PRs, I would really appreciate it
 
 You will need a mongodb account. Why do I use mongodb and not sql? In my opinion mongo is easier to use and you can manually add and remove data
 
-You will need the following structure mongodb structure where `#` resembles a database and `-` collections:
+You will need the following mongodb structure where `#` resembles a database and `-` collections:
 
 **#Killua**
 
@@ -69,6 +69,8 @@ You will need the following structure mongodb structure where `#` resembles a da
   -presence
   
   -todo
+  
+Note: you will have to create a mongodb accoun [here](https://www.mongodb.com)
   
 You will also need a file named `config.json` having the layout like this:
 
