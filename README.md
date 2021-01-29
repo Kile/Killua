@@ -40,7 +40,7 @@
 
 ## Details
 
-Hello and thanks for checking out Killua's source code! I have been working on Killua for months and I learned Python by programming him. He is frequently updated with a team of 4 developers, each doing there part. 
+Hello and thanks for checking out Killua's source code! I have been working on Killua for months and I learned Python by programming him. He is frequently updated with a team of 4 developers, each doing their part. 
 
 Website: https://killua.dev
 
