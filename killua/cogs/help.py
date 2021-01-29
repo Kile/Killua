@@ -121,6 +121,9 @@ Sets a new prefix for Killua for the server, can only be used by admins
 ```css\nban <@user> <optionalreason>```
 Bans a member and deletes their messages of the last 24 hours
             
+```css\nkick <@user> <optionalreason>```
+Kicks a member
+        
 ```css\nunban <userId/Nameandtag>```
 Unbans a user with id or something like `Kile#0606`
             

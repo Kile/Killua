@@ -101,7 +101,7 @@ class api(commands.Cog):
     if blcheck(ctx.author.id) is True:
         return
     # All the options the api I use provides that I consider SFW
-    options = ['adidas', 'ajit', 'america', 'analasys', 'austin', 'autism', 
+    options = ['adidas', 'ajit', 'america', 'analysis', 'austin', 'autism', 
     'bandicam', 'bernie', 'blackify', 'blackpanther', 'bobross', 'coolguy', 'deepfry',
     'dork', 'excuse', 'eyes', 'gaben', 'gay', 'glitch', 'glow', 'god', 'goldstar', 'hawking', 
     'hypercam', 'ifunny', 'isis', 'israel', 'jack' , 'jesus', 'keemstar', 'keemstar2', 'kekistan', 
