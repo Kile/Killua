@@ -13,7 +13,7 @@ import asyncio
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
-class api(commands.Cog):
+class Api(commands.Cog):
   
   def __init__(self, client):
     self.client = client
@@ -406,7 +406,7 @@ async def imagepage(self, msg:discord.Message, author:discord.Member, page:int, 
         await msg.edit(embed=embed)
         return await imagepage(self, msg, author, page, array, content)
 
-Cog = api
+Cog = Api
 
 def setup(client):
-  client.add_cog(api(client))
+  client.add_cog(Api(client))

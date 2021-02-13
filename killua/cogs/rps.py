@@ -18,7 +18,7 @@ teams = db['teams']
 server = db['guilds']
 
 
-class rps(commands.Cog):
+class Rps(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -239,7 +239,7 @@ async def dmcheck(user:discord.User):
             return True
         return True
 
-Cog = rps
+Cog = Rps
 
 def setup(client):
-    client.add_cog(rps(client))
+    client.add_cog(Rps(client))

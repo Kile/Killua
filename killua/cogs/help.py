@@ -15,7 +15,7 @@ server = db['guilds']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 
-class h(commands.Cog):
+class Help(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -277,7 +277,7 @@ Exits the todo list you are currently in
         return embed
 
 
-Cog = h
+Cog = Help
 
 def setup(client):
-    client.add_cog(h(client))
+    client.add_cog(Help(client))

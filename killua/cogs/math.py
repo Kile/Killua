@@ -10,7 +10,7 @@ import json
 
 API_ADDR = 'http://api.mathjs.org/v4/'
 
-class math(commands.Cog):
+class Math(commands.Cog):
 
     def __init__(self, client):
         self.client = client
@@ -45,7 +45,7 @@ class math(commands.Cog):
 
 
 
-Cog = math
+Cog = Math
 
 def setup(client):
-    client.add_cog(math(client))
+    client.add_cog(Math(client))

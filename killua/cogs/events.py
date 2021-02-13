@@ -27,7 +27,7 @@ generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 pr = generaldb['presence']
 
-class events(commands.Cog):
+class Events(commands.Cog):
   
   def __init__(self, client):
     self.client = client
@@ -155,8 +155,8 @@ async def add_premium(member:discord.Member, s_id:int):
     pass
   return
   
-Cog = events
+Cog = Events
 
 
 def setup(client):
-  client.add_cog(events(client))
+  client.add_cog(Events(client))

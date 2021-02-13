@@ -4,7 +4,7 @@ from discord.ext import commands
 from killua.functions import custom_cooldown, blcheck
 import typing
 
-class moderation(commands.Cog):
+class Moderation(commands.Cog):
 
 
     def __init__(self, client):
@@ -249,9 +249,9 @@ class moderation(commands.Cog):
 
 
 
-Cog = moderation
+Cog = Moderation
 
               
               
 def setup(client):
-  client.add_cog(moderation(client))
+  client.add_cog(Moderation(client))

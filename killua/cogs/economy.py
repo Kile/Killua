@@ -32,7 +32,7 @@ numbers = {
     9: '9️⃣'
 }
 
-class economy(commands.Cog):
+class Economy(commands.Cog):
 
     def __init__(self, client):
         self.client = client
@@ -74,7 +74,7 @@ class economy(commands.Cog):
 
     @commands.command()
     @custom_cooldown(6)
-    async def profile(self, ctx,user: typing.Union[discord.User, int]=None):
+    async def profile(self, ctx,user: typing.Union[discord.Member, int]=None):
         #h Get infos about a certain discord user with ID or mention
         #t Around 2 hours
         if blcheck(ctx.author.id) is True:
@@ -83,13 +83,13 @@ class economy(commands.Cog):
             embed = getuser(ctx.author)
             return await ctx.send(embed=embed)
         else: 
-            if isinstance(user, discord.User):
-                embed = getuser(user)
+            if isinstance(user, discord.Member):
+                embed = getmember(user)
                 return await ctx.send(embed=embed)
             else:
                 try:
                     newuser = await self.client.fetch_user(user)
-                    embed = getuser(newuser)
+                    embed = getmember(newuser)
                     return await ctx.send(embed=embed)
                 except Exception as e:
                     await ctx.send(f'```diff\n-{e}\n```')
@@ -252,7 +252,7 @@ async def game(self, ctx, msg:discord.Message, score:int, later):
         # Calculates the points based on how fast you were
         afterwards = datetime.now()
         timetaken = afterwards-before
-        points = int((5-timetaken.seconds)*15)
+        points = int((5-timetaken.seconds)*10)
         # Marks the ghost as hit
         slots[ghost-1] = ':x:'
         await msg.edit(embed=embedgenerator(slots))
@@ -315,7 +315,7 @@ async def addemojis(msg:discord.Message):
     return 
 
 
-Cog = economy
+Cog = Economy
 
 '''function getuser
 Input: 
@@ -328,7 +328,7 @@ Purpose:
 To have a function handle getting infos about a user for less messy code
 '''
 
-def getuser(user: discord.User):
+def getmember(user: discord.Member):
     av = user.avatar_url
     id = user.id 
     joined = (user.created_at).strftime("%b %d %Y %H:%M:%S")
@@ -363,12 +363,12 @@ def getuser(user: discord.User):
             cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
     embed = discord.Embed.from_dict({
             'title': f'Information about {user}',
-            'description': f'{id}\n{flags}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Jenny**\n{points}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily`before"}',
+            'description': f'{id}\n{flags}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Jenny**\n{points}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily` before"}',
             'thumbnail': {'url': str(av)},
             'color': 0x1400ff
         })
     return embed
 
 def setup(client):
-  client.add_cog(economy(client))
+  client.add_cog(Economy(client))
 

@@ -3,7 +3,7 @@ from discord.ext import commands
 from killua.functions import custom_cooldown, blcheck
 
 
-class simplereplies(commands.Cog):
+class SimpleReplies(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -92,8 +92,8 @@ class simplereplies(commands.Cog):
 
     
 
-Cog = simplereplies
+Cog = SimpleReplies
 
     
 def setup(client):
-  client.add_cog(simplereplies(client))
+  client.add_cog(SimpleReplies(client))

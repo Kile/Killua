@@ -19,7 +19,7 @@ blacklist = generaldb['blacklist']
 
 
 
-class prefix(commands.Cog):
+class Prefix(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -46,7 +46,7 @@ class prefix(commands.Cog):
     else:
       await ctx.send(f'The current server prefix is `{pref}`')
 
-Cog = prefix
+Cog = Prefix
 
 def setup(client):
-    client.add_cog(prefix(client))
+    client.add_cog(Prefix(client))

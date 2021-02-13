@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import asyncio
 
-class web_scraping(commands.Cog):
+class WebScraping(commands.Cog):
 
     def __init__(self, client):
         self.client = client
@@ -18,7 +18,7 @@ class web_scraping(commands.Cog):
         if blcheck(ctx.author.id) is True:
             return
         #function making the user able to go to the next result with reactions
-        await pageturn('something', 0, book, self, ctx, True)
+        await pageturn('something', 0, book, self, ctx, True) #'something' is here irrelevant since it is not used anyways
 
 '''function pageturn
 Input:
@@ -146,6 +146,8 @@ def getBook(page, name:str, nr:int):
         rating = "-"
     try:
         isbn = " ".join((str)(book.find_all('div', class_="infoBoxRowItem")[1].text).split())
+        if not isnb.isdigit():
+            isbn = '-'
     except:
         isbn = '-'
     try:
@@ -196,7 +198,7 @@ def getBook(page, name:str, nr:int):
 
     
 
-Cog = web_scraping
+Cog = WebScraping
 
 def setup(client):
-  client.add_cog(web_scraping(client))
+  client.add_cog(WebScraping(client))

@@ -23,7 +23,7 @@ todo = generaldb['todo']
 
 editing = {}
 
-class todo_system(commands.Cog):
+class TodoSystem(commands.Cog):
 
     def __init__(self,client):
         self.client = client
@@ -1330,7 +1330,7 @@ async def todo_menu_embed_generator(self, ctx, todo_id, page:int, msg=None):
                 pass
             return await todo_menu_embed_generator(self, ctx, todo_id, page-1, msg)  
 
-Cog = todo_system     
+Cog = TodoSystem     
 
 '''function generate_id
 Input:
@@ -1357,4 +1357,4 @@ def generate_id():
 
         
 def setup(client):
-    client.add_cog(todo_system(client))
+    client.add_cog(TodoSystem(client))
