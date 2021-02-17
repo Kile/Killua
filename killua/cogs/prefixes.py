@@ -25,26 +25,26 @@ class Prefix(commands.Cog):
     self.client = client
 
   @commands.command(aliases = ['pref'])
-  async def prefix(self, ctx, prefix=None):
+  async def prefix(self, ctx, prefix:str=None):
     if blcheck(ctx.author.id) is True:
       return
       #r to the guild administrator
       #t Around 2-4 hours
       #c Custom prefixes!
       #h Set your server prefix with this command
-    results = server.find({'id': ctx.guild.id})
-    for result in results:
-      pref = result['prefix']
+    results = server.find_one({'id': ctx.guild.id})
     if prefix:
       if ctx.author.guild_permissions.administrator:
 
-        server.update_many({'id': ctx.guild.id},{'$set':{'prefix': str(prefix)}}, upsert=True)
+        server.update_many({'id': ctx.guild.id},{'$set':{'prefix': prefix}}, upsert=True)
         await ctx.send(f'Changed server prefix to `{prefix}`')
 
       else: 
         await ctx.send('Missing permissions')
+    elif results:
+      await ctx.send(f'The current server prefix is `{results['prefix']}`')
     else:
-      await ctx.send(f'The current server prefix is `{pref}`')
+      await ctx.send(f'The current server prefix is `{results['prefix']}`')
 
 Cog = Prefix
 
