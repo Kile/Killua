@@ -50,11 +50,11 @@ def get_prefix(bot, message):
 	try:
 		y = server.find_one({'id': message.guild.id})
 		if y is None:
-			return ['k!', bot.user.mention]
+			return ['k!', bot.user.mention+' ']
 		try:
-			return [y['prefix'], bot.user.mention]
+			return [y['prefix'], bot.user.mention+' ']
 		except KeyError:
-			return ['k!', bot.user.mention]
+			return ['k!', bot.user.mention+' ']
 	except:
 		return ['k!', '<@756206646396452975> ', '<@!756206646396452975>']
 	#Not the most elegant option to make mentioning an unchangable prefix but it works
