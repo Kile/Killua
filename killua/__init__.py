@@ -75,7 +75,7 @@ def main():
 	intents.presences = False
 	# Create the bot instance.
 	bot = commands.Bot(
-		command_prefix=commands.when_mentioned_or(get_prefix),
+		command_prefix=get_prefix,
 		description="default prefix",
 		case_insensitive=True,
 		intents=intents
