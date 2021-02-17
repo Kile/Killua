@@ -55,7 +55,7 @@ def get_prefix(bot, message):
 		return commands.when_mentioned_or(y['prefix'])(bot, message)
 	except KeyError:
 		return commands.when_mentioned_or('k!')(bot, message)
-	#Not the most elegant option to make mentioning an unchangable prefix but it works
+
 
 @command()
 async def load(ctx, extension):
