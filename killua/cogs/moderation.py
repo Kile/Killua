@@ -21,7 +21,7 @@ class Moderation(commands.Cog):
             return await ctx.send('Nice try but you don\'t have the required permission (`ban members`) to execute this command')
 
         if ctx.channel.permissions_for(ctx.me).ban_members == False:
-            return await ctx.send('I don\t have the permission to ban members yet')
+            return await ctx.send('I don\'t have the permission to ban members yet')
 
         if isinstance(member, int):
             try:
@@ -123,7 +123,7 @@ class Moderation(commands.Cog):
             return await ctx.send('My role needs to be moved higher up to grant me permission to kick this person')
 
         if ctx.channel.permissions_for(ctx.me).kick_members == False:
-            return await ctx.send('I don\t have the permission to kick members yet')
+            return await ctx.send('I don\'t have the permission to kick members yet')
 
         try:
             await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
@@ -157,7 +157,7 @@ class Moderation(commands.Cog):
             return await ctx.send('My role needs to be moved higher up to grant me permission to mute this person')
 
         if ctx.channel.permissions_for(ctx.me).manage_roles == False:
-            return await ctx.send('I don\t have the permission to assign roles yet')
+            return await ctx.send('I don\'t have the permission to assign roles yet')
 
         muted = discord.utils.get(ctx.guild.roles, name='muted')
 
@@ -230,7 +230,7 @@ class Moderation(commands.Cog):
             return await ctx.send('My role needs to be moved higher up to grant me permission to unmute this person')
 
         if ctx.channel.permissions_for(ctx.me).manage_roles == False:
-            return await ctx.send('I don\t have the permission to assign roles yet')
+            return await ctx.send('I don\'t have the permission to assign roles yet')
 
         muted = discord.utils.get(ctx.guild.roles, name='muted')
 
