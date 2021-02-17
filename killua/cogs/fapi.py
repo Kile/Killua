@@ -13,7 +13,7 @@ import asyncio
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
-class api(commands.Cog):
+class Api(commands.Cog):
   
   def __init__(self, client):
     self.client = client
@@ -101,7 +101,7 @@ class api(commands.Cog):
     if blcheck(ctx.author.id) is True:
         return
     # All the options the api I use provides that I consider SFW
-    options = ['adidas', 'ajit', 'america', 'analasys', 'austin', 'autism', 
+    options = ['adidas', 'ajit', 'america', 'analysis', 'austin', 'autism', 
     'bandicam', 'bernie', 'blackify', 'blackpanther', 'bobross', 'coolguy', 'deepfry',
     'dork', 'excuse', 'eyes', 'gaben', 'gay', 'glitch', 'glow', 'god', 'goldstar', 'hawking', 
     'hypercam', 'ifunny', 'isis', 'israel', 'jack' , 'jesus', 'keemstar', 'keemstar2', 'kekistan', 
@@ -406,7 +406,7 @@ async def imagepage(self, msg:discord.Message, author:discord.Member, page:int, 
         await msg.edit(embed=embed)
         return await imagepage(self, msg, author, page, array, content)
 
-Cog = api
+Cog = Api
 
 def setup(client):
-  client.add_cog(api(client))
+  client.add_cog(Api(client))

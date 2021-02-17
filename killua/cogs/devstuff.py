@@ -37,9 +37,10 @@ server = db['guilds']
 generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 pr = generaldb['presence']
+items = db['items']
 
 
-class devstuff(commands.Cog):
+class DevStuff(commands.Cog):
 
     def __init__(self, client):
         self.client = client
@@ -197,7 +198,7 @@ class devstuff(commands.Cog):
 
 
 
-Cog = devstuff
+Cog = DevStuff
 
 def setup(client):
-    client.add_cog(devstuff(client))
+    client.add_cog(DevStuff(client))

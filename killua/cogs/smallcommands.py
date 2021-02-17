@@ -19,7 +19,7 @@ hugtext = [f'**(a)** hugs **(u)** as strong as they can', f'**(a)** hugs **(u)**
 patgif = [f'https://i.pinimg.com/originals/be/75/ff/be75ff9f2ba20efb4dbda09c62802b39.gif', f'https://pbs.twimg.com/media/DmWlGrqX0AAKlT3.jpg']
 pattext = ['**(a)** tries to catch a spider, slips and instead pats **(u)**. **(a)** is also fine with that', '**(a)** pats **(u)**', '**(a)** thinks **(u)** is a cat and starts to pat them', '**(a)*** looks at **(u)*\'s fluffy hair and starts to pat them']
 
-class smallcommands(commands.Cog):
+class SmallCommands(commands.Cog):
 
     def __init__(self, client):
         self.client = client
@@ -198,7 +198,7 @@ def avatar(user):
     })
     return embed
 
-Cog = smallcommands
+Cog = SmallCommands
 
 def setup(client):
-    client.add_cog(smallcommands(client))
+    client.add_cog(SmallCommands(client))

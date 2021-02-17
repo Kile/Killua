@@ -111,7 +111,7 @@ Returns:
 Nothing
 
 Purpose:
-Changing Killuas presence freqently if he is adeed to a guild, removed or 12 hour pass, now also customisable by me at will
+Changing Killuas presence freqently if he is added to a guild, removed or 12 hour pass, now also customisable by me at will
 '''   
 
 async def p(self):
@@ -155,5 +155,5 @@ async def p(self):
     #The day Killua was born!!
     b = date(2020,9,17)
     delta = a - b
-    playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | day {delta.days}', type=discord.ActivityType.watching)
+    playing = discord.Activity(name=f'over {len(self.client.guilds)} guilds | k! | day {delta.days}', type=discord.ActivityType.watching)
     return await self.client.change_presence(status=discord.Status.online, activity=playing)

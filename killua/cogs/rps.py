@@ -18,7 +18,7 @@ teams = db['teams']
 server = db['guilds']
 
 
-class rps(commands.Cog):
+class Rps(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -88,7 +88,7 @@ class rps(commands.Cog):
         if member.bot is True:
             return await ctx.send('Beep-boop, if you wanna play against a bot, play against me!')
 
-        await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Papaper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
+        await ctx.send(f'{ctx.author.mention} challanged {member.mention} to a game of Rock Paper Scissors! Will **{member.name}** accept the challange?\n **[y/n]**')
         def check(m1):
             return m1.content.lower() in ["n", "y"] and m1.author.id == member.id
 
@@ -239,7 +239,7 @@ async def dmcheck(user:discord.User):
             return True
         return True
 
-Cog = rps
+Cog = Rps
 
 def setup(client):
-    client.add_cog(rps(client))
+    client.add_cog(Rps(client))

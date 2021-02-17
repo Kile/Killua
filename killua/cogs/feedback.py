@@ -4,7 +4,7 @@ from discord.ext import commands
 from killua.functions import custom_cooldown, blcheck
 
 
-class feedback(commands.Cog):
+class Feedback(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -118,7 +118,7 @@ You can submit 9 types of feedback:
 
     
         
-Cog = feedback
+Cog = Feedback
 
 def setup(client):
-  client.add_cog(feedback(client))
+  client.add_cog(Feedback(client))

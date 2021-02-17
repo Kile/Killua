@@ -12,7 +12,7 @@ single_detection,
 batch_detection)
 
 
-class translate(commands.Cog):
+class Translate(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -53,8 +53,8 @@ class translate(commands.Cog):
     
 
 
-Cog = translate
+Cog = Translate
 
     
 def setup(client):
-  client.add_cog(translate(client))
+  client.add_cog(Translate(client))

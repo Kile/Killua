@@ -50,13 +50,14 @@ def get_prefix(bot, message):
 	try:
 		y = server.find_one({'id': message.guild.id})
 		if y is None:
-			return 'k!'
+			return ['k!', '<@756206646396452975> ', '<@!756206646396452975>']
 		try:
-			return y['prefix']
+			return [y['prefix'], '<@756206646396452975> ', '<@!756206646396452975>']
 		except KeyError:
-			return 'k!'
+			return ['k!', '<@756206646396452975> ', '<@!756206646396452975>']
 	except:
-		return 'k!'
+		return ['k!', '<@756206646396452975> ', '<@!756206646396452975>']
+	#Not the most elegant option to make mentioning an unchangable prefix but it works
 
 @command()
 async def load(ctx, extension):
@@ -76,7 +77,7 @@ def main():
 	intents.presences = False
 	# Create the bot instance.
 	bot = commands.Bot(
-		command_prefix=get_prefix,
+		command_prefix=commands.when_mentioned_or(get_prefix),
 		description="default prefix",
 		case_insensitive=True,
 		intents=intents

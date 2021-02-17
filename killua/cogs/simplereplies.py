@@ -3,7 +3,7 @@ from discord.ext import commands
 from killua.functions import custom_cooldown, blcheck
 
 
-class simplereplies(commands.Cog):
+class SimpleReplies(commands.Cog):
 
   def __init__(self, client):
     self.client = client
@@ -46,7 +46,7 @@ class simplereplies(commands.Cog):
     #h Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**
     embed = discord.Embed(
         title = 'Invite',
-        description = 'Invite the bot to your server [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414). Thank you a lot for supporting my Beta phase!',
+        description = 'Invite the bot to your server [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414). Thank you a lot for supporting me!',
         color = 0x1400ff
     )
     await ctx.send(embed=embed) 
@@ -92,8 +92,8 @@ class simplereplies(commands.Cog):
 
     
 
-Cog = simplereplies
+Cog = SimpleReplies
 
     
 def setup(client):
-  client.add_cog(simplereplies(client))
+  client.add_cog(SimpleReplies(client))
