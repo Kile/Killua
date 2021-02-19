@@ -48,7 +48,7 @@ class Economy(commands.Cog):
             'user': '',
             'points': 0
         }
-        for member in ctx.guild.members:
+        for member in ctx.guild.members: #On big servers I am making 13k requests to my db here which takes a bit, gotta think of a better solution
             user = teams.find_one({'id': member.id})
             if user is None:
                 pass
@@ -80,7 +80,7 @@ class Economy(commands.Cog):
         if blcheck(ctx.author.id) is True:
             return
         if user is None:
-            embed = getuser(ctx.author)
+            embed = getmember(ctx.author)
             return await ctx.send(embed=embed)
         else: 
             if isinstance(user, discord.Member):
