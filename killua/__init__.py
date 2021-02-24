@@ -47,26 +47,25 @@ top = db['teampoints']
 server = db['guilds']
 
 def get_prefix(bot, message):
-	
-	y = server.find_one({'id': message.guild.id})
-	if y is None:
-		return commands.when_mentioned_or('k!')(bot, message)
 	try:
+		y = server.find_one({'id': message.guild.id})
+		if y is None:
+			return commands.when_mentioned_or('k!')(bot, message)
 		return commands.when_mentioned_or(y['prefix'])(bot, message)
-	except KeyError:
+	except:
 		return commands.when_mentioned_or('k!')(bot, message)
 
 
 @command()
 async def load(ctx, extension):
 	if ctx.author.id == 606162661184372736:
-		ctx.bot.load_extension(f'cogs.{extension}')
+		ctx.bot.load_extension(f'killua.cogs.{extension}')
 		await ctx.send(f'Loaded cog `{extension}`')
 
 @command()
 async def unload(ctx, extension):
 	if ctx.author.id == 606162661184372736:
-		ctx.bot.unload_extension(f'cogs.{extension}')
+		ctx.bot.unload_extension(f'killua.cogs.{extension}')
 		await ctx.send(f'Unloaded cog `{extension}`')
 
 

@@ -50,7 +50,7 @@ Feel free to add issues or PRs, I would really appreciate it
 
 ## What you need to do to copy my code
 
-`requirments.txt` contains the libraries you'll need and probably a few more, I was just too lazy to delete the ones I don't use
+`requirements.txt` contains the libraries you'll need and probably a few more, I was just too lazy to delete the ones I don't use. To install the libraries use `pip3 install -r requirements.txt`
 
 You will need a mongodb account. Why do I use mongodb and not sql? In my opinion mongo is easier to use and you can manually add and remove data
 

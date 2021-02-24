@@ -213,7 +213,7 @@ class Api(commands.Cog):
         response = await r.json()
 
     if response == []:
-        await sesssion.close()
+        await session.close()
         return await ctx.send(':x: Not found')
 
     desc = urbandesc(response)

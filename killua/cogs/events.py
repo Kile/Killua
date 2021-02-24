@@ -60,7 +60,7 @@ class Events(commands.Cog):
       ID = result
     #Inserting the guild in the databse if it doesn't exist
     try:
-      prefix = ID['prefix']
+      prefix = ID['prefix']#This is a dumb way to do it and will be optimised when I have time
     except UnboundLocalError:
       server.update_many({'id': guild.id},{'$set':{'points': 0,'items': '','badges': [], 'prefix': 'k!'}}, upsert=True)
       prefix = 'k!'
@@ -103,14 +103,9 @@ class Events(commands.Cog):
       if not before.guild.id == 715358111472418908:
         return
     except:
-      pass
-
-
       s = list(premium.keys())
-
       b = []
       a = []
-
       for role in before.roles:
         b.append(role.id)
       for role in after.roles:
@@ -148,9 +143,7 @@ async def add_premium(member:discord.Member, s_id:int):
   badges.append(premium[s_id])
   teams.update_one({'id': member.id}, {'$set': {'badges': badges}})
   try:
-
     await member.send('Thank you for becoming a premium supporter! Check out your shiney badges with `k!profile` and have fun with your new perks!')
-
   except:
     pass
   return

@@ -127,7 +127,7 @@ class Moderation(commands.Cog):
 
         try:
             await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason}```by `{ctx.author}`')
-        except discord.Forbidden:
+        except:
             pass
 
         await member.kick(reason=reason)
