@@ -3,3 +3,6 @@
 
 #python stuff
 **/__pycache__
+
+# rust stuff
+**/target

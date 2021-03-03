@@ -1,4 +1,4 @@
-aiohttp==3.7.4
+aiohttp==3.6.3
 arrow==0.17.0
 astunparse==1.6.3
 async-timeout==3.0.1
@@ -43,4 +43,6 @@ six==1.15.0
 soupsieve==2.1
 typing-extensions==3.7.4.3
 urllib3==1.26.2
+wasmer==1.0.0
+wasmer_compiler_cranelift==1.0.0
 yarl==1.5.1

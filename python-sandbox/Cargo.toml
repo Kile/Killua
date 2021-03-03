@@ -1,0 +1,16 @@
+[package]
+name = "python-sandbox"
+version = "0.1.0"
+authors = ["Daniel Conley <himself@danii.dev>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rustpython-vm = {path = "/home/danii/Programming/Rust/RustPython/vm"}
+
+[profile.dev]
+# https://ritik-mishra.medium.com/resolving-the-wasm-pack-error-locals-exceed-maximum-ec3a9d96685b
+opt-level = 1
+incremental = true
