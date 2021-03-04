@@ -5,7 +5,7 @@ from numpy import uint32
 from random import SystemRandom
 from sys import stderr, stdout
 from typing import cast, Optional
-from wasm import WASMApi, WASMPointer, WASMSlice, register_blanks, \
+from .wasm import WASMApi, WASMPointer, WASMSlice, register_blanks, \
 	wasm_function
 from wasmer import FunctionType, Memory, Type
 
