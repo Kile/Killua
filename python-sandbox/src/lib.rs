@@ -6,7 +6,7 @@ use rustpython_vm::{
 };
 
 #[no_mangle]
-pub fn main() -> usize {
+pub extern fn main() -> usize {
 	let interpreter = Interpreter::default();
 
 	/*println!("{:?}", rustpython_vm::builtins::PyDict::NAME);
@@ -16,6 +16,16 @@ pub fn main() -> usize {
 
 	interpreter.enter(|vm| {
 		let my_fn = vm.ctx.new_function("my_fn", |message: PyRef<PyStr>| {
+			let message = message.as_ref();
+			// Why must I be a stranger in a world full of Python?
+
+			// Now with 20% more Undefined Behavior!
+
+			// When the world of RustPython is burning, the world of CPython won't
+			// have a care in the world.
+
+			// Is Python unsafe? I don't know, probably.
+			unsafe {message_reply(message.as_ptr(), message.len())};
 			println!("Rusting! {}", message);
 		});
 
@@ -30,6 +40,10 @@ pub fn main() -> usize {
 	});
 
 	0
+}
+
+extern {
+	fn message_reply(msg: *const u8, msg_len: usize);
 }
 
 /*struct TestObject {
