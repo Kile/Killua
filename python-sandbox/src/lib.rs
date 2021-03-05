@@ -1,21 +1,23 @@
 #![feature(new_uninit)]
 
 use rustpython_vm::{
-	builtins::PyStr,
 	compile::Mode,
-	pyobject::PyRef,
-	Interpreter
+	pyobject::PyObjectRef,
+	Interpreter,
+	VirtualMachine
 };
+
+// Why must I be a stranger in a world full of Python?
+
+// Now with 20% more Undefined Behavior!
 
 #[no_mangle]
 pub extern fn main() -> usize {
 	let code = read_code();
 	Interpreter::default().enter(|vm| {
-		let reply = vm.ctx.new_function("reply", |message: PyRef<PyStr>| {
+		let reply = vm.ctx.new_function("reply", |message: PyObjectRef, vm: &VirtualMachine| {
+			let message = vm.to_repr(&message).unwrap();
 			let message = message.as_ref();
-			// Why must I be a stranger in a world full of Python?
-
-			// Now with 20% more Undefined Behavior!
 
 			// Is Python unsafe? I don't know, probably.
 			unsafe {message_reply(message.as_ptr(), message.len())};
