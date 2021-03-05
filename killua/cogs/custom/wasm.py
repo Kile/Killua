@@ -4,9 +4,10 @@
 from __future__ import annotations
 from collections import deque
 from inspect import signature, _empty # type: ignore
-from itertools import islice
+from itertools import islice, zip_longest
 from numpy import frombuffer, uint8, uint32
-from typing import Any, Iterable, Iterator, Optional, TypeVar, Union, cast
+from typing import Any, Generator, Iterable, Iterator, Optional, TypeVar, \
+	Union, cast
 from wasmer import Function, FunctionType, ImportObject, Memory, Store, \
 	Type as WASMType
 
@@ -24,6 +25,32 @@ def skip(iterable, start=0, end=0):
 	for x in it:
 		queue.append(x)
 		yield queue.popleft()
+
+def from_tuple(value: tuple[T, ...]) -> Union[None, T, tuple[T, ...]]:
+	return None if len(value) == 0 else \
+		value if len(value) != 1 else value[0]
+
+def to_tuple(value: Union[None, T, tuple[T, ...]]) -> tuple[T, ...]:
+	return () if value is None else \
+		value if isinstance(value, tuple) else (value,)
+
+def wasmer_to_wasm(types: Iterator[WASMType], values: Iterator[int]):
+	for ty, value in zip(types, values):
+		if ty is WASMType.I32:
+			yield from (
+				uint8(byte) for byte in value.to_bytes(4, "little", signed=True)
+			)
+		else:
+			raise Exception("todo")
+
+def wasm_to_wasmer(types: Iterator[WASMType], values: Iterator[uint8]):
+	for ty in types:
+		if ty is WASMType.I32:
+			# uint8 is correctly treated as an int.
+			bytez = bytearray(cast(Iterator[int], islice(values, 4)))
+			yield int.from_bytes(bytez, "little", signed=True)
+		else:
+			raise Exception("todo")
 
 # TODO: Make this class even better.
 class WASMPointer:
@@ -45,7 +72,7 @@ class WASMPointer:
 
 	def write(self, value: Any):
 		binding = WASMBind([type(value)])
-		memory = list(binding.python_to_wasm([value]))
+		memory = list(binding.python_to_wasm(iter([value])))
 		self[:len(memory)] = memory
 
 	def offset(self, bytes: int) -> WASMPointer:
@@ -118,15 +145,6 @@ class WASMSlice:
 		self.buf = buf
 		self.buf_len = buf_len
 
-def wasmer_to_wasm(types: Iterator[WASMType], values: Iterator[int]):
-	for ty, value in zip(types, values):
-		if ty is WASMType.I32:
-			yield from (
-				uint8(byte) for byte in value.to_bytes(4, "little", signed=True)
-			)
-		else:
-			raise Exception("todo")
-
 Tree = list[tuple[type, Union["WASMBind", list[WASMType]]]]
 
 class WASMBind:
@@ -168,7 +186,8 @@ class WASMBind:
 		# Build tree.
 		self.tree = [(ty, self.build_tree(ty)) for ty in types]
 
-	def wasm_to_python(self, memory: Memory, data: Iterator[uint8]):
+	def wasm_to_python(self, memory: Memory, data: Iterator[uint8]) \
+			-> Generator[Any, None, None]:
 		# For each branch...
 		for ty, components in self.tree:
 			# If it's another tree...
@@ -185,19 +204,33 @@ class WASMBind:
 				yield frombuffer(args, dtype=uint32)[0]
 			# Any other case is malformed.
 			else:
-				raise Exception(f"invalid WASMBind tree (non raw wasm type {ty} was corrolated with raw wasm types {components})")
-		# Partial use of data is okay.
+				raise ValueError(f"invalid WASMBind tree (non raw wasm type {ty} was corrolated with raw wasm types {components})")
+		# Partial use of data is okay. (It could be memory.)
 
-	def python_to_wasm(self, data: list[Any]):
-		for (index, (ty, components)) in enumerate(self.tree):
+	def python_to_wasm(self, data: Iterator[Any]) -> Generator[uint8, None, None]:
+		# For each branch (and therefore item in data)...
+		for value, branch in zip_longest(data, self.tree):
+			# Check if iterator lengths are unbalanced.
+			if value is None or branch is None:
+				too = "short" if value is None else "long"
+				raise ValueError(f"python data too {too} for WASMBind, expected \
+{len(self.tree)} python objects")
+
+			ty, components = branch
+			# If it's another tree...
 			if isinstance(components, type(self)):
-				yield from components.python_to_wasm(data[index:])
+				# Process it and yield value from it.
+				args = value.__to_wasm__()
+				yield from components.python_to_wasm(iter(to_tuple(args)))
+			# Special uint32 case.
 			elif ty is uint32:
-				yield int(data[index])
+				yield from (uint8(byte) for byte in value.tobytes())
+			# Special no annotation case.
 			elif ty is _empty:
 				pass
+			# Any other case is malformed.
 			else:
-				raise Exception("bruh")
+				raise ValueError(f"invalid WASMBind tree (non raw wasm type {ty} was corrolated with raw wasm types {components})")
 
 	def wasm_signature(self):
 		"""Yield's this binding's signature."""
@@ -252,14 +285,14 @@ def wasm_function(function):
 		wasm_params = wasmer_to_wasm(iter(ty_params), iter(wasmer_params))
 		py_params = list(params.wasm_to_python(self.memory, wasm_params))
 
-		if True:
+		if False:
 			debug_params = [str(param) for param in py_params]
 			print(f'debug: {function.__name__}({", ".join(debug_params)})')
 		py_returns = function(self, *py_params)
 
-		wasm_returns = list(returns.python_to_wasm([py_returns]))
-		return None if len(wasm_returns) == 0 else \
-			wasm_returns[0] if len(wasm_returns) == 1 else wasm_returns
+		wasm_returns = returns.python_to_wasm(iter(to_tuple(py_returns)))
+		wasmer_returns = tuple(wasm_to_wasmer(iter(ty_returns), wasm_returns))
+		return from_tuple(wasmer_returns)
 
 	wasi_bind.wasm_type = FunctionType(ty_params, ty_returns)
 	return wasi_bind

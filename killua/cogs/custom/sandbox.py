@@ -12,8 +12,8 @@ from wasmer import FunctionType, Memory, Type
 # Temporary decorator to suppress errors.
 @register_blanks({
 	#"random_get": FunctionType([Type.I32, Type.I32], [Type.I32]),
-	"args_get": FunctionType([Type.I32, Type.I32], [Type.I32]),
-	"args_sizes_get": FunctionType([Type.I32, Type.I32], [Type.I32]),
+	#"args_get": FunctionType([Type.I32, Type.I32], [Type.I32]),
+	#"args_sizes_get": FunctionType([Type.I32, Type.I32], [Type.I32]),
 	"clock_time_get": FunctionType([Type.I32, Type.I64, Type.I32], [Type.I32]),
 	"fd_close": FunctionType([Type.I32], [Type.I32]),
 	"fd_filestat_get": FunctionType([Type.I32, Type.I32], [Type.I32]),
@@ -46,6 +46,19 @@ class WASI(WASMApi):
 		super().__init__("wasi_snapshot_preview1")
 		self.loopback = loopback
 		self.rng = SystemRandom()
+
+	@wasm_function
+	def args_get(self, ptrs: WASMPointer, args: WASMPointer) -> uint32:
+		# This can be a noop because we specify the buffer lengths to both be zero
+		# in args_sizes_get.
+		return uint32(0) # Okay!
+
+	@wasm_function
+	def args_sizes_get(self, ptrs_len: WASMPointer, args_len: WASMPointer) \
+			-> uint32:
+		ptrs_len.write(uint32(0))
+		args_len.write(uint32(0))
+		return uint32(0) # Okay!
 
 	@wasm_function
 	def random_get(self, buf: WASMPointer, buf_len: uint32) -> uint32:
