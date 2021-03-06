@@ -1,4 +1,5 @@
 aiohttp==3.6.3
+aiofiles=0.6.0
 arrow==0.17.0
 astunparse==1.6.3
 async-timeout==3.0.1

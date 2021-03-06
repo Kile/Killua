@@ -1,28 +1,34 @@
+from . import api as API
+from .pipe import DataPipe, PipeClosedError, half_async_duplex
 from .sandbox import WASI
 from .wasm import WASMApi, WASMPointer, WASMSlice, wasm_function
-from asyncio import Event, get_event_loop
+from discord import TextChannel
 from discord.ext.commands import Cog as CommandCog, command
-from multiprocessing import Pipe, Process
-from multiprocessing.connection import Connection
-from numpy import uint32
+from multiprocessing import Process
+from numpy import uint8, uint32, uint64
+from os import getpid, kill
 from re import compile
-from typing import Any, cast
+from signal import SIGKILL
+from sys import stderr
+from time import perf_counter_ns
+from typing import cast
 from wasmer import ImportObject, Instance, Module, Store, engine
 from wasmer_compiler_cranelift import Compiler
 
 wasm_file = "python-sandbox/target/wasm32-wasi/debug/python_sandbox.wasm"
 code_regex = compile(r"^```(?:\w+\n(?!\s*```))?((?:(?!```)(?!(?<=`)``)(?!(?<=``)`)[\w\W])*?)```$")
 
-def sandbox_bootstrap(bridge: Connection, data: bytearray, code: str):
+def sandbox_bootstrap(bridge: DataPipe, module_data: bytearray, code: str,
+		guild_id: int, channel_id: int, message_id: int):
 	with bridge:
 		store = Store(engine.JIT(Compiler))
 		# SAFETY: This data is from Custom.custom.
-		module = Module.deserialize(store, data)
+		module = Module.deserialize(store, module_data)
 
 		imports = ImportObject()
 		wasi_interface = WASI(True)
 		wasi_interface.register(store, imports)
-		bridge_interface = Bridge(code, bridge)
+		bridge_interface = Bridge(bridge, code, guild_id, channel_id, message_id)
 		bridge_interface.register(store, imports)
 
 		instance = Instance(module, imports)
@@ -30,47 +36,88 @@ def sandbox_bootstrap(bridge: Connection, data: bytearray, code: str):
 		bridge_interface.set_memory(instance.exports.memory)
 
 		try:
-			instance.exports.run(0, 0)
+			instance.exports.main(0, 0)
 		except RuntimeError as fatal:
+			import traceback
+			print(fatal)
 			pass # TODO
 
-class IOAvailability:
-	def __init__(self, fd: int, ty="read"):
-		self.fd = fd
-		self.read = True if ty == "read" else False
-
-	async def __aenter__(self):
-		event = Event()
-		loop = get_event_loop()
-
-		if self.read:
-			loop.add_reader(self.fd, event.set)
-		else:
-			loop.add_writer(self.fd, event.set)
-
-		await event.wait()
-		event.clear()
-
-	async def __aexit__(self, err_ty, err, tb):
-		pass
-
-class APIReply:
-	def __init__(self, message: str):
-		self.message = message
-
 class Bridge(WASMApi):
+	pipe: DataPipe
 	code: str
-	pipe: Connection
+	guild_id: int
+	channel_id: int
+	message_id: int
 
-	def __init__(self, code: str, pipe: Any):
-		super().__init__("env")
-		self.code = code
+	def __init__(self, pipe: DataPipe, code: str, guild_id: int, channel_id: int,
+			message_id: int):
+		super().__init__("discord_bridge")
 		self.pipe = pipe
+		self.code = code
+		self.guild_id = guild_id
+		self.channel_id = channel_id
+		self.message_id = message_id
 
 	@wasm_function
-	def message_reply(self, msg: WASMSlice):
+	def message_send(self, msg: WASMSlice, channel: uint64, reply: uint64,
+			id: WASMPointer) -> uint32:
+		"""Sends a message.
+
+		Parameters
+		----------
+		#1: &str, Immutable pointer to message data.
+		#2: u64, ID of the channel to send to.
+		#3: u64, ID of the message to reply to, or 0.
+		#4: &mut u64, Pointer to write the ID of the new message.
+
+		Returns
+		-------
+		#1: u8, Error number.
+			0 for success.
+			1 for message too long.
+			2 for channel doesn't exist.
+			3 for replied to message doesn't exist.
+			4 for insufficient permissions.
+			5 for unknown.
+		"""
+
+		# Read message.
 		message = "".join([chr(cast(int, char)) for char in msg.buf[:msg.buf_len]])
-		self.pipe.send(APIReply(message))
+
+		# Pre flight checks.
+		if len(message) > 2000:
+			return uint8(1)
+
+		# Send message, wait for a reply.
+		self.pipe.send(API.MessageSend(message, int(channel), int(reply)))
+		response = self.pipe.recv()
+		if isinstance(response, API.MessageSendAcknowledge):
+			id.write(uint64(response.id))
+			return uint32(0)
+		elif isinstance(response, API.MessageTooLargeError):
+			return uint32(1)
+		elif isinstance(response, API.UnknownTextChannelIdError):
+			return uint32(2)
+		elif isinstance(response, API.UnknownMessageIdError):
+			return uint32(3)
+		elif isinstance(response, API.InsufficientPermissionsError):
+			return uint32(4)
+		else:
+			return uint32(5)
+
+	@wasm_function
+	def context_environment(self, env: WASMPointer):
+		"""Returns the Discord environment.
+
+		Parameters
+		-------
+		#1: u64, ID of the guild.
+		#2: u64, ID of the channel this interaction is in.
+		#3: u64, ID of the message this interaction is triggered from.
+		"""
+
+		env.write((uint64(self.guild_id), uint64(self.channel_id), \
+			uint64(self.message_id)), tuple[uint64, uint64, uint64])
 
 	@wasm_function
 	def context_read_code(self, buf: WASMPointer) -> uint32:
@@ -90,28 +137,48 @@ class Custom(CommandCog):
 
 	@command()
 	async def custom_debug(self, context, *, code):
-		bridge, client = Pipe(False)
-		module = self.module.serialize()
-
 		if (match := code_regex.match(code)) is not None:
 			code = match[1]
 
-		print(code)
-		process = Process(target=sandbox_bootstrap,
-			args=(client, module, code))
+		client, bridge = await half_async_duplex()
+		module = self.module.serialize()
+		process = Process(target=sandbox_bootstrap, args=(client, module, code,
+			context.guild.id, context.channel.id, context.message.id))
 		process.start()
 
-		try:
+		now = perf_counter_ns()
+		async with bridge:
 			while True:
-				async with IOAvailability(bridge.fileno()):
-					data = bridge.recv()
+				data = await bridge.recv()
 
-					# I really miss Rust enums right about now.
-					if isinstance(data, APIReply):
-						await context.message.reply(data.message)
-					else:
-						raise Exception("bad message")
-		except EOFError:
-			print("PASS")
+				# I really miss Rust enums right about now.
+				if isinstance(data, API.MessageSend):
+					channel = context.guild.get_channel(data.channel_id)
+					if channel is None or not isinstance(channel, TextChannel):
+						await bridge.send(API.UnknownTextChannelIdError)
+						continue
+
+					reply = None if data.reply_id == 0 else data.reply_id
+					message = await channel.send(data.message, reference=reply)
+					await bridge.send(API.MessageSendAcknowledge(message.id))
+				else:
+					# Our implementation only sends these messages, and although there
+					# could be a chance that the pipe becomes broken through natural
+					# means, chances are probably more likely that someone has found a
+					# security issue in Wasmer, and has exploited it to escape the WASM
+					# virtual machine.
+
+					print(f"""SECURITY ERROR, WASM EXECUTION THREAD HAS SENT AN ILLEGAL VALUE.
+CAUSED BY MESSAGE THE FOLLOWING MESSAGE.
+{context.message}
+THE PROCESS WILL NOW KILL IT'S SELF.""", file=stderr)
+
+					process.kill()
+					# Maybe this is too extreme. I might change this if I switch from pickle.
+					kill(getpid(), SIGKILL)
+					while True:
+						pass
+		elapsed = perf_counter_ns()
+		print((elapsed - now) / 1000000000)
 
 Cog = Custom

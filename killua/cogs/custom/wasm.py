@@ -3,15 +3,21 @@
 
 from __future__ import annotations
 from collections import deque
+from dataclasses import dataclass
 from inspect import signature, _empty # type: ignore
 from itertools import islice, zip_longest
-from numpy import frombuffer, uint8, uint32
-from typing import Any, Generator, Iterable, Iterator, Optional, TypeVar, \
-	Union, cast
+from numpy import frombuffer, generic, uint8, uint32, uint64
+from traceback import print_tb
+from typing import Any, Callable, Generator, Generic, GenericAlias, Iterable, \
+	Iterator, Optional, TypeVar, Union, cast, get_args, get_origin
 from wasmer import Function, FunctionType, ImportObject, Memory, Store, \
 	Type as WASMType
 
 T = TypeVar("T")
+I = TypeVar("I", bound=generic)
+AnyType = Union[type, GenericAlias]
+TreeData = Union["WASMBind", list[WASMType]]
+Tree = list[tuple[AnyType, TreeData]]
 
 def skip(iterable, start=0, end=0):
 	it = iter(iterable)
@@ -40,6 +46,10 @@ def wasmer_to_wasm(types: Iterator[WASMType], values: Iterator[int]):
 			yield from (
 				uint8(byte) for byte in value.to_bytes(4, "little", signed=True)
 			)
+		elif ty is WASMType.I64:
+			yield from (
+				uint8(byte) for byte in value.to_bytes(8, "little", signed=True)
+			)
 		else:
 			raise Exception("todo")
 
@@ -48,6 +58,10 @@ def wasm_to_wasmer(types: Iterator[WASMType], values: Iterator[uint8]):
 		if ty is WASMType.I32:
 			# uint8 is correctly treated as an int.
 			bytez = bytearray(cast(Iterator[int], islice(values, 4)))
+			yield int.from_bytes(bytez, "little", signed=True)
+		elif ty is WASMType.I64:
+			# uint8 is correctly treated as an int.
+			bytez = bytearray(cast(Iterator[int], islice(values, 8)))
 			yield int.from_bytes(bytez, "little", signed=True)
 		else:
 			raise Exception("todo")
@@ -70,8 +84,9 @@ class WASMPointer:
 		value = list(binding.wasm_to_python(self.memory, iter(self[:])))
 		return value[0]
 
-	def write(self, value: Any):
-		binding = WASMBind([type(value)])
+	def write(self, value: Any, ty: Any = None):
+		ty = type(value) if ty is None else ty
+		binding = WASMBind([ty])
 		memory = list(binding.python_to_wasm(iter([value])))
 		self[:len(memory)] = memory
 
@@ -145,7 +160,28 @@ class WASMSlice:
 		self.buf = buf
 		self.buf_len = buf_len
 
-Tree = list[tuple[type, Union["WASMBind", list[WASMType]]]]
+def wasm_to_numpy(cls: Union[type[I], GenericAlias], data: Iterator[uint8]) \
+		-> I:
+	args = bytearray(islice(data, None, cls().itemsize)) # type: ignore
+	return frombuffer(args, dtype=cls)[0]
+
+def numpy_to_wasm(cls: Union[type[I], GenericAlias], value: I) \
+		-> Iterator[uint8]:
+	return (uint8(byte) for byte in value.tobytes())
+
+@dataclass
+class PrimitiveWASMBind(Generic[T]):
+	from_wasm: Callable[
+		[Union[type[T], GenericAlias], Iterator[uint8]],
+		T
+	]
+
+	to_wasm: Callable[
+		[Union[type[T], GenericAlias], T],
+		Iterator[uint8]
+	]
+
+	wasm_ty: list[WASMType]
 
 class WASMBind:
 	"""Represents a bind that allows passing of arguments from Python to WASM, or
@@ -156,15 +192,20 @@ class WASMBind:
 	arguments and returned values.
 	"""
 
-	@classmethod
-	def build_tree(cls, py: type) -> Union[WASMBind, list[WASMType]]:
-		cases: dict[type, list[WASMType]] = {
-			uint32: [WASMType.I32],
-			_empty: []
-		}
+	special: dict[Union[type, GenericAlias], PrimitiveWASMBind] = {
+		uint32: PrimitiveWASMBind[uint32](
+			wasm_to_numpy, numpy_to_wasm, [WASMType.I32]),
+		uint64: PrimitiveWASMBind[uint64](
+			wasm_to_numpy, numpy_to_wasm, [WASMType.I64]),
+		_empty: PrimitiveWASMBind[_empty](
+			lambda c, d: None, lambda c, v: iter([]), [])
+	}
 
-		result = cases.get(py)
-		if result is None:
+	@classmethod
+	def build_tree(cls, py: AnyType) -> TreeData:
+		if get_origin(py) is tuple:
+			return cls(get_args(py))
+		elif (result := cls.special.get(py)) is None:
 			# Exceptions coming from this line is intended.
 			from_sig = signature(py.__from_wasm__) # type: ignore
 			# TODO: Check __to_wasm__
@@ -172,7 +213,7 @@ class WASMBind:
 			params = (param.annotation for param in from_sig.parameters.values())
 			return cls(skip(params, start=1))
 		else:
-			return result
+			return result.wasm_ty
 
 	tree: Tree
 
@@ -192,19 +233,20 @@ class WASMBind:
 		for ty, components in self.tree:
 			# If it's another tree...
 			if isinstance(components, type(self)):
-				# Process it and yield ty from it.
-				args = components.wasm_to_python(memory, data)
-				# Exceptions coming from this line is intended.
-				yield ty.__from_wasm__(memory, *list(args)) # type: ignore
-			# Special uint32 case.
-			elif issubclass(ty, cast(type, uint32)):
-				# Collect 4 bytes and convert to a uint32.
-				# uint8 is correctly treated as an int.
-				args = bytearray(cast(Iterator[int], islice(data, None, 4)))
-				yield frombuffer(args, dtype=uint32)[0]
+				if hasattr(ty, "__from_wasm__"):
+					# Process it and yield ty from it.
+					args = components.wasm_to_python(memory, data)
+					# Exceptions coming from this line is intended.
+					yield ty.__from_wasm__(memory, *list(args)) # type: ignore
+				# If it's a tuple...
+				else:
+					yield tuple(components.wasm_to_python(memory, data))
+			# Special cases.
+			elif (special := WASMBind.special.get(ty)):
+				yield special.from_wasm(ty, data)
 			# Any other case is malformed.
 			else:
-				raise ValueError(f"invalid WASMBind tree (non raw wasm type {ty} was corrolated with raw wasm types {components})")
+				raise ValueError(f"invalid WASMBind tree on from_wasm (non raw wasm type {ty} was corrolated with raw wasm types {components})")
 		# Partial use of data is okay. (It could be memory.)
 
 	def python_to_wasm(self, data: Iterator[Any]) -> Generator[uint8, None, None]:
@@ -217,20 +259,21 @@ class WASMBind:
 {len(self.tree)} python objects")
 
 			ty, components = branch
+			# If it's a tuple...
+			if isinstance(value, tuple):
+				# Process it and yield from.
+				yield from components.python_to_wasm(iter(value))
 			# If it's another tree...
-			if isinstance(components, type(self)):
-				# Process it and yield value from it.
+			elif isinstance(components, WASMBind):
+				# Process it and yield from.
 				args = value.__to_wasm__()
 				yield from components.python_to_wasm(iter(to_tuple(args)))
-			# Special uint32 case.
-			elif ty is uint32:
-				yield from (uint8(byte) for byte in value.tobytes())
-			# Special no annotation case.
-			elif ty is _empty:
-				pass
+			# Special cases.
+			elif (special := WASMBind.special.get(ty)):
+				yield from special.to_wasm(ty, value)
 			# Any other case is malformed.
 			else:
-				raise ValueError(f"invalid WASMBind tree (non raw wasm type {ty} was corrolated with raw wasm types {components})")
+				raise ValueError(f"invalid WASMBind tree on to_wasm (non raw wasm type {ty} was corrolated with raw wasm types {components})")
 
 	def wasm_signature(self):
 		"""Yield's this binding's signature."""
@@ -279,20 +322,25 @@ def wasm_function(function):
 	ty_returns = list(returns.wasm_signature())
 
 	def wasi_bind(self, *wasmer_params):
-		if self.memory is None:
-			raise Exception("A WASI API function was used before memory was set.")
+		try:
+			if self.memory is None:
+				raise Exception("A WASI API function was used before memory was set.")
 
-		wasm_params = wasmer_to_wasm(iter(ty_params), iter(wasmer_params))
-		py_params = list(params.wasm_to_python(self.memory, wasm_params))
+			wasm_params = wasmer_to_wasm(iter(ty_params), iter(wasmer_params))
+			py_params = list(params.wasm_to_python(self.memory, wasm_params))
 
-		if False:
-			debug_params = [str(param) for param in py_params]
-			print(f'debug: {function.__name__}({", ".join(debug_params)})')
-		py_returns = function(self, *py_params)
+			if False:
+				debug_params = [str(param) for param in py_params]
+				print(f'debug: {function.__name__}({", ".join(debug_params)})')
+			py_returns = function(self, *py_params)
 
-		wasm_returns = returns.python_to_wasm(iter(to_tuple(py_returns)))
-		wasmer_returns = tuple(wasm_to_wasmer(iter(ty_returns), wasm_returns))
-		return from_tuple(wasmer_returns)
+			wasm_returns = returns.python_to_wasm(iter(to_tuple(py_returns)))
+			wasmer_returns = tuple(wasm_to_wasmer(iter(ty_returns), wasm_returns))
+			return from_tuple(wasmer_returns)
+		except Exception as error:
+			print(print_tb(error.__traceback__))
+			print(error)
+			raise
 
 	wasi_bind.wasm_type = FunctionType(ty_params, ty_returns)
 	return wasi_bind
