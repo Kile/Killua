@@ -1,0 +1,14 @@
+[workspace]
+members = [
+	"discord-bridge",
+	"python-sandbox"
+]
+
+[profile.dev]
+# https://ritik-mishra.medium.com/resolving-the-wasm-pack-error-locals-exceed-maximum-ec3a9d96685b
+opt-level = 1
+incremental = true
+panic = "abort"
+
+[profile.release]
+panic = "abort"

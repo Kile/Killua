@@ -1,11 +1,12 @@
 from . import api as API
-from .pipe import DataPipe, PipeClosedError, half_async_duplex
+from .pipe import DataPipe, half_async_duplex
 from .sandbox import WASI
 from .wasm import WASMApi, WASMPointer, WASMSlice, wasm_function
-from discord import TextChannel
+from dataclasses import dataclass
+from discord import Forbidden, HTTPException, TextChannel
 from discord.ext.commands import Cog as CommandCog, command
 from multiprocessing import Process
-from numpy import uint8, uint32, uint64
+from numpy import uint8, uint16, uint32, uint64
 from os import getpid, kill
 from re import compile
 from signal import SIGKILL
@@ -15,7 +16,7 @@ from typing import cast
 from wasmer import ImportObject, Instance, Module, Store, engine
 from wasmer_compiler_cranelift import Compiler
 
-wasm_file = "python-sandbox/target/wasm32-wasi/debug/python_sandbox.wasm"
+wasm_file = "target/wasm32-wasi/debug/python_sandbox.wasm"
 code_regex = compile(r"^```(?:\w+\n(?!\s*```))?((?:(?!```)(?!(?<=`)``)(?!(?<=``)`)[\w\W])*?)```$")
 
 def sandbox_bootstrap(bridge: DataPipe, module_data: bytearray, code: str,
@@ -42,6 +43,63 @@ def sandbox_bootstrap(bridge: DataPipe, module_data: bytearray, code: str,
 			print(fatal)
 			pass # TODO
 
+@dataclass
+class Message:
+	id: uint64
+	author_id: uint64
+	webhook_id: uint64
+	reference_guild_id: uint64
+	reference_channel_id: uint64
+	reference_message_id: uint64
+	edited: uint64
+	content_length: uint16
+	content_length_cont: uint8
+	flags: uint8
+	ty: uint8
+	reactions_length_etc: uint8
+	mentions_length: uint8
+
+	@staticmethod
+	def from_api(message: API.MessageData):
+		byte_length = len(message.content.encode("utf-8")) & 0b0001111111111111
+		length = len(message.content) & 0b0000011111111111
+		content_length = (byte_length << 3) | ((length >> 8) & 0b00000111)
+		content_length_ext = length & 0b11111111
+
+		pinned = 1 << 2 if message.pinned else 0
+		tts = 1 << 1 if message.tts else 0
+		everyone = 1 if message.mentions_everyone else 0
+		message_reactions_etc = 0 | pinned | tts | everyone
+
+		return Message(
+			uint64(message.id),
+			uint64(message.author_id),
+			uint64(0) if message.webhook_id is None else uint64(message.webhook_id),
+			uint64(0) if message.ref_guild_id is None else uint64(message.ref_guild_id),
+			uint64(0) if message.ref_channel_id is None else uint64(message.ref_channel_id),
+			uint64(0) if message.ref_message_id is None else uint64(message.ref_message_id),
+			uint64(0) if message.edited is None else uint64(message.edited),
+			uint16(content_length),
+			uint8(content_length_ext),
+			uint8(message.flags),
+			uint8(message.ty),
+			uint8(message_reactions_etc),
+			uint8(0)
+		)
+
+	def __to_wasm__(self) -> tuple[uint64, uint64, uint64, uint64, uint64, uint64,
+			uint64, uint16, uint8, uint8, uint8, uint8, uint8]:
+		return (self.id, self.author_id, self.webhook_id, self.reference_guild_id,
+			self.reference_channel_id, self.reference_message_id, self.edited,
+			self.content_length, self.content_length_cont, self.flags, self.ty,
+			self.reactions_length_etc, self.mentions_length)
+
+	@classmethod
+	def __from_wasm__(cls, mem, a: uint64, b: uint64, c: uint64, d: uint64,
+			e: uint64, f: uint64, g: uint64, h: uint16, i: uint8, j: uint8, k: uint8,
+			l: uint8, m: uint8) -> "Message":
+		raise Exception("bruh")
+
 class Bridge(WASMApi):
 	pipe: DataPipe
 	code: str
@@ -57,6 +115,27 @@ class Bridge(WASMApi):
 		self.guild_id = guild_id
 		self.channel_id = channel_id
 		self.message_id = message_id
+
+	@wasm_function
+	def message_load(self, buf: WASMPointer, buf_len: uint32, channel: uint64,
+			fromm: uint64) -> uint32:
+		# Send request and receive response...
+		self.pipe.send(API.MessagePageLoad(int(buf_len), int(channel), None, None))
+		response = self.pipe.recv()
+
+		if isinstance(response, API.MessagePageLoadAcknowledge):
+			message = Message.from_api(response.messages[0])
+			buf.write(message)
+			return uint32(1)
+		else:
+			return uint32(-1)
+
+	@wasm_function
+	def message_populate(self, id: uint64, content: WASMPointer,
+			reactions: WASMPointer, mentions: WASMPointer, split: WASMPointer) \
+			-> uint32:
+		
+		return uint32(0)
 
 	@wasm_function
 	def message_send(self, msg: WASMSlice, channel: uint64, reply: uint64,
@@ -153,14 +232,33 @@ class Custom(CommandCog):
 
 				# I really miss Rust enums right about now.
 				if isinstance(data, API.MessageSend):
+					# channel = context.guild.get_channel(data.channel_id)
+					# if channel is None or not isinstance(channel, TextChannel):
+					# 	await bridge.send(API.UnknownTextChannelIdError)
+					# 	continue
+
+					# reply = None if data.reply_id == 0 else data.reply_id
+					# message = await channel.send(data.message, reference=reply)
+					# await bridge.send(API.MessageSendAcknowledge(message.id))
+					pass
+				elif isinstance(data, API.MessagePageLoad):
 					channel = context.guild.get_channel(data.channel_id)
 					if channel is None or not isinstance(channel, TextChannel):
-						await bridge.send(API.UnknownTextChannelIdError)
+						await bridge.send(API.UnknownTextChannelIdError())
 						continue
 
-					reply = None if data.reply_id == 0 else data.reply_id
-					message = await channel.send(data.message, reference=reply)
-					await bridge.send(API.MessageSendAcknowledge(message.id))
+					try:
+						history = channel.history(limit=data.count,
+							before=data.before, after=data.after)
+						messages = [
+							API.MessageData.from_message(message)
+								async for message in history
+						]
+						await bridge.send(API.MessagePageLoadAcknowledge(messages))
+					except Forbidden:
+						await bridge.send(API.InsufficientPermissionsError())
+					except HTTPException:
+						await bridge.send(API.ServerError)
 				else:
 					# Our implementation only sends these messages, and although there
 					# could be a chance that the pipe becomes broken through natural

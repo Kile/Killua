@@ -1,0 +1,5 @@
+[package]
+name = "discord-bridge"
+version = "0.0.0"
+authors = ["Daniel Conley <himself@danii.dev>"]
+edition = "2018"

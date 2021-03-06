@@ -6,7 +6,7 @@ from collections import deque
 from dataclasses import dataclass
 from inspect import signature, _empty # type: ignore
 from itertools import islice, zip_longest
-from numpy import frombuffer, generic, uint8, uint32, uint64
+from numpy import frombuffer, generic, uint8, uint16, uint32, uint64
 from traceback import print_tb
 from typing import Any, Callable, Generator, Generic, GenericAlias, Iterable, \
 	Iterator, Optional, TypeVar, Union, cast, get_args, get_origin
@@ -193,6 +193,10 @@ class WASMBind:
 	"""
 
 	special: dict[Union[type, GenericAlias], PrimitiveWASMBind] = {
+		uint8: PrimitiveWASMBind[uint8](
+			wasm_to_numpy, numpy_to_wasm, [WASMType.I32]),
+		uint16: PrimitiveWASMBind[uint16](
+			wasm_to_numpy, numpy_to_wasm, [WASMType.I32]),
 		uint32: PrimitiveWASMBind[uint32](
 			wasm_to_numpy, numpy_to_wasm, [WASMType.I32]),
 		uint64: PrimitiveWASMBind[uint64](
