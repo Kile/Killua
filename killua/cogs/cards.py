@@ -111,43 +111,67 @@ class User():
             self.rs_cards = None
             self.fs_cards = None
             self.effects = None
+            self.all_cards = None
         else:
             self.effects:dict = user['cards']['effects']
             self.rs_cards:list = user['cards']['rs']
             self.fs_cards:list = user['cards']['fs']
+            self.all_cards:list = [*self.fs_cards, *self.rs_cards]
 
         self.id:int = user_id
         self.jenny:int = user['points']
         
-    def has_rs_card(self, card_id:int):
+    def has_rs_card(self, card_id:int, fake_allowed:bool=True):
+        """Checking if the user has a card specified in their restricted slots"""
         if card_id in [x[0] for x in self.rs_cards]:
+            if fake_allowed is False and True in [x[1] for x in self.rs_cards if x[0] == card_id]: #Not pretty but should work
+                return False
             return True
         else:
             return False
 
-    def has_fs_card(self, card_id:int):
-        if card_id in [x[0] for x in self.fs_cards]:
+    def has_fs_card(self, card_id:int, fake_allowed:bool=True):
+        """Checking if the user has a card specified in their free slots"""
+        fs = self.fs_cards
+        if card_id in [x[0] for x in fs]:
+            if fake_allowed is False:
+                if True in [x[1]["fake"] for x in fs if x[0] == card_id]:
+                    for x in [x[1]["fake"] for x in fs if x[0] == card_id and x[1]['fake'] == True]:
+                        fs.remove(x[0])
+                    if len([x for x in fs if x[0] == card_id]) == 0:
+                        return False
             return True
         else:
             return False
 
-    def has_any_card(self, card_id:int):
-        if card_id in [x[0] for x in self.fs_cards] or card_id in [x[0] for x in self.rs_cards]:
+    def has_any_card(self, card_id:int, fake_allowed:bool=True):
+        """Checks if the user has the card"""
+        total = self.all_cards
+        if card_id in [x[0] for x in total]:
+            if fake_allowed is False:
+                if True in [x[1]["fake"] for x in total if x[0] == card_id]:
+                    for x in [x[1]["fake"] for x in total if x[0] == card_id and x[1]['fake'] == True]:
+                        total.remove(x[0])
+                    if len([x for x in total if x[0] == card_id]) == 0:
+                        return False
             return True
         else:
             return False
 
     def remove_jenny(self, amount:int):
+        """Removes x Jenny from a user"""
         if self.jenny < amount:
             raise Exception('Trying to remove more Jenny than the user has')
         teams.update_one({'id': self.id}, {'$set': {'points': self.jenny - amount}})
         return
 
     def add_jenny(self, amount:int):
+        """Adds x Jenny to a users balance"""
         teams.update_one({'id': self.id}, {'$set': {'points': self.jenny + amount}})
         return
 
-    def remove_card(self, card_id:int, remove_fake:bool=None, payed:bool=False):
+    def remove_card(self, card_id:int, remove_fake:bool=None, payed:bool=False, restricted_slot:bool=None):
+        """Removes a card from a user"""
         card = Card(card_id)
         if User(self.id).has_any_card(card_id) is False:
             raise NotInPossesion('This card is not in possesion of the specified user!')
@@ -172,8 +196,9 @@ class User():
         def fake():
             if remove_fake is None:
                 c = []
-                for x in self.rs_cards if x[0] == card_id:
-                    c.append(x)
+                for x in self.rs_cards:
+                    if x[0] == card_id:
+                        c.append(x)
                 random_fake = random.choice([x[1]['fake'] for x in c])
                 return random_fake
             elif remove_fake is False:
@@ -185,22 +210,31 @@ class User():
             if fake_check(self.rs_cards) is False and remove_fake is False:
                 raise OnlyFakesFound('The user has no card with this id that is not a fake')
             else:
-                rc(fake(), True)
+                if not restricted_slot: # This is needed if we want to force to take a card from the restricted slots
+                    rc(fake(), True)
+                else:
+                    rc(fake(), restricted_slot)
         else:
             if fake_check(self.fs_cards) is False and remove_fake is False:
                 if fake_check(self.rs_cards) is False and remove_fake is False:
                     raise OnlyFakesFound('The user has no card with this id that is not a fake')
-                
-                rc(fake(), True)
+                if not restricted_slot:
+                    rc(fake(), True)
+                else:
+                    rc(fake(), restricted_slot)
             else:
-                rc(fake(), False)
+                if not restricted_slot:
+                    rc(fake(), False)
+                else:
+                    rc(fake(), restricted_slot)
 
         if payed is not False:
-            User(self.id).remove_jenny(PRICES[card.rank])
+            self.add_jenny(PRICES[card.rank])
 
         return 
 
-    def add_card(self, card_id:int, fake:bool):
+    def add_card(self, card_id:int, fake:bool=False):
+        """Adds a card to the the user"""
         card = Card(card_id)
 
         def ac(restricted_slot:bool=False):
@@ -211,13 +245,19 @@ class User():
             card.add_owner(self.id)
             teams.update_one({'id': self.id}, {'$set': {'cards': {'rs': self.rs_cards, 'fs': self.fs_cards, 'effects': self.effects}}})
 
-        if User(self.id).has_rs_card(card.id) is False:
+        if self.has_rs_card(card.id) is False:
             if card_id > 99:
                 ac(True)
                 return
+            return ac()
+
+        if len(self.fs_cards) >= FREE_SLOTS:
+            raise CardLimitReached('User reached card limit for free slots')
+
         ac()
 
     def count_card(self, card_id:int, including_fakes:bool=True):
+        "Counts how many copies of a card someone has"
         card = Card(card_id)
         card_amount = 0
         if including_fakes is True:
@@ -227,10 +267,31 @@ class User():
             rs_cards = [x[0] for x in self.rs_cards if x[1]['fake'] == False]
             fs_cards = [x[0] for x in self.fs_cards if x[1]['fake'] == False]
 
-        for x in [*rs_cards, *fs_cards] if x == card.id:
-            card_amount = card_amount+1
+        for x in [*rs_cards, *fs_cards]:
+            if x == card.id:
+                card_amount = card_amount+1
 
         return card_amount
+
+    def swap(self, card_id:int): 
+        """Swaps a card from the free slots with one from the restricted slots. Usecase: swapping fake and real card"""
+
+        if (True in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id]):
+            self.remove_card(card_id, remove_fake=True, restricted_slot=True)
+            self.remove_card(card_id, remove_fake=False, restricted_slot=False)
+            self.add_card(card_id, True)
+            self.add_card(card_id)
+            return
+
+        if (True in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id]):
+            self.remove_card(card_id, remove_fake=True, restricted_slot=False)
+            self.remove_card(card_id, remove_fake=False, restricted_slot=True)
+            self.add_card(card_id, False)
+            self.add_card(card_id, True)
+            return
+
+        return False # Returned if the requirements haven't been met
+            
 
     def add_effect(self, effect:int): # Effect are resembled by the card id which caused them
         pass #TODO add effects here depending on what card
