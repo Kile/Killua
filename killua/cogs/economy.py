@@ -140,6 +140,7 @@ class Economy(commands.Cog):
 
     @commands.command()
     async def give(self, ctx, user:discord.User, amount:int=None):
+        return await ctx.send('This command is currently being investigated on')
         if blcheck(ctx.author.id) is True:
             return
         if amount is None:
@@ -149,14 +150,14 @@ class Economy(commands.Cog):
         if balance is None:
             return await ctx.send('You have not been registered in Killua\'s economy system. Do so with `k!daily`')
         if balance['points'] < amount:
-            return await ctx.send(f'Nice of you to try and send {user.name} some Jenny, sadly you don\'t have enough Jenny for that. Your current balance is `{balance}`')
+            return await ctx.send(f'Nice of you to try and send {user.name} some Jenny, sadly you don\'t have enough Jenny for that. Your current balance is `{balance["balance"]}`')
 
         otherguy = teams.find_one({'id': user.id})
         if otherguy is None:
             return ctx.send('The person you want to give Jenny to is not yet registered. Tell them to do so with `k!daily`')
 
-        teams.update_one({'id': ctx.author.id},{'$set':{'points': balance['points'] - amount}}, upsert=True)
-        teams.update_one({'id': user.id},{'$set':{'points': otherguy['points'] + amount}}, upsert=True)
+        teams.update_one({'id': ctx.author.id},{'$set':{'points': balance['points'] - amount}})
+        teams.update_one({'id': user.id},{'$set':{'points': otherguy['points'] + amount}})
         await ctx.send(f'You gave {user} {amount} Jenny! How very nice :3 Their new balance is `{otherguy["points"]+amount}`, yours `{balance["points"] - amount}`')
 
     @commands.command(aliases=['ghosthunter'])
