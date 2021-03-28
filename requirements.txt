@@ -42,5 +42,5 @@ requests==2.25.1
 six==1.15.0
 soupsieve==2.1
 typing-extensions==3.7.4.3
-urllib3==1.26.2
+urllib3==1.26.3
 yarl==1.5.1
