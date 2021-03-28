@@ -27,14 +27,14 @@ class Translate(commands.Cog):
     langs_list = GoogleTranslator.get_supported_languages()
     #h Translate anything to 20+ languages with this command! 
     #t Around 1 hour
-
+    #u translate <source_lang> <target_lang> <text>
 
     embed = discord.Embed.from_dict({ 'title': f'Translation',
     'description': f'```\n{args}```\n`{source}` -> `{target}`\n',
     'color': 0x1400ff})
 
     try:
-        translated = GoogleTranslator(source=source, target=target).translate(text=args)
+        translated = GoogleTranslator(source=source.lower(), target=target.lower()).translate(text=args)
         embed.description = embed.description + '\nSucessfully translated by Google Translator:'
     except Exception as ge:
         error = f'Google error: {ge}\n'
@@ -42,7 +42,7 @@ class Translate(commands.Cog):
             
         try:
             embed.description = embed.description + '\nSucessfully translated by MyMemoryTranslator:'
-            translated = MyMemoryTranslator(source=source, target=target).translate(text=args)
+            translated = MyMemoryTranslator(source=source.lower(), target=target.lower()).translate(text=args)
         except Exception as me:
             error = error + f'MyMemoryTranslator error: {me}\n'
             return await ctx.send(error)

@@ -26,7 +26,8 @@ class Help(commands.Cog):
       return
   #h This command is the one hopefully letting you know what Killua can do and what his features are, I hope you like how it looks!
   #t 2 hours
-  #c 155 lines, help
+  #c 155 lines, help (bad codering)
+  #u help <group/command> <command(if command was previous argument)>
     if group is None and command is None:
         results = server.find({'id': ctx.guild.id})
         for result in results:
@@ -40,6 +41,7 @@ Command groups for {ctx.me.name}:
 :clown: `Fun`
 :trophy: `Economy`
 :scroll: `todo`
+<:card_number_46:811776158966218802>  `Cards`
 <:killua_wink:769919176110112778> `Other`
             
 To see a groups commands, use```css\nhelp <groupname>```
@@ -54,7 +56,7 @@ Website: https://killua.dev (a work in progress)''',
             })
         await ctx.send(embed=embed)
     elif group:
-        if group.lower() in ['moderation', 'fun', 'economy', 'other', 'command', 'todo']:
+        if group.lower() in ['moderation', 'fun', 'economy', 'other', 'command', 'todo', 'cards']:
             if command and group.lower() == 'command':
                 try:
                     func = self.client.get_command(command).callback
@@ -68,7 +70,7 @@ Website: https://killua.dev (a work in progress)''',
                     for item in linecount:
                         first, middle, last = item.partition("#h")
                         firstr, middler, lastr = item.partition("#r")
-
+                        firstu, middleu, lastu = item.partition("#u")
                         if lastr is None or lastr == '':
                             restricted = ''
                         else:
@@ -79,7 +81,7 @@ Website: https://killua.dev (a work in progress)''',
                         
                     embed = discord.Embed.from_dict({
                         'title': f'Info about command `k!{command}`',
-                        'description': f'{desc} {restricted}',
+                        'description': f'{desc} {restricted}\nUsage:```markdown\n{pref}{lastu}',
                         'color': 0x1400ff,
                         'thumbnail': {'url': str(ctx.me.avatar_url)}
                         })
@@ -88,7 +90,7 @@ Website: https://killua.dev (a work in progress)''',
                 except Exception as e:
                     await ctx.send('Command not found')
             else:
-                embed = commands(group)
+                embed = commands(group, pref)
                 embed.color = 0x1400ff
                 embed.set_thumbnail(url= str(ctx.me.avatar_url))
                 await ctx.send(embed=embed)
@@ -106,7 +108,7 @@ Purpose:
 To get the right command without having a giant help command
 '''
 
-def commands(commandgroup):
+def commands(commandgroup, pref:str):
     if commandgroup.lower() == 'command':
         embed = discord.Embed.from_dict({'description': 'You need to input a command to see it\'s information'
             })
@@ -115,71 +117,18 @@ def commands(commandgroup):
     if commandgroup.lower() == 'moderation':
         embed = discord.Embed.from_dict({
             'title': 'Moderation commands',
-            'description': '''```css\nprefix <string>```
-Sets a new prefix for Killua for the server, can only be used by admins
-            
-```css\nban <@user> <optionalreason>```
-Bans a member and deletes their messages of the last 24 hours
-            
-```css\nkick <@user> <optionalreason>```
-Kicks a member
-        
-```css\nunban <userId/Nameandtag>```
-Unbans a user with id or something like `Kile#0606`
-            
-```css\nmute <@user> <optionaltimeinminutes> <optionalreason>```
-Mutes a user for the given amount of time or you specify as `unlimited`
-            
-```css\nunmute <@user> <optionalreason>```
-Unmutes a user'''
+            'description': '`prefix`, `ban`, `kick`, `unban`, `mute`, `unmute`',
+            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'color': 0x1400ff
         })
         return embed
 
     if commandgroup.lower() == 'fun':
         embed = discord.Embed.from_dict({
             'title': 'Fun commands',
-            'description': '''```css\nquote <@user> <text>```
-Send a screenshot of a user saying what you defined. Use `-c`ast the start of `text` for compact mode or `-l` for light mode or both
-
-```css\ncmm <text>```
-Sends the *Change My Mind* meme with the text you defined
-
-```css\nhug <user>```
-We all need  more hugs in our life, this hugs the user specified
-
-
-```css\npat <user>```
-
-Pats a user, pretty similar to `hug`
-
-```css\ntopic```
-You suck at small talk? Get a topic with this command!
-
-```css\ncalc <mathsstuff>```
-Stuck with some math problem or just bored? Use this calculator!
-            
-```css\ntranslate <sourcelanguage/auto> <targetlanguage> <text>```
-Translates given text to the targetlanguage
-
-```css\n8ball <question>```
-Killua will answer the provided question
-
-```css\navatar```
-What you'd expect from an avatar command, provide a mention or ID
-
-```css\nbook <bookname>```
-Get infos about the book providet
-
-```css\nemojaic <user/id/link>```
-Changes provided image into emojis (seriously try this one!)
-
-```css\nimage <title>```
-Gives you the best DuckDuckGo images for your title
-
-```\nf <type> <user/id/link>```
-To get a list with available types just use `k!f`
-*heads or tails in plan*
-            '''
+            'description': '`quote`, `cmm`, `hug`, `pat`, `topic`, `calc`, `translate`, `8ball`, `avatar`, `novel`, `emojaic`, `image`, `rps`, `f`',
+            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'color': 0x1400ff
         })
         return embed
 
@@ -187,23 +136,9 @@ To get a list with available types just use `k!f`
         embed = discord.Embed.from_dict({
 
             'title': 'Economy commands',
-            'description': '''```css\ndaily```
-Gives you your daily points
-
-```css\nrps <@user> <optional integer>```
-Challenges someone to a game of Rock Paper Scissors. If you specify an amount you play with Jenny and the winner gets them all
-
-```css\nprofile <user_id/mention>```
-Shows you info about a specific user, some discord info and some info like how many Jenny they have
-
-```css\ngive <user> <Jenny>```
-Give a fellow user some Jenny
-
-```css\nserver```
-Gives you infos about the current server (currently disabled)
-
-```css\nbal <optional_user>```
-Shows the balance of a user'''
+            'description': '`daily`, `profile`, `give`, `server`, `bal`',
+            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'color': 0x1400ff
 
         })
         return embed
@@ -211,67 +146,26 @@ Shows the balance of a user'''
     if commandgroup.lower() == 'other':
         embed = discord.Embed.from_dict({
             'title': 'Other commands',
-            'description': '''```css\ninfo```
-Gives you some info about the bot
-            
-```css\npatreon```
-Gives you a link to my Patreon profile, feel free to help me and Killua out a bit <:killua_wink:769919176110112778>
-            
-```css\ninvite```
-Gives you the invite link to the bot
-            
-```css\ncodeinfo <command>```
-Gives you some more insights to a command like how long it took me etc
-            
-```css\npermissions```
-Killua lists his permissions on this server
-            
-```css\nbug <commandname/other> <bug>```
-You can report bugs with this command, abuse or spam will result in being blacklisted
-
-```css\nfb <typeoffeedback> <feedback>```
-Send feeback directly to me with this command. Abuse or spam will result in being blacklisted'''
+            'description': '`info`, `patreon`, `invite`, `codeinfo`, `permissions`, `bug`, `feedback`',
+            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'color': 0x1400ff
         })
         return embed
 
     if commandgroup.lower() == 'todo':
         embed = discord.Embed.from_dict({
             'title': 'todo commands',
-            'description': '''**Every command on this list starts with `<prefix>todo`**
-```css\ncreate```
-Creates a todo list in an interactive setup
+            'description': f'**Every command on this list starts with `{pref}todo`**\n\n`create`, `lists`, `shop`, `edit`, `info`, `buy`, `add`, `remove`, `mark`, `invite`, `view`, `kick`, `status`, `name`, `autodelete`, `color`, `thumbnail`, `custom_id`, `assign`, `delete`, `exit`',
+            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'color': 0x1400ff
+        })
+        return embed
 
-```css\nlists```
-Shows all lists you have permission to view, edit or own
-
-```css\nshop```
-Gives you a list of items you can purchase for your todo list
-
-```css\nedit <list_id>```
-Brings you in edit mode for the list specified if you have permission, you will have to be in this mode if you want to change anything on your todo list
-
-```css\nadd <thing>```
-Let\'s you add a todo task to the list you are currently in
-
-```css\nremove <todo_number>```
-Removes a task from your todo list you are currently in
-
-```css\nmark <todo_number> <comment>```
-Mark a todo task with a comment like "in progress". If you have specified that todos should be deleted when they are marked as "done" then it will delete todos you mark as "done". To remove a comment, simply type `-rm` instead of the comment
-
-```css\ninvite <mention/user_id> <editor/viewer>```
-Invite someone to edit or view your todo list. Viewing permissions only need ot be granted when the list is marked as `private`
-
-```css\nview <id/custom_id>```
-Lets you see the todos on a list if permission
-
-```css\nkick <mention/user_id>```
-Takes every permission from the user specified, you need to be list owner to use this command
-
-```css\nexit```
-Exits the todo list you are currently in
-
-**These are not all todo commands, they are only the most essential. Find all todo commands [here](https://killua.dev/todo-docs)**''',
+    if commandgroup.lower() == 'todo':
+        embed = discord.Embed.from_dict({
+            'title': 'Card commands',
+            'description': 'Working on it...',
+            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
             'color': 0x1400ff
         })
         return embed

@@ -28,9 +28,10 @@ class Rps(commands.Cog):
   async def rps(self, ctx, member: discord.User, points: int=None):
     if blcheck(ctx.author.id) is True:
       return
-    #c The most complicated command I ever made
+    #c The most complicated command I ever made (lol not anymore)
     #t a week
     #h Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun.
+    #u rps <user> <points(optional)
     
     if member.id == ctx.author.id:
       return await ctx.send('Baka! You can\'t play against yourself')

@@ -6,7 +6,6 @@ import discord
 import random
 import json
 from json import loads
-from random import randint
 from datetime import datetime, date, timedelta
 from discord.ext import tasks
 import pymongo
@@ -16,22 +15,22 @@ import asyncio
 import inspect
 from inspect import getsource
 from discord.utils import find
-from discord import client
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from numpy import *
 from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
 import numpy as np
 import numexpr as ne
 import re
+import math
 from killua.functions import custom_cooldown, blcheck, p
+from killua.cogs.cards import Card, User
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
 
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
-collection = db['teams']
+teams = db['teams']
 top =db['teampoints']
 server = db['guilds']
 generaldb = cluster['general']
@@ -51,6 +50,7 @@ class DevStuff(commands.Cog):
         if blcheck(ctx.author.id) is True:
             return
         #h Standart eval command, me restricted ofc
+        #u eval <code>
         if ctx.author.id == 606162661184372736:
             try:
                 global bot
@@ -63,6 +63,7 @@ class DevStuff(commands.Cog):
         if blcheck(ctx.author.id) is True:
             return
         #h Displays the source code to a command, if discord allows it :3
+        #u source <command>
         # Idk what that does tbh
         func = self.client.get_command(name).callback
         code = inspect.getsource(func)
@@ -71,7 +72,7 @@ class DevStuff(commands.Cog):
     @commands.command()
     async def codeinfo(self, ctx, *,content):
         #h Gives you some information to a specific command like how many lines, how much time I spend on it etc
-
+        #u codeinfo <command>
         # Using the K!source principle I can get infos about code with this
 	    try:
 		    func = ctx.bot.get_command(content).callback
@@ -125,6 +126,7 @@ class DevStuff(commands.Cog):
             return
         #h Allows me to publish Killua updates in a handy formart 
         #r user ID 606162661184372736
+        #u update <text>
         if ctx.author.id != 606162661184372736:
             return
         embed = discord.Embed.from_dict({
@@ -142,7 +144,8 @@ class DevStuff(commands.Cog):
 
     @commands.command()
     async def blacklist(self, ctx, id:int, *,reason=None):
-        #h Blacklisting bad people like Hisoka
+        #h Blacklisting bad people like Hisoka. Owner restricted
+        #u blacklist <user>
         if blcheck(ctx.author.id) is True:
             return
         if ctx.author.id != 606162661184372736:
@@ -161,6 +164,9 @@ class DevStuff(commands.Cog):
     async def whitelist(self, ctx, id:int):
         # One of the only commands I don't check the blacklist on because I couldn't whitelist myself if
         # I'd have blacklisted myself for testing
+        #u whitelist <user>
+        #h Whitelists a user. Owner restricted
+
         if ctx.author.id != 606162661184372736:
             return
         try:
@@ -173,6 +179,8 @@ class DevStuff(commands.Cog):
 
     @commands.command(aliases=['st', 'pr', 'status'])
     async def presence(self, ctx, *, status):
+        #h Changes the presence of Killua. Owner restricted 
+        #u pr <text>
         if ctx.author.id != 606162661184372736:
             return
         if status == '-rm':

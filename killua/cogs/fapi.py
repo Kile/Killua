@@ -25,6 +25,7 @@ class Api(commands.Cog):
     if blcheck(ctx.author.id) is True:
         return
     #h Get DuckDuckGo Images with this command! Use n or b to go back and forth between sides
+    #u image <text>
     # Creating a session
     session = aiohttp.ClientSession()
     # Inserting api details
@@ -59,6 +60,7 @@ class Api(commands.Cog):
   @commands.command()
   @custom_cooldown(15)
   async def gay(self, ctx, image:typing.Union[discord.User, int, str]=None):
+    #u gay <user/url>
     #h Lays a pride flag over a user's pfp by mentioning them, their Id or over a url to an image you provide
     if blcheck(ctx.author.id) is True:
         return
@@ -97,6 +99,7 @@ class Api(commands.Cog):
   @commands.command(aliases=['fapi', 'api'])
   @custom_cooldown(15)
   async def f(self, ctx, t:str=None, image:typing.Union[discord.User, int, str]=None):
+    #u fapi <type> <user/url>
     #h Get any feature of the API Killua uses! Provide a type and then ID, mention or url to let the API do it's thing. For a list of available types, use k!f
     if blcheck(ctx.author.id) is True:
         return
@@ -159,9 +162,10 @@ class Api(commands.Cog):
   async def emojaic(self, ctx, image:typing.Union[discord.User, int, str]=None):
     if blcheck(ctx.author.id) is True:
         return
-    #cEmoji mosaic an image!
+    #c Emoji mosaic an image!
     #t Around 1 hour
     #h Emoji mosaic an image; let emojis recreate an image you gave Killua! Takes in a mention, ID or image url
+    #u emojaic <user/url>
     if isinstance(image, discord.User):
         image = str(image.avatar_url)
     if isinstance(image, int):
@@ -205,7 +209,7 @@ class Api(commands.Cog):
     #t 2-3 hours
     #c Using fAPI
     #h Use this command to get the definition of a word from the urban dictionary, use "" around more than one word if you want to search for that
-    
+    #u urban <text>
     async with session.post('https://fapi.wrmsr.io/urban', headers=headers, json=body) as r: 
         if r.status != 200:
             await session.close()
@@ -235,6 +239,7 @@ class Api(commands.Cog):
     #c Change my mind!
     #t Around 1-2 hours
     #h Craft your Change My Mind meme with this command
+    #u cmm <text>
     session = aiohttp.ClientSession() 
     headers = {'Content-Type': 'application/json',
         'Authorization': f'Bearer {config["fapi"]}'} 
@@ -259,6 +264,7 @@ class Api(commands.Cog):
     #t 2 hours
     #c powered by fAPI
     #h Fake a user saying something with this command by specifying who, what and some other stuff
+    #u quote <user> <text>
     light = False
     compact = False
     name = ''
@@ -346,15 +352,6 @@ def urbandesc(array):
         print('no')
 
     return desc
-
-def avatar(user):
-    #constructing the avatar embed
-    embed = discord.Embed.from_dict({
-        'title': f'Avatar of {user}',
-        'image': {'url': str(user.avatar_url)},
-        'color': 0xc21a1a
-    })
-    return embed
 
 '''async function imagepage
 Input:

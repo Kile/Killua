@@ -16,6 +16,7 @@ class Feedback(commands.Cog):
         return
     #h Report Killua bugs with this command! For more info on how to report a bug, use `k!bug`.
     #t 1 hour
+    #u bug <command> <text>
     if command and bug:
         
         try:
@@ -69,6 +70,7 @@ Reproduction: ban a member without providing a reason```''',
         return
     #h Submit feedback to Killua with this command! For more information on how do send what, use `k!fb`.
     #t 1 hour
+    #u feedback <type> <text> 
     if Type and feedback:
         
         if not Type.lower() in ['topic', '8ball', 'hug', 'apply', 'general', 'idea', 'feature-request', 'complain', 'compliment']:

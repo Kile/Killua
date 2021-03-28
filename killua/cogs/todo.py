@@ -38,6 +38,7 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def create(self, ctx):
+        #u todo create
         #h Let's you create your todo list in an interactive menu
         x = 0
         
@@ -79,6 +80,7 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(5)
     @todo.command()
     async def view(self, ctx, todo_id=None):
+        #u todo view <list_id(optional)>
         #h Allows you to view what is on any todo list- provided you have the permissions
         if todo_id is None:
             try:
@@ -119,6 +121,7 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(5)
     @todo.command()
     async def info(self, ctx, todo_or_task_id=None, td:int=None):
+        #u todo info <list_id/task_id> <task_id(if list id provided)>
         #h This gives you info about either a todo task or list
             if td is None:
                 if todo_or_task_id is None:
@@ -138,6 +141,7 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(5)
     @todo.command()
     async def edit(self, ctx, todo_id):
+        #u todo edit <todo_id>
         #h The command with which you can change stuff on your todo list
         if todo_id.isdigit():
             todo_id = int(todo_id)
@@ -156,7 +160,8 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def name(self, ctx, new_name:str):
-        #h Rename your todo list with thsi command
+        #u todo name <new_name>
+        #h Rename your todo list with thsi command (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -170,7 +175,8 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def status(self, ctx, status):
-        #h Change the status of your todo list (public/private) with this command
+        #u todo status <new_status>
+        #h Change the status of your todo list (public/private) with this command (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -183,7 +189,8 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def color(self, ctx, color):
-        #h Change your todo list's color with this command
+        #u todo color <new_color_in_hex>
+        #h Change your todo list's color with this command (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -207,7 +214,8 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def thumbnail(self, ctx, url):
-        #h Change your todo lists thumbnail with this command
+        #u todo thumbnail <new_thumbnail>
+        #h Change your todo lists thumbnail with this command (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -235,7 +243,8 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def custom_id(self, ctx, custom_id):
-        #h Let's you change your todo lists custom id- provided you are premium supporter
+        #u todo custom_id <new_id>
+        #h Lets you change your todo lists custom id- provided you are premium supporter (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -256,7 +265,8 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(20)
     @todo.command()
     async def autodelete(self, ctx, on_or_off):
-        #h Let's you change if you mark a todo task as done if it should automatically delete it or not
+        #u todo autodelete <on/off>
+        #h Let's you change if you mark a todo task as done if it should automatically delete it or not (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -279,28 +289,32 @@ class TodoSystem(commands.Cog):
 
     @custom_cooldown(10)
     @todo.command()
-    async def remove(self, ctx, todo_number:int):
-        #h Remove a todo with this command. YAY, GETTING THINGS DONE!!
+    async def remove(self, ctx, todo_numbers: commands.Greedy[int]):
+        #u todo remove <task_id>
+        #h Remove a todo with this command. YAY, GETTING THINGS DONE!! (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
             return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
         
         todo_list = todo.find_one({'_id': list_id})
-        if todo_number == 0:
-            return await ctx.send('You can\'t remove number 0')
+        for n in todo_numbers_
+            if n < 0:
+                return await ctx.send('You can\'t remove a number less than 1')
         try:
             todos = todo_list['todos']
-            todos.pop(todo_number-1)
+            for n in todo_numbers:
+                todos.pop(n-1)
             todo.update_one({'_id': list_id}, {'$set':{'todos': todos}})
-            return await ctx.send(f'You removed todo number {todo_number} successfully')
+            return await ctx.send(f'You removed todo number{"s" if len(todo_numbers) > 1 else ""} {", ".join(todo_numbers)} successfully')
         except:
-            return await ctx.send('You need to provide a valid number!')
+            return await ctx.send('You need to provide only valid numbers!')
 
     @custom_cooldown(5)
     @todo.command()
     async def mark(self, ctx, todo_number:int, *,marked_as:str):
-        #h Mark a todo with a comment like `done` or `too lazy`
+        #u todo mark <task_id> <text>
+        #h Mark a todo with a comment like `done` or `too lazy` (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -343,7 +357,8 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(10)
     @todo.command()
     async def buy(self, ctx, what):
-        #h Buy cool stuff for your todo list with this command!
+        #u todo buy <item>
+        #h Buy cool stuff for your todo list with this command! (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -367,6 +382,7 @@ class TodoSystem(commands.Cog):
     @custom_cooldown(2)
     @todo.command()
     async def shop(self, ctx):
+        #u todo shop
         #h Get some info about what cool stuff you can buy for your todo list with this command
         embed = discord.Embed.from_dict({
             'title': '**The todo shop**',
@@ -390,7 +406,8 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(4)
     @todo.command()
     async def add(self, ctx, *, td):
-        #h Add a todo to your list, *yay, more work*
+        #u todo add <text>
+        #h Add a todo to your list, *yay, more work* (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -413,7 +430,8 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(5)
     @todo.command()
     async def kick(self, ctx, user: typing.Union[discord.User, int]):
-        #h Kick someone with permissions from your todo list (this takes **every** permission)
+        #u todo kick <user>
+        #h Kick someone with permissions from your todo list (this takes **every** permission) (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -447,6 +465,7 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(4)
     @todo.command()
     async def exit(self, ctx):
+        #u todo exit
         #h Exit editing mode with this. I've never used it because it is pointless because my code is so good you realistically never need to be out of editing mode but it is here so use it 
         try:
             list_id = editing[ctx.author.id]
@@ -459,7 +478,8 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(20)
     @todo.command()
     async def invite(self, ctx, user: typing.Union[discord.User, int], role):
-        #h Wanna let your friend add more todos for you? Invite them! You can also make people view your todo list when it is set on private
+        #u todo invite <user> <editor/viewer>
+        #h Wanna let your friend add more todos for you? Invite them! You can also make people view your todo list when it is set on private (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -535,7 +555,8 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(5)
     @todo.command()
     async def assign(self, ctx, todo_number:int, user: typing.Union[discord.User, int], rm=None):
-        #h Assign someone a todo task with this to coordinate who does what
+        #u todo assign <task_id> <user>
+        #h Assign someone a todo task with this to coordinate who does what (Only in editor mode)
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
@@ -605,6 +626,7 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(20)
     @todo.command()
     async def delete(self, ctx, todo_id):
+        #u todo delete <todo_id>
         #h Use this command to delete your todo list. Make sure to say goodbye a last time
         if todo_id.isdigit():
             todo_id = int(todo_id)
@@ -623,6 +645,8 @@ Buy 10 more spots for todos for your list''',
     @custom_cooldown(4)
     @todo.command()
     async def lists(self, ctx):
+        #u todo lists
+        #h This shows a liat of todo lists you own or have access to
         lists_owning = todo.find({'owner': ctx.author.id})
         lists_viewing = todo.find({'viewer': ctx.author.id})
         lists_editing = todo.find({'editor': ctx.author.id})
