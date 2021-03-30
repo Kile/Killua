@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands, tasks
 import random
 from random import randint
-import datetime
+from datetime import datetime, timedelta
 import pymongo
 from pymongo import MongoClient
 import json
@@ -10,6 +10,9 @@ import asyncio
 from itertools import zip_longest
 import math
 import typing
+from PIL import Image, ImageFont, ImageDraw
+import io
+import aiohttp
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -50,16 +53,23 @@ example = {
       "effect": "time/amount"
     },
     "rs": [ #Stands for restricted slots
-      [1,{"fake": True}],
-      [4, {"fake": False}],
-      [6, {"fake": False}],
-      [7, {"fake": False}]
+      [1,{"fake": True, "clone": False}],
+      [4, {"fake": False, "clone": False}],
+      [6, {"fake": False, "clone": True}],
+      [7, {"fake": False, "clone": False}]
     ],
     "fs": [ #Stands for free slots
-      [1004, {"fake": True}],
-      [1008, {"fake": False}]
+      [1004, {"fake": True, "clone": False}],
+      [1008, {"fake": False, "clone": False}]
+    ],
+    "met_users": [
+        606162661184372736,
+        258265415770177536
     ]
 }
+
+
+cached_cards = {}
 
 ALLOWED_AMOUNT_MULTIPLE = 3
 FREE_SLOTS = 40
@@ -286,8 +296,8 @@ class User():
         if card_id in [x[0] for x in fs]:
             if fake_allowed is False:
                 if True in [x[1]["fake"] for x in fs if x[0] == card_id]:
-                    for x in [x[1]["fake"] for x in fs if x[0] == card_id and x[1]['fake'] == True]:
-                        fs.remove(x[0])
+                    for x in [x for x in fs if x[0] == card_id and x[1]['fake'] == True]:
+                        fs.remove([x[0], {"fake": True, "clone": x[1]["clone"]}])
                     if len([x for x in fs if x[0] == card_id]) == 0:
                         return False
             return True
@@ -300,8 +310,8 @@ class User():
         if card_id in [x[0] for x in total]:
             if fake_allowed is False:
                 if True in [x[1]["fake"] for x in total if x[0] == card_id]:
-                    for x in [x[1]["fake"] for x in total if x[0] == card_id and x[1]['fake'] == True]:
-                        total.remove(x[0])
+                    for x in [x for x in total if x[0] == card_id and x[1]['fake'] == True]:
+                        total.remove([x[0], {"fake": True, "clone": x[1]["clone"]}])
                     if len([x for x in total if x[0] == card_id]) == 0:
                         return False
             return True
@@ -410,7 +420,7 @@ class User():
             teams.update_one({'id': self.id}, {'$set': {'cards': {'rs': self.rs_cards, 'fs': self.fs_cards, 'effects': self.effects}}})
 
         if self.has_rs_card(card.id) is False:
-            if card_id < 99:
+            if card_id < 100:
                 ac(True)
                 return
             return ac()
@@ -481,15 +491,15 @@ class User():
         if (True in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id]):
             r = self.remove_card(card_id, remove_fake=True, restricted_slot=True)
             r2 = self.remove_card(card_id, remove_fake=False, restricted_slot=False)
-            self.add_card(card_id, True, r[1]["clone"])
-            self.add_card(card_id, False, r2[1]["clone"])
+            self.add_card(card_id, False, r[1]["clone"])
+            self.add_card(card_id, True, r2[1]["clone"])
             return
 
         if (True in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id]):
             r = self.remove_card(card_id, remove_fake=True, restricted_slot=False)
             r2 = self.remove_card(card_id, remove_fake=False, restricted_slot=True)
-            self.add_card(card_id, False, r[1]["clone"])
-            self.add_card(card_id, True, r2[1]["clone"])
+            self.add_card(card_id, True, r[1]["clone"])
+            self.add_card(card_id, False, r2[1]["clone"])
             return
 
         return False # Returned if the requirements haven't been met
@@ -558,12 +568,21 @@ class User():
             teams.update_one({'id': self.id}, {'$set': {'cards': {'rs': self.rs_cards, 'fs': self.fs_cards, 'effects': {}}}})
             return True
 
-
 class Cards(commands.Cog):
 
     def __init__(self, client):
         self.client = client
         self.shop_update.start()
+
+    #@commands.Cog.listener()
+    #async def on_command_error(self, ctx, error):
+        #embed = discord.Embed.from_dict({
+            #'title': '**An error occured**',
+            #'description': str(error),
+            #'color': 0xff0000,
+            #'footer': {'text': 'Make sure to report the error!'}
+        #})
+        #await ctx.send(embed=embed)
         
     @tasks.loop(hours=6)
     async def shop_update(self):
@@ -733,6 +752,8 @@ class Cards(commands.Cog):
 
         if sw is False:
             await ctx.send(f'You don\'t own a fake and real copy of card `{card.name}` you can swap out!')
+        
+        await ctx.send(f'Successfully swapped out card No. {card_id}')
 
     @commands.command()
     async def hunt(self, ctx, end:str=None):
@@ -827,7 +848,7 @@ class Cards(commands.Cog):
                 return await ctx.send('Invalid card number')
             if user.has_any_card(item, False) is False:
                 return await ctx.send('You don\'t have any not fake copies of this card!')
-            if (len(User(other.id).fs_cards) <= 40 and item < 100 and User(other.id).has_rs_card(item)) or (len(User(other.id).fs_cards) <= 40 and item > 99):
+            if (len(User(other.id).fs_cards) >= 40 and item < 100 and User(other.id).has_rs_card(item)) or (len(User(other.id).fs_cards) >= 40 and item > 99):
                 return await ctx.send('The user you are trying to give the cards\'s free slots are full!')
 
             user.remove_card(item)
@@ -967,6 +988,9 @@ class Cards(commands.Cog):
             return await ctx.send(f'Added {item} Jenny to your account')
 
 async def card_1038(self, ctx, card_id:int, without_removing=False):
+    if not isinstance(card_id, int):
+        return await ctx.send('Invalid arguments')
+    
     try:
         card = Card(card_id)
     except CardNotFound:
@@ -974,7 +998,7 @@ async def card_1038(self, ctx, card_id:int, without_removing=False):
     if card.id == 0:
         return await ctx.send('Invalid card!')
     if without_removing is False:
-        User(ctx.author.id).remove_card(1031)
+        User(ctx.author.id).remove_card(1038)
     real_owners = list()
     for o in card.owners: 
         # Get the total number of owners
@@ -990,13 +1014,14 @@ async def card_1038(self, ctx, card_id:int, without_removing=False):
 
 async def card_1036(self, ctx, effect:str, card_id:int):
     user = User(ctx.author.id)
+    effect = str(effect)
     if not '1036' in user.effects and not user.has_fs_card(1036):
         return await ctx.send('You need to have used the card 1036 once to use this command')
     if user.has_fs_card(1036) and not '1036' in user.effects:
         user.remove_card(1036)
         user.add_effect('1036', datetime.now())
     if not effect.lower() in ["list", "analysis", "1031", "1038"]:
-        return await ctx.send('Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `use <1036 list/analysis> <card_id>`')
+        return await ctx.send('Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `use 1036 <list/analysis> <card_id>`')
 
     if effect.lower() in ["list", "1038"]:
         return await card_1038(self, ctx, card_id, True)
@@ -1160,22 +1185,22 @@ async def card_1018(self, ctx):
     users = list()
     stolen_cards = list()
     async for message in ctx.channel.history(limit=20):
-        if message.author.id not in users and message.author.bot is False and message.author != ctx.author:
-            users.append(message.author.id)
+        if message.author not in users and message.author.bot is False and message.author != ctx.author:
+            users.append(message.author)
 
-    for user in users:
-        u = User(user)
+    for usr in users:
+        u = User(usr.id)
         if len(u.all_cards) == 0:
             continue
         c = random.choice(u.all_cards)
-        if await check_defense(self, ctx, user, 1018, c[0]) is True:
+        if await check_defense(self, ctx, usr, 1018, c[0]) is True:
             continue
         r = u.remove_card(c[0], c[1]["fake"])
         stolen_cards.append(r)
 
     
     user.add_multi(stolen_cards)
-    return await ctx.send(f'Success! Stole the cards {", ".join([x[0] for x in stolen_cards])} from {len(stolen_cards)} users!')
+    return await ctx.send(f'Success! Stole the card{"s" if len(stolen_cards) > 1 else ""} {", ".join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} users!')
 
 async def card_1015(self, ctx, member:discord.Member):
     if not isinstance(member, discord.Member):
@@ -1196,7 +1221,7 @@ async def card_1015(self, ctx, member:discord.Member):
 
 async def card_1011(self, ctx, member:discord.Member):
     if not isinstance(member, discord.Member):
-        return await ctx.send('Invalid argument used with card number 10011')
+        return await ctx.send('Invalid argument used with card number 1011')
     if member.bot:
         return await ctx.send('🤖')
 
@@ -1204,16 +1229,16 @@ async def card_1011(self, ctx, member:discord.Member):
     other = User(member.id)
     user.remove_card(1011)
 
-    if  len(other.all_cards):
+    if len(other.rs_cards) == 0:
         return await ctx.send('The target does not have any restricted slot cards! Clone will get used up anyways')
     card = random.choice(other.rs_cards)
-    if len(Card(card[0]).owners) >= Card(card[0]) * ALLOWED_AMOUNT_MULTIPLE:
+    if len(Card(card[0]).owners) >= len(Card(card[0]).owners) * ALLOWED_AMOUNT_MULTIPLE:
         return await ctx.send(f'The maximum amount of existing cards with id {card[0]} is reached! Clone gets used up anyways')
 
     if len(user.fs_cards) >= FREE_SLOTS: # This will NEVER be true but there is a very small chance with perfect timing
         return await ctx.send('You don\'t have space in your free slots so you can\'t use this command')
     user.add_card(card[0], card[1]["fake"], True)
-    return await ctx.send(f'Successfully added another copy of {card[0]} to your book! This card is {"not" if card[1]["fake"] is False else ""} a fake!')
+    return await ctx.send(f'Successfully added another copy of card No. {card[0]} to your book! This card is {"not" if card[1]["fake"] is False else ""} a fake!')
 
 async def card_1010(self, ctx, card_id:int):
     user = User(ctx.author.id)
@@ -1249,14 +1274,15 @@ async def card_1008(self, ctx, member:discord.Member):
     if len(attackist_cards) == 0:
         return await ctx.send('You don\'t have any cards left that could be swapped!')
 
-    if (await check_defense(self, ctx, member, 1008)) is True:
+    rm_c = random.choice([x[0] for x in other.all_cards if x[0] != 1008])
+    if (await check_defense(self, ctx, member, 1008, rm_c)) is True:
         return
     
-    attackist.remove_card(1008) # Removing the card BEFORE swapping so it can't be swapped out
-    removed_card_other = other.remove_card(random.choice([x[0] for x in other.all_cards]))
-    removed_attackist_card = attackist.remove_card(random.choice(attackist_cards))
+    user.remove_card(1008)
+    removed_card_other = other.remove_card(rm_c)
+    removed_attackist_card = user.remove_card(random.choice(attackist_cards))
     other.add_card(removed_attackist_card[0], removed_attackist_card[1]["fake"])
-    attackist.add_card(removed_card_other[0], removed_card_other[1]["fake"])
+    user.add_card(removed_card_other[0], removed_card_other[1]["fake"])
 
     await ctx.send(f'Sucesfully swapped cards! Gave {member} the card `{removed_attackist_card[0]}` and took card number `{removed_card_other[0]}` from them!')
 
@@ -1364,8 +1390,8 @@ async def book_paginator(self, ctx, page, msg:discord.Message=None, first_time=F
 
 async def check_defense(self, ctx, attacked_user:discord.Member, attack_spell:int, target_card:int): #This function will alow the user to defend themselfes if they have protection spells
     user = User(attacked_user.id)
-    if target_card in [x[0] for x in user.rs_cards] and attack_spell in []: # A list of cards that steal from restricted slots
-        if f'page_protection_{int((target_card-10)/18)+2}' in user.effects and not target_card in [x[0] for x in user.fs_cards]:
+    if target_card in [x[0] for x in user.rs_cards]: # A list of cards that steal from restricted slots
+        if f'page_protection_{int((target_card-10)/18+2)}' in user.effects and not target_card in [x[0] for x in user.fs_cards]:
             await ctx.send('The user has protected the page this card is in against spells!')
             return True
 
@@ -1395,12 +1421,14 @@ async def check_defense(self, ctx, attacked_user:discord.Member, attack_spell:in
     def check(msg):
         return msg.author.id == attacked_user.id and (msg.content.lower() in [*['n'], *[str(x) for x in effects]])
     try:
-        msg = await self.client.wait_for('message', timeout=120, check=check)
+        msg = await self.client.wait_for('message', timeout=1, check=check)
     except asyncio.TimeoutError:
-        return await ctx.send('No response from the one attacked, the attack goes through!', delete_after=3)
+        await ctx.send('No response from the one attacked, the attack goes through!', delete_after=3)
+        return
     else:
         if msg.content.lower() == 'n':
-            return await ctx.send('You decided not to use a defense spell, the attack goes through!', delete_after=3)
+            await ctx.send('You decided not to use a defense spell, the attack goes through!', delete_after=3)
+            return
         else:
             user.remove_card(int(msg.content), False)
             await ctx.send(f'Successfully defended against card `{attack_spell}`!')
@@ -1539,7 +1567,7 @@ def format_item(offer:int, reduced_item:int=None, reduced_by:int=None, number:in
     return {'name':f'**Number {item["_id"]}: {item["name"]}** |{item["emoji"]}|', 'value': f'**Description:** {item["description"]}\n**Price:** {PRICES[item["rank"]]} Jenny\n**Type:** {item["type"].replace("normal", "item")}\n**Rarity:** {item["rank"]}'}
 
 async def paginator(self, ctx, page:int, msg:discord.Message=None, first_time=False, only_display=None, user=None):
-    if only_display is None:
+    if user is None:
         name = ctx.author
         person = User(ctx.author.id)
     else:
@@ -1686,7 +1714,14 @@ async def cards(image, data, option):
             l.append(None)
             continue
         if not i[0] in [x[0] for x in l]:
-            l.append([i[0], await getcard(data[n][1]) if data[n][1] else None])
+            if str(i[0]) in cached_cards: # I decided since it's too much effort to save the cards locally, after a card was first used, why not 
+                # save its pillow image object to decrease computing time significantly 
+                l.append([i[0], cached_cards[str(i[0])] if data[n][1] else None])
+                continue
+            c =  await getcard(data[n][1]) if data[n][1] else None
+            l.append([i[0], c])
+            if c:
+                cached_cards[str(i[0])] = c
         else: 
             l.append([i[0], l[[x[0] for x in l].index(i[0])][1]])
     i = 0

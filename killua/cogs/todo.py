@@ -1071,7 +1071,7 @@ async def todo_embed_generator(self, ctx, todo_id):
     new_l = '\n'.join(new_l)
     embed = discord.Embed.from_dict({
         'title': f'To-do list "{todo_list["name"]}" (ID: {todo_list["_id"]})',
-        'description': f'{new_l}',
+        'description': f'{new_l if len(new_l) > 1 else "No todos"}',
         'color': 0x1400ff,
         'footer': {'icon_url': str(owner.avatar_url), 'text': f'Owned by {owner}'}
     })
@@ -1101,6 +1101,8 @@ outsourcing big embed production 🛠
 '''
 
 async def todo_info_embed_generator(self, ctx, list_id:str):
+    editors = list()
+    viewer = list()
     if str(list_id).isdigit():
         list_id = int(list_id)
         todo_list = todo.find_one({'_id': list_id})
@@ -1119,23 +1121,22 @@ async def todo_info_embed_generator(self, ctx, list_id:str):
     if todo_list['viewer'] == []:
         todo_list['viewer'] = ['No one with viewing permissions']
     else:
+        print(todo_list['viewer'])
         for user in todo_list['viewer']:
             u = await self.client.fetch_user(user)
-            todo_list['viewer'].remove(user)
-            todo_list['viewer'].append(f'{u.name}#{u.discriminator}')
+            viewer.append(f'{u.name}#{u.discriminator}')
+        print(viewer)
     if todo_list['editor'] == []:
         todo_list['editor'] = ['No one with editing permissions']
     else:
         for user in todo_list['editor']:
             u = await self.client.fetch_user(user)
-            todo_list['editor'].remove(user)
-            todo_list['editor'].append(f'{u.name}#{u.discriminator}')
+            editors.append(f'{u.name}#{u.discriminator}')
     try:
         description = todo_list['description']
     except KeyError:
         description = ''
     owner = await self.client.fetch_user(todo_list['owner'])
-    owner = f'{owner.name}#{owner.discriminator}'
     if not 'description' in todo_list:
         todo_list['description'] = ''
     
@@ -1148,9 +1149,9 @@ async def todo_info_embed_generator(self, ctx, list_id:str):
 
 **Status**: `{todo_list["status"]}`
 
-**Editors**: `{", ".join(todo_list["editor"])}`
+**Editors**: `{", ".join(editors) if len(editors) > 0 else "Nobody has editor perissions"}`
 
-**Viewers**: `{", ".join(todo_list["viewer"])}`
+**Viewers**: `{", ".join(viewer) if len(viewer) > 0 else "Nobody has viewer permissions"}`
 
 **Todos**: `{len(todo_list["todos"])}/{todo_list["spots"]}`
 
