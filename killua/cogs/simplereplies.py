@@ -25,17 +25,21 @@ class SimpleReplies(commands.Cog):
     })
     await ctx.send(embed=embed)
     
-  @commands.command()
+  @commands.command(aliases=['stats'])
   async def info(self, ctx):
     if blcheck(ctx.author.id) is True:
       return
-    embed = discord.Embed(
-        title = 'Info',
-        description = 'This is Killua, a bot designed to be a fun SFW bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua\'s status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n **Last time restarted:**\n '+ str(self.client.startup_datetime.strftime("%b %d %Y %H:%M:%S")),
-        color = 0x1400ff
-    )
+    now = datetime.datetime.now()
+    diff = now - self.client.startup_datetime
+    t = f'{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds'
+    embed = discord.Embed.from_dict({
+      'title': f'Infos about {ctx.me.name}',
+      'description': f'This is Killua, a bot designed to be a fun multipurpose bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua\'s status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n**__Bot stats__**\n__Bot uptime:__ `{t}`\n__Bot users:__ `{len(self.client.users)}`\n__Bot guilds:__ `{len(self.client.guilds)}`\n__Bot commands:__ `{len(self.client.commands)}`\n__Owner id:__ `{self.client.owner_id}`\n__Latency:__ `{int(self.client.latency*100)}` ms',
+      'color': 0x1400ff,
+        'thumbnail': {'url': str(ctx.me.avatar_url)}
+    })
     await ctx.send(embed=embed) 
-    #c help command
+    #c info command
     #t 20 minutes, constantly updating
     #h Gives you some outdated infos about Killua
     #u info
