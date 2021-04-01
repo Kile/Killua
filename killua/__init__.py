@@ -48,7 +48,6 @@ top = db['teampoints']
 server = db['guilds']
 
 def get_prefix(bot, message):
-	return random.choice(["k!", "k.", "k?", "k-"])
 	try:
 		y = server.find_one({'id': message.guild.id})
 		if y is None:
