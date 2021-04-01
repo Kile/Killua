@@ -12,6 +12,7 @@ import json
 from pymongo import MongoClient
 from random import choice, randint
 from typing import Callable, Coroutine
+import random
 
 
 all_commands = []
@@ -47,6 +48,7 @@ top = db['teampoints']
 server = db['guilds']
 
 def get_prefix(bot, message):
+	return random.choice(["k!", "k.", "k?", "k-"])
 	try:
 		y = server.find_one({'id': message.guild.id})
 		if y is None:
