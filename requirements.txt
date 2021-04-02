@@ -1,4 +1,4 @@
-aiohttp==3.6.4
+aiohttp==3.6.3
 arrow==0.17.0
 astunparse==1.6.3
 async-timeout==3.0.1
@@ -44,3 +44,4 @@ soupsieve==2.1
 typing-extensions==3.7.4.3
 urllib3==1.26.3
 yarl==1.5.1
+pypxl==0.1.6
