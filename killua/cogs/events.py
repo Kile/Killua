@@ -82,7 +82,7 @@ class Events(commands.Cog):
 
       await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again, thank you for helping to improve killua :3')
     else:
-      print(error)
+      print(f'An error occured\nGuild id: {ctx.guild.id}\nCommand name: {ctx.command.name}\nError: {error}')
 
         
   @commands.Cog.listener()

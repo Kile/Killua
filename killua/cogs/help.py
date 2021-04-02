@@ -138,13 +138,7 @@ Unmutes a user'''
     if commandgroup.lower() == 'fun':
         embed = discord.Embed.from_dict({
             'title': 'Fun commands',
-            'description': '''```css\nquote <@user> <text>```
-Send a screenshot of a user saying what you defined. Use `-c`ast the start of `text` for compact mode or `-l` for light mode or both
-
-```css\ncmm <text>```
-Sends the *Change My Mind* meme with the text you defined
-
-```css\nhug <user>```
+            'description': '''```css\nhug <user>```
 We all need  more hugs in our life, this hugs the user specified
 
 
@@ -176,9 +170,14 @@ Changes provided image into emojis (seriously try this one!)
 ```css\nimage <title>```
 Gives you the best DuckDuckGo images for your title
 
-```\nf <type> <user/id/link>```
-To get a list with available types just use `k!f`
-*heads or tails in plan*
+```css\nflag <flag <user/id/link>```
+Put a flag over an image!
+
+```css\nlego <user/id/link>```
+Legofiy an image
+
+```css\nthonkify <text>```
+Turn text into thonks
             '''
         })
         return embed
@@ -195,9 +194,6 @@ Challenges someone to a game of Rock Paper Scissors. If you specify an amount yo
 
 ```css\nprofile <user_id/mention>```
 Shows you info about a specific user, some discord info and some info like how many Jenny they have
-
-```css\ngive <user> <Jenny>```
-Give a fellow user some Jenny
 
 ```css\nserver```
 Gives you infos about the current server (currently disabled)
