@@ -40,8 +40,6 @@ shop = general['shop']
 5) k!give modify to work with items |Done|
 
 6) Add support for all spell cards usable with k!use |Done (24/24)|
-
-Testing in progress...
 '''
 ###################TODO TODO TODO####################
 
@@ -664,17 +662,12 @@ class Cards(commands.Cog):
         price = int()
 
         try:
-            prefix = guilds.find_one({'id': ctx.guild.id})['prefix']
-        except:
-            prefix = 'k!'
-
-        try:
             card = Card(item)
         except CardNotFound:
-            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{prefix}shop`')
+            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`')
 
         if not item in shop_items:
-            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{prefix}shop`')
+            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`')
 
         if not shop_data['reduced'] is None:
             if shop_items.index(card.id) == shop_data['reduced']['reduced_item']:
@@ -686,7 +679,7 @@ class Cards(commands.Cog):
             return await ctx.send('Unfortunatly the global maximal limit of this card is reached! Someone needs to sell their card for you to buy one or trade/give it to you')
 
         if len(user.fs_cards) >= FREE_SLOTS:
-            return await ctx.send(f'Looks like your free slots are filled! Get rid of some with `{prefix}sell`')
+            return await ctx.send(f'Looks like your free slots are filled! Get rid of some with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`')
 
         if user.jenny < price:
             return await ctx.send(f'I\'m afraid you don\'t have enough Jenny to buy this card. Your balance is {user.jenny} while the card costs {price} Jenny')
@@ -694,12 +687,12 @@ class Cards(commands.Cog):
             user.add_card(item)
         except Exception as e:
             if isinstance(e, CardLimitReached):
-                return await ctx.send(f'Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{prefix}sell <card>`')
+                return await ctx.send(f'Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell <card>`')
             else:
                 print(e)
 
         user.remove_jenny(price) #Always putting substracting points before giving the item so if the payment errors no iten is given
-        return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{prefix}book`!')
+        return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!')
 
     @commands.command()
     async def sell(self, ctx, item:int, amount=1):
@@ -780,7 +773,7 @@ class Cards(commands.Cog):
                     for rew in rewards:
                         for i in range(rew[1]):
                             if len([*user.fs_cards,*[x for x in l if x[0] > 99 and not user.has_rs_card(x[0])]]) >= 40 and (rew[0] > 99 or (not user.has_rs_card(rew[0]) and rew[0] < 100)):
-                                r = ':warning:*Your free slot limit has been reached! Sell some cards with `k!sell`*:warning:\n\n' + r
+                                r = f':warning:*Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`*:warning:\n\n' + r
                                 return r_l, r, l
                             l.append([rew[0], {"fake": False, "clone": False}])
                         r_l.append(f'{rew[1]}x **{Card(rew[0]).name}**{Card(rew[0]).emoji}')
@@ -798,10 +791,10 @@ class Cards(commands.Cog):
                 return await ctx.send(embed=embed)
                 
             elif end.lower() == 'end': 
-                return await ctx.send(f'You aren\'t on a hunt yet! Start one with `k!hunt`')
+                return await ctx.send(f'You aren\'t on a hunt yet! Start one with `{self.client.command_prefix(self.client, ctx.message)[2]}hunt`')
 
         if user.has_effect('hunting')[0] is True:
-            return await ctx.send('You are already on a hunt! Get the results with `k!hunt end`')
+            return await ctx.send(f'You are already on a hunt! Get the results with `{self.client.command_prefix(self.client, ctx.message)[2]}hunt end`')
         user.add_effect('hunting', datetime.now())
         await ctx.send('You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get')
 
@@ -869,7 +862,7 @@ class Cards(commands.Cog):
         if not user.has_any_card(card.id):
             return await ctx.send('You are not in possesion of this card!')
 
-        await ctx.send(f'Do you really want to throw this card away? (be aware that this will throw the first card you own with this id away, if you want to get rid of a fake swap it out of your album with `k!swap <card_id>`) **[y/n]**')
+        await ctx.send(f'Do you really want to throw this card away? (be aware that this will throw the first card you own with this id away, if you want to get rid of a fake swap it out of your album with `{self.client.command_prefix(self.client, ctx.message)[2]}swap <card_id>`) **[y/n]**')
 
         def check(msg):
             return msg.author.id == ctx.author.id and (msg.content.lower() in ['y', 'n'])
@@ -960,7 +953,7 @@ class Cards(commands.Cog):
     async def gain(self, ctx, t:str, item:str):
         user = User(ctx.author.id)
         if not t.lower() in ["jenny", "card"]:
-            return await ctx.send('You need to provide a valid type! `gain <jenny/card> <amount/id>`')
+            return await ctx.send(f'You need to provide a valid type! `{self.client.command_prefix(self.client, ctx.message)[2]}gain <jenny/card> <amount/id>`')
         if t.lower() == 'card':
             try:
                 item = int(item)
@@ -1021,7 +1014,7 @@ async def card_1036(self, ctx, effect:str, card_id:int):
         user.remove_card(1036)
         user.add_effect('1036', datetime.now())
     if not effect.lower() in ["list", "analysis", "1031", "1038"]:
-        return await ctx.send('Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `use 1036 <list/analysis> <card_id>`')
+        return await ctx.send(f'Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{self.client.command_prefix(self.client, ctx.message)[2]}use 1036 <list/analysis> <card_id>`')
 
     if effect.lower() in ["list", "1038"]:
         return await card_1038(self, ctx, card_id, True)
@@ -1081,10 +1074,11 @@ async def card_1031(self, ctx, card_id:int, without_removing=False):
 
 async def card_1029(self, ctx, member:discord.Member):
     if not isinstance(member, discord.Member):
-        return await ctx.send('Invalid argument used with card number 1008')
+        return await ctx.send('Invalid argument used with card number 10029')
     if member.bot:
         return await ctx.send('🤖')
-
+    if (await check_circumstances(ctx, member)) is not True:
+        return
     other = User(member.id)
     user = User(ctx.author.id)
     if len(other.rs_cards) == 0:
@@ -1101,7 +1095,8 @@ async def card_1028(self, ctx, member:discord.Member):
         return await ctx.send('Invalid argument used with card number 1008')
     if member.bot:
         return await ctx.send('🤖')
-
+    if (await check_circumstances(ctx, member)) is not True:
+        return
     other = User(member.id)
     user = User(ctx.author.id)
     if len(other.fs_cards) == 0:
@@ -1151,6 +1146,8 @@ async def card_1021(self, ctx, member:discord.Member, card_id:int):
         return await ctx.send('Invalid argument used with card number 1021')
     if member.bot:
         return await ctx.send('🤖')
+    if (await check_circumstances(ctx, member)) is not True:
+        return
 
     user = User(ctx.author.id)
     other = User(member.id)
@@ -1189,6 +1186,8 @@ async def card_1018(self, ctx):
             users.append(message.author)
 
     for usr in users:
+        if (await check_circumstances(ctx, usr)) is not True:
+            continue
         u = User(usr.id)
         if len(u.all_cards) == 0:
             continue
@@ -1200,7 +1199,7 @@ async def card_1018(self, ctx):
 
     
     user.add_multi(stolen_cards)
-    return await ctx.send(f'Success! Stole the card{"s" if len(stolen_cards) > 1 else ""} {", ".join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} users!')
+    return await ctx.send(f'Success! Stole the card{"s" if len(stolen_cards) > 1 else ""} {", ".join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} user{"s" if len(users) > 1 else ""}!')
 
 async def card_1015(self, ctx, member:discord.Member):
     if not isinstance(member, discord.Member):
@@ -1210,7 +1209,7 @@ async def card_1015(self, ctx, member:discord.Member):
 
     user = User(ctx.author.id)
     if not user.has_met(member.id):
-        return await ctx.send('You haven\'t met this user yet! Use `k!meet <@someone>` if they send a message in a channel to be able to use this card on them')
+        return await ctx.send(f'You haven\'t met this user yet! Use `{self.client.command_prefix(self.client, ctx.message)[2]}meet <@someone>` if they send a message in a channel to be able to use this card on them')
 
     user.remove_card(1015)
 
@@ -1262,7 +1261,8 @@ async def card_1008(self, ctx, member:discord.Member):
         return await ctx.send('Invalid argument used with card number 1008')
     if member.bot:
         return await ctx.send('🤖')
-    
+    if (await check_circumstances(ctx, member)) is not True:
+        return
     other = User(member.id)
 
     if len(other.all_cards) == 0:
@@ -1291,6 +1291,9 @@ async def card_1007(self, ctx, member:discord.Member):
         return await ctx.send('Invalid argument used with card number 1007')
     if member.bot:
         return await ctx.send('🤖')
+    if (await check_circumstances(ctx, member)) is not True:
+        return
+
     other = User(member.id)
     attackist = User(ctx.author.id)
 
@@ -1311,9 +1314,12 @@ async def card_1002(self, ctx, member:discord.Member):
         return await ctx.send('Invalid argument used with card number 1002')
     if member.bot:
         return await ctx.send('🤖')
+    if (await check_circumstances(ctx, member)) is not True:
+        return
+
     user = User(ctx.author.id)
     if not user.has_met(member.id):
-        return await ctx.send('You haven\'t met this user yet! Use `k!meet <@someone>` if they send a message in a channel to be able to use this card on them')
+        return await ctx.send(f'You haven\'t met this user yet! Use `{self.client.command_prefix(self.client, ctx.message)[2]}meet <@someone>` if they send a message in a channel to be able to use this card on them')
 
     user.remove_card(1002)
 
@@ -1329,7 +1335,10 @@ async def card_1001(self, ctx, member:discord.Member):
         return await ctx.send('🤖')
 
     if not User(ctx.author.id).has_met(member.id):
-        return await ctx.send('You haven\'t met this user yet! Use `k!meet <@someone>` if they send a message in a channel to be able to use this card on them')
+        return await ctx.send(f'You haven\'t met this user yet! Use `{self.client.command_prefix(self.client, ctx.message)[2]}meet <@someone>` if they send a message in a channel to be able to use this card on them')
+
+    if (await check_circumstances(ctx, member)) is not True:
+        return
 
     User(ctx.author.id).remove_card(1001)
 
@@ -1421,7 +1430,7 @@ async def check_defense(self, ctx, attacked_user:discord.Member, attack_spell:in
     def check(msg):
         return msg.author.id == attacked_user.id and (msg.content.lower() in [*['n'], *[str(x) for x in effects]])
     try:
-        msg = await self.client.wait_for('message', timeout=1, check=check)
+        msg = await self.client.wait_for('message', timeout=60, check=check)
     except asyncio.TimeoutError:
         await ctx.send('No response from the one attacked, the attack goes through!', delete_after=3)
         return
@@ -1433,6 +1442,13 @@ async def check_defense(self, ctx, attacked_user:discord.Member, attack_spell:in
             user.remove_card(int(msg.content), False)
             await ctx.send(f'Successfully defended against card `{attack_spell}`!')
             return True
+
+async def check_circumstances(ctx, attacked_user:discord.Member):
+    # This makes sure members always have the chance to defend themselves against attacks
+    perms = ctx.channel.permissions_for(attacked_user)
+    if not perms.send_messages or not perms.read_messages:
+        return await ctx.send(f'You can only attack a user in a channel they have read and write permissions to which isn\'t the case with {attacked_user.name}') 
+    return True
 
 async def check_view_defense(self, ctx, attacked_user:discord.Member, attack_spell:int):
     user = User(attacked_user.id)
@@ -1708,35 +1724,22 @@ async def getfont(size):
     return font
 
 async def cards(image, data, option):
-    l = list()
-    for n, i in enumerate(data): # Kile part (I wrote a small optimasation algorithm which avoids fetching the same card and just uses the same data)
-        if not i:
-            l.append(None)
-            continue
-        if not i[0] in [x[0] for x in l]:
-            if str(i[0]) in cached_cards: # I decided since it's too much effort to save the cards locally, after a card was first used, why not 
-                # save its pillow image object to decrease computing time significantly 
-                l.append([i[0], cached_cards[str(i[0])] if data[n][1] else None])
-                continue
-            c =  await getcard(data[n][1]) if data[n][1] else None
-            l.append([i[0], c])
-            if c:
-                cached_cards[str(i[0])] = c
-        else: 
-            l.append([i[0], l[[x[0] for x in l].index(i[0])][1]])
-    i = 0
+
     card_pos:list = [
         [(113, 145),(320, 15),(418, 15),(516, 15),(320, 142),(418, 142),(516, 142),(320, 269),(418, 269),(516, 269)],
         [(15,17),(112,17),(210,17),(15,144),(112,144),(210,144),(15,274),(112,274),(210,274),(320,13),(418,13),(516,13),(320,143),(418,143),(516,143),(320,273),(418,273),(516,273)]
     ]
-    for n, z in enumerate(l):
-        if z != None and z[1] != None:
-            image.paste(z[1], (card_pos[option][n]))
+    for n, i in enumerate(data): 
+        if i:
+            if i[1]:
+                if not str(i[0]) in cached_cards: # Kile part (I wrote a small optimasation algorithm which avoids fetching the same card and just uses the same data)
+                    cached_cards[str(i[0])] = await getcard(i[1])
+
+                image.paste(cached_cards[str(i[0])], (card_pos[option][n]))
     return image
 
 async def numbers(image, data, page):
     page -= 2
-    i = 0
     numbers_pos:list = [
       [(35, 60),(138, 60),(230, 60),(35, 188),(138, 188),(230, 188),(36, 317),(134, 317),(232, 317),(338, 60),(436, 60),(536, 60),(338, 188),(436, 188),(536, 188),(338, 317),(436, 317),(536, 317)], 
       [(30, 60),(132, 60),(224, 60),(34, 188),(131, 188),(227, 188),(32, 317),(130, 317),(228, 317),(338, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(533, 317)], 
@@ -1748,9 +1751,9 @@ async def numbers(image, data, page):
 
     font = await getfont(35)
     draw = ImageDraw.Draw(image)
-    for z in data:
-        draw.text(numbers_pos[page][i], f'0{z[0]}', (165,165,165), font=font)
-        i += 1
+    for n, i in enumerate(data):
+        if i[1] == None:
+            draw.text(numbers_pos[page][n], f'0{z[0]}', (165,165,165), font=font)
     return image
 
 def setup(client):
