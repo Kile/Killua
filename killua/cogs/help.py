@@ -161,10 +161,10 @@ def commands(commandgroup, pref:str):
         })
         return embed
 
-    if commandgroup.lower() == 'todo':
+    if commandgroup.lower() == 'cards':
         embed = discord.Embed.from_dict({
             'title': 'Card commands',
-            'description': 'Working on it...',
+            'description': f'Use `{pref}use booklet` for an introduction\n\n`book`, `shop`, `buy`, `sell`, `swap`, `hunt`, `meet`, `discard`, `use`',
             'footer': {'text': f'For more info to a command use {pref}help command <command>'},
             'color': 0x1400ff
         })

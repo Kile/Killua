@@ -58,16 +58,6 @@ class DevStuff(commands.Cog):
             except Exception as e:
                 await ctx.channel.send(str(e))
 
-    @commands.command()
-    async def source(self, ctx, name):
-        if blcheck(ctx.author.id) is True:
-            return
-        #h Displays the source code to a command, if discord allows it :3
-        #u source <command>
-        # Idk what that does tbh
-        func = self.client.get_command(name).callback
-        code = inspect.getsource(func)
-        await ctx.send('```python\n{}```'.format(code.replace('```', '``')))
 
     @commands.command()
     async def codeinfo(self, ctx, *,content):
@@ -120,27 +110,51 @@ class DevStuff(commands.Cog):
 	    except Exception as e:
 		    await ctx.send(f'Invalid command. Error: {e}')
 
-    @commands.command()
-    async def update(self, ctx, *, update):
-        if blcheck(ctx.author.id) is True:
-            return
-        #h Allows me to publish Killua updates in a handy formart 
+        @commands.command()
+    async def publish_update(self, ctx, version:str, *, update):
+        #h Allows me to publish Killua updates in a handy formart
         #r user ID 606162661184372736
-        #u update <text>
         if ctx.author.id != 606162661184372736:
             return
+        old = updates.find_one({'_id':'current'})
+        log = updates.find_one({'_id': 'log'})
         embed = discord.Embed.from_dict({
-                        'title': 'Killua Update',
+                        'title': f'Killua Update `{old["version"]}`->`{version}`',
                         'description': update,
                         'color': 0x1400ff,
                         'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar_url)},
                         'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
                     })
-        # #updates in my dev
+        try:
+            log.append(old)
+        except:
+            log = [old]
+        updates.update_one({'_id': 'current'}, {'$set': {'version': version, 'description': update, 'published_on': datetime.now(), 'published_by': ctx.author.id}})
+        updates.update_one({'_id': 'log'}, {'$set': {'past_updates': log}})
         channel = self.client.get_channel(757170264294424646)
         msg = await channel.send(content= '<@&795422783261114398>', embed=embed)
         await msg.publish()
-        await ctx.message.delete()
+
+    @commands.command()
+    async def update(self, ctx, version:str=None):
+        #h Allows you to view current and past updates
+        #u update <version(optional)>
+        if version == None:
+            data = updates.find_one({'_id': 'current'})
+        else:
+            d = [x for x in updates.find_one({'_id': 'log'})['past_updates'] if x['version'] == version]
+            if len(d) == 0:
+                return await ctx.send('Invalid version!')
+            data = d[0]
+            
+        author = await self.client.fetch_user(data["published_by"])
+        embed = discord.Embed.from_dict({
+            'title': f'Infos about version `{data["version"]}`',
+            'description': str(data["description"]),
+            'color': 0x1400ff,
+            'footer': {'icon_url': str(author.avatar_url), 'text': f'Published on {data["published_on"].strftime("%b %d %Y %H:%M:%S")}'}
+        })
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def blacklist(self, ctx, id:int, *,reason=None):

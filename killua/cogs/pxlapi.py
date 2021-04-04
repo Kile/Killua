@@ -133,7 +133,7 @@ class Api(commands.Cog):
     async def snapchat(self, ctx, filter:str, args:typing.Union[discord.Member, str]=None):
         if blcheck(ctx.author.id) is True:
             return
-        #h Valid flags: dog, dog2, dog3, pig, flowers, random
+        #h Valid filters: dog, dog2, dog3, pig, flowers, random
         #u flag <flag> <user/url>
         
         data = await validate_input(self, ctx, args)

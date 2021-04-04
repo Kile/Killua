@@ -13,6 +13,7 @@ import typing
 from PIL import Image, ImageFont, ImageDraw
 import io
 import aiohttp
+from killua.functions import custom_cooldown, blcheck
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -66,6 +67,7 @@ example = {
     ]
 }
 
+# I am NOT writing a detailed description of every function in here, just a brief description for functions in classes
 
 cached_cards = {}
 
@@ -328,6 +330,11 @@ class User():
         teams.update_one({'id': self.id}, {'$set': {'points': self.jenny + amount}})
         return
 
+    def set_jenny(self, amount:int):
+        """Sets the users jenny to the specified value. Only used for testing"""
+        teams.update_one({'id': self.id}, {'$set': {'points': amount}})
+        return
+
     def remove_card(self, card_id:int, remove_fake:bool=None, payed:bool=False, restricted_slot:bool=None, clone:bool=False):
         """Removes a card from a user"""
         card = Card(card_id)
@@ -571,16 +578,6 @@ class Cards(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.shop_update.start()
-
-    #@commands.Cog.listener()
-    #async def on_command_error(self, ctx, error):
-        #embed = discord.Embed.from_dict({
-            #'title': '**An error occured**',
-            #'description': str(error),
-            #'color': 0xff0000,
-            #'footer': {'text': 'Make sure to report the error!'}
-        #})
-        #await ctx.send(embed=embed)
         
     @tasks.loop(hours=6)
     async def shop_update(self):
@@ -622,8 +619,14 @@ class Cards(commands.Cog):
                 log.append({'time': datetime.now(), 'items': shop_items, 'redued': None})
                 shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': None}})
 
+    @custom_cooldown(5)
     @commands.command()
     async def book(self, ctx, page:int=None):
+        #h Allows you to take a look at your cards
+        #u book <page(optional)>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         if len(User(ctx.author.id).all_cards) == 0:
             return await ctx.send('You don\'t have any cards yet!')
 
@@ -635,6 +638,11 @@ class Cards(commands.Cog):
 
     @commands.command(aliases=['store'])
     async def shop(self, ctx):
+        #h Shows the current cards for sale
+        #u shop
+        if blcheck(ctx.author.id) is True:
+            return
+        
         sh = shop.find_one({'_id': 'daily_offers'})
         shop_items:list = sh['offers']
         formatted = list()
@@ -654,8 +662,14 @@ class Cards(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @custom_cooldown(7400)
     @commands.command()
     async def buy(self, ctx, item:int):
+        #h Buy a card from the shop with this command
+        #u buy <card_id>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         shop_data = shop.find_one({'_id': 'daily_offers'})
         shop_items = shop_data['offers']
         user = User(ctx.author.id)
@@ -672,8 +686,10 @@ class Cards(commands.Cog):
         if not shop_data['reduced'] is None:
             if shop_items.index(card.id) == shop_data['reduced']['reduced_item']:
                 price = int(PRICES[card.rank] - int(PRICES[card.rank] * shop_data['reduced']['reduced_by']/100))
+            else:
+                price = PRICES[card.rank]
         else:
-            price = PRICES[card.rank] 
+            price = PRICES[card.rank]
 
         if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
             return await ctx.send('Unfortunatly the global maximal limit of this card is reached! Someone needs to sell their card for you to buy one or trade/give it to you')
@@ -694,8 +710,14 @@ class Cards(commands.Cog):
         user.remove_jenny(price) #Always putting substracting points before giving the item so if the payment errors no iten is given
         return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!')
 
+    @custom_cooldown(30)
     @commands.command()
     async def sell(self, ctx, item:int, amount=1):
+        #h Sell any amount of cards you own
+        #u sell <card_id> <amount(optional)>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         user = User(ctx.author.id)
         if amount < 1:
             amount = 1
@@ -705,9 +727,10 @@ class Cards(commands.Cog):
             card = Card(item)
         except CardNotFound:
             return await ctx.send(f'A card with the id `{item}` does not exist')
+        in_possesion = user.count_card(card.id, including_fakes=False)
 
-        if user.has_any_card(card.id, False) is False:
-            return await ctx.send(f'You don\'t own the card with the number {item} or just own a fake copy')
+        if in_possesion < amount:
+            return await ctx.send(f'Seems you don\'t own enough copis of this card. You own {in_possesion} cop{"y" if in_possesion == 1 else "ies"} of this card')
         
         await ctx.send(f'You will recieve {PRICES[card.rank]*amount} Jenny for selling {"this card" if amount == 1 else "those cards"}, do you want to proceed? **[y/n]**')
 
@@ -724,15 +747,21 @@ class Cards(commands.Cog):
             card_amount = user.count_card(item, False)
 
             if not amount >= amount:
-                return await ctx.send('Seems like you don\'t own enough non-fake copies of this card you try to sell')
+                return await ctx.send('Seems like you don\'t own enoug ch non-fake copies of this card you try to sell')
             else:
                 for i in range(amount):
                     user.remove_card(item, False)
                 user.add_jenny(PRICES[card.rank]*amount)
                 await ctx.send(f'Sucessfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {PRICES[card.rank]*amount} Jenny!')
 
+    @custom_cooldown(2)
     @commands.command()
     async def swap(self, ctx, card_id:int):
+        #h Allows you to swap cards from your free slots with the restrcited slots and the other way around
+        #u swap <card_id>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         user = User(ctx.author.id)
         if len(user.all_cards) == 0:
             return await ctx.send('You don\'t have any cards yet!')
@@ -744,12 +773,17 @@ class Cards(commands.Cog):
         sw = user.swap(card_id)
 
         if sw is False:
-            await ctx.send(f'You don\'t own a fake and real copy of card `{card.name}` you can swap out!')
+            return await ctx.send(f'You don\'t own a fake and real copy of card `{card.name}` you can swap out!')
         
         await ctx.send(f'Successfully swapped out card No. {card_id}')
 
     @commands.command()
     async def hunt(self, ctx, end:str=None):
+        #h Go on a hunt! The longer you are on the hunt, the better the rewards!
+        #u hunt <end(optional)>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         user = User(ctx.author.id)
         has_effect, value = user.has_effect('hunting')
 
@@ -798,8 +832,14 @@ class Cards(commands.Cog):
         user.add_effect('hunting', datetime.now())
         await ctx.send('You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get')
 
-    @commands.command(aliases=['meet'])
-    async def approach(self, ctx, user:discord.Member):
+    @custom_cooldown(120)
+    @commands.command(aliases=['approach'])
+    async def meet(self, ctx, user:discord.Member):
+        #h Meet a user who has recently send a message in this channel to enable certain spell card effects
+        #u meet <user>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         author = User(ctx.author.id)
         past_users = list()
         if user.bot:
@@ -821,17 +861,23 @@ class Cards(commands.Cog):
 
     @commands.command()
     async def give(self, ctx, other:discord.Member, t:str, item:int):
+        #h If you're feeling generous give another user cards or jenny. Available types are jenny and card
+        #u give <user> <type> <card_id/amount>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         if other == ctx.author:
             return await ctx.send('You can\'t give yourself anything!')
         if other.bot:
             return await ctx.send('🤖')
         user = User(ctx.author.id)
+        o = User(other.id)
         if t.lower() == 'jenny':
             if item < 1:
                 return await ctx.send(f'You can\'t transfer less than 1 Jenny!')
             if user.jenny < item:
                 return await ctx.send('You can\'t transfer more Jenny than you have')
-            User(other.id).add_jenny(item)
+            o.add_jenny(item)
             user.remove_jenny(item)
             return await ctx.send(f'✉️ transferred {item} Jenny to `{other}`!')
         elif t.lower() == 'card':
@@ -841,11 +887,11 @@ class Cards(commands.Cog):
                 return await ctx.send('Invalid card number')
             if user.has_any_card(item, False) is False:
                 return await ctx.send('You don\'t have any not fake copies of this card!')
-            if (len(User(other.id).fs_cards) >= 40 and item < 100 and User(other.id).has_rs_card(item)) or (len(User(other.id).fs_cards) >= 40 and item > 99):
+            if ((o.fs_cards) >= 40 and item < 100 and o.has_rs_card(item)) or (len(o.fs_cards) >= 40 and item > 99):
                 return await ctx.send('The user you are trying to give the cards\'s free slots are full!')
 
-            user.remove_card(item)
-            User(other.id).add_card(item)
+            removed_card = user.remove_card(item)
+            o.add_card(item, clone=removed_card["clone"])
             return await ctx.send(f'✉️ gave `{other}` card No. {item}!')
 
         else:
@@ -853,6 +899,11 @@ class Cards(commands.Cog):
             
     @commands.command()
     async def discard(self, ctx, card:int):
+        #h Discard a card you want to get rid of with this command
+        #u discard <card_id>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         user = User(ctx.author.id)
         try:
             card = Card(card)
@@ -882,8 +933,14 @@ class Cards(commands.Cog):
                 await ctx.message.delete()
                 await ctx.send(f'Successfully thrown away card No. `{card.id}`')
 
+    @custom_cooldown(4)
     @commands.command()
     async def use(self, ctx, item: typing.Union[int,str], args: typing.Union[discord.Member, str, int]=None, add_args:int=None):
+        #h Use spell cards you own with this command! Focus on offense or defense, team up with your friends or steal their cards in their sleep!
+        #u use <card_id> <required_arguments>
+        if blcheck(ctx.author.id) is True:
+            return
+        
         if isinstance(item, str):
             if not item.lower() == 'booklet':
                 return await ctx.send('Either use a spell card with this command or the booklet')
@@ -951,6 +1008,8 @@ class Cards(commands.Cog):
     @commands.has_role(823321334598860801)
     @commands.command()
     async def gain(self, ctx, t:str, item:str):
+        #h An owner restricted command allowing the user to obtain any card or amount of jenny
+        #u gain <type> <card_id/amount>
         user = User(ctx.author.id)
         if not t.lower() in ["jenny", "card"]:
             return await ctx.send(f'You need to provide a valid type! `{self.client.command_prefix(self.client, ctx.message)[2]}gain <jenny/card> <amount/id>`')
@@ -1047,7 +1106,7 @@ async def card_1032(self, ctx):
     user = User(ctx.author.id)
     if len(user.fs_cards) >= FREE_SLOTS:
         return await ctx.send('You can only use this card with space in your free slots!')
-    c = random.choice([x['_id'] for x in items.find({'type': 'normal'})])
+    c = random.choice([x['_id'] for x in items.find({'type': 'normal'}) if x['rank'] != 'SS'])
     user.remove_card(1032)
     if len(Card(c).owners) >= Card(c).limit*ALLOWED_AMOUNT_MULTIPLE:
         return await ctx.send('Sadly the card limit of the card "Lottery" was about to transorm into is reached. Lottery will be used up anyways')
@@ -1197,9 +1256,11 @@ async def card_1018(self, ctx):
         r = u.remove_card(c[0], c[1]["fake"])
         stolen_cards.append(r)
 
-    
-    user.add_multi(stolen_cards)
-    return await ctx.send(f'Success! Stole the card{"s" if len(stolen_cards) > 1 else ""} {", ".join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} user{"s" if len(users) > 1 else ""}!')
+    if len(stolen_cards) > 0:
+        user.add_multi(stolen_cards)
+        return await ctx.send(f'Success! Stole the card{"s" if len(stolen_cards) > 1 else ""} {", ".join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} user{"s" if len(users) > 1 else ""}!')
+    else:
+        return await ctx.send('All targetted users were able to defend themselves!')
 
 async def card_1015(self, ctx, member:discord.Member):
     if not isinstance(member, discord.Member):
@@ -1484,13 +1545,11 @@ def construct_rewards(reward_score:int):
     MONSTERS = [572, 585, 598, 673, 697, 711, 1217]
     rewards = list()
     def rw(reward_score:int):
-        if randint(int(reward_score*100), 100) == 1:
+        if reward_score == 1:
             if randint(1,10) < 5:
-                reward_score = 0.3
-                return random.choice([x['_id'] for x in items.find({'type': 'normal', 'rank': random.choice(['A', 'B', 'C'])})]), 1
+                return (random.choice([x['_id'] for x in items.find({'type': 'normal', 'rank': random.choice(['A', 'B', 'C'])})]), 1), 0.3
             else:
-                reward_score = 0.3
-                return random.choice([x['_id'] for x in items.find({'type': 'spell', 'rank': random.choice(['B', 'C'])})]), 1
+                return (random.choice([x['_id'] for x in items.find({'type': 'spell', 'rank': random.choice(['B', 'C'])})]), 1), 0.3
         if reward_score < 3000/10000:
             rarities = ['E', 'G', 'H']
         elif reward_score < 7000/10000:
@@ -1498,12 +1557,13 @@ def construct_rewards(reward_score:int):
         else:
             rarities = ['C', 'D', 'E']
         amount = int(random.randint(int(100*reward_score), int(130*reward_score))/25)
-        return random.choice([x['_id'] for x in items.find({'type': 'monster', 'rank': random.choice(rarities)})]), amount if amount != 0 else 1
+        return (random.choice([x['_id'] for x in items.find({'type': 'monster', 'rank': random.choice(rarities)})]), amount if amount != 0 else 1), reward_score
 
     card_amount = int(random.randint(4, 10)*reward_score)
     for i in range(card_amount if card_amount >= 1 else 1):
-        r = rw(reward_score) # I get a type error if I don't pass the score idk why
+        r, s = rw(reward_score) # I get a type error if I don't pass the score idk why
         rewards.append(r)
+        reward_score = s
   
     other_rewards = rewards
     for reward in other_rewards: 
@@ -1518,35 +1578,6 @@ def construct_rewards(reward_score:int):
 
     return rewards
 
-example = {
-    "effects":{
-      "effect": "time/amount"
-    },
-    "rs": [ #Stands for restricted slots
-      [1,{"fake": True}],
-      [4, {"fake": False}],
-      [6, {"fake": False}],
-      [7, {"fake": False}]
-    ],
-    "fs": [ #Stands for free slots
-      [1004, {"fake": True}],
-      [1008, {"fake": False}]
-    ]
-}
-        
-'''function format_offers
-Input:
-offers (list): A list with the current offers
-reduced_item (int)/None: If an item is reduced, what item in the list
-reduced_by (int)/None: If an item is reduced by how much
-
-Returns:
-formatted (list): a list containing dictionaries containing title and value
-
-Purpose:
-Format a list of offers into something that can be easily converted into embed fields
-'''
-
 def format_offers(offers:list, reduced_item:int=None, reduced_by:int=None):
     formatted:list = []
     if reduced_item and reduced_by:
@@ -1559,20 +1590,6 @@ def format_offers(offers:list, reduced_item:int=None, reduced_by:int=None):
             formatted.append(format_item(offer))
 
     return formatted
-
-'''function format_item
-Input:
-offer (int): The card number of an offer
-reduced_item (int)/None: If an item is reduced, what item in the list
-reduced_by (int)/None: If an item is reduced by how much
-number (int)/None: In what position in the shop list the item passed is
-
-Returns:
-(dict): a dictionary containing title and value with data of the offer
-
-Purpose:
-Format card data into something that can be easily converted into an embed field
-'''
 
 def format_item(offer:int, reduced_item:int=None, reduced_by:int=None, number:int=None):
     item = items.find_one({'_id': int(offer)})
@@ -1720,7 +1737,7 @@ async def setpage(image, page):
     return image
 
 async def getfont(size):
-    font = ImageFont.truetype('/killua/font.ttf', size, encoding="unic") 
+    font = ImageFont.truetype('/killua/killua/font.ttf', size, encoding="unic") 
     return font
 
 async def cards(image, data, option):
@@ -1753,7 +1770,7 @@ async def numbers(image, data, page):
     draw = ImageDraw.Draw(image)
     for n, i in enumerate(data):
         if i[1] == None:
-            draw.text(numbers_pos[page][n], f'0{z[0]}', (165,165,165), font=font)
+            draw.text(numbers_pos[page][n], f'0{i[0]}', (165,165,165), font=font)
     return image
 
 def setup(client):
