@@ -15,7 +15,7 @@ with open('config.json', 'r') as config_file:
 pxl = Pxlapi(token=config["pxlapi"], stop_on_error=False)
 
 
-async def validate_input(self, ctx, args):
+async def validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
     image = None
     if isinstance(args, discord.Member):
         image = str(args.avatar_url_as(static_format='png'))
