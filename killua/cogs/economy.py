@@ -111,7 +111,7 @@ class Economy(commands.Cog):
             user_id = user.id
         elif user:
             user_id = user
-        real_user = User(ctx.author.id)
+        real_user = User(user_id)
 
         return await ctx.send(f'{user or ctx.author}\'s balance is {real_user.jenny} Jenny')
         
