@@ -43,9 +43,9 @@ class Prefix(commands.Cog):
       else: 
         await ctx.send('Missing permissions')
     elif results:
-      await ctx.send(f'The current server prefix is `{results['prefix']}`')
+      await ctx.send(f'The current server prefix is `{results["prefix"]}`')
     else:
-      await ctx.send(f'The current server prefix is `{results['prefix']}`')
+      await ctx.send(f'The current server prefix is `{results["prefix"]}`')
 
 Cog = Prefix
 
