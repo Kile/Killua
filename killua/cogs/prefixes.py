@@ -32,6 +32,7 @@ class Prefix(commands.Cog):
       #t Around 2-4 hours
       #c Custom prefixes!
       #h Set your server prefix with this command
+      #u prefix <prefix>
     results = server.find_one({'id': ctx.guild.id})
     if prefix:
       if ctx.author.guild_permissions.administrator:

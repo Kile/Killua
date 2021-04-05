@@ -21,7 +21,7 @@ class Math(commands.Cog):
         if blcheck(ctx.author.id) is True:
             return
         #h Calculates any equasion you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)
-    
+        #u calc <text>
         if not args:
             return await ctx.send(
                 "Please give me something to evaluate.\n"

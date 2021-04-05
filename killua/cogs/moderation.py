@@ -16,7 +16,7 @@ class Moderation(commands.Cog):
             return
         #t 30 minutes
         #h What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason
-
+        #u ban <user> <reason>
         if ctx.channel.permissions_for(ctx.author).ban_members == False:
             return await ctx.send('Nice try but you don\'t have the required permission (`ban members`) to execute this command')
 
@@ -59,6 +59,7 @@ class Moderation(commands.Cog):
             return
         #t 1 hour
         #h Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work :3
+        #u unban <user>
         banned_users = await ctx.guild.bans()
 
         if ctx.channel.permissions_for(ctx.author).ban_members == False:
@@ -106,7 +107,7 @@ class Moderation(commands.Cog):
         #t 10 minutes
         #h What you would expect of a kick command, kicks a user, optional reason
         #c Literally copy pasted ban command and changed a view things
-   
+        #u kick <user> <reason>
         if member == ctx.me:
             return await ctx.send('Hey!')
 
@@ -140,7 +141,7 @@ class Moderation(commands.Cog):
         if blcheck(ctx.author.id) is True:
             return
         #h Mutes a user for the specified duration or unlimited. Requirements: You need to have a role named `muted` (Case sensitve) set up already (Deny this role permission to send messages in every channel)
-
+        #u mute <user> <time/u> <reason> 
         if member == ctx.me:
             return await ctx.send('Hey!')
 
@@ -219,7 +220,7 @@ class Moderation(commands.Cog):
         if blcheck(ctx.author.id) is True:
             return
         #h Unmutes a user if they have a `muted` (case sensitve) role
-
+        #u unmute <user> <reason(optional)>
         if ctx.channel.permissions_for(ctx.author).manage_roles == False:
             return await ctx.send('Nice try but you don\'t have the required permission (`manage roles`) to execute this command')
 

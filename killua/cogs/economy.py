@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from random import randint
 import random
 import asyncio
+from killua.cogs.cards import User
 
 
 with open('config.json', 'r') as config_file:
@@ -40,6 +41,8 @@ class Economy(commands.Cog):
     @commands.command(aliases=['server'])
     @custom_cooldown(6)
     async def guild(self, ctx):
+        #h Displays infos about the current guild
+        #u guild
         if blcheck(ctx.author.id) is True:
             return
         return await ctx.send('Command currently under maintenance')
@@ -77,6 +80,7 @@ class Economy(commands.Cog):
     async def profile(self, ctx,user: typing.Union[discord.Member, int]=None):
         #h Get infos about a certain discord user with ID or mention
         #t Around 2 hours
+        #u profile <user(optional)>
         if blcheck(ctx.author.id) is True:
             return
         if user is None:
@@ -97,19 +101,19 @@ class Economy(commands.Cog):
     @commands.command(aliases=['bal', 'balance', 'points'])
     async def jenny(self, ctx, user: typing.Union[discord.User, int]=None):
         #h Gives you a users balance
+        #u balance <user(optional)>
         if blcheck(ctx.author.id) is True:
             return
+        
         if not user:
             user_id = ctx.author.id
         if isinstance(user, discord.User):
             user_id = user.id
         elif user:
             user_id = user
-        real_user = teams.find_one({'id': user_id})
+        real_user = User(ctx.author.id)
 
-        if real_user is None:
-            return await ctx.send('The user is not yet in the database')
-        return await ctx.send(f'{user or ctx.author}\'s balance is {real_user["points"]} Jenny')
+        return await ctx.send(f'{user or ctx.author}\'s balance is {real_user.jenny} Jenny')
         
 
     @commands.command()
@@ -119,51 +123,28 @@ class Economy(commands.Cog):
 	    #c I didn't know a daily command was that complicated
 	    #t several hours
         #h Claim your daily point swith this command!
+        #u daily
 	    now = datetime.today()
 	    later = datetime.now()+timedelta(hours=24)
-	    result = teams.find_one({'id': ctx.author.id})
+	    user = User(ctx.author.id)
 	    daily = randint(50, 100)
 
-	    if result is None:
-		    teams.insert_one({'id': ctx.author.id, 'points': daily, 'badges': [], 'cooldowndaily': later})
-		    await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {daily}')   
-	    else:
-		    if str(result['cooldowndaily']) < str(now):
- 
-			    teams.update_many({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': result['points'] + daily}}, upsert=True)
-			    await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(result["points"]) + int(daily)}')
-		    else:
+	    
+		if str(user.daily_cooldown) < str(now):
 
-			    cd = result['cooldowndaily'] -datetime.now()
-			    cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
-			    await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
+			teams.update_many({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': user.jenny + daily}}, upsert=True)
+			await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(user.jenny) + int(daily)}')
+		else:
+		    cd = user.daily_cooldown -datetime.now()
+			cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
+		    await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
 
-    @commands.command()
-    async def give(self, ctx, user:discord.User, amount:int=None):
-        return await ctx.send('This command is currently being investigated on')
-        if blcheck(ctx.author.id) is True:
-            return
-        if amount is None:
-            amount = 100
-        
-        balance = teams.find_one({'id': ctx.author.id})
-        if balance is None:
-            return await ctx.send('You have not been registered in Killua\'s economy system. Do so with `k!daily`')
-        if balance['points'] < amount:
-            return await ctx.send(f'Nice of you to try and send {user.name} some Jenny, sadly you don\'t have enough Jenny for that. Your current balance is `{balance["balance"]}`')
-
-        otherguy = teams.find_one({'id': user.id})
-        if otherguy is None:
-            return ctx.send('The person you want to give Jenny to is not yet registered. Tell them to do so with `k!daily`')
-
-        teams.update_one({'id': ctx.author.id},{'$set':{'points': balance['points'] - amount}})
-        teams.update_one({'id': user.id},{'$set':{'points': otherguy['points'] + amount}})
-        await ctx.send(f'You gave {user} {amount} Jenny! How very nice :3 Their new balance is `{otherguy["points"]+amount}`, yours `{balance["points"] - amount}`')
 
     @commands.command(aliases=['ghosthunter'])
     @custom_cooldown(240)
     async def gh(self, ctx):
         #h Catch the ghosts fast enough! The faster the more points you get! This command is restricted to premium guilds as it is not fully developed
+        #u gh
         guild = server.find_one({'id': ctx.guild.id})
         if guild is None or not 'partner' in guild['badges'] and not 'premium' in guild['badges']:
             return await ctx.send('Beta commands are a premium feature')

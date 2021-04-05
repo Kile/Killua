@@ -10,10 +10,11 @@ class WebScraping(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.command(aliases=['b'])
+    @commands.command(aliases=['n', 'search-book', 'sb'])
     @custom_cooldown(240)
-    async def book(self, ctx, *,book):
+    async def novel(self, ctx, *,book):
         #checking if the user is blacklisted
+        #u novel <title>
         #h With this command you can search for books! Just say the book title and look through the results
         if blcheck(ctx.author.id) is True:
             return
