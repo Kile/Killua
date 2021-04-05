@@ -119,25 +119,24 @@ class Economy(commands.Cog):
     @commands.command()
     async def daily(self, ctx):
 	    if blcheck(ctx.author.id) is True:
-		return
-	    #c I didn't know a daily command was that complicated
-	    #t several hours
-            #h Claim your daily point swith this command!
-            #u daily
+		    return
+	        #c I didn't know a daily command was that complicated
+	        #t several hours
+	        #h Claim your daily point swith this command!
+	        #u daily
 	    now = datetime.today()
 	    later = datetime.now()+timedelta(hours=24)
 	    user = User(ctx.author.id)
 	    daily = randint(50, 100)
 
-	    
 	    if str(user.daily_cooldown) < str(now):
 
-	        teams.update_many({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': user.jenny + daily}}, upsert=True)
-	        await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(user.jenny) + int(daily)}')
+		    teams.update_many({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': user.jenny + daily}}, upsert=True)
+		    await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(user.jenny) + int(daily)}')
 	    else:
-	        cd = user.daily_cooldown -datetime.now()
-	        cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
-	        await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
+		    cd = user.daily_cooldown -datetime.now()
+		    cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
+		    await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
 
 
     @commands.command(aliases=['ghosthunter'])
