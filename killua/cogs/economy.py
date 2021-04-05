@@ -131,13 +131,14 @@ class Economy(commands.Cog):
 
 	    
 		if str(user.daily_cooldown) < str(now):
- 
+
 			teams.update_many({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': user.jenny + daily}}, upsert=True)
 			await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(user.jenny) + int(daily)}')
 		else:
 		    cd = user.daily_cooldown -datetime.now()
 			cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
 		    await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
+
 
     @commands.command(aliases=['ghosthunter'])
     @custom_cooldown(240)

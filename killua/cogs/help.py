@@ -129,6 +129,7 @@ def commands(commandgroup, pref:str):
             'description': '`quote`, `cmm`, `hug`, `pat`, `topic`, `calc`, `translate`, `8ball`, `avatar`, `novel`, `emojaic`, `image`, `rps`, `f`',
             'footer': {'text': f'For more info to a command use {pref}help command <command>'},
             'color': 0x1400ff
+
         })
         return embed
 
@@ -139,6 +140,7 @@ def commands(commandgroup, pref:str):
             'description': '`daily`, `profile`, `give`, `server`, `bal`',
             'footer': {'text': f'For more info to a command use {pref}help command <command>'},
             'color': 0x1400ff
+
 
         })
         return embed

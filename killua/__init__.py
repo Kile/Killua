@@ -12,6 +12,7 @@ import json
 from pymongo import MongoClient
 from random import choice, randint
 from typing import Callable, Coroutine
+import random
 
 
 all_commands = []
@@ -50,10 +51,10 @@ def get_prefix(bot, message):
 	try:
 		y = server.find_one({'id': message.guild.id})
 		if y is None:
-			return commands.when_mentioned_or('k!', 'k.')(bot, message)
+			return commands.when_mentioned_or('k!')(bot, message)
 		return commands.when_mentioned_or(y['prefix'])(bot, message)
 	except:
-		return commands.when_mentioned_or('k!', 'k.')(bot, message)
+		return commands.when_mentioned_or('k!')(bot, message)
 
 
 @command()
