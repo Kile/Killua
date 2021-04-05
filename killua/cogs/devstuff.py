@@ -110,7 +110,7 @@ class DevStuff(commands.Cog):
 	    except Exception as e:
 		    await ctx.send(f'Invalid command. Error: {e}')
 
-        @commands.command()
+    @commands.command()
     async def publish_update(self, ctx, version:str, *, update):
         #h Allows me to publish Killua updates in a handy formart
         #r user ID 606162661184372736
