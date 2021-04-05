@@ -78,7 +78,10 @@ Website: https://killua.dev (a work in progress)''',
                             desc = last
 
                         if lastu and lastu != '")':
-                            usage = lastu
+                            if lastu.startswith(' '):
+                                usage = lastu[1:]
+                            else:
+                                usage = lastu
                         
                     embed = discord.Embed.from_dict({
                         'title': f'Info about command `k!{command}`',
