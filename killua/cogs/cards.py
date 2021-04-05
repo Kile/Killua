@@ -1773,5 +1773,7 @@ async def numbers(image, data, page):
             draw.text(numbers_pos[page][n], f'0{i[0]}', (165,165,165), font=font)
     return image
 
+Cog = Cards
+
 def setup(client):
     client.add_cog(Cards(client))
