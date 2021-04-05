@@ -84,7 +84,7 @@ class Events(commands.Cog):
     else:
 
       print('------------------------------------------')
-      print(f'An error occured\nGuild id: {ctx.guild.id if ctx.guild else "dm channel with "+ ctx.author.id}\nCommand name: {ctx.command.nam if ctx.command else "Error didn't occur during a command"}\nError: {error}')
+      print(f'An error occured\nGuild id: {ctx.guild.id if ctx.guild else "dm channel with "+ ctx.author.id}\nCommand name: {ctx.command.name if ctx.command else "Error didn't occur during a command"}\nError: {error}')
       print('------------------------------------------')
 
 
