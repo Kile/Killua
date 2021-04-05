@@ -1737,7 +1737,7 @@ async def setpage(image, page):
     return image
 
 async def getfont(size):
-    font = ImageFont.truetype('/home/ec2-user/killua/killua/fonts.fft', size, encoding="unic") 
+    font = ImageFont.truetype('/home/ec2-user/killua/killua/font.ttf', size, encoding="unic") 
     return font
 
 async def cards(image, data, option):
