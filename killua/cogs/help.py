@@ -63,7 +63,7 @@ Website: https://killua.dev (a work in progress)''',
 
                     restricted = ''
                     desc = 'No description yet'
-
+                    usage = ''
 
                     for item in linecount:
                         first, middle, last = item.partition("#h")
@@ -76,10 +76,13 @@ Website: https://killua.dev (a work in progress)''',
 
                         if last and last != '")':
                             desc = last
+
+                        if lastu and lastu != '")':
+                            usage = lastu
                         
                     embed = discord.Embed.from_dict({
                         'title': f'Info about command `k!{command}`',
-                        'description': f'{desc} {restricted}\nUsage:```markdown\n{pref}{lastu}\n```',
+                        'description': f'{desc} {restricted}\nUsage:```markdown\n{pref}{usage}\n```',
                         'color': 0x1400ff,
                         'thumbnail': {'url': str(ctx.me.avatar_url)}
                         })
