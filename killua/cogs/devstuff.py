@@ -37,6 +37,7 @@ generaldb = cluster['general']
 blacklist = generaldb['blacklist']
 pr = generaldb['presence']
 items = db['items']
+updates = generaldb['updates']
 
 
 class DevStuff(commands.Cog):
