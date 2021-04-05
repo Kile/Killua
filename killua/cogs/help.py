@@ -28,10 +28,8 @@ class Help(commands.Cog):
   #t 2 hours
   #c 155 lines, help (bad codering)
   #u help <group/command> <command(if command was previous argument)>
+    pref = self.client.command_prefix(self.client, ctx.message)[2]
     if group is None and command is None:
-        results = server.find({'id': ctx.guild.id})
-        for result in results:
-            pref = result['prefix']
             
         embed = discord.Embed.from_dict({
             'title': 'Bot commands',
@@ -88,6 +86,7 @@ Website: https://killua.dev (a work in progress)''',
                     await ctx.send(embed=embed)                    
 
                 except Exception as e:
+                    print(e)
                     await ctx.send('Command not found')
             else:
                 embed = commands(group, pref)

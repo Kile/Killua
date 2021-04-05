@@ -134,6 +134,7 @@ class DevStuff(commands.Cog):
         updates.update_one({'_id': 'log'}, {'$set': {'past_updates': log}})
         channel = self.client.get_channel(757170264294424646)
         msg = await channel.send(content= '<@&795422783261114398>', embed=embed)
+        await ctx.message.delete()
         await msg.publish()
 
     @commands.command()
