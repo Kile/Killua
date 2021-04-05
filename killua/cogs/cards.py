@@ -1005,11 +1005,12 @@ class Cards(commands.Cog):
             return await ctx.send('You can only use this card in response to an attack!')
         await ctx.send('Invalid card!')
 
-    @commands.has_role(823321334598860801)
     @commands.command()
     async def gain(self, ctx, t:str, item:str):
         #h An owner restricted command allowing the user to obtain any card or amount of jenny
         #u gain <type> <card_id/amount>
+        if not ctx.author.id == 606162661184372736:
+            return
         user = User(ctx.author.id)
         if not t.lower() in ["jenny", "card"]:
             return await ctx.send(f'You need to provide a valid type! `{self.client.command_prefix(self.client, ctx.message)[2]}gain <jenny/card> <amount/id>`')
@@ -1019,8 +1020,6 @@ class Cards(commands.Cog):
                 card = Card(item)
             except CardNotFound:
                 return await ctx.send('Invalid card id')
-            if card.id == 0:
-                return await ctx.send('You wish')
             if len(card.owners) >= card.limit * ALLOWED_AMOUNT_MULTIPLE:
                 return await ctx.send('Sorry! Global card limit reached!')
             if len(user.fs_cards) >= FREE_SLOTS and (item > 99 or item in [x[0] for x in user.rs_cards]):
