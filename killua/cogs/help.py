@@ -79,14 +79,13 @@ Website: https://killua.dev (a work in progress)''',
                         
                     embed = discord.Embed.from_dict({
                         'title': f'Info about command `k!{command}`',
-                        'description': f'{desc} {restricted}\nUsage:```markdown\n{pref}{lastu}',
+                        'description': f'{desc} {restricted}\nUsage:```markdown\n{pref}{lastu}\n```',
                         'color': 0x1400ff,
                         'thumbnail': {'url': str(ctx.me.avatar_url)}
                         })
                     await ctx.send(embed=embed)                    
 
                 except Exception as e:
-                    print(e)
                     await ctx.send('Command not found')
             else:
                 embed = commands(group, pref)
