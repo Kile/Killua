@@ -122,7 +122,7 @@ def commands(commandgroup, pref:str):
         embed = discord.Embed.from_dict({
             'title': 'Moderation commands',
             'description': '`prefix`, `ban`, `kick`, `unban`, `mute`, `unmute`',
-            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
             'color': 0x1400ff
         })
         return embed
@@ -130,8 +130,8 @@ def commands(commandgroup, pref:str):
     if commandgroup.lower() == 'fun':
         embed = discord.Embed.from_dict({
             'title': 'Fun commands',
-            'description': '`quote`, `cmm`, `hug`, `pat`, `topic`, `calc`, `translate`, `8ball`, `avatar`, `novel`, `emojaic`, `image`, `rps`, `f`',
-            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'description': ' `hug`, `pat`, `topic`, `calc`, `translate`, `8ball`, `avatar`, `novel`, `emojaic`, `image`, `rps`, `flag`, `glitch`, `lego`, `snapchat`, `thonkify`, `screenshot`, `sonic`, `jpeg`, `google`',
+            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
             'color': 0x1400ff
 
         })
@@ -142,7 +142,7 @@ def commands(commandgroup, pref:str):
 
             'title': 'Economy commands',
             'description': '`daily`, `profile`, `give`, `server`, `bal`',
-            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
             'color': 0x1400ff
 
 
@@ -153,7 +153,7 @@ def commands(commandgroup, pref:str):
         embed = discord.Embed.from_dict({
             'title': 'Other commands',
             'description': '`info`, `patreon`, `invite`, `codeinfo`, `permissions`, `bug`, `feedback`',
-            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
             'color': 0x1400ff
         })
         return embed
@@ -162,7 +162,7 @@ def commands(commandgroup, pref:str):
         embed = discord.Embed.from_dict({
             'title': 'todo commands',
             'description': f'**Every command on this list starts with `{pref}todo`**\n\n`create`, `lists`, `shop`, `edit`, `info`, `buy`, `add`, `remove`, `mark`, `invite`, `view`, `kick`, `status`, `name`, `autodelete`, `color`, `thumbnail`, `custom_id`, `assign`, `delete`, `exit`',
-            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
             'color': 0x1400ff
         })
         return embed
@@ -171,7 +171,7 @@ def commands(commandgroup, pref:str):
         embed = discord.Embed.from_dict({
             'title': 'Card commands',
             'description': f'Use `{pref}use booklet` for an introduction\n\n`book`, `shop`, `buy`, `sell`, `swap`, `hunt`, `meet`, `discard`, `use`',
-            'footer': {'text': f'For more info to a command use {pref}help command <command>'},
+            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
             'color': 0x1400ff
         })
         return embed

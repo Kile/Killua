@@ -111,7 +111,11 @@ class Economy(commands.Cog):
             user_id = user.id
         elif user:
             user_id = user
-        real_user = User(user_id)
+        try:
+            await self.client.fetch_user(user_id)
+            real_user = User(user_id)
+        except:
+            return await ctx.send('User not found')
 
         return await ctx.send(f'{user or ctx.author}\'s balance is {real_user.jenny} Jenny')
         
@@ -336,7 +340,7 @@ def getmember(user: discord.Member):
 
     else:
         points = info['points']
-        badges = ', '.join(info['badges']).replace('one_star_hunter', '<:badge_one_star_hunter:788935576836374548>').replace('two_star_hunter', '<:badge_double_star_hunter:788935576120066048>').replace('triple_star_hunter', '<:badge_triple_star_hunter:788935576925372417>')
+        badges = ' '.join(info['badges']).replace('one_star_hunter', '<:badge_one_star_hunter:788935576836374548>').replace('two_star_hunter', '<:badge_double_star_hunter:788935576120066048>').replace('triple_star_hunter', '<:badge_triple_star_hunter:788935576925372417>').replace('premium', '<:badge_premium:829118525398188052>').replace('owner', '<:badge_killua_owner:788940157599612948>')
         if str(datetime.now()) > str(info['cooldowndaily']):
             cooldown = 'Ready to claim!'
         else:

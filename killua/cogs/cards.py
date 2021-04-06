@@ -1726,6 +1726,7 @@ async def getcard(url):
             image_bytes = await res.read()
             image_card = Image.open(io.BytesIO(image_bytes)).convert('RGB')
             image_card = image_card.resize((80, 110), Image.ANTIALIAS)
+    await asyncio.sleep(0.3) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
     return image_card
 
 async def setpage(image, page):

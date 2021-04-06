@@ -7,6 +7,7 @@ from json import loads
 from killua.functions import custom_cooldown, blcheck
 import typing
 import asyncio
+import re
 from pypxl import Pxlapi # My own library :sparkles:
 
 with open('config.json', 'r') as config_file:
