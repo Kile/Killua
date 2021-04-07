@@ -891,7 +891,7 @@ class Cards(commands.Cog):
                 return await ctx.send('The user you are trying to give the cards\'s free slots are full!')
 
             removed_card = user.remove_card(item)
-            o.add_card(item, clone=removed_card["clone"])
+            o.add_card(item, clone=removed_card[1]["clone"])
             return await ctx.send(f'✉️ gave `{other}` card No. {item}!')
 
         else:
