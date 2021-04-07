@@ -887,7 +887,7 @@ class Cards(commands.Cog):
                 return await ctx.send('Invalid card number')
             if user.has_any_card(item, False) is False:
                 return await ctx.send('You don\'t have any not fake copies of this card!')
-            if ((o.fs_cards) >= 40 and item < 100 and o.has_rs_card(item)) or (len(o.fs_cards) >= 40 and item > 99):
+            if (len(o.fs_cards) >= 40 and item < 100 and o.has_rs_card(item)) or (len(o.fs_cards) >= 40 and item > 99):
                 return await ctx.send('The user you are trying to give the cards\'s free slots are full!')
 
             removed_card = user.remove_card(item)

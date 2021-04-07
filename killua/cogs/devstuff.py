@@ -120,7 +120,7 @@ class DevStuff(commands.Cog):
         old = updates.find_one({'_id':'current'})
         log = updates.find_one({'_id': 'log'})
         embed = discord.Embed.from_dict({
-                        'title': f'Killua Update `{old["version"]}`->`{version}`',
+                        'title': f'Killua Update `{old["version"]}` -> `{version}`',
                         'description': update,
                         'color': 0x1400ff,
                         'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar_url)},
