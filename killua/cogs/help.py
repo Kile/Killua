@@ -33,7 +33,7 @@ COMMANDS = {
     ]
 }
 
-class Help(command.Cog):
+class Help(commands.Cog):
 
     def __init__(self, client):
         self.client = client
