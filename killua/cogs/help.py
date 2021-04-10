@@ -5,6 +5,7 @@ from json import loads
 from pymongo import MongoClient
 from discord.ext import commands
 from killua.functions import custom_cooldown, blcheck
+import asyncio
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
