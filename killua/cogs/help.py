@@ -1,6 +1,5 @@
 import discord
 import inspect
-import pymongo
 import json
 from json import loads
 from pymongo import MongoClient
@@ -12,28 +11,47 @@ with open('config.json', 'r') as config_file:
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
 
-class Help(commands.Cog):
+COMMANDS = {
+    'todo': [
+        'todo create', 'todo lists', 'todo shop', 'todo edit', 'todo info', 'todo buy', 'todo add', 'todo remove', 'todo mark', 'todo invite', 'todo view', 'todo kick', 'todo status', 'todo name', 'todo autodelete', 'todo color', 'todo thumbnail', 'todo custom_id', 'todo assign', 'todo delete', 'todo exit'
+    ],
+    'moderation': [
+        'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
+    ],
+    'fun': [
+        'hug', 'pat', 'topic', 'calc', 'translate', '8ball', 'avatar', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
+    ],
+    'cards': [
+        'book', 'shop', 'buy', 'sell', 'swap', 'hunt', 'meet', 'discard', 'use'
+    ],
+    'other': [
+        'info', 'patreon', 'invite', 'codeinfo', 'permissions', 'bug', 'feedback'
+    ],
+    'economy': [
+        'daily', 'profile', 'give', 'server', 'bal'
+    ]
+}
 
-  def __init__(self, client):
-    self.client = client
-    
-  @commands.command()
-  async def help(self, ctx, group=None, *,command=None):
-    if blcheck(ctx.author.id) is True:
-      return
-  #h This command is the one hopefully letting you know what Killua can do and what his features are, I hope you like how it looks!
-  #t 2 hours
-  #c 155 lines, help (bad codering)
-  #u help <group/command> <command(if command was previous argument)>
-    pref = self.client.command_prefix(self.client, ctx.message)[2]
-    if group is None and command is None:
+class Help(command.Cog):
+
+    def __init__(self, client):
+        self.client = client
+
+    @commands.command()
+    async def help(self, ctx, group:str=None, *,command:str=None):
+        if blcheck(ctx.author.id) is True:
+            return
+        #h This command is the one hopefully letting you know what Killua can do and what his features are, I hope you like how it looks!
+        #t 2 hours
+        #c 155 lines, help (bad codering)
+        #u help <group/command> <command(if command was previous argument)>
+        pref = self.client.command_prefix(self.client, ctx.message)[2]
+        if group is None and command is None:
             
-        embed = discord.Embed.from_dict({
-            'title': 'Bot commands',
-            'description': f'''Current server Prefix: `{pref}`
+            embed = discord.Embed.from_dict({
+                'title': 'Bot commands',
+                'description': f'''Current server Prefix: `{pref}`
 Command groups for {ctx.me.name}:
 :tools: `Moderation`
 :clown: `Fun`
@@ -45,137 +63,164 @@ Command groups for {ctx.me.name}:
 To see a groups commands, use```css\nhelp <groupname>```
 For more info to a specific command, use
 ```css\nhelp command <commandname>```
-
 [Support server](https://discord.gg/be4nvwq7rZ)
 [Source code](https://github.com/Kile/Killua)
 Website: https://killua.dev (a work in progress)''',
-            'color': 0x1400ff,
-            'thumbnail': {'url': str(ctx.me.avatar_url)}
+                'color': 0x1400ff,
+                'thumbnail': {'url': str(ctx.me.avatar_url)}
             })
-        await ctx.send(embed=embed)
-    elif group:
-        if group.lower() in ['moderation', 'fun', 'economy', 'other', 'command', 'todo', 'cards']:
-            if command and group.lower() == 'command':
-                try:
-                    func = self.client.get_command(command).callback
-                    code = inspect.getsource(func)
-                    linecount = code.splitlines()
+            try:
+                await ctx.send(embed=embed)
+            except:
+                await ctx.send('Uh oh, something went wrong... I need embed permissions to send the help menu!')
+        elif group:
+            if group.lower() in ['moderation', 'fun', 'economy', 'other', 'command', 'todo', 'cards']:
+                if command and group.lower() == 'command':
+                    try:
+                        self.client.get_command(command.lower()).callback
+                    except:
+                        return await ctx.send('Command not found')
 
-                    restricted = ''
-                    desc = 'No description yet'
-                    usage = ''
-
-                    for item in linecount:
-                        first, middle, last = item.partition("#h")
-                        firstr, middler, lastr = item.partition("#r")
-                        firstu, middleu, lastu = item.partition("#u")
-                        if lastr is None or lastr == '':
-                            restricted = ''
-                        else:
-                            retricted = f'\n\nCommand restricted to: {lastr}'
-
-                        if last and last != '")':
-                            desc = last
-
-                        if lastu and lastu != '")':
-                            if lastu.startswith(' '):
-                                usage = lastu[1:]
-                            else:
-                                usage = lastu
-                        
+                    r, d, u = command_info(self, command.lower())
+                            
                     embed = discord.Embed.from_dict({
-                        'title': f'Info about command `k!{command}`',
-                        'description': f'{desc} {restricted}\nUsage:```markdown\n{pref}{usage}\n```',
+                        'title': f'Info about command `k!{command.lower()}`',
+                        'description': f'{d} {r}\nUsage:```markdown\n{pref}{u}\n```',
                         'color': 0x1400ff,
                         'thumbnail': {'url': str(ctx.me.avatar_url)}
-                        })
+                    })
                     await ctx.send(embed=embed)                    
-
-                except Exception as e:
-                    await ctx.send('Command not found')
+                else:
+                    await commands(self, ctx, group, pref, 1, first_time=True)
             else:
-                embed = commands(group, pref)
-                embed.color = 0x1400ff
-                embed.set_thumbnail(url= str(ctx.me.avatar_url))
-                await ctx.send(embed=embed)
-        else:
-            await ctx.send('Not a valid group, please make sure you know what groups are available')
+                await ctx.send('Not a valid group, please make sure you know what groups are available')
 
 '''function commands
 Input:
 commandgroup: The group specified using the command
-
 Returns:
 embed: Embed with a list of the commands in that group
-
 Purpose:
 To get the right command without having a giant help command
 '''
 
-def commands(commandgroup, pref:str):
+async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.Message=None, first_time:bool=False):
     if commandgroup.lower() == 'command':
         embed = discord.Embed.from_dict({'description': 'You need to input a command to see it\'s information'
             })
-        return embed
+        return await ctx.send(embed=embed)
 
-    if commandgroup.lower() == 'moderation':
-        embed = discord.Embed.from_dict({
-            'title': 'Moderation commands',
-            'description': '`prefix`, `ban`, `kick`, `unban`, `mute`, `unmute`',
-            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
-            'color': 0x1400ff
-        })
-        return embed
+    cmds = COMMANDS[commandgroup.lower()]
+    command = cmds[page-1]
+    r, d, u = command_info(self, command)
 
-    if commandgroup.lower() == 'fun':
-        embed = discord.Embed.from_dict({
-            'title': 'Fun commands',
-            'description': ' `hug`, `pat`, `topic`, `calc`, `translate`, `8ball`, `avatar`, `novel`, `emojaic`, `image`, `rps`, `flag`, `glitch`, `lego`, `snapchat`, `thonkify`, `screenshot`, `sonic`, `jpeg`, `google`',
-            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
-            'color': 0x1400ff
+    embed = discord.Embed.from_dict({
+        'title': commandgroup.lower() + ' commands',
+        'description': f'\nCommand: `{pref}{command}`\n\n{d} {r}\nUsage:```markdown\n{pref}{u}\n```\n*{page}/{len(cmds)}*',
+        'color': 0x1400ff,
+        'thumbnail': {'url': str(ctx.me.avatar_url)}
+    })
 
-        })
-        return embed
+    if first_time:
+        msg = await ctx.send(embed=embed)
+        #ultra backwards arrow
+        await msg.add_reaction('\U000023ea')
+        #arrow backwards
+        await msg.add_reaction('\U000025c0')
+        #stop button 
+        await msg.add_reaction('\U000023f9')
+        #arrow forwards
+        await msg.add_reaction('\U000025b6')
+        #ultra forwards arrow
+        await msg.add_reaction('\U000023e9')
+    else:
+        await msg.edit(embed=embed)
 
-    if commandgroup.lower() == 'economy':
-        embed = discord.Embed.from_dict({
+    def check(reaction, u):
+        #Checking if everything is right, the bot's reaction does not count
+        return u == ctx.author and reaction.message.id == msg.id and u != ctx.me and reaction.emoji in ['\U000023e9', '\U000025b6', '\U000023f9', '\U000025c0', '\U000023ea']
+    try:
+        reaction, u = await self.client.wait_for('reaction_add', timeout=120, check=check)
+    except asyncio.TimeoutError:
+        try:
+            await msg.remove_reaction('\U000023ea', ctx.me)
+            await msg.remove_reaction('\U000025c0', ctx.me)
+            await msg.remove_reaction('\U000023f9', ctx.me)
+            await msg.remove_reaction('\U000025b6', ctx.me)
+            await msg.remove_reaction('\U000023e9', ctx.me)
+            return
+        except:
+            pass
+        return
+    else:
+        if reaction.emoji == '\U000023e9':
+            print('ok')
+            #ultra forward emoji
+            try:
+                await msg.remove_reaction('\U000023e9', ctx.author)
+            except:
+                pass
+            return await commands(self, ctx, commandgroup, pref, len(cmds), msg)
 
-            'title': 'Economy commands',
-            'description': '`daily`, `profile`, `give`, `server`, `bal`',
-            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
-            'color': 0x1400ff
+        if reaction.emoji == '\U000025b6':
+            #forward emoji
+            try:
+                await msg.remove_reaction('\U000025b6', ctx.author)
+            except:
+                pass
+            return await commands(self, ctx, commandgroup, pref, 1 if len(cmds) == page else page+1, msg)
 
+        if reaction.emoji in ['\U000023f9', '\U0000fe0f']:
+            #stop button
+            await msg.delete()
+            return
 
-        })
-        return embed
+        if reaction.emoji == '\U000025c0':
+            #backwards emoji
+            try:
+                await msg.remove_reaction('\U000025c0', ctx.author)
+            except:
+                pass
+            return await commands(self, ctx, commandgroup, pref, len(cmds) if 1 == page else page-1, msg)
 
-    if commandgroup.lower() == 'other':
-        embed = discord.Embed.from_dict({
-            'title': 'Other commands',
-            'description': '`info`, `patreon`, `invite`, `codeinfo`, `permissions`, `bug`, `feedback`',
-            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
-            'color': 0x1400ff
-        })
-        return embed
+        if reaction.emoji == '\U000023ea':
+            #ultra backwards emoji
+            try:
+                await msg.remove_reaction('\U000023ea', ctx.author)
+            except:
+                pass
+            return await commands(self, ctx, commandgroup, pref, 1, msg)
 
-    if commandgroup.lower() == 'todo':
-        embed = discord.Embed.from_dict({
-            'title': 'todo commands',
-            'description': f'**Every command on this list starts with `{pref}todo`**\n\n`create`, `lists`, `shop`, `edit`, `info`, `buy`, `add`, `remove`, `mark`, `invite`, `view`, `kick`, `status`, `name`, `autodelete`, `color`, `thumbnail`, `custom_id`, `assign`, `delete`, `exit`',
-            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
-            'color': 0x1400ff
-        })
-        return embed
+""""I have given up on commenting functions"""
 
-    if commandgroup.lower() == 'cards':
-        embed = discord.Embed.from_dict({
-            'title': 'Card commands',
-            'description': f'Use `{pref}use booklet` for an introduction\n\n`book`, `shop`, `buy`, `sell`, `swap`, `hunt`, `meet`, `discard`, `use`',
-            'footer': {'text': f'For more info on how to use a command use {pref}help command <command>. You will need to provide arguments to most commands, they don\'t work on their own!'},
-            'color': 0x1400ff
-        })
-        return embed
+def command_info(self, command:str):
+    func = self.client.get_command(command).callback
+    code = inspect.getsource(func)
+    linecount = code.splitlines()
 
+    restricted = ''
+    desc = 'No description yet'
+    usage = 'Not provided'
+
+    for item in linecount:
+        first, middle, last = item.partition("#h")
+        firstr, middler, lastr = item.partition("#r")
+        firstu, middleu, lastu = item.partition("#u")
+        if lastr is None or lastr == '':
+            restricted = ''
+        else:
+            retricted = f'\n\nCommand restricted to: {lastr}'
+
+        if last and last != '")':
+            desc = last
+
+        if lastu and lastu != '")':
+            if lastu.startswith(' '):
+                usage = lastu[1:]
+            else:
+                usage = lastu
+
+    return restricted, desc, usage
 
 Cog = Help
 
