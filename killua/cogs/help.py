@@ -21,7 +21,7 @@ COMMANDS = {
         'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
     ],
     'fun': [
-        'hug', 'pat', 'topic', 'calc', 'translate', '8ball', 'avatar', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
+        'hug', 'pat', 'topic', 'calc', 'translate', '8ball', 'avatar', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
     ],
     'cards': [
         'book', 'shop', 'buy', 'sell', 'swap', 'hunt', 'meet', 'discard', 'use'
@@ -86,7 +86,7 @@ Website: https://killua.dev (a work in progress)''',
                             
                     embed = discord.Embed.from_dict({
                         'title': f'Info about command `k!{command.lower()}`',
-                        'description': f'{d} {r}\nUsage:```markdown\n{pref}{u}\n```',
+                        'description': f'{d} {r}\n\nUsage:```markdown\n{pref}{u}\n```',
                         'color': 0x1400ff,
                         'thumbnail': {'url': str(ctx.me.avatar_url)}
                     })
@@ -117,7 +117,7 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
 
     embed = discord.Embed.from_dict({
         'title': commandgroup.lower() + ' commands',
-        'description': f'\nCommand: `{pref}{command}`\n\n{d} {r}\nUsage:```markdown\n{pref}{u}\n```\n*{page}/{len(cmds)}*',
+        'description': f'\nCommand: `{pref}{command}`\n\n{d} {r}\n\nUsage:```markdown\n{pref}{u}\n```\n*{page}/{len(cmds)}*',
         'color': 0x1400ff,
         'thumbnail': {'url': str(ctx.me.avatar_url)}
     })

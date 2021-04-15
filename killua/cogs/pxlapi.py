@@ -38,6 +38,9 @@ async def validate_input(self, ctx, args): # a useful check that looks for what 
                 image = args
 
     if not image:
+        if len(ctx.message.attachments) > 0:
+            return ctx.message.attachments[0].url
+            
         async for message in ctx.channel.history(limit=20):
             if len(message.attachments) > 0:
                 image = message.attachments[0].url
@@ -144,6 +147,25 @@ class Api(commands.Cog):
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
         r = await pxl.snapchat(filter=filter, images=[data])
+        if isinstance(r, str):
+            return await ctx.send(":x: "+r)
+        else:
+            f = discord.File(io.BytesIO(r), filename="snap.png")
+            return await ctx.send(file=f)
+
+    @commands.command(aliases=['eye'])
+    @custom_cooldown(10)
+    async def eyes(self, ctx, t:str, args:typing.Union[discord.Member, str]=None):
+        if blcheck(ctx.author.id) is True:
+            return
+
+        #h Valid eyes: big, black, bloodshot, blue, default, googly, green, horror, illuminati, money, pink, red, small, spinner, spongebob, white, yellow, random
+        #u eyes <eye_type> <user/url>
+        
+        data = await validate_input(self, ctx, args)
+        if not data:
+            return await ctx.send('Invalid arguments passed! Try again')
+        r = await pxl.eyes(eyes=t, images=[data])
         if isinstance(r, str):
             return await ctx.send(":x: "+r)
         else:

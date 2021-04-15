@@ -1344,7 +1344,7 @@ async def card_1008(self, ctx, member:discord.Member):
     other.add_card(removed_attackist_card[0], removed_attackist_card[1]["fake"])
     user.add_card(removed_card_other[0], removed_card_other[1]["fake"])
 
-    await ctx.send(f'Sucesfully swapped cards! Gave {member} the card `{removed_attackist_card[0]}` and took card number `{removed_card_other[0]}` from them!')
+    await ctx.send(f'Successfully swapped cards! Gave {member} the card `{removed_attackist_card[0]}` and took card number `{removed_card_other[0]}` from them!')
 
 async def card_1007(self, ctx, member:discord.Member):
     if not isinstance(member, discord.Member):
