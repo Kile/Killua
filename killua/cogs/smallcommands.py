@@ -86,6 +86,7 @@ class SmallCommands(commands.Cog):
 
     @commands.command(aliases=['av', 'a'])
     async def avatar(self, ctx, user: typing.Union[discord.User, int]=None):
+      #h Shows the avatar of a user
       #u avatar <user(optional)>
       if blcheck(ctx.author.id) is True:
         return
@@ -107,6 +108,7 @@ class SmallCommands(commands.Cog):
 
     @commands.command()
     async def hug(self, ctx, members: commands.Greedy[discord.Member]=None):
+      #h Hug anyone you feel needs a hug with this command
       #u hug <user(multiple)>
         if blcheck(ctx.author.id) is True:
             return
@@ -149,6 +151,7 @@ class SmallCommands(commands.Cog):
 
     @commands.command()
     async def pat(self, ctx, members: commands.Greedy[discord.Member]=None):
+      #h Pat anyone you feel needs to be patted
       #u pat <user(multiple)>
         if blcheck(ctx.author.id) is True:
             return

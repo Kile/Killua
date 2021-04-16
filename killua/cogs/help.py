@@ -31,6 +31,9 @@ COMMANDS = {
     ],
     'economy': [
         'daily', 'profile', 'give', 'server', 'bal'
+    ],
+    'tags': [
+        'tag get', 'tag create', 'tag edit', 'tag list', 'tag delete', 'tag user', 'tag info'
     ]
 }
 
@@ -59,6 +62,7 @@ Command groups for {ctx.me.name}:
 :trophy: `Economy`
 :scroll: `todo`
 <:card_number_46:811776158966218802>  `Cards`
+:file_cabinet: `Tags`
 <:killua_wink:769919176110112778> `Other`
             
 To see a groups commands, use```css\nhelp <groupname>```
@@ -75,7 +79,7 @@ Website: https://killua.dev (a work in progress)''',
             except:
                 await ctx.send('Uh oh, something went wrong... I need embed permissions to send the help menu!')
         elif group:
-            if group.lower() in ['moderation', 'fun', 'economy', 'other', 'command', 'todo', 'cards']:
+            if group.lower() in [*[k for k in COMMANDS], *['command']]:
                 if command and group.lower() == 'command':
                     try:
                         self.client.get_command(command.lower()).callback
@@ -117,9 +121,10 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
 
     embed = discord.Embed.from_dict({
         'title': commandgroup.lower() + ' commands',
-        'description': f'\nCommand: `{pref}{command}`\n\n{d} {r}\n\nUsage:```markdown\n{pref}{u}\n```\n*{page}/{len(cmds)}*',
+        'description': f'\nCommand: `{pref}{command}`\n\n{d} {r}\n\nUsage:```markdown\n{pref}{u}\n```',
         'color': 0x1400ff,
-        'thumbnail': {'url': str(ctx.me.avatar_url)}
+        'thumbnail': {'url': str(ctx.me.avatar_url)},
+        'footer': {'text': f'{page}/{len(cmds)}'}
     })
 
     if first_time:
@@ -155,7 +160,6 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
         return
     else:
         if reaction.emoji == '\U000023e9':
-            print('ok')
             #ultra forward emoji
             try:
                 await msg.remove_reaction('\U000023e9', ctx.author)

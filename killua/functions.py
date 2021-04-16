@@ -54,7 +54,6 @@ def custom_cooldown(time:int):
         later = datetime.now()+timedelta(seconds=time)
         try:
             cdwn = cooldowndic[ctx.author.id][ctx.command.name]
-            print(cdwn)
         except KeyError as e:
             error = e.args[0]
             if error == ctx.author.id:
