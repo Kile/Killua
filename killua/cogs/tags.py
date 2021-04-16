@@ -48,13 +48,13 @@ class Tag():
 
     def delete(self):
         indx:int = [r[0] for r in self.tags].index(self.name.lower())
-        self.tags.remove(tags[indx])
+        self.tags.remove(self.tags[indx])
         guilds.update_one({'id': self.guild_id}, {'$set': {'tags': self.tags}})
         return
     
     def add_use(self):
         indx:int = [r[0] for r in self.tags].index(self.name.lower())
-        self.tags[indx][1]['uses'] = tags[indx][1]['uses']+1
+        self.tags[indx][1]['uses'] = self.tags[indx][1]['uses']+1
         guilds.update_one({'id': self.guild_id}, {'$set': {'tags': self.tags}})
         return
 
@@ -98,7 +98,7 @@ class Tags(commands.Cog):
         #h Create a tag with this command! After first using the command it will ask you for the content of the tag
         #u tag create <tag_name>
         guild = guilds.find_one({'id': ctx.guild.id})
-        member = Member(ctx.athor.id, ctx.guild.id)
+        member = Member(ctx.author.id, ctx.guild.id)
         if not Tag(ctx.guild.id, tag_name).found is False:
             tag = Tag(ctx.guild.id, tag_name)
             user = self.client.fetch_user(tag.owner)
