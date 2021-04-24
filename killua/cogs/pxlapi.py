@@ -15,8 +15,6 @@ with open('config.json', 'r') as config_file:
 
 pxl = Pxlapi(token=config["pxlapi"], stop_on_error=False)
 
-
-
 async def validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
 
     image = None
@@ -95,7 +93,7 @@ class Api(commands.Cog):
         if isinstance(r, str):
             return await ctx.send(":x: "+r)
         else:
-            f = discord.File(io.BytesIO(r), filename="flag.png")
+            f = discord.File(io.BytesIO(r), filename=f"flag.gif") # In case the image url isn't a gif this is a meh solution but...
             return await ctx.send(file=f)
 
     @commands.command()

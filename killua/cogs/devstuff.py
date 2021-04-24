@@ -26,6 +26,7 @@ from killua.functions import custom_cooldown, blcheck, p
 from killua.cogs.cards import Card, User
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
+# All those imports are to give k!eval many libraries it can use
 
 
 cluster = MongoClient(config['mongodb'])
@@ -47,85 +48,35 @@ class DevStuff(commands.Cog):
 
     #Eval command, unecessary with the jsk extension but useful for databse stuff
     @commands.command()
-    async def eval(self, ctx, *, c):
+    async def eval(self, ctx, *, code):
         if blcheck(ctx.author.id) is True:
             return
         #h Standart eval command, me restricted ofc
         #u eval <code>
+        #r user ID: 606162661184372736
         if ctx.author.id == 606162661184372736:
             try:
                 global bot
-                await ctx.channel.send(f'```py\n{eval(c)}```')
+                await ctx.channel.send(f'```py\n{eval(code)}```')
             except Exception as e:
                 await ctx.channel.send(str(e))
-
-
-    @commands.command()
-    async def codeinfo(self, ctx, *,content):
-        #h Gives you some information to a specific command like how many lines, how much time I spend on it etc
-        #u codeinfo <command>
-        # Using the K!source principle I can get infos about code with this
-	    try:
-		    func = ctx.bot.get_command(content).callback
-		    code = getsource(func)
-		    linecount = code.splitlines()
-		    time= ''
-		    restricted = ''
-		    comment = ''
-		    for item in linecount:
-			    firstt, middlet, lastt = item.partition("#t")
-			    firstr, middler, lastr = item.partition("#r")
-			    firstc, middlec, lastc = item.partition("#c")
-			    if lastt == '':
-				    pass
-			    else:
-				    time = lastt
-			    if lastr == '':
-				    pass
-			    else:
-				    restricted = lastr
-			    if lastc == '':
-				    pass
-			    else:
-				    comment = lastc
-			    #c this very code
-			    #t 1-2 hours
-		    if restricted == '' or restricted is None or restricted == '")':
-			    realrestricted = ''
-		    else:
-			    realrestricted = f'**Restricted to:** {restricted}'
-
-		    embed= discord.Embed.from_dict({
-			    'title': f'Command **{content}**',
-			    'color': 0x1400ff,
-			    'description': f'''**Characters:** {len(code)}
-			    **Lines:**  {len(linecount)}
-
-
-			    **Time spend on code:** {time or 'No time provided'}
-			    **Comments:** {comment or 'No comment'}
-
-			    {realrestricted}'''
-			})
-		    await ctx.send(embed=embed)
-	    except Exception as e:
-		    await ctx.send(f'Invalid command. Error: {e}')
 
     @commands.command()
     async def publish_update(self, ctx, version:str, *, update):
         #h Allows me to publish Killua updates in a handy formart
+        #u publish_update <version> <text>
         #r user ID 606162661184372736
         if ctx.author.id != 606162661184372736:
             return
         old = updates.find_one({'_id':'current'})
         log = updates.find_one({'_id': 'log'})
         embed = discord.Embed.from_dict({
-                        'title': f'Killua Update `{old["version"]}` -> `{version}`',
-                        'description': update,
-                        'color': 0x1400ff,
-                        'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar_url)},
-                        'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
-                    })
+            'title': f'Killua Update `{old["version"]}` -> `{version}`',
+            'description': update,
+            'color': 0x1400ff,
+            'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar_url)},
+            'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
+        })
         try:
             log.append(old)
         except:
@@ -162,6 +113,7 @@ class DevStuff(commands.Cog):
     async def blacklist(self, ctx, id:int, *,reason=None):
         #h Blacklisting bad people like Hisoka. Owner restricted
         #u blacklist <user>
+        #r user ID: 606162661184372736
         if blcheck(ctx.author.id) is True:
             return
         if ctx.author.id != 606162661184372736:
@@ -182,7 +134,7 @@ class DevStuff(commands.Cog):
         # I'd have blacklisted myself for testing
         #u whitelist <user>
         #h Whitelists a user. Owner restricted
-
+        #r user ID: 606162661184372736
         if ctx.author.id != 606162661184372736:
             return
         try:
@@ -192,11 +144,23 @@ class DevStuff(commands.Cog):
 
         blacklist.delete_one({'id': id})
         await ctx.send(f'Successfully whitelisted `{user}`')
+    
+    @commands.command()
+    async def say(self, ctx, *, content):
+        if blcheck(ctx.author.id) is True:
+            return
+        #h Let's Killua say what is specified with this command. Possible abuse leads to this being restricted 
+        #r user ID: 606162661184372736
+        #u say <text>
+        if ctx.author.id == 606162661184372736:
+            await ctx.message.delete()
+            await ctx.send(content)
 
     @commands.command(aliases=['st', 'pr', 'status'])
     async def presence(self, ctx, *, status):
         #h Changes the presence of Killua. Owner restricted 
         #u pr <text>
+        #r user ID: 606162661184372736
         if ctx.author.id != 606162661184372736:
             return
         if status == '-rm':
