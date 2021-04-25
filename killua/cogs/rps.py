@@ -24,7 +24,7 @@ class Rps(commands.Cog):
     
     @commands.command()
     @custom_cooldown(30)
-    async def rps(self, ctx, member: discord.User, points: int=None):
+    async def rps(self, ctx, member: discord.Member, points: int=None):
         if blcheck(ctx.author.id) is True:
             return
         #h Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun.
