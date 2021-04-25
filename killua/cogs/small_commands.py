@@ -217,8 +217,7 @@ class SmallCommands(commands.Cog):
         if "error" not in answer or "result" not in answer:
             return await ctx.send("An unknown error occurred during calculation!")
         if answer["error"]:
-            await ctx.reply("The following error occured while calculating:\n`{}`".format(answer["error"]))
-            return
+            return await ctx.send("The following error occured while calculating:\n`{}`".format(answer["error"]))
         await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
 Cog = SmallCommands
