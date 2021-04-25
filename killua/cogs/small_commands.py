@@ -14,7 +14,7 @@ class SmallCommands(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    def av(user) -> discord.Embed:
+    def av(self, user) -> discord.Embed:
         """ Input:
             user: the user to get the avatar from
 
