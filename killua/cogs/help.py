@@ -21,7 +21,10 @@ COMMANDS = {
         'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
     ],
     'fun': [
-        'hug', 'pat', 'topic', 'calc', 'translate', '8ball', 'avatar', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
+        'topic', 'calc', 'translate', '8ball', 'avatar', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
+    ],
+    'actions': [
+        'hug', 'poke', 'slap', 'tickle', 'pat'
     ],
     'cards': [
         'book', 'shop', 'buy', 'sell', 'swap', 'hunt', 'meet', 'discard', 'use'
@@ -30,7 +33,7 @@ COMMANDS = {
         'info', 'patreon', 'invite', 'codeinfo', 'permissions', 'bug', 'feedback'
     ],
     'economy': [
-        'daily', 'profile', 'give', 'server', 'bal'
+        'daily', 'profile', 'give', 'server', 'bal', 'leaderboard'
     ],
     'tags': [
         'tag get', 'tag create', 'tag edit', 'tag list', 'tag delete', 'tag user', 'tag info'
@@ -47,8 +50,6 @@ class Help(commands.Cog):
         if blcheck(ctx.author.id) is True:
             return
         #h This command is the one hopefully letting you know what Killua can do and what his features are, I hope you like how it looks!
-        #t 2 hours
-        #c 155 lines, help (bad codering)
         #u help <group/command> <command(if command was previous argument)>
         pref = self.client.command_prefix(self.client, ctx.message)[2]
         if group is None and command is None:
@@ -59,12 +60,13 @@ class Help(commands.Cog):
 Command groups for {ctx.me.name}:
 :tools: `Moderation`
 :clown: `Fun`
+:busts_in_silhouette: `actions`
 :trophy: `Economy`
 :scroll: `todo`
 <:card_number_46:811776158966218802>  `Cards`
 :file_cabinet: `Tags`
 <:killua_wink:769919176110112778> `Other`
-            
+
 To see a groups commands, use```css\nhelp <groupname>```
 For more info to a specific command, use
 ```css\nhelp command <commandname>```
@@ -198,7 +200,7 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
 
 """"I have given up on commenting functions"""
 
-def command_info(self, command:str):
+def command_info(self, command:str) -> tuple:
     func = self.client.get_command(command).callback
     code = inspect.getsource(func)
     linecount = code.splitlines()

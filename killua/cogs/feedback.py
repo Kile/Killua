@@ -15,7 +15,6 @@ class Feedback(commands.Cog):
     if blcheck(ctx.author.id) is True:
         return
     #h Report Killua bugs with this command! For more info on how to report a bug, use `k!bug`.
-    #t 1 hour
     #u bug <command> <text>
     if command and bug:
         
@@ -69,7 +68,6 @@ Reproduction: ban a member without providing a reason```''',
     if blcheck(ctx.author.id) is True:
         return
     #h Submit feedback to Killua with this command! For more information on how do send what, use `k!fb`.
-    #t 1 hour
     #u feedback <type> <text> 
     if Type and feedback:
         
