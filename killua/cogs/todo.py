@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from killua.functions import custom_cooldown, blcheck
-import pymongo
 from pymongo import MongoClient
 import asyncio
 import typing
@@ -10,7 +9,6 @@ from datetime import datetime
 import re
 import math
 import json
-from json import loads
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -205,7 +203,7 @@ class TodoSystem(commands.Cog):
         try:
             if not int(c, 16) <= 16777215:
                 await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
-        except:
+        except Exception:
             await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
 
         todo.update_one({'_id': list_id}, {'$set':{'color': int(c, 16)}})
@@ -307,7 +305,7 @@ class TodoSystem(commands.Cog):
                 todos.pop(n-1)
             todo.update_one({'_id': list_id}, {'$set':{'todos': todos}})
             return await ctx.send(f'You removed todo number{"s" if len(todo_numbers) > 1 else ""} {", ".join(todo_numbers)} successfully')
-        except:
+        except Exception:
             return await ctx.send('You need to provide only valid numbers!')
 
     @custom_cooldown(5)
@@ -326,7 +324,7 @@ class TodoSystem(commands.Cog):
             if todo_number == 0:
                 raise Exception('Error!')
             t = todos[todo_number-1]
-        except:
+        except Exception:
             return await ctx.send(f'You don\'t have a number {todo_number} on your current todo list')
 
         if  marked_as.lower() == 'done' and todo_list['delete_done'] is True:
@@ -441,7 +439,7 @@ Buy 10 more spots for todos for your list''',
         if isinstance(user, int):
             try:
                 user = client.fetch_user(user)
-            except:
+            except discord.NotFound:
                 return await ctx.send('Invalid ID')
 
         if not ctx.author.id == todo_list['owner']:
@@ -488,7 +486,7 @@ Buy 10 more spots for todos for your list''',
         if isinstance(user, int):
             try:
                 user = self.client.fetch_user(user)
-            except:
+            except discord.NotFound:
                 return await ctx.send('Invalid user id')
 
         if user.id == ctx.author.id:
@@ -512,7 +510,7 @@ Buy 10 more spots for todos for your list''',
         try:
             await user.send(embed=embed)
             await ctx.send('Successfully send the invitation to the specified user! They have 24 hours to accept or deny')
-        except:
+        except discord.Forbidden:
             return await ctx.send('Failed to send the user a dm. Make sure they are on a guild Killua is on and has their dms open')
 
         def check(m):
@@ -523,7 +521,7 @@ Buy 10 more spots for todos for your list''',
         except asyncio.TimeoutError:
             try:
                 await user.send('Time to respond is up')
-            except:
+            except discord.Forbidden:
                 pass
             return await ctx.author.send(f'{user} has not responded to your invitation in 24 hours so the invitation went invalid')
         else:
@@ -567,7 +565,7 @@ Buy 10 more spots for todos for your list''',
         if isinstance(user, int):
             try:
                 user = self.client.fetch_user(user)
-            except:
+            except discord.NotFound:
                 return await ctx.send('Invalid user id')
 
         if not user.id == todo_list['owner'] and not user.id in todo_list['editor']:
@@ -595,7 +593,7 @@ Buy 10 more spots for todos for your list''',
                     })
                     try:
                         await user.send(embed=embed)
-                    except:
+                    except discord.Forbidden:
                         pass
                 todos[todo_number-1]['assigned_to'].remove(user.id)
                 todo.update_one({'_id': list_id}, {'$set':{'todos': todos}})
@@ -619,7 +617,7 @@ Buy 10 more spots for todos for your list''',
             })
             try:
                 await user.send(embed=embed)
-            except:
+            except discord.Forbidden:
                 pass
         return await ctx.send(f'Succesfully assigned the task with number {todo_number} to `{user}`')
         
@@ -711,7 +709,7 @@ async def todo_name(self, ctx):
         await step.delete()
         try:
             await confirmmsg.delete()
-        except:
+        except discord.HTTPException:
             pass
         if len(title) > 30:
             await ctx.send('Title can\'t be longer than 20 characters, please try again', delete_after=5)
@@ -753,7 +751,7 @@ async def todo_status(self, ctx):
 
         try:
             await confirmmsg.delete()
-        except:
+        except discord.HTTPException:
             pass
         await step.delete()
         return status
@@ -790,7 +788,7 @@ async def todo_done_delete(self, ctx):
     else:
         try:
             await confirmmsg.delete()
-        except:
+        except discord.Forbidden:
             pass
         await step.delete()
         if confirmmsg.content.lower() == 'y':
@@ -874,14 +872,14 @@ async def buy_color(self, ctx):
         await step.delete()
         try:
             await confirmmsg.delete()
-        except:
+        except discord.HTTPException:
             pass
         c = f'0x{confirmmsg.content}'
         try:
             if not int(c, 16) <= 16777215:
                 await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
                 return await buy_color(self, ctx)
-        except:
+        except Exception:
             await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
             return await buy_color(self, ctx)
 
@@ -925,7 +923,7 @@ async def buy_thumbnail(self, ctx):
         await step.delete()
         try:
             await confirmmsg.delete()
-        except:
+        except discord.HTTPException:
             pass
         url = re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))', confirmmsg.content)
 
@@ -981,7 +979,7 @@ async def buy_space(self, ctx):
         await step.delete()
         try:
             await confirmmsg.delete()
-        except:
+        except discord.HTTPException:
             pass
         teams.update_one({'id': ctx.author.id}, {'$set':{'points': user['points']- todo_list['spots']*100}})
         todo.update_one({'_id': list_id}, {'$set':{'spots': todo_list['spots']+10 }})
@@ -1019,7 +1017,7 @@ async def buy_description(self, ctx):
         await step.delete()
         try:
             await confirmmsg.delete()
-        except:
+        except discord.HTTPException:
             pass
         if len(confirmmsg.content) > 200:
             await ctx.send('Your description can\'t be over 200 characters!')
@@ -1333,16 +1331,19 @@ async def todo_menu_embed_generator(self, ctx, todo_id, page:int, msg=None):
     try:
         reaction, user = await self.client.wait_for('reaction_add', timeout=120, check=check)
     except asyncio.TimeoutError:
-        await msg.remove_reaction('\U000025c0', ctx.me)
-        await msg.remove_reaction('\U000025b6', ctx.me)
-        return
+        try:
+            await msg.remove_reaction('\U000025c0', ctx.me)
+            await msg.remove_reaction('\U000025b6', ctx.me)
+            return
+        except discord.HTTPException:
+            pass
     else:
         if reaction.emoji == '\U000025b6':
             if page == max_pages: 
                 page = 0
             try:
                 await msg.remove_reaction('\U000025b6', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await todo_menu_embed_generator(self, ctx, todo_id, page+1, msg)
 
@@ -1351,7 +1352,7 @@ async def todo_menu_embed_generator(self, ctx, todo_id, page:int, msg=None):
                 page = max_pages+1
             try:
                 await msg.remove_reaction('\U000025c0', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await todo_menu_embed_generator(self, ctx, todo_id, page-1, msg)  
 

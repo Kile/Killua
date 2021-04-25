@@ -1,10 +1,10 @@
 import discord
 import inspect
 import json
-from json import loads
 from pymongo import MongoClient
 from discord.ext import commands
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import blcheck
+from killua.constants import COMMANDS
 import asyncio
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -12,33 +12,6 @@ with open('config.json', 'r') as config_file:
 cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 server = db['guilds']
-
-COMMANDS = {
-    'todo': [
-        'todo create', 'todo lists', 'todo shop', 'todo edit', 'todo info', 'todo buy', 'todo add', 'todo remove', 'todo mark', 'todo invite', 'todo view', 'todo kick', 'todo status', 'todo name', 'todo autodelete', 'todo color', 'todo thumbnail', 'todo custom_id', 'todo assign', 'todo delete', 'todo exit'
-    ],
-    'moderation': [
-        'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
-    ],
-    'fun': [
-        'topic', 'calc', 'translate', '8ball', 'avatar', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
-    ],
-    'actions': [
-        'hug', 'poke', 'slap', 'tickle', 'pat'
-    ],
-    'cards': [
-        'book', 'shop', 'buy', 'sell', 'swap', 'hunt', 'meet', 'discard', 'use'
-    ],
-    'other': [
-        'info', 'patreon', 'invite', 'codeinfo', 'permissions', 'bug', 'feedback'
-    ],
-    'economy': [
-        'daily', 'profile', 'give', 'server', 'bal', 'leaderboard'
-    ],
-    'tags': [
-        'tag get', 'tag create', 'tag edit', 'tag list', 'tag delete', 'tag user', 'tag info'
-    ]
-}
 
 class Help(commands.Cog):
 
@@ -83,9 +56,7 @@ Website: https://killua.dev (a work in progress)''',
         elif group:
             if group.lower() in [*[k for k in COMMANDS], *['command']]:
                 if command and group.lower() == 'command':
-                    try:
-                        self.client.get_command(command.lower()).callback
-                    except:
+                    if self.client.get_command(command.lower()) is None:
                         return await ctx.send('Command not found')
 
                     r, d, u = command_info(self, command.lower())
@@ -157,7 +128,7 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
             await msg.remove_reaction('\U000025b6', ctx.me)
             await msg.remove_reaction('\U000023e9', ctx.me)
             return
-        except:
+        except discord.HTTPException:
             pass
         return
     else:
@@ -165,7 +136,7 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
             #ultra forward emoji
             try:
                 await msg.remove_reaction('\U000023e9', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await commands(self, ctx, commandgroup, pref, len(cmds), msg)
 
@@ -173,7 +144,7 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
             #forward emoji
             try:
                 await msg.remove_reaction('\U000025b6', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await commands(self, ctx, commandgroup, pref, 1 if len(cmds) == page else page+1, msg)
 
@@ -186,7 +157,7 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
             #backwards emoji
             try:
                 await msg.remove_reaction('\U000025c0', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await commands(self, ctx, commandgroup, pref, len(cmds) if 1 == page else page-1, msg)
 
@@ -194,7 +165,7 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
             #ultra backwards emoji
             try:
                 await msg.remove_reaction('\U000023ea', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await commands(self, ctx, commandgroup, pref, 1, msg)
 

@@ -436,7 +436,7 @@ class User():
             for card in [x[0] for x in self.all_cards]:
                 try:
                     Card(card).remove_owner(self.id)
-                except:
+                except Exception:
                     pass
             teams.update_one({'id': self.id}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}}})
             return True
@@ -444,7 +444,7 @@ class User():
             for card in [x[0] for x in self.fs_cards]:
                 try:
                     Card(card).remove_owner(self.id)
-                except:
+                except Exception:
                     pass
             teams.update_one({'id': self.id}, {'$set': {'cards': {'rs': self.rs_cards, 'fs': [], 'effects': self.effects}}})
             return True
@@ -452,7 +452,7 @@ class User():
             for card in [x[0] for x in self.rs_cards]:
                 try:
                     Card(card).remove_owner(self.id)
-                except:
+                except Exception:
                     pass
             teams.update_one({'id': self.id}, {'$set': {'cards': {'rs': [], 'fs': self.fs_cards, 'effects': self.effects}}})
             return True

@@ -1,7 +1,6 @@
 from . import cogs
 import discord
 from datetime import datetime, timedelta
-from discord import Embed, File
 from discord.ext.commands import command as discord_command, \
 	group as discord_group
 from discord.ext import commands
@@ -12,8 +11,6 @@ import json
 from pymongo import MongoClient
 from random import choice, randint
 from typing import Callable, Coroutine
-import random
-
 
 all_commands = []
 
@@ -48,12 +45,14 @@ top = db['teampoints']
 server = db['guilds']
 
 def get_prefix(bot, message):
+	if bot.user.id == 758031913788375090:
+		return commands.when_mentioned_or('kil!', 'kil.')(bot, message)
 	try:
 		y = server.find_one({'id': message.guild.id})
 		if y is None:
 			return commands.when_mentioned_or('k!')(bot, message)
 		return commands.when_mentioned_or(y['prefix'])(bot, message)
-	except:
+	except Exception:
 		return commands.when_mentioned_or('k!')(bot, message)
 
 

@@ -1,7 +1,6 @@
 import discord
-from discord.ext.commands.cooldowns import BucketType
 from discord.ext import commands
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import blcheck
 
 
 class Feedback(commands.Cog):
@@ -18,11 +17,8 @@ class Feedback(commands.Cog):
     #u bug <command> <text>
     if command and bug:
         
-        try:
-            func = self.client.get_command(command.lower()).callback
-        except AttributeError:
-            if command.lower() != 'other':
-                return ctx.send('Command not found. To report bugs not bound to a command, use `other` here')
+        if self.client.get_command(command.lower()) is None and command.lower() != 'other':
+            return ctx.send('Command not found. To report bugs not bound to a command, use `other` here')
 
         if bug is None:
             return await ctx.send('Please tell us what exactly the with the provided command is. For more info on how to do that, use `k!bug`')

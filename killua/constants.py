@@ -152,3 +152,31 @@ card design with image we will be happy to have a look at your idea!
 Have fun hunters
 - The Gamemaster"""
 ]   
+
+# COMMANDS
+COMMANDS = {
+    'todo': [
+        'todo create', 'todo lists', 'todo shop', 'todo edit', 'todo info', 'todo buy', 'todo add', 'todo remove', 'todo mark', 'todo invite', 'todo view', 'todo kick', 'todo status', 'todo name', 'todo autodelete', 'todo color', 'todo thumbnail', 'todo custom_id', 'todo assign', 'todo delete', 'todo exit'
+    ],
+    'moderation': [
+        'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
+    ],
+    'fun': [
+        'topic', 'calc', 'translate', '8ball', 'avatar', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
+    ],
+    'actions': [
+        'hug', 'poke', 'slap', 'tickle', 'pat'
+    ],
+    'cards': [
+        'book', 'shop', 'buy', 'sell', 'swap', 'hunt', 'meet', 'discard', 'use'
+    ],
+    'other': [
+        'info', 'patreon', 'invite', 'permissions', 'bug', 'feedback'
+    ],
+    'economy': [
+        'daily', 'profile', 'give', 'server', 'bal', 'leaderboard'
+    ],
+    'tags': [
+        'tag get', 'tag create', 'tag edit', 'tag list', 'tag delete', 'tag user', 'tag info'
+    ]
+}

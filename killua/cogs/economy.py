@@ -2,10 +2,8 @@ import discord
 from discord.ext import commands
 from pymongo import MongoClient
 from killua.functions import custom_cooldown, blcheck
-from json import loads
 import typing
 from datetime import datetime, timedelta
-from random import randint
 import random
 import json
 from killua.classes import User, Guild
@@ -39,7 +37,7 @@ class Economy(commands.Cog):
         
         info = User(user.id)
 
-        flags = [USER_FLAGS[x] for x in user.public_flags]
+        flags = [USER_FLAGS[x[0]] for x in user.public_flags if x[1]]
         badges = [KILLUA_BADGES[x] for x in info.badges]
         bal = info.jenny
         
@@ -51,7 +49,7 @@ class Economy(commands.Cog):
 
         embed = discord.Embed.from_dict({
                 'title': f'Information about {user}',
-                'description': f'{user.id}\n{flags}\n\n**Killua Badges**\n{badges if len(badges) > 0 else "No badges"}\n\n**Jenny**\n{bal}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily` before"}',
+                'description': f'{user.id}\n{" ".join(flags)}\n\n**Killua Badges**\n{" ".join(badges) if len(badges) > 0 else "No badges"}\n\n**Jenny**\n{bal}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily` before"}',
                 'thumbnail': {'url': str(av)},
                 'color': 0x1400ff
             })
@@ -143,7 +141,7 @@ class Economy(commands.Cog):
         try:
             await self.client.fetch_user(user_id)
             real_user = User(user_id)
-        except:
+        except discord.NotFound:
             return await ctx.send('User not found')
 
         return await ctx.send(f'{user or ctx.author}\'s balance is {real_user.jenny} Jenny')

@@ -1,28 +1,10 @@
 from discord.ext import commands
-import io
-import aiohttp
-import time
 import discord
-import random
 import json
-from json import loads
 from datetime import datetime, date, timedelta
-from discord.ext import tasks
-import pymongo
 from pymongo import MongoClient
-from pprint import pprint
-import asyncio
-import inspect
-from inspect import getsource
-from discord.utils import find
-from numpy import *
-from matplotlib.pyplot import *
-import matplotlib.pyplot as plt
-import numpy as np
-import numexpr as ne
 import re
-import math
-from killua.functions import custom_cooldown, blcheck, p
+from killua.functions import blcheck, p
 from killua.cogs.cards import Card, User
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -79,7 +61,7 @@ class DevStuff(commands.Cog):
         })
         try:
             log.append(old)
-        except:
+        except Exception:
             log = [old]
         updates.update_one({'_id': 'current'}, {'$set': {'version': version, 'description': update, 'published_on': datetime.now(), 'published_by': ctx.author.id}})
         updates.update_one({'_id': 'log'}, {'$set': {'past_updates': log}})
@@ -92,7 +74,7 @@ class DevStuff(commands.Cog):
     async def update(self, ctx, version:str=None):
         #h Allows you to view current and past updates
         #u update <version(optional)>
-        if version == None:
+        if version is None:
             data = updates.find_one({'_id': 'current'})
         else:
             d = [x for x in updates.find_one({'_id': 'log'})['past_updates'] if x['version'] == version]

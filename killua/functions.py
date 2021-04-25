@@ -13,10 +13,8 @@ Checking before everry command if the user is blacklisted
 '''   
 
 def blcheck(userid:int):
-    import pymongo
     from pymongo import MongoClient
     import json
-    from json import loads
 
     with open('config.json', 'r') as config_file:
 	    config = json.loads(config_file.read())
@@ -36,10 +34,8 @@ cooldowndic = {}
 def custom_cooldown(time:int):
     async def predicate(ctx):
         global cooldowndic
-        import pymongo
         from pymongo import MongoClient
         import json
-        from json import loads
         from datetime import datetime, timedelta
 
         with open('config.json', 'r') as config_file:
@@ -114,10 +110,8 @@ Changing Killuas presence freqently if he is added to a guild, removed or 12 hou
 '''   
 
 async def p(self):
-    import pymongo
     from pymongo import MongoClient
     import json
-    from json import loads
     from datetime import datetime, timedelta, date
 
 
