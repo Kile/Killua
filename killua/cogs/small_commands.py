@@ -1,4 +1,3 @@
-import inspect
 import discord
 from discord.ext import commands
 import time
@@ -6,7 +5,6 @@ from datetime import datetime, timedelta
 import random
 import typing
 import aiohttp
-from random import randint
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 from killua.functions import custom_cooldown, blcheck
 from killua.constants import TOPICS
@@ -16,7 +14,7 @@ class SmallCommands(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    def avatar(user) -> discord.Embed:
+    def av(user) -> discord.Embed:
         """ Input:
             user: the user to get the avatar from
 
@@ -83,16 +81,16 @@ class SmallCommands(commands.Cog):
         if blcheck(ctx.author.id):
             return
         if not user:
-            embed = self.avatar(ctx.author)
+            embed = self.av(ctx.author)
             return await ctx.send(embed=embed)
             #Showing the avatar of the author if no user is provided
         if isinstance(user, discord.User):
-            embed = self.avatar(user)
+            embed = self.av(user)
             return await ctx.send(embed=embed)
             #If the user args is a mention the bot can just get everything from there
         try:
             newuser = await self.client.fetch_user(user)
-            embed = self.avatar(newuser)
+            embed = self.av(newuser)
             return await ctx.send(embed=embed)
             #If the args is an integer the bot will try to get a user with the integer as ID
         except:

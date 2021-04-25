@@ -7,7 +7,6 @@ import typing
 from datetime import datetime, timedelta
 from random import randint
 import random
-import asyncio
 import json
 from killua.classes import User, Guild
 from killua.constants import USER_FLAGS, KILLUA_BADGES
@@ -25,7 +24,7 @@ class Economy(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    def getmember(user: discord.Member):
+    def getmember(self, user: discord.Member):
         """ Input: 
             user (discord.User): the user to get info about and return it
 
@@ -52,7 +51,7 @@ class Economy(commands.Cog):
 
         embed = discord.Embed.from_dict({
                 'title': f'Information about {user}',
-                'description': f'{user.id}\n{flags}\n\n**Killua Badges**\n{badges if len(badges) > 0 else "No badges"}\n\n**Jenny**\n{points}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily` before"}',
+                'description': f'{user.id}\n{flags}\n\n**Killua Badges**\n{badges if len(badges) > 0 else "No badges"}\n\n**Jenny**\n{bal}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily` before"}',
                 'thumbnail': {'url': str(av)},
                 'color': 0x1400ff
             })

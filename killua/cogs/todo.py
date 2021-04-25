@@ -324,7 +324,7 @@ class TodoSystem(commands.Cog):
         todos = todo_list['todos']
         try:
             if todo_number == 0:
-                raise 'Error!'
+                raise Exception('Error!')
             t = todos[todo_number-1]
         except:
             return await ctx.send(f'You don\'t have a number {todo_number} on your current todo list')
@@ -577,7 +577,7 @@ Buy 10 more spots for todos for your list''',
 
         try:
             if todo_number == 0:
-                raise 'Error!'
+                raise Exception('Error!')
                 #Error!!!!
             t = todos[todo_number-1]
         except Exception as e:

@@ -3,11 +3,9 @@ from discord.ext import commands, tasks
 import random
 from random import randint
 from datetime import datetime, timedelta
-import pymongo
 from pymongo import MongoClient
 import json
 import asyncio
-from itertools import zip_longest
 import math
 import typing
 from PIL import Image, ImageFont, ImageDraw
@@ -127,7 +125,7 @@ class Cards(commands.Cog):
         
         sh = shop.find_one({'_id': 'daily_offers'})
         shop_items:list = sh['offers']
-        formatted = list()
+
         if not sh['reduced'] is None:
             reduced_item = sh['reduced']['reduced_item']
             reduced_by = sh['reduced']['reduced_by']
@@ -155,7 +153,6 @@ class Cards(commands.Cog):
         shop_data = shop.find_one({'_id': 'daily_offers'})
         shop_items = shop_data['offers']
         user = User(ctx.author.id)
-        price = int()
 
         try:
             card = Card(item)
@@ -228,7 +225,7 @@ class Cards(commands.Cog):
             
             card_amount = user.count_card(item, False)
 
-            if not amount >= amount:
+            if not card_amount >= amount:
                 return await ctx.send('Seems like you don\'t own enoug ch non-fake copies of this card you try to sell')
             else:
                 for i in range(amount):
@@ -364,7 +361,7 @@ class Cards(commands.Cog):
             return await ctx.send(f'✉️ transferred {item} Jenny to `{other}`!')
         elif t.lower() == 'card':
             try:
-                card = Card(item)
+                Card(item)
             except CardNotFound:
                 return await ctx.send('Invalid card number')
             if user.has_any_card(item, False) is False:
@@ -1024,7 +1021,6 @@ def construct_rewards(reward_score:int):
     if reward_score > 1:
         reward_score = 1
 
-    MONSTERS = [572, 585, 598, 673, 697, 711, 1217]
     rewards = list()
     def rw(reward_score:int):
         if reward_score == 1:
@@ -1089,7 +1085,6 @@ async def paginator(self, ctx, page:int, msg:discord.Message=None, first_time=Fa
         name = user
         person = User(user.id)
     
-    restricted_slots = bool()
     rs_cards = list()
     fs_cards = list()
     max_pages = 6+math.ceil(len(person.fs_cards)/18)
@@ -1252,7 +1247,7 @@ async def numbers(image, data, page):
     font = await getfont(35)
     draw = ImageDraw.Draw(image)
     for n, i in enumerate(data):
-        if i[1] == None:
+        if i[1] is None:
             draw.text(numbers_pos[page][n], f'0{i[0]}', (165,165,165), font=font)
     return image
 

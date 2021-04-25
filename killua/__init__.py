@@ -74,9 +74,9 @@ def main():
 	intents = discord.Intents.all()
 	intents.presences = False
 	# Create the bot instance.
-	bot = commands.Bot(
+	bot = commands.AutoShardedBot(
 		command_prefix=get_prefix,
-		description="default prefix",
+		description="The discord bot Killua",
 		case_insensitive=True,
 		intents=intents
 	)
