@@ -4,7 +4,7 @@ from pymongo import MongoClient
 from killua.functions import custom_cooldown, blcheck
 import typing
 from datetime import datetime, timedelta
-import random
+from random import randint
 import json
 from killua.classes import User, Guild
 from killua.constants import USER_FLAGS, KILLUA_BADGES

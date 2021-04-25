@@ -57,11 +57,11 @@ You will need a mongodb account. Why do I use mongodb and not sql? In my opinion
 You will need the following mongodb structure where `#` resembles a database and `-` collections:
 
 ```
-Killua
+#Killua
   -teams
   -guilds
   
-general
+#general
   -blacklist
   -presence
   -todo
