@@ -7,7 +7,7 @@ import typing
 import aiohttp
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 from killua.functions import custom_cooldown, blcheck
-from killua.constants import TOPICS
+from killua.constants import TOPICS, ANSWERS
 
 class SmallCommands(commands.Cog):
 
@@ -60,15 +60,15 @@ class SmallCommands(commands.Cog):
         await ctx.send("Hello " + str(ctx.author))
 
     @custom_cooldown(2)
-    @commands.command()
-    async def _8ball(self, ctx, *, question:str):
+    @commands.command(aliases=['8ball'])
+    async def ball(self, ctx, *, question:str):
         if blcheck(ctx.author.id):
             return
         #h Ask Killua anything and he will answer
         #u 8ball <question>
         embed = discord.Embed.from_dict({
             'title': f'8ball has spoken 🎱',
-            'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n```\n{random.choice(answers)}```',
+            'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n```\n{random.choice(ANSWERS)}```',
             'footer': {'icon_url': str(ctx.author.avatar_url), 'text': f'Asked by {ctx.author}'},
             'color': 0x1400ff
         })
