@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
-import typing
 import aiohttp
 import random
-from killua.functions import blcheck, custom_cooldown
+import asyncio
+from killua.functions import blcheck
 from killua.constants import ACTIONS
 
 class Actions(commands.Cog):
@@ -68,7 +68,7 @@ class Actions(commands.Cog):
         def check(m):
             return m.content.lower() == 'yes' and m.author == ctx.author
         try:
-            msg = await self.client.wait_for('message', check=check, timeout=60) 
+            await self.client.wait_for('message', check=check, timeout=60) 
         except asyncio.TimeoutError:
             pass
         else:

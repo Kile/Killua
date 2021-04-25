@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 import json
 from pymongo import MongoClient
-import json
 from datetime import datetime
 import math
 import asyncio
@@ -247,7 +246,7 @@ async def paginator(self, ctx, content:list, page:int, user:discord.Member=None,
 
     embed = discord.Embed.from_dict({
         'title': f'Top tags owned by {user.name}' if user else f'Top tags of guild {guild.name}',
-        'description': '\n'.join(content),
+        'description': '\n'.join(final_tags),
         'color': 0x1400ff,
         'thumbnail': {'url': str(user.avatar_url) if user else str(guild.icon_url)}
     })
@@ -280,7 +279,7 @@ async def paginator(self, ctx, content:list, page:int, user:discord.Member=None,
             await msg.remove_reaction('\U000025b6', ctx.me)
             await msg.remove_reaction('\U000023e9', ctx.me)
             return
-        except:
+        except discord.HTTPException:
             pass
         return
     else:
@@ -288,7 +287,7 @@ async def paginator(self, ctx, content:list, page:int, user:discord.Member=None,
             #ultra forward emoji
             try:
                 await msg.remove_reaction('\U000023e9', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await paginator(self, ctx, content, max_pages, user, guild, msg)
 
@@ -296,7 +295,7 @@ async def paginator(self, ctx, content:list, page:int, user:discord.Member=None,
             #forward emoji
             try:
                 await msg.remove_reaction('\U000025b6', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await paginator(self, ctx, content, 1 if page == max_pages else page+1, user, guild, msg)
 
@@ -309,7 +308,7 @@ async def paginator(self, ctx, content:list, page:int, user:discord.Member=None,
             #backwards emoji
             try:
                 await msg.remove_reaction('\U000025c0', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await paginator(self, ctx, content, max_pages if page == 1 else page-1, user, guild, msg)
 
@@ -317,7 +316,7 @@ async def paginator(self, ctx, content:list, page:int, user:discord.Member=None,
             #ultra backwards emoji
             try:
                 await msg.remove_reaction('\U000023ea', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             return await paginator(self, ctx, content, 1, user, guild, msg)
 

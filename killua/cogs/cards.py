@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands, tasks
 import random
-from random import randint
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 import json
@@ -11,6 +10,7 @@ import typing
 from PIL import Image, ImageFont, ImageDraw
 import io
 import aiohttp
+from random import randint
 from killua.functions import custom_cooldown, blcheck
 from killua.classes import User, Card, CardLimitReached, CardNotFound
 from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES
@@ -918,7 +918,7 @@ async def book_paginator(self, ctx, page, msg:discord.Message=None, first_time=F
             await msg.remove_reaction('\U000025c0', ctx.me)
             await msg.remove_reaction('\U000025b6', ctx.me)
             return
-        except:
+        except discord.HTTPException:
             pass
     else:
         if reaction.emoji == '\U000025b6':
@@ -1112,7 +1112,7 @@ async def paginator(self, ctx, page:int, msg:discord.Message=None, first_time=Fa
         while (len(fs_cards) % 18 == 0) == False or (len(fs_cards) == 0) == True: 
             try:
                 fs_cards.append([person.fs_cards[i][0], Card(person.fs_cards[i][0]).image_url])
-            except: # don't know what the out of range error is called so I can't check for it
+            except IndexError: 
                 fs_cards.append(None)
             i = i+1
 

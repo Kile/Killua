@@ -72,7 +72,7 @@ async def pageturn(msg, page:int, book:str, self, ctx, first_time:bool):
             try:
                 await msg.remove_reaction('\U000025b6', ctx.author)
                 #If permission and if the reaction is still there it will remove the authors reaction
-            except:
+            except discord.HTTPException:
                 pass
             #It calls itself so that we have a loop which makes the user able to turn pages as much as they want
             return await pageturn(msg, page, book, self, ctx, False)
@@ -87,7 +87,7 @@ async def pageturn(msg, page:int, book:str, self, ctx, first_time:bool):
             try:
                 await msg.remove_reaction('\U000025c0', ctx.author)
                 #If permission and if the reaction is still there it will remove the authors reaction
-            except:
+            except discord.HTTPException:
                 pass
             #Editing the embed to the right book
             await msg.edit(embed=embed)
@@ -142,42 +142,42 @@ def getBook(page, name:str, nr:int):
     book = BeautifulSoup(requests.get('https://www.goodreads.com/book/show/' + bookNr).content, 'html.parser')
     # get the book values
     try:
-        rating = starRating = " ".join((str)(book.find('span', itemprop="ratingValue").text).split())
-    except: 
+        rating = " ".join((str)(book.find('span', itemprop="ratingValue").text).split())
+    except Exception: 
         rating = "-"
     try:
         isbn = " ".join((str)(book.find_all('div', class_="infoBoxRowItem")[1].text).split())
         if not isnb.isdigit():
             isbn = '-'
-    except:
+    except Exception:
         isbn = '-'
     try:
         name = " ".join((str)(book.find('div', class_="bookCoverPrimary").find('img').attrs['alt']).split())
-    except:
+    except Exception:
         name = '-'
     try:
         author = " ".join((str)(book.find('a', class_="authorName").find_all('span')[0].text).split())
-    except:
+    except Exception:
         author = '-'
     try:
         description = " ".join((str)(book.find('div', id="description").find(style="display:none").text).split())
         if description.startswith('Alternate cover for this ISBN can be found here'):
             description = description.replace('Alternate cover for this ISBN can be found here', '')
-    except:
+    except Exception:
         description = '-'
     try:
         language = " ".join((str)(book.find('div', itemprop="inLanguage").text).split())
-    except:
+    except Exception:
         language = '-'
     try:
         pages = " ".join((str)(book.find('span', itemprop="numberOfPages").text).split())
-    except:
+    except Exception:
         pages = '-'
     #If a certain thing isn't specified such as number of pages, it is now replaced with '-'
 
     try:
         img_url = " ".join((str)(book.find('div', class_="bookCoverPrimary").find('img').attrs['src']).split())
-    except:
+    except Exception:
         img_url = 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png';      
 
     if len(description) > 1000:

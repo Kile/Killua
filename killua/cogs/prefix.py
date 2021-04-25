@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 from killua.functions import custom_cooldown, blcheck
 from killua.classes import Guild
@@ -10,6 +9,8 @@ class Prefix(commands.Cog):
 
     @commands.command()
     async def prefix(self, ctx, pref:str=None):
+        if blcheck(ctx.author.id):
+            return
         #h Change killua's prefix with this command. If you forgot your prefix, mentioning is always a prefix as well
         #u prefix <prefix>
         guild = Guild(ctx.guild.id)

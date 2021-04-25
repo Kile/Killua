@@ -37,7 +37,7 @@ class Events(commands.Cog):
     async def on_guild_join(self, guild):
         #Changing the status
         await p(self)
-        g = Guild(guild)
+        Guild(guild.id)
       
         general = find(lambda x: x.name == 'general',  guild.text_channels)
         if general and general.permissions_for(guild.me).send_messages:
@@ -63,11 +63,11 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         # The purpose of this function is to kinda automate premium badges
-        try:
-            if not before.guild.id == 715358111472418908:
-                return
-        except:
+        if not before.guild:
             return
+        if not before.guild.id == 715358111472418908:
+            return
+
         s = list(PREMIUM_ROLES.keys())
 
         common_elements = set(s).intersection([x.id for x in before.roles])

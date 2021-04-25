@@ -2,7 +2,7 @@ import discord
 import asyncio
 from discord.utils import find
 from discord.ext import commands
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import blcheck
 import typing
 
 class Moderation(commands.Cog):
@@ -106,7 +106,7 @@ class Moderation(commands.Cog):
             return
         try:
             await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason or "No reason provided"}```by `{ctx.author}`')
-        except:
+        except discord.Forbidden:
             pass
 
         await member.kick(reason=reason or "No reason provided")

@@ -1,9 +1,7 @@
 import discord
 import io
-import aiohttp
 from discord.ext import commands
 import json
-from json import loads
 from killua.functions import custom_cooldown, blcheck
 import typing
 import asyncio
@@ -26,7 +24,7 @@ async def validate_input(self, ctx, args): # a useful check that looks for what 
             try:
                 user = await self.client.fetch_user(int(args))
                 image = str(user.avatar_url_as(static_format='png'))
-            except:
+            except discord.NotFound:
                 return None
         else:
             url = re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))', args)
@@ -296,14 +294,14 @@ async def paginator(bot, ctx, page:int, query:str, data:list, first_time:bool=Fa
             await msg.remove_reaction('\U000025c0', ctx.me)
             await msg.remove_reaction('\U000025b6', ctx.me)
             return
-        except:
+        except discord.HTTPException:
             pass
     else:
         if reaction.emoji == '\U000025b6':
             #forward emoji
             try:
                 await msg.remove_reaction('\U000025b6', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             if page == len(data):
                 return await paginator(bot, ctx, 1, query, data, msg=msg)
@@ -313,7 +311,7 @@ async def paginator(bot, ctx, page:int, query:str, data:list, first_time:bool=Fa
             #backwards emoji
             try:
                 await msg.remove_reaction('\U000025c0', ctx.author)
-            except:
+            except discord.HTTPException:
                 pass
             if page == 1:
                 return await paginator(bot, ctx, len(data), query, data, msg=msg)

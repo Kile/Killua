@@ -57,11 +57,11 @@ You will need a mongodb account. Why do I use mongodb and not sql? In my opinion
 You will need the following mongodb structure where `#` resembles a database and `-` collections:
 
 ```
-Killua
+#Killua
   -teams
   -guilds
   
-general
+#general
   -blacklist
   -presence
   -todo
@@ -86,3 +86,8 @@ You will also need a file named `config.json` having the layout like this:
 If you don't like me using one of your images for the hug or pat command, please contact me on discord `Kile#0606` or on `killua.bot.help@gmail.com`
 
 If you have any further questions, join my discord server or dm me!
+<p align="center">
+  <a href"https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
+     <img src="https://cdn.discordapp.com/attachments/759863805567565925/834794115148546058/image0.jpg">
+  </a>
+</p>

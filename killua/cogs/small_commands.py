@@ -93,7 +93,7 @@ class SmallCommands(commands.Cog):
             embed = self.av(newuser)
             return await ctx.send(embed=embed)
             #If the args is an integer the bot will try to get a user with the integer as ID
-        except:
+        except discord.NotFound:
             return await ctx.send('Invalid user')
 
     @commands.command()
@@ -157,7 +157,7 @@ class SmallCommands(commands.Cog):
         })
         try:
             await ctx.send(embed=embed)
-        except: # If embed permission is denied
+        except discord.Forbidden: # If embed permission is denied
             await ctx.send('__Bot permissions__\n\n'+prettier)
 
     @commands.command()
