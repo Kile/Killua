@@ -88,8 +88,8 @@ class Cards(commands.Cog):
 
             log = shop.find_one({'_id': 'daily_offers'})['log']
             if random.randint(1, 10) > 6: #40% to have an item in the shop reduced
-                reduced_item = randint(0, len(shop_items)-1)
-                reduced_by = randint(15, 40)
+                reduced_item = random.randint(0, len(shop_items)-1)
+                reduced_by = random.randint(15, 40)
                 print('Updated shop with following cards: ' + ', '.join([str(x) for x in shop_items])+f', reduced item number {shop_items[reduced_item]} by {reduced_by}%')
                 log.append({'time': datetime.now(), 'items': shop_items, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}})
                 shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}}})
