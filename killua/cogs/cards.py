@@ -69,7 +69,7 @@ class Cards(commands.Cog):
             thing = [i['_id'] for i in items.find({'type': 'normal', 'rank': random.choice(['A', 'S'])})]
             shop_items.append(random.choice(thing))
         if random.randint(1,100) > 20: #80% chance for spell
-            if randint(1, 100) > 95: #5% chance for a good spell (they are rare)
+            if random.randint(1, 100) > 95: #5% chance for a good spell (they are rare)
                 spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': 'A'})]
                 shop_items.append(random.choice(spells))
             elif random.randint(1,50): #50% chance of getting a medium good card
