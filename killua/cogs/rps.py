@@ -6,7 +6,6 @@ import asyncio
 import json
 from killua.functions import custom_cooldown, blcheck
 from killua.classes import User
-from json import loads
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())

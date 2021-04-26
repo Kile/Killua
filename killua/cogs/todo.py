@@ -41,13 +41,9 @@ class TodoSystem(commands.Cog):
         x = 0
         
         user_todo_lists = todo.find({'owner': ctx.author.id})
-        try:
-            for l in user_todo_lists:
-                x +1
-        except Exception:
-            pass
-        if x == 5:
-            return ctx.send('You can currently not own more than 5 todo lists')
+
+        if len(user_todo_lists) == 5:
+            return await ctx.send('You can currently not own more than 5 todo lists')
 
         title  = await todo_name(self, ctx)
         if title is None:
@@ -323,7 +319,7 @@ class TodoSystem(commands.Cog):
         try:
             if todo_number == 0:
                 raise Exception('Error!')
-            t = todos[todo_number-1]
+            todos[todo_number-1]
         except Exception:
             return await ctx.send(f'You don\'t have a number {todo_number} on your current todo list')
 

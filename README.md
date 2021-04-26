@@ -36,6 +36,8 @@
   <a href="https://www.patreon.com/KileAlkuri">
     <img src="https://img.shields.io/badge/Support-Killua!-blue.svg" alt="Support Killua on Patreon!">
   </a>
+  <a href="https://lgtm.com/projects/g/Kile/Killua/context:python"><img alt="Language grade: Python" src="https://img.shields.io/lgtm/grade/python/g/Kile/Killua.svg?logo=lgtm&logoWidth=18"/>
+  </a>
 </p>
 
 ## Details

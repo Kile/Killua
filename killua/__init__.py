@@ -6,7 +6,6 @@ from discord.ext.commands import command as discord_command, \
 from discord.ext import commands
 from inspect import getsource
 from io import BytesIO
-from json import loads
 import json
 from pymongo import MongoClient
 from random import choice, randint

@@ -1,5 +1,4 @@
 from discord.ext import commands
-from killua.functions import custom_cooldown, blcheck
 from killua.classes import Guild
 
 class Prefix(commands.Cog):

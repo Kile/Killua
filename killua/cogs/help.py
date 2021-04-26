@@ -51,7 +51,7 @@ Website: https://killua.dev (a work in progress)''',
             })
             try:
                 await ctx.send(embed=embed)
-            except:
+            except discord.Forbidden:
                 await ctx.send('Uh oh, something went wrong... I need embed permissions to send the help menu!')
         elif group:
             if group.lower() in [*[k for k in COMMANDS], *['command']]:
@@ -187,7 +187,7 @@ def command_info(self, command:str) -> tuple:
         if lastr is None or lastr == '':
             restricted = ''
         else:
-            retricted = f'\n\nCommand restricted to: {lastr}'
+            restricted = f'\n\nCommand restricted to: {lastr}'
 
         if last and last != '")':
             desc = last

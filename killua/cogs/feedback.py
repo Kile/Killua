@@ -15,7 +15,7 @@ class Feedback(commands.Cog):
         return
     #h Report Killua bugs with this command! For more info on how to report a bug, use `k!bug`.
     #u bug <command> <text>
-    if command and bug:
+    if command:
         
         if self.client.get_command(command.lower()) is None and command.lower() != 'other':
             return ctx.send('Command not found. To report bugs not bound to a command, use `other` here')
@@ -65,7 +65,7 @@ Reproduction: ban a member without providing a reason```''',
         return
     #h Submit feedback to Killua with this command! For more information on how do send what, use `k!fb`.
     #u feedback <type> <text> 
-    if Type and feedback:
+    if Type:
         
         if not Type.lower() in ['topic', '8ball', 'hug', 'apply', 'general', 'idea', 'feature-request', 'complain', 'compliment']:
             ctx.command.reset_cooldown(ctx)

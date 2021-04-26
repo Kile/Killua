@@ -296,8 +296,6 @@ class User():
                 else:
                     return rc(fake(), restricted_slot)
 
-        return 
-
     def add_card(self, card_id:int, fake:bool=False, clone:bool=False):
         """Adds a card to the the user"""
         card = Card(card_id)
@@ -315,7 +313,8 @@ class User():
             if card_id < 100:
                 ac(True)
                 return
-            return ac()
+            ac()
+            return
 
         if len(self.fs_cards) >= FREE_SLOTS:
             raise CardLimitReached('User reached card limit for free slots')

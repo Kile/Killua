@@ -10,7 +10,6 @@ import typing
 from PIL import Image, ImageFont, ImageDraw
 import io
 import aiohttp
-from random import randint
 from killua.functions import custom_cooldown, blcheck
 from killua.classes import User, Card, CardLimitReached, CardNotFound
 from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES
@@ -64,16 +63,16 @@ class Cards(commands.Cog):
         #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
         #the challange is to create a balanced system with good items rare enough but not too rare
         shop_items:list = []
-        number_of_items = randint(3,5) #How many items the shop has
-        if randint(1,100) > 95:
+        number_of_items = random.randint(3,5) #How many items the shop has
+        if random.randint(1,100) > 95:
             #Add a S/A card to the shop
             thing = [i['_id'] for i in items.find({'type': 'normal', 'rank': random.choice(['A', 'S'])})]
             shop_items.append(random.choice(thing))
-        if randint(1,100) > 20: #80% chance for spell
+        if random.randint(1,100) > 20: #80% chance for spell
             if randint(1, 100) > 95: #5% chance for a good spell (they are rare)
                 spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': 'A'})]
                 shop_items.append(random.choice(spells))
-            elif randint(1,50): #50% chance of getting a medium good card
+            elif random.randint(1,50): #50% chance of getting a medium good card
                 spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': random.choice(['B', 'C'])})]
                 shop_items.append(random.choice(spells))
             else: #otherwise getting a fairly normal card
@@ -88,7 +87,7 @@ class Cards(commands.Cog):
                     shop_items.append(t)
 
             log = shop.find_one({'_id': 'daily_offers'})['log']
-            if randint(1, 10) > 6: #40% to have an item in the shop reduced
+            if random.randint(1, 10) > 6: #40% to have an item in the shop reduced
                 reduced_item = randint(0, len(shop_items)-1)
                 reduced_by = randint(15, 40)
                 print('Updated shop with following cards: ' + ', '.join([str(x) for x in shop_items])+f', reduced item number {shop_items[reduced_item]} by {reduced_by}%')
@@ -1024,7 +1023,7 @@ def construct_rewards(reward_score:int):
     rewards = list()
     def rw(reward_score:int):
         if reward_score == 1:
-            if randint(1,10) < 5:
+            if random.randint(1,10) < 5:
                 return (random.choice([x['_id'] for x in items.find({'type': 'normal', 'rank': random.choice(['A', 'B', 'C'])})]), 1), 0.3
             else:
                 return (random.choice([x['_id'] for x in items.find({'type': 'spell', 'rank': random.choice(['B', 'C'])})]), 1), 0.3
@@ -1119,7 +1118,7 @@ async def paginator(self, ctx, page:int, msg:discord.Message=None, first_time=Fa
     if page <= 6:
         cards = rs_cards
         restricted_slots = True
-    elif page > 6:
+    else:
         cards = fs_cards
         restricted_slots = False
 
@@ -1155,7 +1154,7 @@ async def paginator(self, ctx, page:int, msg:discord.Message=None, first_time=Fa
             await msg.remove_reaction('\U000025c0', ctx.me)
             await msg.remove_reaction('\U000025b6', ctx.me)
             return
-        except:
+        except discord.HTTPException:
             pass
     else:
         if reaction.emoji == '\U000025b6':
