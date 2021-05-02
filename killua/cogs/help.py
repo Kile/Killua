@@ -3,7 +3,7 @@ import inspect
 import json
 from pymongo import MongoClient
 from discord.ext import commands
-from killua.functions import blcheck
+from killua.functions import check
 from killua.constants import COMMANDS
 import asyncio
 with open('config.json', 'r') as config_file:
@@ -18,10 +18,9 @@ class Help(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @check()
     @commands.command()
     async def help(self, ctx, group:str=None, *,command:str=None):
-        if blcheck(ctx.author.id) is True:
-            return
         #h This command is the one hopefully letting you know what Killua can do and what his features are, I hope you like how it looks!
         #u help <group/command> <command(if command was previous argument)>
         pref = self.client.command_prefix(self.client, ctx.message)[2]

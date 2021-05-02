@@ -2,16 +2,16 @@ import discord
 import io
 from discord.ext import commands
 import json
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import check
 import typing
 import asyncio
 import re
-from pypxl import Pxlapi # My own library :sparkles:
+from pypxl import PxlClient # My own library :sparkles:
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
-pxl = Pxlapi(token=config["pxlapi"], stop_on_error=False)
+pxl = PxlClient(token=config["pxlapi"], stop_on_error=False)
 
 async def validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
 
@@ -58,29 +58,24 @@ class Api(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @check(120) # Big cooldown >_<
     @commands.command(aliases=['ej', 'emojimosaic'])
-    @custom_cooldown(60) # Long cooldown >-<
     async def emojaic(self, ctx, args:typing.Union[discord.Member, str]=None):
         #h Emoji mosaic an image; let emojis recreate an image you gave Killua! Takes in a mention, ID or image url
         #u emojaic <user/url>
-        if blcheck(ctx.author.id) is True:
-            return
         
         data = await validate_input(self, ctx, args)
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
         r = await pxl.emojaic([data], groupSize=6)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="emojaic.png")
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes, filename='emojiaic.png')
             return await ctx.send(file=f)
+        return await ctx.send(f':x: '+r.error)
 
+    @check(5)
     @commands.command()
-    @custom_cooldown(5)
     async def flag(self, ctx, flag:str, args:typing.Union[discord.Member, str]=None):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Valid flags: asexual, aromantic, bisexual, pansexual, gay, lesbian, trans, nonbinary, genderfluid, genderqueer, polysexual, austria, belgium, botswana, bulgaria, ivory, estonia, france, gabon, gambia, germany, guinea, hungary, indonesia, ireland, italy, luxembourg, monaco, nigeria, poland, russia, romania, sierraleone, thailand, ukraine, yemen
         #u flag <flag> <user/url>
         
@@ -94,13 +89,11 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename=f"flag.gif") # In case the image url isn't a gif this is a meh solution but...
             return await ctx.send(file=f)
 
+    @check(5)
     @commands.command()
-    @custom_cooldown(30)
     async def glitch(self, ctx, args:typing.Union[discord.Member, str]=None):
         #h Tranform a users pfp into a glitchy GIF!
         #u glitch <user/url>
-        if blcheck(ctx.author.id) is True:
-            return
         
         data = await validate_input(self, ctx, args)
         if not data:
@@ -112,13 +105,11 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename="glitch.gif")
             return await ctx.send(file=f)
 
+    @check(10)
     @commands.command()
-    @custom_cooldown(15)
     async def lego(self, ctx, args:typing.Union[discord.Member, str]=None):
         #h Legofies an image
         #u lego <user/url>
-        if blcheck(ctx.author.id) is True:
-            return
         
         data = await validate_input(self, ctx, args)
         if not data:
@@ -130,12 +121,9 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename="lego.png")
             return await ctx.send(file=f)
 
+    @check(3)
     @commands.command(aliases=['snap'])
-    @custom_cooldown(10)
     async def snapchat(self, ctx, filter:str, args:typing.Union[discord.Member, str]=None):
-        if blcheck(ctx.author.id) is True:
-            return
-
         #h Valid filters: dog, dog2, dog3, pig, flowers, random
         #u flag <flag> <user/url>
         
@@ -149,12 +137,9 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename="snap.png")
             return await ctx.send(file=f)
 
+    @check(3)
     @commands.command(aliases=['eye'])
-    @custom_cooldown(10)
     async def eyes(self, ctx, t:str, args:typing.Union[discord.Member, str]=None):
-        if blcheck(ctx.author.id) is True:
-            return
-
         #h Valid eyes: big, black, bloodshot, blue, default, googly, green, horror, illuminati, money, pink, red, small, spinner, spongebob, white, yellow, random
         #u eyes <eye_type> <user/url>
         
@@ -168,11 +153,9 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename="snap.png")
             return await ctx.send(file=f)
 
+    @check(3)
     @commands.command()
-    @custom_cooldown(5)
     async def thonkify(self, ctx, *, text:str):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Turn text into thonks!
         #u thonkify <text>
 
@@ -183,11 +166,9 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename="thonk.png")
             return await ctx.send(file=f)
 
+    @check(5)
     @commands.command(aliases=['screen'])
-    @custom_cooldown(15)
     async def screenshot(self, ctx, website:str):
-        if blcheck(ctx.author.id) is True:
-            return
         #h screenshot the specified webste!
         #u screenshot <url>
 
@@ -198,11 +179,9 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename="screenshot.png")
             return await ctx.send(file=f)
 
+    @check(2)
     @commands.command()
-    @custom_cooldown(5)
     async def sonic(self, ctx, *, text:str):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Let sonic say anything you want
         #u sonic <text>
 
@@ -213,11 +192,9 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename="sonic.png")
             return await ctx.send(file=f)
 
+    @check(4)
     @commands.command(aliases=['8bit', 'blurr'])
-    @custom_cooldown(5)
     async def jpeg(self, ctx, args:typing.Union[discord.Member, str]=None):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Did you ever want to decrease image quality? Then this is the command for you!
         #u jpeg <user/url>
         
@@ -231,11 +208,9 @@ class Api(commands.Cog):
             f = discord.File(io.BytesIO(r), filename="jpeg.png")
             return await ctx.send(file=f)
 
+    @check(2)
     @commands.command(aliases=['g','search'])
-    @custom_cooldown(5)
     async def google(self, ctx, *, query:str):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Get the best results for a query the web has to offer
         #u search <query>
         
@@ -253,11 +228,9 @@ class Api(commands.Cog):
                 embed.add_field(name='** **', value=f'__**[{res["title"]}]({res["url"]})**__\n{res["description"][:100]}...' if len(res["description"]) > 100 else res["description"], inline=False)
             await ctx.send(embed=embed)
 
+    @check(4)
     @commands.command(aliases=['image'])
-    @custom_cooldown(15)
     async def img(self, ctx, *,query:str):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Search any image you want
         #u img <query>
         

@@ -4,7 +4,7 @@ import json
 from datetime import datetime, date, timedelta
 from pymongo import MongoClient
 import re
-from killua.functions import blcheck, p
+from killua.functions import check, p
 from killua.cogs.cards import Card, User #lgtm [py/unused-import]
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -29,10 +29,8 @@ class DevStuff(commands.Cog):
         self.client = client
 
     #Eval command, unecessary with the jsk extension but useful for databse stuff
-    @commands.command()
+    @commands.command(aliases=['exec'])
     async def eval(self, ctx, *, code):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Standart eval command, me restricted ofc
         #u eval <code>
         #r user ID: 606162661184372736
@@ -70,6 +68,7 @@ class DevStuff(commands.Cog):
         await ctx.message.delete()
         await msg.publish()
 
+    @check()
     @commands.command()
     async def update(self, ctx, version:str=None):
         #h Allows you to view current and past updates
@@ -96,8 +95,6 @@ class DevStuff(commands.Cog):
         #h Blacklisting bad people like Hisoka. Owner restricted
         #u blacklist <user>
         #r user ID: 606162661184372736
-        if blcheck(ctx.author.id) is True:
-            return
         if ctx.author.id != 606162661184372736:
             return
         try:
@@ -112,8 +109,6 @@ class DevStuff(commands.Cog):
         
     @commands.command()
     async def whitelist(self, ctx, id:int):
-        # One of the only commands I don't check the blacklist on because I couldn't whitelist myself if
-        # I'd have blacklisted myself for testing
         #u whitelist <user>
         #h Whitelists a user. Owner restricted
         #r user ID: 606162661184372736
@@ -129,8 +124,6 @@ class DevStuff(commands.Cog):
     
     @commands.command()
     async def say(self, ctx, *, content):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Let's Killua say what is specified with this command. Possible abuse leads to this being restricted 
         #r user ID: 606162661184372736
         #u say <text>

@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from pymongo import MongoClient
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import check
 import typing
 from datetime import datetime, timedelta
 from random import randint
@@ -67,13 +67,11 @@ class Economy(commands.Cog):
         }
         return data
 
+    @check()
     @commands.command(aliases=['server'])
-    @custom_cooldown(6)
     async def guild(self, ctx):
         #h Displays infos about the current guild
         #u guild
-        if blcheck(ctx.author.id) is True:
-            return
         top = self.lb(ctx, limit=1)
 
         guild = server.find_one({'id': ctx.guild.id})
@@ -88,7 +86,8 @@ class Economy(commands.Cog):
         })
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['lb'])
+    @check()
+    @commands.command(aliases=['lb', 'top'])
     async def leaderboard(self, ctx):
         #h Get a leaderboard of members with the most jenny
         #u leaderboard
@@ -103,13 +102,11 @@ class Economy(commands.Cog):
         })
         await ctx.send(embed=embed)
 
+    @check()
     @commands.command()
-    @custom_cooldown(6)
     async def profile(self, ctx,user: typing.Union[discord.Member, int]=None):
         #h Get infos about a certain discord user with ID or mention
         #u profile <user(optional)>
-        if blcheck(ctx.author.id) is True:
-            return
         if user is None:
             embed = self.getmember(ctx.author)
             return await ctx.send(embed=embed)
@@ -125,12 +122,11 @@ class Economy(commands.Cog):
                 except Exception as e:
                     await ctx.send(f'```diff\n-{e}\n```')
 
+    @check()
     @commands.command(aliases=['bal', 'balance', 'points'])
     async def jenny(self, ctx, user: typing.Union[discord.User, int]=None):
         #h Gives you a users balance
         #u balance <user(optional)>
-        if blcheck(ctx.author.id) is True:
-            return
         
         if not user:
             user_id = ctx.author.id
@@ -146,11 +142,9 @@ class Economy(commands.Cog):
 
         return await ctx.send(f'{user or ctx.author}\'s balance is {real_user.jenny} Jenny')
         
-
+    @check()
     @commands.command()
     async def daily(self, ctx):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Claim your daily points with this command!
         #u daily
         now = datetime.today()

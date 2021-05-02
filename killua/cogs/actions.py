@@ -3,7 +3,7 @@ from discord.ext import commands
 import aiohttp
 import random
 import asyncio
-from killua.functions import blcheck
+from killua.functions import check
 from killua.constants import ACTIONS
 
 class Actions(commands.Cog):
@@ -89,30 +89,35 @@ class Actions(commands.Cog):
         else:
             return await ctx.send(embed=embed)
 
+    @check()
     @commands.command()
     async def hug(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Hug a user with this command
         #u hug <user>
         return await self.do_action(ctx, members)
 
+    @check()
     @commands.command()
     async def pat(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Pat a user with this command
         #u pat <user>
         return await self.do_action(ctx, members)
 
+    @check()
     @commands.command()
     async def poke(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Poke a user with this command
         #u poke <user>
         return await self.do_action(ctx, members)
 
+    @check()
     @commands.command()
     async def tickle(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Tickle a user wi- ha- hahaha- stop- haha
         #u tickle <user>
         return await self.do_action(ctx, members)
 
+    @check()
     @commands.command()
     async def slap(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Slap a user with this command

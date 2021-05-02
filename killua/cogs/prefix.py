@@ -1,11 +1,13 @@
 from discord.ext import commands
 from killua.classes import Guild
+from killua.functions import check
 
 class Prefix(commands.Cog):
 
     def __init__(self, client):
         self.client = client
 
+    @check()
     @commands.command()
     async def prefix(self, ctx, pref:str=None):
         if blcheck(ctx.author.id):

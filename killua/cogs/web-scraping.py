@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import check
 import requests
 from bs4 import BeautifulSoup
 import asyncio
@@ -10,8 +10,8 @@ class WebScraping(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @check(120)
     @commands.command(aliases=['n', 'search-book', 'sb'])
-    @custom_cooldown(240)
     async def novel(self, ctx, *,book):
         #checking if the user is blacklisted
         #u novel <title>

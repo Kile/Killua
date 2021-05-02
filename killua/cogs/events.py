@@ -15,7 +15,7 @@ class Events(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.token = config['dbl']
-        self.dblpy = dbl.DBLClient(self.client, self.token, autopost=True)
+        #self.dblpy = dbl.DBLClient(self.client, self.token, autopost=True)
         self.status.start()
 
     @commands.Cog.listener()
@@ -37,7 +37,7 @@ class Events(commands.Cog):
     async def on_guild_join(self, guild):
         #Changing the status
         await p(self)
-        Guild(guild.id)
+        Guild.add_default(guild.id)
       
         general = find(lambda x: x.name == 'general',  guild.text_channels)
         if general and general.permissions_for(guild.me).send_messages:

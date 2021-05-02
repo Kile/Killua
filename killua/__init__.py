@@ -1,14 +1,12 @@
 from . import cogs
 import discord
-from datetime import datetime, timedelta
 from discord.ext.commands import command as discord_command, \
 	group as discord_group
 from discord.ext import commands
-from inspect import getsource
-from io import BytesIO
 import json
+import aiohttp
 from pymongo import MongoClient
-from random import choice, randint
+
 from typing import Callable, Coroutine
 
 all_commands = []
@@ -72,7 +70,7 @@ def main():
 	intents = discord.Intents.all()
 	intents.presences = False
 	# Create the bot instance.
-	bot = commands.AutoShardedBot(
+	bot = commands.Bot(
 		command_prefix=get_prefix,
 		description="The discord bot Killua",
 		case_insensitive=True,

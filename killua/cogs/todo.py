@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import check
 from pymongo import MongoClient
 import asyncio
 import typing
@@ -30,17 +30,16 @@ class TodoSystem(commands.Cog):
     @commands.group()
     async def todo(self, ctx):
         #h You most likely want info about another todo command. Use `k!help command todo <todo_command>` for that
-        if blcheck(ctx.author.id) is True:
-            return
+        pass
 
-    @custom_cooldown(20)
+    @check(10)
     @todo.command()
     async def create(self, ctx):
         #u todo create
         #h Let's you create your todo list in an interactive menu
         x = 0
         
-        user_todo_lists = todo.find({'owner': ctx.author.id})
+        user_todo_lists = [x for x in todo.find({'owner': ctx.author.id})]
 
         if len(user_todo_lists) == 5:
             return await ctx.send('You can currently not own more than 5 todo lists')
@@ -71,7 +70,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{todo_id}`')
         todo.insert_one({'_id': todo_id, 'name': title, 'owner': ctx.author.id, 'custom_id': None, 'status': status, 'delete_done': done_delete, 'viewer': [], 'editor': [], 'todos': [{'todo': 'add todos', 'marked': None, 'added_by': 756206646396452975, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"), 'views':0, 'assigned_to': [], 'mark_log': []}], 'marks': [], 'created_at': (datetime.now()).strftime("%b %d %Y %H:%M:%S"), 'spots': 10, 'views': 0 })
 
-    @custom_cooldown(5)
+    @check()
     @todo.command()
     async def view(self, ctx, todo_id=None):
         #u todo view <list_id(optional)>
@@ -112,7 +111,7 @@ class TodoSystem(commands.Cog):
                 embed = await todo_embed_generator(self, ctx, todo_id)
                 return await ctx.send(embed=embed)
 
-    @custom_cooldown(5)
+    @check(1)
     @todo.command()
     async def info(self, ctx, todo_or_task_id=None, td:int=None):
         #u todo info <list_id/task_id> <task_id(if list id provided)>
@@ -132,7 +131,7 @@ class TodoSystem(commands.Cog):
             elif td:
                 return await single_todo_info_embed_generator(self, ctx, td, todo_or_task_id)
 
-    @custom_cooldown(5)
+    @check()
     @todo.command()
     async def edit(self, ctx, todo_id):
         #u todo edit <todo_id>
@@ -151,7 +150,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f'You are now in editor mode for todo list "{todo_list["name"]}"')
         editing[ctx.author.id] = todo_list['_id']
 
-    @custom_cooldown(20)
+    @check()
     @todo.command()
     async def name(self, ctx, new_name:str):
         #u todo name <new_name>
@@ -166,7 +165,7 @@ class TodoSystem(commands.Cog):
         todo.update_one({'_id': list_id}, {'$set':{'name': new_name}})
         await ctx.send(f'Done! Update your todo list\'s name to "{new_name}"')
 
-    @custom_cooldown(20)
+    @check()
     @todo.command()
     async def status(self, ctx, status):
         #u todo status <new_status>
@@ -180,7 +179,7 @@ class TodoSystem(commands.Cog):
         todo.update_one({'_id'}, {'$set': {'status': status-lower()}})
         await ctx.send(f'Done! Updated your todo list\'s status to `{status.lower()}`')
 
-    @custom_cooldown(20)
+    @check()
     @todo.command()
     async def color(self, ctx, color):
         #u todo color <new_color_in_hex>
@@ -205,7 +204,7 @@ class TodoSystem(commands.Cog):
         todo.update_one({'_id': list_id}, {'$set':{'color': int(c, 16)}})
         await ctx.send(f'Done! Updated your todo list\'s color to `{c}`')
 
-    @custom_cooldown(20)
+    @check()
     @todo.command()
     async def thumbnail(self, ctx, url):
         #u todo thumbnail <new_thumbnail>
@@ -234,7 +233,7 @@ class TodoSystem(commands.Cog):
         else:
             await ctx.send('You didn\'t provide a valid url with an image! Please make sure you do that')
 
-    @custom_cooldown(20)
+    @check()
     @todo.command()
     async def custom_id(self, ctx, custom_id):
         #u todo custom_id <new_id>
@@ -256,7 +255,7 @@ class TodoSystem(commands.Cog):
         todo.update_one({'_id': list_id}, {'$set':{'custom_id': custom_id}})
         return await ctx.send(f'Done! Updated your todo list\'s custom id to `{custom_id}`')
 
-    @custom_cooldown(20)
+    @check()
     @todo.command()
     async def autodelete(self, ctx, on_or_off):
         #u todo autodelete <on/off>
@@ -281,7 +280,7 @@ class TodoSystem(commands.Cog):
             todo.update_one({'_id': list_id},{'$set':{'delete_done': False}})
             return await ctx.send(f'Done! Deactivated your lists auto delete feature when something is marked as `done`')
 
-    @custom_cooldown(10)
+    @check()
     @todo.command()
     async def remove(self, ctx, todo_numbers: commands.Greedy[int]):
         #u todo remove <task_id>
@@ -304,7 +303,7 @@ class TodoSystem(commands.Cog):
         except Exception:
             return await ctx.send('You need to provide only valid numbers!')
 
-    @custom_cooldown(5)
+    @check()
     @todo.command()
     async def mark(self, ctx, todo_number:int, *,marked_as:str):
         #u todo mark <task_id> <text>
@@ -348,7 +347,7 @@ class TodoSystem(commands.Cog):
             todo.update_many({'_id': list_id},{'$set':{'todos': todos}}, upsert=True)
             return await ctx.send(f'Marked to-do number {todo_number} as `{marked_as}`!')
 
-    @custom_cooldown(10)
+    @check(2)
     @todo.command()
     async def buy(self, ctx, what):
         #u todo buy <item>
@@ -373,7 +372,7 @@ class TodoSystem(commands.Cog):
         elif what.lower() == 'description':
             return await buy_description(self, ctx)
 
-    @custom_cooldown(2)
+    @check()
     @todo.command()
     async def shop(self, ctx):
         #u todo shop
@@ -397,7 +396,7 @@ Buy 10 more spots for todos for your list''',
         })
         await ctx.send(embed=embed)
 
-    @custom_cooldown(4)
+    @check()
     @todo.command()
     async def add(self, ctx, *, td):
         #u todo add <text>
@@ -421,7 +420,7 @@ Buy 10 more spots for todos for your list''',
         todo.update_one({'_id': list_id},{'$set':{'todos': todos}})
         return await ctx.send(f'Great! Added {td} to your todo list!')
 
-    @custom_cooldown(5)
+    @check(20)
     @todo.command()
     async def kick(self, ctx, user: typing.Union[discord.User, int]):
         #u todo kick <user>
@@ -456,7 +455,7 @@ Buy 10 more spots for todos for your list''',
             todo.update_many({'_id': list_id},{'$set':{'viewer': viewer}}, upsert=True)
             await ctx.send(f'You have successfully taken the viewer permission from {user}')
 
-    @custom_cooldown(4)
+    @check()
     @todo.command()
     async def exit(self, ctx):
         #u todo exit
@@ -469,7 +468,7 @@ Buy 10 more spots for todos for your list''',
         editing.pop(ctx.author.id, None)
         return await ctx.send('Exiting editing mode!')
 
-    @custom_cooldown(20)
+    @check(20)
     @todo.command()
     async def invite(self, ctx, user: typing.Union[discord.User, int], role):
         #u todo invite <user> <editor/viewer>
@@ -546,7 +545,7 @@ Buy 10 more spots for todos for your list''',
                 await user.send('User has been reported for harrasment/abuse of the invite command. Abuse of reporting may lead to blacklisting')
                 await ctx.author.send(f'You have been reported for inviting {user}, a staff member will look into the issue soon')
 
-    @custom_cooldown(5)
+    @check()
     @todo.command()
     async def assign(self, ctx, todo_number:int, user: typing.Union[discord.User, int], rm=None):
         #u todo assign <task_id> <user>
@@ -616,8 +615,8 @@ Buy 10 more spots for todos for your list''',
             except discord.Forbidden:
                 pass
         return await ctx.send(f'Succesfully assigned the task with number {todo_number} to `{user}`')
-        
-    @custom_cooldown(20)
+    
+    @check()
     @todo.command()
     async def delete(self, ctx, todo_id):
         #u todo delete <todo_id>
@@ -636,7 +635,7 @@ Buy 10 more spots for todos for your list''',
         todo.delete_one({'_id': todo_id})
         return await ctx.send(f'Done! Deleted todo list {todo_list["name"]}')
 
-    @custom_cooldown(4)
+    @check()
     @todo.command()
     async def lists(self, ctx):
         #u todo lists
