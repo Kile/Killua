@@ -91,7 +91,7 @@ class Tags(commands.Cog):
     @commands.group()
     async def tag(self, ctx):
         if not Guild(ctx.guild.id).is_premium:
-            await ctx.send('This command group is currently only a premium feature. To enable your guild to use it, become a Patreon and join the support server')
+            await ctx.send('This command group is currently only a premium feature. To enable your guild to use it, become a Patreon (https://patreon.com/kilealkuri) and join the support server')
             raise Exception("tag command used on non premium guild")
             
         if not ctx.guild:
