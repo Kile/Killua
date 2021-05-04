@@ -162,7 +162,7 @@ COMMANDS = {
         'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
     ],
     'fun': [
-        'topic', 'calc', 'translate', '8ball', 'avatar', 'uwu', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
+        'topic', 'calc', 'translate', '8ball', 'avatar', 'uwu', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'nokia', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
     ],
     'actions': [
         'hug', 'poke', 'slap', 'tickle', 'pat'
@@ -171,7 +171,7 @@ COMMANDS = {
         'book', 'shop', 'buy', 'sell', 'swap', 'hunt', 'meet', 'discard', 'use'
     ],
     'other': [
-        'info', 'patreon', 'invite', 'permissions', 'bug', 'feedback'
+        'info', 'patreon', 'invite', 'permissions', 'bug', 'feedback', 'usage'
     ],
     'economy': [
         'daily', 'profile', 'give', 'server', 'bal', 'leaderboard'
