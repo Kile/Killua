@@ -10,7 +10,7 @@ import typing
 from PIL import Image, ImageFont, ImageDraw
 import io
 import aiohttp
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import check
 from killua.classes import User, Card, CardLimitReached, CardNotFound
 from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES
 
@@ -98,13 +98,11 @@ class Cards(commands.Cog):
                 log.append({'time': datetime.now(), 'items': shop_items, 'redued': None})
                 shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': None}})
 
-    @custom_cooldown(5)
+    @check(3)
     @commands.command()
     async def book(self, ctx, page:int=None):
         #h Allows you to take a look at your cards
         #u book <page(optional)>
-        if blcheck(ctx.author.id) is True:
-            return
         
         if len(User(ctx.author.id).all_cards) == 0:
             return await ctx.send('You don\'t have any cards yet!')
@@ -115,12 +113,11 @@ class Cards(commands.Cog):
 
         return await paginator(self, ctx, 1 if not page else page, first_time=True)
 
+    @check()
     @commands.command(aliases=['store'])
     async def shop(self, ctx):
         #h Shows the current cards for sale
         #u shop
-        if blcheck(ctx.author.id) is True:
-            return
         
         sh = shop.find_one({'_id': 'daily_offers'})
         shop_items:list = sh['offers']
@@ -141,13 +138,11 @@ class Cards(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @custom_cooldown(5)
+    @check(2)
     @commands.command()
     async def buy(self, ctx, item:int):
         #h Buy a card from the shop with this command
         #u buy <card_id>
-        if blcheck(ctx.author.id) is True:
-            return
         
         shop_data = shop.find_one({'_id': 'daily_offers'})
         shop_items = shop_data['offers']
@@ -188,13 +183,11 @@ class Cards(commands.Cog):
         user.remove_jenny(price) #Always putting substracting points before giving the item so if the payment errors no iten is given
         return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!')
 
-    @custom_cooldown(10)
+    @check(2)
     @commands.command()
     async def sell(self, ctx, item:int, amount=1):
         #h Sell any amount of cards you own
         #u sell <card_id> <amount(optional)>
-        if blcheck(ctx.author.id) is True:
-            return
         
         user = User(ctx.author.id)
         if amount < 1:
@@ -232,13 +225,11 @@ class Cards(commands.Cog):
                 user.add_jenny(int((PRICES[card.rank]*amount)/10))
                 await ctx.send(f'Sucessfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {int((PRICES[card.rank]*amount)/10)} Jenny!')
 
-    @custom_cooldown(2)
+    @check(20)
     @commands.command()
     async def swap(self, ctx, card_id:int):
         #h Allows you to swap cards from your free slots with the restrcited slots and the other way around
         #u swap <card_id>
-        if blcheck(ctx.author.id) is True:
-            return
         
         user = User(ctx.author.id)
         if len(user.all_cards) == 0:
@@ -255,12 +246,11 @@ class Cards(commands.Cog):
         
         await ctx.send(f'Successfully swapped out card No. {card_id}')
 
+    @check()
     @commands.command()
     async def hunt(self, ctx, end:str=None):
         #h Go on a hunt! The longer you are on the hunt, the better the rewards!
         #u hunt <end(optional)>
-        if blcheck(ctx.author.id) is True:
-            return
         
         user = User(ctx.author.id)
         has_effect, value = user.has_effect('hunting')
@@ -310,14 +300,12 @@ class Cards(commands.Cog):
         user.add_effect('hunting', datetime.now())
         await ctx.send('You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get')
 
-    @custom_cooldown(120)
+    @check(120)
     @commands.command(aliases=['approach'])
     async def meet(self, ctx, user:discord.Member):
         #h Meet a user who has recently send a message in this channel to enable certain spell card effects
         #u meet <user>
-        if blcheck(ctx.author.id) is True:
-            return
-        
+
         author = User(ctx.author.id)
         past_users = list()
         if user.bot:
@@ -337,12 +325,11 @@ class Cards(commands.Cog):
         await ctx.message.delete()
         return await ctx.send(f'Done {ctx.author.mention}! Successfully added `{user}` to the list of people you\'ve met', delete_after=5)
 
+    @check()
     @commands.command()
     async def give(self, ctx, other:discord.Member, t:str, item:int):
         #h If you're feeling generous give another user cards or jenny. Available types are jenny and card
         #u give <user> <type> <card_id/amount>
-        if blcheck(ctx.author.id) is True:
-            return
         
         if other == ctx.author:
             return await ctx.send('You can\'t give yourself anything!')
@@ -375,12 +362,11 @@ class Cards(commands.Cog):
         else:
             await ctx.send('You need to choose a valid type (`card`|`jenny`)')
             
+    @check()
     @commands.command()
     async def discard(self, ctx, card:int):
         #h Discard a card you want to get rid of with this command
         #u discard <card_id>
-        if blcheck(ctx.author.id) is True:
-            return
         
         user = User(ctx.author.id)
         try:
@@ -411,13 +397,11 @@ class Cards(commands.Cog):
                 await ctx.message.delete()
                 await ctx.send(f'Successfully thrown away card No. `{card.id}`')
 
-    @custom_cooldown(4)
+    @check()
     @commands.command()
     async def use(self, ctx, item: typing.Union[int,str], args: typing.Union[discord.Member, str, int]=None, add_args:int=None):
         #h Use spell cards you own with this command! Focus on offense or defense, team up with your friends or steal their cards in their sleep!
         #u use <card_id> <required_arguments>
-        if blcheck(ctx.author.id) is True:
-            return
         
         if isinstance(item, str):
             if not item.lower() == 'booklet':

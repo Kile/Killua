@@ -2,7 +2,7 @@ import discord
 import asyncio
 from discord.utils import find
 from discord.ext import commands
-from killua.functions import blcheck
+from killua.functions import check
 import typing
 
 class Moderation(commands.Cog):
@@ -24,12 +24,11 @@ class Moderation(commands.Cog):
             return await ctx.send(f'My role needs to be moved higher up to grant me permission to {ctx.command.name} this person')
         return None
 
+    @check()
     @commands.command()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx, member: typing.Union[discord.Member, int], *,reason=None):
-        if blcheck(ctx.author.id) is True:
-            return
         #h What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason
         #u ban <user> <reason>
     
@@ -46,20 +45,18 @@ class Moderation(commands.Cog):
             return
         try:
             await member.send(f'You have been banned from {ctx.guild.name} because of: ```\n{reason or "No reason provided"}```by `{ctx.author}`')
-        except discord.Forbidden:
+        except discord.HTTPException:
             pass
 
         await member.ban(reason=reason, delete_message_days=1)
         await ctx.send(f':hammer: Banned **{member}** because of: ```\n{reason or "No reason provided"}```Operating moderator: **{ctx.author}**')
    
     
-
+    @check()
     @commands.command()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     async def unban(self, ctx, *, member:typing.Union[str, int]):
-        if blcheck(ctx.author.id) is True:
-            return
         #t 1 hour
         #h Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work :3
         #u unban <user>
@@ -92,7 +89,8 @@ class Moderation(commands.Cog):
                 loopround = loopround+1
                 if loopround == bannedtotal:
                     return await ctx.send('User is not currently banned')
-              
+
+    @check()
     @commands.command()
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
@@ -106,12 +104,13 @@ class Moderation(commands.Cog):
             return
         try:
             await member.send(f'You have been kicked from {ctx.guild.name} because of: ```\n{reason or "No reason provided"}```by `{ctx.author}`')
-        except discord.Forbidden:
+        except discord.HTTPException:
             pass
 
         await member.kick(reason=reason or "No reason provided")
         await ctx.send(f':hammer: Kicked **{member}** because of: ```\n{reason or "No reason provided"}```Operating moderator: **{ctx.author}**')
         
+    @check()
     @commands.command()
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -149,7 +148,7 @@ class Moderation(commands.Cog):
                 await member.add_roles(muted, reason=reason or "No reason provided")
                 try:
                     await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')
-                except discord.Forbidden:
+                except discord.HTTPException:
                     pass
 
                 return await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
@@ -161,7 +160,7 @@ class Moderation(commands.Cog):
                     
             try:
                 await member.send(f'You have been muted in {ctx.guild.name} for the duration of `{timem}` minutes by `{ctx.author}`')
-            except discord.Forbidden:
+            except discord.HTTPException:
                 pass
             await ctx.send(f':pinching_hand: Muted **{member}** for  `{timem}` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
             await asyncio.sleep(int(timem) * 60)
@@ -169,17 +168,17 @@ class Moderation(commands.Cog):
             try:
                 await member.remove_roles(muted, reason='Mute time expired')
                 await member.send(f'You have been unmuted in {ctx.guild.name}, reason: mute time expired')
-            except discord.Forbidden:
+            except discord.HTTPException:
                 pass
         else:
             await member.add_roles(muted,reason=reason or "No reason")
             try:
                 await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
-            except discord.Forbidden:
+            except discord.HTTPException:
                 pass
             await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')    
         
-                           
+    @check()                  
     @commands.command()
     async def unmute(self, ctx, member: discord.Member, *, reason=None):
         if blcheck(ctx.author.id) is True:
@@ -204,7 +203,7 @@ class Moderation(commands.Cog):
         await member.remove_roles(muted, reason=reason or "No reason provided")
         try:
             await member.send(f'You have been unmuted in {ctx.guild.name} by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
-        except discord.Forbidden:
+        except discord.HTTPException:
             pass
         return await ctx.send(f':lips: Unmuted **{member}** Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
 

@@ -3,23 +3,22 @@ from discord.ext import commands
 import aiohttp
 import random
 import asyncio
-from killua.functions import blcheck
+from killua.functions import check
 from killua.constants import ACTIONS
 
 class Actions(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.session = self.client.session
 
     async def request_action(self, endpoint:str):
         session = aiohttp.ClientSession()
-        async with session.get(f"https://shiro.gg/api/images/{endpoint}") as r:
-            if r.status == 200:
-                await session.close()
-                return await r.json()
-            else:
-                await session.close()
-                return await r.text()
+        r = self.session.get(f"https://shiro.gg/api/images/{endpoint}")
+        if r.status == 200:
+            return await r.json()
+        else:
+            return await r.text()
 
     async def get_image(self, ctx, endpoint:str): # for endpoints like /wallpaper where you don't want to mention a user
         image = await self.request_action(endpoint)
@@ -63,7 +62,6 @@ class Actions(commands.Cog):
         return embed
 
     async def no_argument(self, ctx):
-
         await ctx.send(f'You provided no one to {ctx.command.name}.. Should- I {ctx.command.name} you?')
         def check(m):
             return m.content.lower() == 'yes' and m.author == ctx.author
@@ -75,8 +73,6 @@ class Actions(commands.Cog):
             return await self.action_embed(ctx.command.name, 'Killua', ctx.author.name)
 
     async def do_action(self, ctx, members=None):
-        if blcheck(ctx.author.id) is True:
-            return
         if not members:
             embed = await self.no_argument(ctx)
         elif ctx.author == members[0]:
@@ -89,30 +85,35 @@ class Actions(commands.Cog):
         else:
             return await ctx.send(embed=embed)
 
+    @check()
     @commands.command()
     async def hug(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Hug a user with this command
         #u hug <user>
         return await self.do_action(ctx, members)
 
+    @check()
     @commands.command()
     async def pat(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Pat a user with this command
         #u pat <user>
         return await self.do_action(ctx, members)
 
+    @check()
     @commands.command()
     async def poke(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Poke a user with this command
         #u poke <user>
         return await self.do_action(ctx, members)
 
+    @check()
     @commands.command()
     async def tickle(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Tickle a user wi- ha- hahaha- stop- haha
         #u tickle <user>
         return await self.do_action(ctx, members)
 
+    @check()
     @commands.command()
     async def slap(self, ctx, members: commands.Greedy[discord.Member]=None):
         #h Slap a user with this command

@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from datetime import datetime
 import math
 import asyncio
+from killua.classes import Guild
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
@@ -89,8 +90,13 @@ class Tags(commands.Cog):
 
     @commands.group()
     async def tag(self, ctx):
+        if not Guild(ctx.guild.id).is_premium:
+            await ctx.send('This command group is currently only a premium feature. To enable your guild to use it, become a Patreon (https://patreon.com/kilealkuri) and join the support server')
+            raise Exception("tag command used on non premium guild")
+            
         if not ctx.guild:
-            return await ctx.send('Not usable in dms')
+            await ctx.send('Not usable in dms')
+            raise Exception("tag command used on non premium guild")
 
     @tag.command()
     async def create(self, ctx, *, tag_name:str):

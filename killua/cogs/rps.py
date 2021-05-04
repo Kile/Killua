@@ -4,7 +4,7 @@ from discord.ext import commands
 import random
 import asyncio
 import json
-from killua.functions import custom_cooldown, blcheck
+from killua.functions import blcheck, check
 from killua.classes import User
 
 with open('config.json', 'r') as config_file:
@@ -21,11 +21,9 @@ class Rps(commands.Cog):
     def __init__(self, client):
         self.client = client
     
+    @check(60)
     @commands.command()
-    @custom_cooldown(30)
     async def rps(self, ctx, member: discord.Member, points: int=None):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun.
         #u rps <user> <points(optional)
         

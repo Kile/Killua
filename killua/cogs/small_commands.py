@@ -3,12 +3,22 @@ from discord.ext import commands
 import time
 from datetime import datetime, timedelta
 import random
+from random import randint, choice
+import math
 import typing
 import aiohttp
 import json
+from pymongo import MongoClient
 from deep_translator import GoogleTranslator, MyMemoryTranslator
-from killua.functions import custom_cooldown, blcheck
-from killua.constants import TOPICS, ANSWERS
+from killua.functions import check, check
+from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS
+
+with open('config.json', 'r') as config_file:
+    config = json.loads(config_file.read())
+
+cli = MongoClient(config['mongodb'])
+gdb = cli['general']
+stats = gdb['stats']
 
 class SmallCommands(commands.Cog):
 
@@ -33,10 +43,67 @@ class SmallCommands(commands.Cog):
         })
         return embed
 
+    def hardcoded_aliases(self, text:str) -> str:
+        l = []
+        for w in text.split(' '):
+            if w.lower() in ALIASES:
+                l.append(choice(ALIASES[w.lower()]))
+                continue
+            l.append(w)
+        return ' '.join(l)
+
+    def initial_uwuing(self, text:str) -> str:
+        t = []
+        for w in text.split(' '):
+            chars = [c for c in w]
+            if 'r' in chars:
+                w = w.replace('r', 'w')
+            if 'ng' in chars and randint(1,2) == 1:
+                w = w.replace('ng', 'n')
+            if 'l' in chars and randint(1,2) == 1:
+                w = w.replace('l', 'w')
+            t.append(w)
+        return ' '.join(t)
+
+    def stuttify(self, text:str, stuttering:int):
+        nt = []
+        for p, w in enumerate(text.split(' ')):
+            if p % 2 == 0:
+                if int(len(text.split(' '))*(randint(1, 5)/10))*stuttering*2 < len(text.split(' ')) and len(w) > 2:
+                    nt.append(w[:1]+'-'+w)
+                    continue
+            nt.append(w)
+        return ' '.join(nt) 
+
+    def cuteify(self, text:str, cuteness:int) -> str:
+        s = text.split(' ')
+        emotes = math.ceil((len([x for x in s if x[-1:] in [',' , '.'] and x[-2:] != '..'])+1)*(cuteness/10))
+        t = []
+        for p, w in enumerate(s):
+            if emotes > 0:
+                if (w[-1:] in [',', '.'] and w[-2:] != '..' and randint(6,10) > 7) or p+1 == len(s):
+                    t.append(w[:len(w)-(1 if w[-1:] in [',', '.'] else 0)]+' '+choice(UWUS)+(w[-1:] if p != len(s)-1 else ''))
+                    emotes = emotes-1
+                    continue
+            t.append(w)
+        return ' '.join(t)
+
+    def build_uwufy(self, text:str, cuteness:int=5, stuttering:int=3) -> str:
+        text = self.hardcoded_aliases(text)
+        stuttered_text = self.stuttify(self.initial_uwuing(text), stuttering)
+        cuteified_text= self.cuteify(stuttered_text, cuteness)
+        return cuteified_text
+
+    @check()
+    @commands.command(aliases=['uwu', 'owo', 'owofy'])
+    async def uwufy(self, ctx, *, content:str):
+        #h Uwufy any sentence you want with dis command, have fun >_<
+        #u uwu <text>
+        return await ctx.send(self.build_uwufy(content, stuttering=3, cuteness=3))
+
+    @check()
     @commands.command()
     async def ping(self, ctx):
-        if blcheck(ctx.author.id):
-            return
         #h Standart of seeing if the bot is working
         #u ping
         start = time.time()
@@ -44,27 +111,23 @@ class SmallCommands(commands.Cog):
         end = time.time()
         await msg.edit(content = str('Pong in `' + str(1000 * (end - start))) + '` ms')
 
+    @check()
     @commands.command()
     async def topic(self, ctx):
-        if blcheck(ctx.author.id):
-            return
         #h From a constatnly updating list of topics to talk about one is chosen here
         #u topic
         await ctx.send(random.choice(TOPICS))
 
+    @check()
     @commands.command()
     async def hi(self, ctx):
-        if blcheck(ctx.author.id):
-            return
         #h This is just here because it was Killua's first command and I can't take that from him :3
         #u hi
         await ctx.send("Hello " + str(ctx.author))
 
-    @custom_cooldown(2)
+    @check()
     @commands.command(aliases=['8ball'])
     async def ball(self, ctx, *, question:str):
-        if blcheck(ctx.author.id):
-            return
         #h Ask Killua anything and he will answer
         #u 8ball <question>
         embed = discord.Embed.from_dict({
@@ -75,17 +138,16 @@ class SmallCommands(commands.Cog):
         })
         await ctx.send(embed=embed)
 
+    @check()
     @commands.command(aliases=['av', 'a'])
     async def avatar(self, ctx, user: typing.Union[discord.Member, int]=None):
         #h Shows the avatar of a user
         #u avatar <user(optional)>
-        if blcheck(ctx.author.id):
-            return
         if not user:
             embed = self.av(ctx.author)
             return await ctx.send(embed=embed)
             #Showing the avatar of the author if no user is provided
-        if isinstance(user, discord.User):
+        if isinstance(user, discord.Member):
             embed = self.av(user)
             return await ctx.send(embed=embed)
             #If the user args is a mention the bot can just get everything from there
@@ -97,10 +159,9 @@ class SmallCommands(commands.Cog):
         except discord.NotFound:
             return await ctx.send('Invalid user')
 
+    @check()
     @commands.command()
     async def patreon(self, ctx):
-        if blcheck(ctx.author.id):
-            return
         #h Get infos about my Patreon and feel free to donate for some perks!
         #u patreon
         embed = discord.Embed.from_dict({
@@ -111,10 +172,9 @@ class SmallCommands(commands.Cog):
         })
         await ctx.send(embed=embed)
 
+    @check()
     @commands.command(aliases=['stats'])
     async def info(self, ctx):
-        if blcheck(ctx.author.id):
-            return
         #h Gives you some infos and stats about Killua
         #u info
         now = datetime.now()
@@ -128,10 +188,9 @@ class SmallCommands(commands.Cog):
         })
         await ctx.send(embed=embed)
 
+    @check()
     @commands.command()
     async def invite(self, ctx):
-        if blcheck(ctx.author.id):
-            return
         #h Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**
         #u invite
         embed = discord.Embed(
@@ -141,11 +200,9 @@ class SmallCommands(commands.Cog):
         )
         await ctx.send(embed=embed) 
 
+    @check()
     @commands.command()
-    @custom_cooldown(6)
     async def permissions(self, ctx):
-        if blcheck(ctx.author.id):
-            return
         #h Displays the permissions Killua has and has not, useful for checking if Killua has the permissions he needs
         #u permissions
         permissions = '\n'.join([f"{v} {n}" for n, v in ctx.me.guild_permissions])
@@ -161,20 +218,16 @@ class SmallCommands(commands.Cog):
         except discord.Forbidden: # If embed permission is denied
             await ctx.send('__Bot permissions__\n\n'+prettier)
 
+    @check()
     @commands.command()
     async def vote(self, ctx):
-        if blcheck(ctx.author.id) is True:
-            return
         #u vote
         #h Gived you the links you need if you want to support Killua by voting
         await ctx.send('Thanks for supporting Killua! Vote for him here: https://top.gg/bot/756206646396452975/vote \nAnd here: https://discordbotlist.com/bots/killua/upvote')
 
+    @check()
     @commands.command()
-    @custom_cooldown(10)
     async def translate(self, ctx, source:str, target:str, *,args:str):
-        if blcheck(ctx.author.id):
-            return
-
         #h Translate anything to 20+ languages with this command! 
         #u translate <source_lang> <target_lang> <text>
 
@@ -199,11 +252,9 @@ class SmallCommands(commands.Cog):
         embed.description = embed.description + f'```\n{translated}```'
         await ctx.send(embed=embed)
 
+    @check()
     @commands.command()
-    @custom_cooldown(6)
     async def calc(self, ctx, *,args=None):
-        if blcheck(ctx.author.id) is True:
-            return
         #h Calculates any equasion you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)
         #u calc <text>
         if not args:
@@ -219,6 +270,17 @@ class SmallCommands(commands.Cog):
         if answer["error"]:
             return await ctx.send("The following error occured while calculating:\n`{}`".format(answer["error"]))
         await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
+
+    @check()
+    @commands.command()
+    async def usage(self, ctx):
+        #h Shows the commands used the most. Added for fun and out of interest
+        #u usage
+        s = stats.find_one({'_id': 'commands'})['command_usage']
+        top = sorted(s.items(), key=lambda x: x[1])
+        prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])
+        print(prettier)
+        return await ctx.send("```\n"+prettier+"\n```")
 
 Cog = SmallCommands
 

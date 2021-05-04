@@ -44,4 +44,4 @@ soupsieve==2.1
 typing-extensions==3.7.4.3
 urllib3==1.26.4
 yarl==1.5.1
-pypxl==0.1.8
+pypxl==0.2.0
