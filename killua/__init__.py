@@ -6,7 +6,6 @@ from discord.ext import commands
 import json
 import aiohttp
 from pymongo import MongoClient
-
 from typing import Callable, Coroutine
 
 all_commands = []
@@ -67,6 +66,7 @@ async def unload(ctx, extension):
 
 
 def main():
+	session = aiohttp.ClientSession()
 	intents = discord.Intents.all()
 	intents.presences = False
 	# Create the bot instance.
@@ -74,9 +74,10 @@ def main():
 		command_prefix=get_prefix,
 		description="The discord bot Killua",
 		case_insensitive=True,
-		intents=intents
+		intents=intents,
+		session=session
 	)
-
+	bot.session = session
 	# Setup commands.
 	bot.remove_command('help')
 	for command in all_commands:

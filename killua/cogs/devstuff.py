@@ -6,6 +6,7 @@ from pymongo import MongoClient
 import re
 from killua.functions import check, p
 from killua.cogs.cards import Card, User #lgtm [py/unused-import]
+from killua.cogs.pxlapi import PxlClient #lgtm [py/unused-import]
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 # All those imports are to give k!eval many libraries it can use

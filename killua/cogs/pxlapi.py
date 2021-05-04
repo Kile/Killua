@@ -6,12 +6,12 @@ from killua.functions import check
 import typing
 import asyncio
 import re
+from killua.constants import CODE
 from pypxl import PxlClient # My own library :sparkles:
 
 with open('config.json', 'r') as config_file:
 	config = json.loads(config_file.read())
 
-pxl = PxlClient(token=config["pxlapi"], stop_on_error=False)
 
 async def validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
 
@@ -37,7 +37,7 @@ async def validate_input(self, ctx, args): # a useful check that looks for what 
         if len(ctx.message.attachments) > 0:
             return ctx.message.attachments[0].url
             
-        async for message in ctx.channel.history(limit=20):
+        async for message in ctx.channel.history(limit=10):
             if len(message.attachments) > 0:
                 image = message.attachments[0].url
                 break
@@ -57,6 +57,7 @@ class Api(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.pxl = PxlClient(token=config["pxlapi"], stop_on_error=False, session=self.client.session)
 
     @check(120) # Big cooldown >_<
     @commands.command(aliases=['ej', 'emojimosaic'])
@@ -67,9 +68,9 @@ class Api(commands.Cog):
         data = await validate_input(self, ctx, args)
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
-        r = await pxl.emojaic([data], groupSize=6)
+        r = await self.pxl.emojaic([data], groupSize=6)
         if r.success:
-            f = discord.File(r.convert_to_ioBytes, filename='emojiaic.png')
+            f = discord.File(r.convert_to_ioBytes(), filename=f'emojiaic.{r.file_type}')
             return await ctx.send(file=f)
         return await ctx.send(f':x: '+r.error)
 
@@ -82,12 +83,11 @@ class Api(commands.Cog):
         data = await validate_input(self, ctx, args)
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
-        r = await pxl.flag(flag=flag, images=[data])
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename=f"flag.gif") # In case the image url isn't a gif this is a meh solution but...
+        r = await self.pxl.flag(flag=flag, images=[data])
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"flag.{r.file_type}") # In case the image url isn't a gif this is a meh solution but...
             return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
 
     @check(5)
     @commands.command()
@@ -98,12 +98,11 @@ class Api(commands.Cog):
         data = await validate_input(self, ctx, args)
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
-        r = await pxl.glitch(images=[data])
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="glitch.gif")
+        r = await self.pxl.glitch(images=[data])
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"glitch.{r.file_type}")
             return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
 
     @check(10)
     @commands.command()
@@ -114,12 +113,11 @@ class Api(commands.Cog):
         data = await validate_input(self, ctx, args)
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
-        r = await pxl.lego(images=[data], scale=True, groupSize=10)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="lego.png")
+        r = await self.pxl.lego(images=[data], scale=True, groupSize=10)
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"lego.{r.file_type}")
             return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
 
     @check(3)
     @commands.command(aliases=['snap'])
@@ -130,12 +128,11 @@ class Api(commands.Cog):
         data = await validate_input(self, ctx, args)
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
-        r = await pxl.snapchat(filter=filter, images=[data])
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="snap.png")
+        r = await self.pxl.snapchat(filter=filter, images=[data])
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"snap.{r.file_type}")
             return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
 
     @check(3)
     @commands.command(aliases=['eye'])
@@ -146,12 +143,40 @@ class Api(commands.Cog):
         data = await validate_input(self, ctx, args)
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
-        r = await pxl.eyes(eyes=t, images=[data])
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="snap.png")
+        r = await self.pxl.eyes(eyes=t, images=[data])
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"eyes.{r.file_type}")
             return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
+
+    @check(3)
+    @commands.command(aliases=['animal'])
+    async def ganimal(self, ctx, args:typing.Union[discord.Member, str]=None):
+        #h Turns a face into multilple animal faces
+        #u ganimal <user/url>
+        data = await validate_input(self, ctx, args)
+        if not data:
+            return await ctx.send('Invalid arguments passed! Try again')
+        r = await self.pxl.ganimal(images=[data])
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"ganimal.{r.file_type}")
+            return await ctx.send(file=f)
+        return await ctx.send(':x: '+error)
+
+    @check()
+    @commands.command()
+    async def nokia(self, ctx, args:typing.Union[discord.Member, str]=None):
+        #h Turns a face into multilple animal faces
+        #u nokia <user/url>
+        data = await validate_input(self, ctx, args)
+        if not data:
+            return await ctx.send('Invalid arguments passed! Try again')
+        d = "const url = '" + data + ";'" + CODE
+        r = await self.pxl.imagescript(code=d, version="1.2.0")
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"nokia.{r.file_type}")
+            return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
 
     @check(3)
     @commands.command()
@@ -159,12 +184,11 @@ class Api(commands.Cog):
         #h Turn text into thonks!
         #u thonkify <text>
 
-        r = await pxl.thonkify(text=text)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="thonk.png")
+        r = await self.pxl.thonkify(text=text)
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"thonk.{r.file_type}")
             return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
 
     @check(5)
     @commands.command(aliases=['screen'])
@@ -172,12 +196,11 @@ class Api(commands.Cog):
         #h screenshot the specified webste!
         #u screenshot <url>
 
-        r = await pxl.screenshot(url=website)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="screenshot.png")
+        r = await self.pxl.screenshot(url=website)
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"screenshot.{r.file_type}")
             return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
 
     @check(2)
     @commands.command()
@@ -185,12 +208,11 @@ class Api(commands.Cog):
         #h Let sonic say anything you want
         #u sonic <text>
 
-        r = await pxl.sonic(text=text)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="sonic.png")
+        r = await self.pxl.sonic(text=text)
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"sonic.{r.file_type}")
             return await ctx.send(file=f)
+        return await ctx.send(':x: '+r.error)
 
     @check(4)
     @commands.command(aliases=['8bit', 'blurr'])
@@ -201,11 +223,9 @@ class Api(commands.Cog):
         data = await validate_input(self, ctx, args)
         if not data:
             return await ctx.send('Invalid arguments passed! Try again')
-        r = await pxl.jpeg(images=[data])
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            f = discord.File(io.BytesIO(r), filename="jpeg.png")
+        r = await self.pxl.jpeg(images=[data])
+        if r.success:
+            f = discord.File(r.convert_to_ioBytes(), filename=f"jpeg.{r.file_type}")
             return await ctx.send(file=f)
 
     @check(2)
@@ -214,11 +234,9 @@ class Api(commands.Cog):
         #h Get the best results for a query the web has to offer
         #u search <query>
         
-        r = await pxl.web_search(query=query)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
-        else:
-            results = r['results']
+        r = await self.pxl.web_search(query=query)
+        if r.success:
+            results = r.data['results']
             embed = discord.Embed.from_dict({
                 'title': f'Results for query {query}',
                 'color': 0x1400ff,
@@ -227,6 +245,7 @@ class Api(commands.Cog):
                 res = results[i-1]
                 embed.add_field(name='** **', value=f'__**[{res["title"]}]({res["url"]})**__\n{res["description"][:100]}...' if len(res["description"]) > 100 else res["description"], inline=False)
             await ctx.send(embed=embed)
+        return await ctx.send(':x: '+r.error)
 
     @check(4)
     @commands.command(aliases=['image'])
@@ -234,11 +253,11 @@ class Api(commands.Cog):
         #h Search any image you want
         #u img <query>
         
-        r = await pxl.image_search(query=query)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r)
+        r = await self.pxl.image_search(query=query)
+        if r.success:
+            return await paginator(self.client, ctx, 1, query, r.data, True)
         else:
-            return await paginator(self.client, ctx, 1, query, r, True)
+            return await ctx.send(':x: '+r.error)
 
 async def paginator(bot, ctx, page:int, query:str, data:list, first_time:bool=False, msg:discord.Message=None):
     embed = discord.Embed.from_dict({

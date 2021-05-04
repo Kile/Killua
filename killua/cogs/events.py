@@ -43,7 +43,7 @@ class Events(commands.Cog):
         if general and general.permissions_for(guild.me).send_messages:
             embed = discord.Embed.from_dict({
                 'title': 'Hello {}!'.format(guild.name),
-                'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{prefix}info`\n\nTo change the server prefix, use `{prefix}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{prefix}help` to see every command\n\nPlease consider leaving feeback with `k!fb` as this helps me improve Killua',
+                'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `k!info`\n\nTo change the server prefix, use `k!prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `k!help` to see every command\n\nPlease consider leaving feeback with `k!fb` as this helps me improve Killua',
                 'color': 0x1400ff
             })
             await general.send(embed=embed)
@@ -96,10 +96,10 @@ class Events(commands.Cog):
             return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
 
         if isinstance(error, commands.MissingPermissions):
-            return await ctx.send(f"You don\'t have the required permissions to use this command! (`', '.join({error.missing_perms})`)")
+            return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
         
         if isinstance(error, commands.MissingRequiredArgument):
-            return await ctx.send(f"Seems like you missed a required argument for this command: `{error.param}`")
+            return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
 
         guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
         command = ctx.command.name if ctx.command else "Error didn't occur during a command"

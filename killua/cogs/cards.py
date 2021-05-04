@@ -104,8 +104,6 @@ class Cards(commands.Cog):
     async def book(self, ctx, page:int=None):
         #h Allows you to take a look at your cards
         #u book <page(optional)>
-        if blcheck(ctx.author.id) is True:
-            return
         
         if len(User(ctx.author.id).all_cards) == 0:
             return await ctx.send('You don\'t have any cards yet!')
@@ -121,8 +119,6 @@ class Cards(commands.Cog):
     async def shop(self, ctx):
         #h Shows the current cards for sale
         #u shop
-        if blcheck(ctx.author.id) is True:
-            return
         
         sh = shop.find_one({'_id': 'daily_offers'})
         shop_items:list = sh['offers']
@@ -148,8 +144,6 @@ class Cards(commands.Cog):
     async def buy(self, ctx, item:int):
         #h Buy a card from the shop with this command
         #u buy <card_id>
-        if blcheck(ctx.author.id) is True:
-            return
         
         shop_data = shop.find_one({'_id': 'daily_offers'})
         shop_items = shop_data['offers']
@@ -195,8 +189,6 @@ class Cards(commands.Cog):
     async def sell(self, ctx, item:int, amount=1):
         #h Sell any amount of cards you own
         #u sell <card_id> <amount(optional)>
-        if blcheck(ctx.author.id) is True:
-            return
         
         user = User(ctx.author.id)
         if amount < 1:
@@ -239,8 +231,6 @@ class Cards(commands.Cog):
     async def swap(self, ctx, card_id:int):
         #h Allows you to swap cards from your free slots with the restrcited slots and the other way around
         #u swap <card_id>
-        if blcheck(ctx.author.id) is True:
-            return
         
         user = User(ctx.author.id)
         if len(user.all_cards) == 0:
@@ -262,8 +252,6 @@ class Cards(commands.Cog):
     async def hunt(self, ctx, end:str=None):
         #h Go on a hunt! The longer you are on the hunt, the better the rewards!
         #u hunt <end(optional)>
-        if blcheck(ctx.author.id) is True:
-            return
         
         user = User(ctx.author.id)
         has_effect, value = user.has_effect('hunting')
@@ -318,9 +306,7 @@ class Cards(commands.Cog):
     async def meet(self, ctx, user:discord.Member):
         #h Meet a user who has recently send a message in this channel to enable certain spell card effects
         #u meet <user>
-        if blcheck(ctx.author.id) is True:
-            return
-        
+
         author = User(ctx.author.id)
         past_users = list()
         if user.bot:
@@ -345,8 +331,6 @@ class Cards(commands.Cog):
     async def give(self, ctx, other:discord.Member, t:str, item:int):
         #h If you're feeling generous give another user cards or jenny. Available types are jenny and card
         #u give <user> <type> <card_id/amount>
-        if blcheck(ctx.author.id) is True:
-            return
         
         if other == ctx.author:
             return await ctx.send('You can\'t give yourself anything!')
@@ -384,8 +368,6 @@ class Cards(commands.Cog):
     async def discard(self, ctx, card:int):
         #h Discard a card you want to get rid of with this command
         #u discard <card_id>
-        if blcheck(ctx.author.id) is True:
-            return
         
         user = User(ctx.author.id)
         try:
@@ -421,8 +403,6 @@ class Cards(commands.Cog):
     async def use(self, ctx, item: typing.Union[int,str], args: typing.Union[discord.Member, str, int]=None, add_args:int=None):
         #h Use spell cards you own with this command! Focus on offense or defense, team up with your friends or steal their cards in their sleep!
         #u use <card_id> <required_arguments>
-        if blcheck(ctx.author.id) is True:
-            return
         
         if isinstance(item, str):
             if not item.lower() == 'booklet':

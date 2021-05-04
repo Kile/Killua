@@ -36,7 +36,7 @@ Command groups for {ctx.me.name}:
 :trophy: `Economy`
 :scroll: `todo`
 <:card_number_46:811776158966218802>  `Cards`
-:file_cabinet: `Tags`
+:file_cabinet: `Tags` (Premium only)
 <:killua_wink:769919176110112778> `Other`
 
 To see a groups commands, use```css\nhelp <groupname>```

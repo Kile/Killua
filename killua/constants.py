@@ -11,7 +11,7 @@ PAT_IMGS = [f'https://i.pinimg.com/originals/be/75/ff/be75ff9f2ba20efb4dbda09c62
 
 # ACTION TEXT
 HUG_TEXTS = [f'**(a)** hugs **(u)** as strong as they can', f'**(a)** hugs **(u)** and makes sure to not let go', f'**(a)** gives **(u)** the longest hug they have ever seen', f'**(a)** cuddles **(u)**', f'**(a)** uses **(u)** as a teddybear', f'**(a)** hugs **(u)** until all their worries are gone and 5 minutes longer',f'**(a)** clones themself and together they hug **(u)**', f'**(a)** jumps in **(u)**\'s arms', f'**(a)** gives **(u)** a bearhug', f'**(a)** finds a lamp with a Jinn and gets a wish. So they wish to hug **(u)**', f'**(a)** asks **(u)** for motivation and gets a hug','**(a)** looks at the floor, then up, then at the floor again and finnally hugs **(u)** with passion', '**(a)** looks deep into **(u)**\'s eyes and them gives them a hug', '**(a)** could do their homework but instead they decide to hug **(u)**', '**(u)** wanted to go get food but **(a)** wouldn\'t let go']
-PAT_TEXTS = ['**(a)** was too tired to hug **(u)** so they gave a pat instead', '**(u)** took 5 lp damage down so **(a)** gives them a healing head pat', '**(a)** tries to catch a spider, slips and instead pats **(u)**. **(a)** is also fine with that', '**(a)** pats **(u)**', '**(a)** thinks **(u)** is a cat and starts to pat them', '**(a)*** looks at **(u)**\'s fluffy hair and starts to pat them']
+PAT_TEXTS = ['**(a)** was too tired to hug **(u)** so they gave a pat instead', '**(u)** took 5 lp damage down so **(a)** gives them a healing head pat', '**(a)** tries to catch a spider, slips and instead pats **(u)**. **(a)** is also fine with that', '**(a)** pats **(u)**', '**(a)** thinks **(u)** is a cat and starts to pat them', '**(a)** looks at **(u)**\'s fluffy hair and starts to pat them']
 SLAP_TEXTS = ['**(a)** slaps **(u)**', '**(a)** stares at **(u)** for a long time and then slaps them', '**(a)** has now mercy; they slap **(u)**', '**(a)** is unsure how to react so they slap **(u)**']
 POKE_TEXTS = ['**(a)** pokes **(u)**', '*Poke* *Poke*, **(a)** pokes **(u)**', '**(a)** starts poking **(u)**', '**(a)** pokes **(u)** with a big smile on their face']
 TICKLE_TEXTS = ['**(u)** didn\'t let **(a)** eat cookies, so they get tickled!', '**(a)** couldn\'t resist their chance to tickle **(a)**','**(a)** tickles **(u)**', '**(a)** has no mercy; they tickle **(u)**', '**(a)** knows there is just one way, so they tickle **(u)**']
@@ -193,3 +193,43 @@ ALIASES = {
 }
 
 UWUS = ['uwu', 'owo', 'ʕ•́ᴥ•̀ʔっ', '≧◠ᴥ◠≦', '>\_<']
+
+# FOR THE NOKIA COMMAND OF /IMAGESCRIPT OF PXLAPI
+
+CODE = """
+let ext = url.split('.').pop(); let ext2 = ext.substring(0,ext.length-(ext.length-3)).replace('jpe', 'jpeg');
+let canvas;
+if(ext2 == "gif") {
+const mybuffer = await fetch(url).then(r => r.arrayBuffer());
+const mybuffer2 = await fetch('https://cdn.discordapp.com/attachments/762926280793784350/817847142668304444/1615060247537.png').then(r => r.arrayBuffer());
+let overlay = await Image.decode(mybuffer2);
+let image = await GIF.decode(mybuffer);
+let frames = [];
+let n = 0;
+ for (num = 0; num < ((image.length < 40) ? image.length : 40); num = num+1) {
+ const canva = new Frame(overlay.width, overlay.height, image[n].duration, 0, 0, Frame.DISPOSAL_BACKGROUND);
+image[n].resize(235, 168);
+for(const [x, y] of image[n]) {
+    const [,,l,a] = Image.rgbaToHSLA(...Image.colorToRGBA(image[n].getPixelAt(x, y)));
+    image[n].setPixelAt(x, y, Image.rgbaToColor(...[0x69,0x90,0x5b].map(v => v * l), 0xff * a));}
+    canva.composite(new Image(235, 168).fill(0x69905bff), 54, 214);
+    canva.composite(image[n], 54, 214);
+    canva.composite(overlay);
+ frames.push(canva); n = n+1}
+canvas = new GIF(frames);
+} else {
+    const mybuffer = await fetch(url).then(r => r.arrayBuffer());
+    const mybuffer2 = await fetch('https://cdn.discordapp.com/attachments/762926280793784350/817847142668304444/1615060247537.png').then(r => r.arrayBuffer());
+    let overlay = await Image.decode(mybuffer2);
+    let image = await Image.decode(mybuffer);
+     canvas = new Image(overlay.width, overlay.height);
+    for(const [x, y] of image) {
+    const [,,l,a] = Image.rgbaToHSLA(...Image.colorToRGBA(image.getPixelAt(x, y)));
+    image.setPixelAt(x, y, Image.rgbaToColor(...[0x69,0x90,0x5b].map(v => v * l), 0xff * a));}
+    image.resize(235, 168);
+    canvas.composite(new Image(235, 168).fill(0x69905bff), 54, 214);
+    canvas.composite(image, 54, 214);
+    canvas.composite(overlay);
+} 
+return canvas.encode();
+"""

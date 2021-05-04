@@ -13,11 +13,8 @@ class WebScraping(commands.Cog):
     @check(120)
     @commands.command(aliases=['n', 'search-book', 'sb'])
     async def novel(self, ctx, *,book):
-        #checking if the user is blacklisted
         #u novel <title>
         #h With this command you can search for books! Just say the book title and look through the results
-        if blcheck(ctx.author.id) is True:
-            return
         #function making the user able to go to the next result with reactions
         await pageturn('something', 0, book, self, ctx, True) #'something' is here irrelevant since it is not used anyways
 

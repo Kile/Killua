@@ -8,10 +8,9 @@ class Prefix(commands.Cog):
         self.client = client
 
     @check()
+    @commands.has_permissions(administrator=True)
     @commands.command()
     async def prefix(self, ctx, pref:str=None):
-        if blcheck(ctx.author.id):
-            return
         #h Change killua's prefix with this command. If you forgot your prefix, mentioning is always a prefix as well
         #u prefix <prefix>
         guild = Guild(ctx.guild.id)

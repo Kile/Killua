@@ -1,7 +1,16 @@
 import discord
 from discord.ext import commands
+from pymongo import MongoClient
+import json
 
 cooldowndic = {}
+
+with open('config.json', 'r') as config_file:
+        config = json.loads(config_file.read())
+
+cli = MongoClient(config['mongodb'])
+gdb = cli['general']
+bl = gdb['blacklist']
 
 def blcheck(userid:int): # It is necessary to define it twice as I might have to use this function on its own
     """
@@ -36,9 +45,15 @@ def check(time:int=0):
     cli = MongoClient(config['mongodb'])
     db = cli['Killua']
     g = db['guilds']
-    t = db['teams']
+    tms = db['teams']
     gdb = cli['general']
     bl = gdb['blacklist']
+    d = gdb['stats']
+
+    def add_usage(command:str):
+        data = d.find_one({'_id': 'commands'})['command_usage']
+        data[command] = data[command]+1 if command in data else 1
+        d.update_one({'_id': 'commands'}, {'$set': {'command_usage': data}})
 
     def blcheck(userid:int):
         """
@@ -80,7 +95,7 @@ def check(time:int=0):
             return True 
 
         else:
-            user = t.find_one({'id': ctx.author.id})
+            user = tms.find_one({'id': ctx.author.id})
             guild = g.find_one({'id': ctx.guild.id})
 
             if cd.seconds < time:
@@ -89,24 +104,25 @@ def check(time:int=0):
                     pass
                 elif 'partner' in guild['badges'] or 'premium' in guild['badges']:
                     if int(cd.seconds) > time/2:
-                        await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds', delete_after=5)
-                        return False
+                        t = t/2
+                        pass
                     else:
                         cooldowndic[ctx.author.id][ctx.command.name] = later
                         return True
 
                 if user is None:
-                    await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds', delete_after=5)
+                    await ctx.send(f':x: Command on cooldown! Try again after `{t}` seconds\n\nHalf your cooldown by becoming a patreon here: https://patreon.com/kilealkuri', delete_after=5)
                     return False
-                if 'supporter' in user['badges']:
-                    if int(cd.seconds) > time/2:
-                        await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds', delete_after=5)
+
+                if 'premium' in user['badges']:
+                    if int(cd.seconds) > t/2:
+                        await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds\n\nHalf your cooldown by becoming a patreon here: https://patreon.com/kilealkuri', delete_after=5)
                         return False
                     else:
                         cooldowndic[ctx.author.id][ctx.command.name] = later
                         return True
                     
-                await ctx.send(f':x: Command on cooldown! Try again after `{t}` seconds', delete_after=5)
+                await ctx.send(f':x: Command on cooldown! Try again after `{t}` seconds\n\nHalf your cooldown by becoming a patreon here: https://patreon.com/kilealkuri', delete_after=5)
                 return False
             return True
 
@@ -155,10 +171,13 @@ def check(time:int=0):
             pass
 
         if time == 0:
+            add_usage(ctx.command.name)
             return True
 
         if await custom_cooldown(ctx, time) is False:
             return False
+
+        add_usage(ctx.command.name)
 
         return True
 

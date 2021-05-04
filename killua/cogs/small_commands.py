@@ -8,9 +8,17 @@ import math
 import typing
 import aiohttp
 import json
+from pymongo import MongoClient
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 from killua.functions import check, check
 from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS
+
+with open('config.json', 'r') as config_file:
+    config = json.loads(config_file.read())
+
+cli = MongoClient(config['mongodb'])
+gdb = cli['general']
+stats = gdb['stats']
 
 class SmallCommands(commands.Cog):
 
@@ -89,6 +97,8 @@ class SmallCommands(commands.Cog):
     @check()
     @commands.command(aliases=['uwu', 'owo', 'owofy'])
     async def uwufy(self, ctx, *, content:str):
+        #h Uwufy any sentence you want with dis command, have fun >_<
+        #u uwu <text>
         return await ctx.send(self.build_uwufy(content, stuttering=3, cuteness=3))
 
     @check()
@@ -260,6 +270,17 @@ class SmallCommands(commands.Cog):
         if answer["error"]:
             return await ctx.send("The following error occured while calculating:\n`{}`".format(answer["error"]))
         await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
+
+    @check()
+    @commands.command()
+    async def usage(self, ctx):
+        #h Shows the commands used the most. Added for fun and out of interest
+        #u usage
+        s = stats.find_one({'_id': 'commands'})['command_usage']
+        top = sorted(s.items(), key=lambda x: x[1])
+        prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])
+        print(prettier)
+        return await ctx.send("```\n"+prettier+"\n```")
 
 Cog = SmallCommands
 
