@@ -277,9 +277,8 @@ class SmallCommands(commands.Cog):
         #h Shows the commands used the most. Added for fun and out of interest
         #u usage
         s = stats.find_one({'_id': 'commands'})['command_usage']
-        top = sorted(s.items(), key=lambda x: x[1])
-        prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])
-        print(prettier)
+        top = sorted(s.items(), key=lambda x: x[1], reverse=True)
+        prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])[:-20]
         return await ctx.send("```\n"+prettier+"\n```")
 
 Cog = SmallCommands

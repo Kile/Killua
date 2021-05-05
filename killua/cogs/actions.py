@@ -13,7 +13,7 @@ class Actions(commands.Cog):
         self.session = self.client.session
 
     async def request_action(self, endpoint:str):
-        session = aiohttp.ClientSession()
+
         r = self.session.get(f"https://shiro.gg/api/images/{endpoint}")
         if r.status == 200:
             return await r.json()

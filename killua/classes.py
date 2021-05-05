@@ -10,7 +10,7 @@ cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 teams = db['teams']
 items = db['items']
-guilds = db['servers']
+guilds = db['guilds']
 
 class CardNotFound(Exception):
     pass
