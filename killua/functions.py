@@ -36,7 +36,6 @@ def check(time:int=0):
     """
     
     from datetime import datetime, timedelta
-    import json
     from pymongo import MongoClient
 
     with open('config.json', 'r') as config_file:
