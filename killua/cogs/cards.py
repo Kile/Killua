@@ -21,7 +21,6 @@ cluster = MongoClient(config['mongodb'])
 db = cluster['Killua']
 teams = db['teams']
 items = db['items']
-guilds = db['servers']
 general = cluster['general']
 shop = general['shop']
 

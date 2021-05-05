@@ -1,5 +1,4 @@
 import discord
-import io
 from discord.ext import commands
 import json
 from killua.functions import check

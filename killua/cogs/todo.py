@@ -37,7 +37,6 @@ class TodoSystem(commands.Cog):
     async def create(self, ctx):
         #u todo create
         #h Let's you create your todo list in an interactive menu
-        x = 0
         
         user_todo_lists = [x for x in todo.find({'owner': ctx.author.id})]
 

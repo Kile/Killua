@@ -261,7 +261,7 @@ class SmallCommands(commands.Cog):
             return await ctx.send("Please give me something to evaluate.\n")
         exprs = str(args).split('\n')
         request = {"expr": exprs, "precision": 14}
-        async with aiohttp.ClientSession() as session:
+        async with self.client.session as session:
             async with session.post('http://api.mathjs.org/v4/', data=json.dumps(request)) as resp:
                 answer = await resp.json()
 
@@ -277,8 +277,8 @@ class SmallCommands(commands.Cog):
         #h Shows the commands used the most. Added for fun and out of interest
         #u usage
         s = stats.find_one({'_id': 'commands'})['command_usage']
-        top = sorted(s.items(), key=lambda x: x[1], reverse=True)
-        prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])[:-20]
+        top = sorted(s.items(), key=lambda x: x[1], reverse=True)[:-20]
+        prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])
         return await ctx.send("```\n"+prettier+"\n```")
 
 Cog = SmallCommands

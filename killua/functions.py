@@ -104,7 +104,6 @@ def check(time:int=0):
                 elif 'partner' in guild['badges'] or 'premium' in guild['badges']:
                     if int(cd.seconds) > time/2:
                         t = t/2
-                        pass
                     else:
                         cooldowndic[ctx.author.id][ctx.command.name] = later
                         return True
@@ -195,7 +194,6 @@ Changing Killuas presence freqently if he is added to a guild, removed or 12 hou
 
 async def p(self):
     from pymongo import MongoClient
-    import json
     from datetime import datetime, timedelta, date
 
 
