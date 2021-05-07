@@ -125,6 +125,7 @@ def check(time:int=0):
             return True
 
     def settings_check(ctx):
+
         guild = g.find_one({'id': ctx.guild.id})
 
         if not 'commands' in guild:
@@ -135,26 +136,37 @@ def check(time:int=0):
 
         command = guild['commands'][ctx.command.name]
 
+        # Checking if a command is disabled
         if command['enabled'] is False:
             return False
 
-        if ctx.author.id in [int(x) for x in command['restricted_to_members'] if len(command['restricted_to_members']) > 0]:
-            return True
+        # Checking if the member is whitelisted (not implemeted)
+        #if ctx.author.id in [int(x) for x in command['restricted_to_members'] if len(command['restricted_to_members']) > 0]:
+            #return True
 
-        if ctx.author.id in [int(x) for x in command['blacklisted_members'] if len(command['blacklisted_members']) > 0]:
-            return False
+        # Checking if the member is blacklisted (not implemented)
+        #if ctx.author.id in [int(x) for x in command['blacklisted_members'] if len(command['blacklisted_members']) > 0]:
+            #return False
 
+        # Checking if the channel is blacklisted
         if ctx.channel.id in [int(x) for x in command['blacklisted_channels']]:
             return False
 
+        # Checking if the channel is whitelisted if it is only whitelisted to a few channels
         if not ctx.channel.id in command['restricted_to_channels'] and len(command['restricted_to_channels']) > 0:
             return False
 
+        # Checking if the user has a role the command is restricted to
         if not len([i for i, j in zip([x.id for x in ctx.author.roles], [int(x) for x in command['restricted_to_roles']]) if i == j]) > 0 and len(command['restricted_to_roles']) > 0:
             return False
 
+        # Checking if a role a user has is blacklisted
         if len([i for i, j in zip([x.id for x in ctx.author.roles], [int(x) for x in command['blacklisted_roles']]) if i == j]) > 0:
             return False
+
+        # Checking if the command invokation should be deleted
+        if command['delete_invokation']:
+            await ctx.message.delete() # This could break stuff, fixing later
 
         return True
 

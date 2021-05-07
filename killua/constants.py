@@ -162,7 +162,7 @@ COMMANDS = {
         'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
     ],
     'fun': [
-        'topic', 'calc', 'translate', '8ball', 'avatar', 'uwu', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'nokia', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
+        'topic', 'calc', 'translate', '8ball', 'avatar', 'uwufy', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'nokia', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
     ],
     'actions': [
         'hug', 'poke', 'slap', 'tickle', 'pat'

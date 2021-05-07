@@ -317,11 +317,17 @@ class Cards(commands.Cog):
             return await ctx.send('The user you tried to approach has not send a message in this channel recently')
 
         if user.id in author.met_user:
-            await ctx.message.delete()
+            try:
+                await ctx.message.delete()
+            except discord.HTTPException:
+                pass
             return await ctx.send(f'You already have `{user}` in the list of users you met, {ctx.author.name}', delete_after=2)
 
         author.add_met_user(user.id)
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except discord.HTTPException:
+            pass
         return await ctx.send(f'Done {ctx.author.mention}! Successfully added `{user}` to the list of people you\'ve met', delete_after=5)
 
     @check()

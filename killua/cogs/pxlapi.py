@@ -160,7 +160,7 @@ class Api(commands.Cog):
         if r.success:
             f = discord.File(r.convert_to_ioBytes(), filename=f"ganimal.{r.file_type}")
             return await ctx.send(file=f)
-        return await ctx.send(':x: '+error)
+        return await ctx.send(':x: '+r.error)
 
     @check()
     @commands.command()

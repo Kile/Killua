@@ -37,7 +37,6 @@ class DevStuff(commands.Cog):
         #r user ID: 606162661184372736
         if ctx.author.id == 606162661184372736:
             try:
-                global bot
                 await ctx.channel.send(f'```py\n{eval(code)}```')
             except Exception as e:
                 await ctx.channel.send(str(e))
