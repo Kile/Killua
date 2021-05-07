@@ -124,7 +124,7 @@ def check(time:int=0):
                 return False
             return True
 
-    def settings_check(ctx):
+    async def settings_check(ctx):
 
         guild = g.find_one({'id': ctx.guild.id})
 
@@ -175,7 +175,7 @@ def check(time:int=0):
             return False
 
         try:
-            if settings_check(ctx) is False:
+            if (await settings_check(ctx)) is False:
                 return False
         except Exception: #If someone used the api and messed up the guilds data struture
             pass
