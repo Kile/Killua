@@ -261,9 +261,9 @@ class SmallCommands(commands.Cog):
             return await ctx.send("Please give me something to evaluate.\n")
         exprs = str(args).split('\n')
         request = {"expr": exprs, "precision": 14}
-        async with self.client.session as session:
-            async with session.post('http://api.mathjs.org/v4/', data=json.dumps(request)) as resp:
-                answer = await resp.json()
+
+        r = await self.client.session.post('http://api.mathjs.org/v4/', data=json.dumps(request))
+        answer = await r.json()
 
         if "error" not in answer or "result" not in answer:
             return await ctx.send("An unknown error occurred during calculation!")
