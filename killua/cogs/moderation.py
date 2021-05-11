@@ -95,8 +95,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *,reason=None):
-        if blcheck(ctx.author.id) is True:
-            return
+
         #h What you would expect of a kick command, kicks a user, optional reason
         #u kick <user> <reason>
         r = await self.check_perms(ctx, member)
@@ -115,8 +114,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
-        if blcheck(ctx.author.id) is True:
-            return
+
         #h Mutes a user for the specified duration or unlimited. Requirements: You need to have a role named `muted` (Case insensitve) set up already (Deny this role permission to send messages in every channel)
         #u mute <user> <time/u> <reason> 
 
@@ -181,8 +179,7 @@ class Moderation(commands.Cog):
     @check()                  
     @commands.command()
     async def unmute(self, ctx, member: discord.Member, *, reason=None):
-        if blcheck(ctx.author.id) is True:
-            return
+
         #h Unmutes a user if they have a `muted` (case insensitve) role
         #u unmute <user> <reason(optional)>
         r = await self.check_perms(ctx, member)
