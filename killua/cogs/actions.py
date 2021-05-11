@@ -15,7 +15,7 @@ class Actions(commands.Cog):
     async def request_action(self, endpoint:str):
 
         r = self.session.get(f"https://shiro.gg/api/images/{endpoint}")
-        if r.status == 200:
+        if r.status_code == 200:
             return await r.json()
         else:
             return await r.text()
