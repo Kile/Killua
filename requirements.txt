@@ -42,6 +42,6 @@ requests==2.25.1
 six==1.15.0
 soupsieve==2.1
 typing-extensions==3.7.4.3
-urllib3==1.26.4
+urllib3==1.26.5
 yarl==1.5.1
 pypxl==0.2.0
