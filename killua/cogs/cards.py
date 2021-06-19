@@ -254,13 +254,14 @@ class Cards(commands.Cog):
         user = User(ctx.author.id)
         has_effect, value = user.has_effect('hunting')
 
-        if end.lower() == 'time':
-            if not has_effect:
-                return await ctx.send('You are not on a hunt yet!')
-            difference = datetime.now() - value
-            return await ctx.send(f'You\'ve been hunting for {difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds.')
-
         if end:
+            
+            if end.lower() == 'time':
+                if not has_effect:
+                    return await ctx.send('You are not on a hunt yet!')
+                difference = datetime.now() - value
+                return await ctx.send(f'You\'ve been hunting for {difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds.')
+
             if not end.lower() == 'end':
                 pass
             elif has_effect is True:
