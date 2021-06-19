@@ -17,6 +17,8 @@ with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
 
 cli = MongoClient(config['mongodb'])
+db = cli['Killua']
+teams = db['teams']
 gdb = cli['general']
 stats = gdb['stats']
 
@@ -182,7 +184,7 @@ class SmallCommands(commands.Cog):
         t = f'{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds'
         embed = discord.Embed.from_dict({
             'title': f'Infos about {ctx.me.name}',
-            'description': f'This is Killua, a bot designed to be a fun multipurpose bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua\'s status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n**__Bot stats__**\n__Bot uptime:__ `{t}`\n__Bot users:__ `{len(self.client.users)}`\n__Bot guilds:__ `{len(self.client.guilds)}`\n__Bot commands:__ `{len(self.client.commands)}`\n__Owner id:__ `{self.client.owner_id}`\n__Latency:__ `{int(self.client.latency*100)}` ms',
+            'description': f'This is Killua, a bot designed to be a fun multipurpose bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua\'s status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n**__Bot stats__**\n__Bot uptime:__ `{t}`\n__Bot users:__ `{len(self.client.users)}`\n__Bot guilds:__ `{len(self.client.guilds)}`\n__Registered user:__ `{teams.count_documents({})}`\n__Bot commands:__ `{len(self.client.commands)}`\n__Owner id:__ `606162661184372736`\n__Latency:__ `{int(self.client.latency*100)}` ms',
             'color': 0x1400ff,
             'thumbnail': {'url': str(ctx.me.avatar_url)}
         })
@@ -277,7 +279,7 @@ class SmallCommands(commands.Cog):
         #h Shows the commands used the most. Added for fun and out of interest
         #u usage
         s = stats.find_one({'_id': 'commands'})['command_usage']
-        top = sorted(s.items(), key=lambda x: x[1], reverse=True)[:-20]
+        top = sorted(s.items(), key=lambda x: x[1], reverse=True)[:20]
         prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])
         return await ctx.send("```\n"+prettier+"\n```")
 
