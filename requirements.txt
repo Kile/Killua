@@ -56,7 +56,7 @@ typing-extensions==3.10.0.0
 ubuntu-advantage-tools==20.3
 ufw==0.36
 unattended-upgrades==0.1
-urllib3==1.25.8
+urllib3==1.26.5
 Werkzeug==1.0.1
 yarl==1.6.3
 zipp==1.0.0
