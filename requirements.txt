@@ -25,7 +25,7 @@ idna==2.8
 import-expression==1.1.4
 importlib-metadata==1.5.0
 itsdangerous==1.1.0
-Jinja2==2.10.1
+Jinja2==2.11.3
 jishaku==2.0.0
 jsonpatch==1.22
 jsonpointer==2.0
