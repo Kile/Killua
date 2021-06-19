@@ -11,7 +11,7 @@ click==7.1.2
 cloud-init==20.4
 command-not-found==0.3
 configobj==5.0.6
-cryptography==2.8
+cryptography==3.3.2
 dblpy==0.4.0
 dbus-python==1.2.16
 deep-translator==1.4.4
