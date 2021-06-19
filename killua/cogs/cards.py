@@ -255,7 +255,7 @@ class Cards(commands.Cog):
         has_effect, value = user.has_effect('hunting')
 
         if end:
-            
+
             if end.lower() == 'time':
                 if not has_effect:
                     return await ctx.send('You are not on a hunt yet!')
@@ -1210,7 +1210,7 @@ async def setpage(image, page):
     return image
 
 async def getfont(size):
-    font = ImageFont.truetype('/home/ec2-user/killua/killua/font.ttf', size, encoding="unic") 
+    font = ImageFont.truetype('/home/bot/Killua/killua/font.ttf', size, encoding="unic") 
     return font
 
 async def cards(image, data, option):
