@@ -45,7 +45,7 @@ pypxl==0.2.0
 pyrsistent==0.15.5
 pyserial==3.4
 python-apt==2.0.0+ubuntu0.20.4.4
-PyYAML==5.3.1
+PyYAML==5.4
 ratelimiter==1.2.0.post0
 requests==2.22.0
 requests-unixsocket==0.2.0
