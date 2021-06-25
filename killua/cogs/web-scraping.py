@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from killua.functions import check
 import requests
-import aiohttp
 from bs4 import BeautifulSoup
 import asyncio
 
