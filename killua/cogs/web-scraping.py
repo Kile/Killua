@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from killua.functions import check
-import requests
+import aiohttp
 from bs4 import BeautifulSoup
 import asyncio
 
@@ -34,7 +34,11 @@ Makes the user to be able to go through results
 ''' 
 
 async def pageturn(msg, page:int, book:str, self, ctx, first_time:bool):
-    p = BeautifulSoup(requests.get('https://www.goodreads.com/search?q=' + book).content, 'html.parser')
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://www.goodreads.com/search?q={book}") as response:
+            content = await response.text()
+
+    p = BeautifulSoup(content.encode(), 'html.parser')
     if first_time is True:
         b = getBook(p, book, 0)
         msg = await ctx.send(embed=b)
