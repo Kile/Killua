@@ -34,8 +34,8 @@ Makes the user to be able to go through results
 ''' 
 
 async def pageturn(msg, page:int, book:str, self, ctx, first_time:bool):
-    async with self.client.session.get(f"https://www.goodreads.com/search?q={book}") as response:
-        content = await response.text()
+    response = await self.client.session.get(f"https://www.goodreads.com/search?q={book}")
+    content = await response.text()
 
     p = BeautifulSoup(content.encode(), 'html.parser')
     if first_time is True:
