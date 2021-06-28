@@ -1,21 +1,11 @@
 import discord
 from discord.ext import commands
-from pymongo import MongoClient
 from killua.functions import check
 import typing
 from datetime import datetime, timedelta
 from random import randint
-import json
 from killua.classes import User, Guild
-from killua.constants import USER_FLAGS, KILLUA_BADGES
-
-with open('config.json', 'r') as config_file:
-    config = json.loads(config_file.read())
-
-cluster = MongoClient(config['mongodb'])
-db = cluster['Killua']
-teams = db['teams']
-server = db['guilds']
+from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds
 
 class Economy(commands.Cog):
 
@@ -74,7 +64,7 @@ class Economy(commands.Cog):
         #u guild
         top = self.lb(ctx, limit=1)
 
-        guild = server.find_one({'id': ctx.guild.id})
+        guild = guilds.find_one({'id': ctx.guild.id})
         if not guild is None:
             badges = '\n'.join(guild['badges'])
 

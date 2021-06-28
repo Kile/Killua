@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands, tasks
 import random
 from datetime import datetime, timedelta
-from pymongo import MongoClient
-import json
 import asyncio
 import math
 import typing
@@ -12,44 +10,11 @@ import io
 import aiohttp
 from killua.functions import check
 from killua.classes import User, Card, CardLimitReached, CardNotFound
-from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES
-
-with open('config.json', 'r') as config_file:
-	config = json.loads(config_file.read())
-
-cluster = MongoClient(config['mongodb'])
-db = cluster['Killua']
-teams = db['teams']
-items = db['items']
-general = cluster['general']
-shop = general['shop']
-
-#Data structure for card system:
-
-example = {
-    "effects":{
-      "effect": "time/amount"
-    },
-    "rs": [ #Stands for restricted slots
-      [1,{"fake": True, "clone": False}],
-      [4, {"fake": False, "clone": False}],
-      [6, {"fake": False, "clone": True}],
-      [7, {"fake": False, "clone": False}]
-    ],
-    "fs": [ #Stands for free slots
-      [1004, {"fake": True, "clone": False}],
-      [1008, {"fake": False, "clone": False}]
-    ],
-    "met_users": [
-        606162661184372736,
-        258265415770177536
-    ]
-}
+from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES, teams, items, shop
 
 # I am NOT writing a detailed description of every function in here, just a brief description for functions in classes
 
 cached_cards = {}
-
 
 class Cards(commands.Cog):
 

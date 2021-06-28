@@ -2,15 +2,10 @@ import discord
 from discord.ext import commands
 from pymongo import MongoClient
 import json
+from .constants import blacklist
 
 cooldowndic = {}
 
-with open('config.json', 'r') as config_file:
-        config = json.loads(config_file.read())
-
-cli = MongoClient(config['mongodb'])
-gdb = cli['general']
-bl = gdb['blacklist']
 
 def blcheck(userid:int): # It is necessary to define it twice as I might have to use this function on its own
     """
@@ -23,7 +18,7 @@ def blcheck(userid:int): # It is necessary to define it twice as I might have to
     Purpose:
         Checking before everry command if the user is blacklisted
     """
-    result = bl.find_one({'id': userid})
+    result = blacklist.find_one({'id': userid})
 
     if result is None:
         return False
@@ -36,23 +31,12 @@ def check(time:int=0):
     """
     
     from datetime import datetime, timedelta
-    from pymongo import MongoClient
-
-    with open('config.json', 'r') as config_file:
-        config = json.loads(config_file.read())
-
-    cli = MongoClient(config['mongodb'])
-    db = cli['Killua']
-    g = db['guilds']
-    tms = db['teams']
-    gdb = cli['general']
-    bl = gdb['blacklist']
-    d = gdb['stats']
+    from killua.constants import guilds, teams, blacklist, stats
 
     def add_usage(command:str):
-        data = d.find_one({'_id': 'commands'})['command_usage']
+        data = stats.find_one({'_id': 'commands'})['command_usage']
         data[command] = data[command]+1 if command in data else 1
-        d.update_one({'_id': 'commands'}, {'$set': {'command_usage': data}})
+        stats.update_one({'_id': 'commands'}, {'$set': {'command_usage': data}})
 
     def blcheck(userid:int):
         """
@@ -65,7 +49,8 @@ def check(time:int=0):
         Purpose:
             Checking before everry command if the user is blacklisted
         """
-        result = bl.find_one({'id': userid})
+
+        result = blacklist.find_one({'id': userid})
 
         if result is None:
             return False
@@ -94,8 +79,8 @@ def check(time:int=0):
             return True 
 
         else:
-            user = tms.find_one({'id': ctx.author.id})
-            guild = g.find_one({'id': ctx.guild.id})
+            user = teams.find_one({'id': ctx.author.id})
+            guild = guilds.find_one({'id': ctx.guild.id})
 
             if cd.seconds < time:
                 t = -1*(6-time-cd.seconds)
@@ -126,7 +111,7 @@ def check(time:int=0):
 
     async def settings_check(ctx):
 
-        guild = g.find_one({'id': ctx.guild.id})
+        guild = guilds.find_one({'id': ctx.guild.id})
 
         if not 'commands' in guild:
             return True
@@ -205,18 +190,10 @@ Changing Killuas presence freqently if he is added to a guild, removed or 12 hou
 '''   
 
 async def p(self):
-    from pymongo import MongoClient
+    from killua.constants import presence
     from datetime import datetime, timedelta, date
 
-
-    with open('config.json', 'r') as config_file:
-	    config = json.loads(config_file.read())
-
-    c = MongoClient(config['mongodb'])
-    db = c['general']
-    pr = db['presence']
-
-    status = pr.find_one({})
+    status = presence.find_one({})
     if status['text']:
         if not status['activity']:
             status['activity'] = 'playing'

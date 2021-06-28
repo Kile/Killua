@@ -1,20 +1,10 @@
-from pymongo import MongoClient
 import discord
 from discord.ext import commands
 import random
 import asyncio
-import json
 from killua.functions import blcheck, check
 from killua.classes import User
-
-with open('config.json', 'r') as config_file:
-	config = json.loads(config_file.read())
-
-cluster = MongoClient(config['mongodb'])
-db = cluster['Killua']
-teams = db['teams']
-server = db['guilds']
-
+from killua.constants import teams
 
 class Rps(commands.Cog):
 

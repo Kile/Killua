@@ -1,17 +1,9 @@
 import discord
 import inspect
-import json
-from pymongo import MongoClient
 from discord.ext import commands
 from killua.functions import check
 from killua.constants import COMMANDS
 import asyncio
-with open('config.json', 'r') as config_file:
-	config = json.loads(config_file.read())
-
-cluster = MongoClient(config['mongodb'])
-db = cluster['Killua']
-server = db['guilds']
 
 class Help(commands.Cog):
 
@@ -49,7 +41,7 @@ Website: https://killua.dev (a work in progress)''',
                 'thumbnail': {'url': str(ctx.me.avatar_url)}
             })
             try:
-                await ctx.send(embed=embed)
+                await ctx.reply(embed=embed, allowed_mentions=discord.AllowedMentions.none())
             except discord.Forbidden:
                 await ctx.send('Uh oh, something went wrong... I need embed permissions to send the help menu!')
         elif group:
@@ -66,7 +58,7 @@ Website: https://killua.dev (a work in progress)''',
                         'color': 0x1400ff,
                         'thumbnail': {'url': str(ctx.me.avatar_url)}
                     })
-                    await ctx.send(embed=embed)                    
+                    await ctx.reply(embed=embed, allowed_mentions=discord.AllowedMentions.none())                    
                 else:
                     await commands(self, ctx, group, pref, 1, first_time=True)
             else:
@@ -100,7 +92,7 @@ async def commands(self, ctx, commandgroup:str, pref:str, page:int, msg:discord.
     })
 
     if first_time:
-        msg = await ctx.send(embed=embed)
+        msg = await ctx.reply(embed=embed, allowed_mentions=discord.AllowedMentions.none())
         #ultra backwards arrow
         await msg.add_reaction('\U000023ea')
         #arrow backwards

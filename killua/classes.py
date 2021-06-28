@@ -1,16 +1,7 @@
 from datetime import datetime
 from pymongo import MongoClient
 import json
-from .constants import FREE_SLOTS
-
-with open('config.json', 'r') as config_file:
-	config = json.loads(config_file.read())
-
-cluster = MongoClient(config['mongodb'])
-db = cluster['Killua']
-teams = db['teams']
-items = db['items']
-guilds = db['guilds']
+from .constants import FREE_SLOTS, teams, items, guilds, todo
 
 class CardNotFound(Exception):
     pass
@@ -22,6 +13,9 @@ class OnlyFakesFound(Exception):
     pass
 
 class CardLimitReached(Exception):
+    pass
+
+class TodoListNotFound(Exception):
     pass
 
 class Card():
@@ -85,7 +79,6 @@ class Card():
                 return False
 
 class User():
-
     """This class allows me to handle a lot of user related actions more easily"""
     
     def __init__(self, user_id:int):
@@ -458,6 +451,125 @@ class User():
         if t == 'effects':
             teams.update_one({'id': self.id}, {'$set': {'cards': {'rs': self.rs_cards, 'fs': self.fs_cards, 'effects': {}}}})
             return True
+
+class TodoList():
+    def __init__(self, list_id):
+        td_list = todo.find_one({'_id' if str(list_id).isdigit() else 'custom_id': int(list_id) if str(list_id).isdigit() else list_id.lower()})
+        if not td_list:
+            raise TodoListNotFound
+
+        self.id:int = td_list['_id']
+        self.name:str = td_list['name']
+        self.owner:int = td_list['owner']
+        self.custom_id:str = td_list['custom_id']
+        self.status:str = td_list['status']
+        self.delete_done:bool = td_list['delete_done']
+        self.viewer:list = td_list['viewer']
+        self.editor:list = td_list['editor']
+        self.todos:list = td_list['todos']
+        self.created_at:str = td_list['created_at']
+        self.spots:int = td_list['spots']
+        self.views:int = td_list['views']
+        self.thumbnail:str = td_list['thumbnail'] if 'thumbnail' in td_list else None
+        self.color:int = td_list['color'] if 'color' in td_list else None
+        self.description:str = td_list['description'] if 'description' in td_list else None
+
+    def __len__(self) -> int:
+        return len(self.todos)
+
+    @staticmethod
+    def _generate_id() -> int:
+        l = []
+        while len(l) != 6:
+            l.append(str(randint(0,9)))
+
+        todo_id = todo.find_one({'_id': ''.join(l)})
+
+        if todo_id is None:
+            return int(''.join(l))
+        else:
+            return self._generate_id()
+
+    @staticmethod
+    def create(owner:int, title:str, status:str, done_delete:bool, custom_id:str=None):
+        """Creates a todo list and returns a TodoList class"""
+        list_id = TodoList._generate_id()
+        todo.insert_one({'_id': list_id, 'name': title, 'owner': owner, 'custom_id': custom_id, 'status': status, 'delete_done': done_delete, 'viewer': [], 'editor': [], 'todos': [{'todo': 'add todos', 'marked': None, 'added_by': 756206646396452975, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"), 'views':0, 'assigned_to': [], 'mark_log': []}], 'marks': [], 'created_at': (datetime.now()).strftime("%b %d %Y %H:%M:%S"), 'spots': 10, 'views': 0 })
+        return TodoList(list_id)
+
+    def delete(self):
+        """Deletes a todo list"""
+        todo.delete_one({'_id': self.id})
+
+    def has_view_permission(self, user_id:int) -> bool:
+        """Checks if someone has permission to view a todo list"""
+        if self.status== 'private':
+            if not (user_id in self.viewer or user_id in self.editor or user_id == self.owner):
+                return False
+        return True
+
+    def has_edit_permission(self, user_id:int) -> bool:
+        """Checks if someone has permission to edit a todo list"""
+        if not (user_id in self.editor or user_id == self.owner):
+            return False
+        return True
+
+    def add_view(self, viewer:int):
+        """Adds a view to a todo lists viewcount"""
+        if not viewer == self.owner and not viewer in self.viewer and viewer in self.editor:
+            todo.update_one({'_id': self.id}, {'$set':{'views': self.views+1 }})
+
+    def set_property(self, prop, value):
+        """Sets/updates a certain property of a todo list"""
+        todo.update_one({'_id': self.id}, {'$set':{prop: value}})
+
+    def add_spots(self, spots):
+        """Easy way to add max spots"""
+        self.set_property('spots', self.spots+spots)
+
+    def add_editor(self, user:int):
+        """Easy way to add an editor"""
+        self.editor.append(user)
+        self.set_property('editor', self.editor)
+
+    def add_viewer(self, user:int):
+        """Easy way to add a viewer"""
+        self.viewer.append(user)
+        self.set_property('viewer', self.viewer)
+
+    def kick_editor(self, editor:int):
+        """Easy way to kick an editor"""
+        self.editor.remove(editor)
+        self.set_property('editor', self.editor)
+
+    def kick_viewer(self, viewer:int):
+        """Easy way to kick a viewer"""
+        self.viewer.remove(viewer)
+        self.set_property('viewer', self.viewer)
+
+    def has_todo(self, task:int) -> bool:
+        """Checks if a list contains a certain todo task"""
+        try:
+            if task == 0:
+                raise Exception('Error!')
+            self.todos[task-1]
+        except Exception:
+            return False
+        return True
+
+class Todo(TodoList):
+
+    def __init__(self, position:int, list_id):
+        super().__init__(list_id)
+        task = self.todos[position-1]
+
+        self.todo:str = task['todo']
+        self.marked:str = task['marked']
+        self.added_by:int = task['added_by']
+        self.added_on:str = task['added_on']
+        self.views:int = task['views']
+        self.assigned_to:list = task['assigned_to']
+        self.mark_log:list = task['mark_log']
 
 class Guild():
 

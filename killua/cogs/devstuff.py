@@ -1,28 +1,13 @@
 from discord.ext import commands
 import discord
 import json
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 from pymongo import MongoClient
 import re
 from killua.functions import check, p
 from killua.cogs.cards import Card, User #lgtm [py/unused-import]
 from killua.cogs.pxlapi import PxlClient #lgtm [py/unused-import]
-with open('config.json', 'r') as config_file:
-	config = json.loads(config_file.read())
-# All those imports are to give k!eval many libraries it can use
-
-
-cluster = MongoClient(config['mongodb'])
-db = cluster['Killua']
-teams = db['teams']
-top =db['teampoints']
-server = db['guilds']
-generaldb = cluster['general']
-blacklist = generaldb['blacklist']
-pr = generaldb['presence']
-items = db['items']
-updates = generaldb['updates']
-
+from killua.constants import teams, guilds, blacklist, presence as pr, items, updates #lgtm [py/unused-import]
 
 class DevStuff(commands.Cog):
 
@@ -101,10 +86,8 @@ class DevStuff(commands.Cog):
             user = await self.client.fetch_user(id)
         except Exception as e:
             return await ctx.send(e)
-        today = date.today()
         # Inserting the bad person into my databse
-        blacklist.insert_one({'id': id, 'reason':reason or "No reason provided", 'date': today.strftime("%B %d, %Y")})
-
+        blacklist.insert_one({'id': id, 'reason':reason or "No reason provided", 'date': datetime.now()})
         await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
         
     @commands.command()

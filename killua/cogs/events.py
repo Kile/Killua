@@ -24,7 +24,7 @@ class Events(commands.Cog):
         print('Logged in as: ' + self.client.user.name + f" (ID: {self.client.user.id})")
         print('------')
         self.client.startup_datetime = datetime.now()
-    
+
     @tasks.loop(hours=12)
     async def status(self):
         await p(self)
@@ -32,13 +32,13 @@ class Events(commands.Cog):
     @status.before_loop
     async def before_status(self):
         await self.client.wait_until_ready()
-    
+
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         #Changing the status
         await p(self)
         Guild.add_default(guild.id)
-      
+
         general = find(lambda x: x.name == 'general',  guild.text_channels)
         if general and general.permissions_for(guild.me).send_messages:
             embed = discord.Embed.from_dict({
@@ -52,7 +52,7 @@ class Events(commands.Cog):
     async def on_connect(self):
         #Changing Killua's status
         await p(self)
-    
+
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
@@ -97,7 +97,7 @@ class Events(commands.Cog):
 
         if isinstance(error, commands.MissingPermissions):
             return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
-        
+
         if isinstance(error, commands.MissingRequiredArgument):
             return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
 

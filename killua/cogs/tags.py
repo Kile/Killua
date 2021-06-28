@@ -1,18 +1,11 @@
 import discord 
 from discord.ext import commands
-import json
 from pymongo import MongoClient
 from datetime import datetime
 import math
 import asyncio
 from killua.classes import Guild
-
-with open('config.json', 'r') as config_file:
-	config = json.loads(config_file.read())
-
-cluster = MongoClient(config['mongodb'])
-db = cluster['Killua']
-guilds = db['guilds']
+from killua.constants import guilds
 
 class Tag():
     def __init__(self, guild_id:int, tag_name:str):
@@ -190,7 +183,7 @@ class Tags(commands.Cog):
         if tag.found is False:
             return await ctx.send('This tag doesn\'t exist')
         tag.add_use()
-        return await ctx.send(tag.content, allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.send(tag.content, allowed_mentions=discord.AllowedMentions.none(), reference=ctx.message)
     
     @tag.command()
     async def info(self, ctx, *, tag_name:str):

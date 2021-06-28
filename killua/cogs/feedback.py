@@ -110,8 +110,6 @@ class Feedback(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    
-        
 Cog = Feedback
 
 def setup(client):
