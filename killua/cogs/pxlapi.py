@@ -155,7 +155,7 @@ class Api(commands.Cog):
         #h Legofies an image
         #u lego <user/url>
         async def func(data, *args):
-            return await self.pxl.glitch(images=[data], scale=True, groupSize=10)
+            return await self.pxl.lego(images=[data], scale=True, groupSize=10)
         await self.handle_command(ctx, args, func)
 
     @check(3)

@@ -183,7 +183,7 @@ class Tags(commands.Cog):
         if tag.found is False:
             return await ctx.send('This tag doesn\'t exist')
         tag.add_use()
-        return await ctx.send(tag.content, allowed_mentions=discord.AllowedMentions.none(), reference=ctx.message)
+        return await ctx.send(tag.content, allowed_mentions=discord.AllowedMentions.none(), reference=ctx.message.reference or ctx.message)
     
     @tag.command()
     async def info(self, ctx, *, tag_name:str):
