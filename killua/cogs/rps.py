@@ -95,7 +95,7 @@ class Rps(commands.Cog):
     async def _timeout(self, players:list, done:asyncio.Future):
         """A way to handle a timeout of not responding to Killua in dms"""
         for x in players:
-            if x.id in [x.result().id for x in done]:
+            if x.id in [x.result().author.id for x in done]:
                 await x.send('Sadly the other player has not responded in time')
             else:
                 await x.send('Too late, time to respond is up!')
