@@ -17,7 +17,7 @@ class TodoSystem(commands.Cog):
     def __init__(self,client):
         self.client = client
 
-    async def __get_user(self, u:int):
+    async def _get_user(self, u:int):
         r = self.client.get_user(u)
         if not r:
             r = await self.client.fetch_user(u)
@@ -26,7 +26,7 @@ class TodoSystem(commands.Cog):
     def _get_color(self, l:TodoList):
         return l.color if l.color else 0x1400ff
 
-    async def __wait_for_response(self, step, check):
+    async def _wait_for_response(self, step, check):
         try:
             confirmmsg = await self.client.wait_for('message', check=check, timeout=60)
         except asyncio.TimeoutError:
@@ -41,8 +41,8 @@ class TodoSystem(commands.Cog):
                 pass
             return confirmmsg
 
-    async def __build_embed(self, todo_list:TodoList, page:int=None) -> discord.Embed:
-        owner = await self.__get_user(todo_list.owner)
+    async def _build_embed(self, todo_list:TodoList, page:int=None) -> discord.Embed:
+        owner = await self._get_user(todo_list.owner)
         l = todo_list.todos
         desc = []
 
@@ -58,7 +58,7 @@ class TodoSystem(commands.Cog):
         async def assigned_users(td: Todo) -> str:
             at = []
             for user in t.assigned_to:
-                person = await self.__get_user(user_id)
+                person = await self._get_user(user_id)
                 at.append(person)
             return f'\n`Assigned to: {", ".join(at)}`'
 
@@ -105,7 +105,7 @@ class TodoSystem(commands.Cog):
         def check(m):
             return m.author.id == ctx.author.id
 
-        confirmmsg = await self.__wait_for_response(step, check)
+        confirmmsg = await self._wait_for_response(step, check)
 
         if not confirmmsg:
             return None
@@ -138,7 +138,7 @@ class TodoSystem(commands.Cog):
         def check(m):
             return m.content.lower() in ['private', 'public'] and m.author.id == ctx.author.id
 
-        confirmmsg = await self.__wait_for_response(step, check)
+        confirmmsg = await self._wait_for_response(step, check)
         if not confirmmsg:
             return None
         return confirmmsg.content.lower()
@@ -164,7 +164,7 @@ class TodoSystem(commands.Cog):
         def check(m):
             return m.content.lower() in ['y', 'n'] and m.author.id == ctx.author.id
 
-        confirmmsg = await self.__wait_for_response(step, check)
+        confirmmsg = await self._wait_for_response(step, check)
 
         if not confirmmsg:
             return None
@@ -191,7 +191,7 @@ class TodoSystem(commands.Cog):
 
         def check(m):
             return m.author.id == ctx.author.id
-        confirmmsg = await self.__wait_for_response(step, check)
+        confirmmsg = await self._wait_for_response(step, check)
         if not confirmmsg:
             return None
 
@@ -218,7 +218,7 @@ class TodoSystem(commands.Cog):
         outsourcing big embed production 🛠, also to not have a giant embed with todos on a list, so this is called
         when there are more than 10 todos on the list
         """
-        embed = await self.__build_embed(todo_list, page)
+        embed = await self._build_embed(todo_list, page)
 
         if msg:
             await msg.edit(embed=embed)
@@ -280,7 +280,7 @@ class TodoSystem(commands.Cog):
             return await ctx.send('You don\'t have permission to view infos about this list!')
         todo_list.add_view(ctx.author.id)
 
-        owner = await self.__get_user(todo_list.owner)
+        owner = await self._get_user(todo_list.owner)
         
         embed = discord.Embed.from_dict({
             'title': f'Information for the todo list "{todo_list.name}" (ID: {todo_list.id})',
@@ -288,8 +288,8 @@ class TodoSystem(commands.Cog):
     **Owner**: `{owner}`\n
     **Custom ID**: `{todo_list.custom_id or "No custom id"}`\n
     **Status**: `{todo_list.status}`\n
-    **Editors**: `{", ".join([str(await self.__get_user(u)) for u in todo_list.editor]) if len(todo_list.editor) > 0 else "Nobody has editor perissions"}`\n
-    **Viewers**: `{", ".join([str(await self.__get_user(u)) for u in todo_list.viewer]) if len(todo_list.viewer) > 0 else "Nobody has viewer permissions"}`\n
+    **Editors**: `{", ".join([str(await self._get_user(u)) for u in todo_list.editor]) if len(todo_list.editor) > 0 else "Nobody has editor perissions"}`\n
+    **Viewers**: `{", ".join([str(await self._get_user(u)) for u in todo_list.viewer]) if len(todo_list.viewer) > 0 else "Nobody has viewer permissions"}`\n
     **Todos**: `{len(todo_list)}/{todo_list.spots}`\n
     **Created on:** `{todo_list.created_at}`\n
     *{todo_list.views} views*
@@ -327,7 +327,7 @@ class TodoSystem(commands.Cog):
         if not todo_list.has_view_permission(ctx.author.id):
             return await ctx.send('You don\'t have permission to view infos about this list!')
 
-        addist = await self.__get_user(todo_task.added_by)
+        addist = await self._get_user(todo_task.added_by)
 
         mark_log = '\n'.join([f"""Changed to: `{x['change']}`
         By `{await self.__get_user(x['author'])}`
@@ -338,7 +338,7 @@ class TodoSystem(commands.Cog):
             'description': f'''**Added by**: `{addist}`\n
     **Content**: {todo_task.todo}\n
     **Currently marked as**: `{todo_task.marked or "Not currently marked"}`\n
-    **Assigned to**: `{", ".join([str(await self.__get_user(u)) for u in todo_task.assigned_to]) if len(todo_task.assigned_to) > 0 else "unassigned"}`\n
+    **Assigned to**: `{", ".join([str(await self._get_user(u)) for u in todo_task.assigned_to]) if len(todo_task.assigned_to) > 0 else "unassigned"}`\n
     **Added on:** `{todo_task.added_on}`\n
     **Latest changes marks**:
     {mark_log}\n
@@ -374,7 +374,7 @@ class TodoSystem(commands.Cog):
         def check(m):
             return m.author.id == ctx.author.id
 
-        confirmmsg = await self.__wait_for_response(step, check)
+        confirmmsg = await self._wait_for_response(step, check)
         if not confirmmsg:
             return
         c = f'0x{confirmmsg.content}'
@@ -415,7 +415,7 @@ class TodoSystem(commands.Cog):
         def check(m):
             return m.author.id == ctx.author.id
 
-        confirmmsg = await self.__wait_for_response(step, check)
+        confirmmsg = await self._wait_for_response(step, check)
         if not confirmmsg:
             return
 
@@ -461,7 +461,7 @@ class TodoSystem(commands.Cog):
         def check(m):
             return m.content.lower() in ['y', 'n'] and m.author.id == ctx.author.id
 
-        confirmmsg = await self.__wait_for_response(step, check)
+        confirmmsg = await self._wait_for_response(step, check)
         if not confirmmsg:
             return
 
@@ -495,7 +495,7 @@ class TodoSystem(commands.Cog):
         def check(m):
             return m.author.id == ctx.author.id
         
-        confirmmsg = await self.__wait_for_response(step, check)
+        confirmmsg = await self._wait_for_response(step, check)
         if not confirmmsg:
             return
 
@@ -879,7 +879,7 @@ Buy 10 more spots for todos for your list''',
 
         if isinstance(user, int):
             try:
-                user = await self.__get_user(user)
+                user = await self._get_user(user)
             except discord.NotFound:
                 return await ctx.send('Invalid ID')
 
@@ -922,7 +922,7 @@ Buy 10 more spots for todos for your list''',
 
         if isinstance(user, int):
             try:
-                user = await self.__get_user(user)
+                user = await self._get_user(user)
             except discord.NotFound:
                 return await ctx.send('Invalid user id')
 
@@ -997,7 +997,7 @@ Buy 10 more spots for todos for your list''',
 
         if isinstance(user, int):
             try:
-                user = await self.__get_user(user)
+                user = await self._get_user(user)
             except discord.NotFound:
                 return await ctx.send('Invalid user id')
 

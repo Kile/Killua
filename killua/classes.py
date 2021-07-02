@@ -475,6 +475,7 @@ class TodoList():
         self.description:str = td_list['description'] if 'description' in td_list else None
 
     def __len__(self) -> int:
+        """Makes it nicer to get the "lenght" of a todo list, or rather the length of its todos"""
         return len(self.todos)
 
     @staticmethod

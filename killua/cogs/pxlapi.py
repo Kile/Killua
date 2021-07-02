@@ -67,7 +67,7 @@ class Api(commands.Cog):
                     return await self.paginator(ctx, len(data), query, data, msg=msg)
                 return await self.paginator(ctx, page-1, query, data, msg=msg)
 
-    async def validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
+    async def _validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
         image = None
         if isinstance(args, discord.Member):
             image = str(args.avatar_url_as(static_format="png"))
@@ -111,7 +111,7 @@ class Api(commands.Cog):
 
     async def handle_command(self, ctx, args, function, t=None, validate:bool=True):
         if validate:
-            data = await self.validate_input(ctx, args)
+            data = await self._validate_input(ctx, args)
             if not data:
                 return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help command {ctx.command.name}`')
         else:
