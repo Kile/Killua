@@ -35,7 +35,7 @@ class Vote(commands.Cog):
         user_id = data["user"]
         user = User(user_id)
         user.add_vote()
-        reward = self._get_reward(user_id, user["isWeekend"])
+        reward = self._get_reward(user_id, data["isWeekend"])
         user.add_jenny(reward)
         
         usr = await self._get_user(user_id)
