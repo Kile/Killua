@@ -33,9 +33,9 @@ class Vote(commands.Cog):
     async def on_dbl_vote(self, data):
         """An event that is called whenever someone votes for the bot on Top.gg."""
         user_id = data["user"]
-        user = User(user_id)
+        user = User(int(user_id))
         user.add_vote()
-        reward = self._get_reward(user_id, data["isWeekend"])
+        reward = self._get_reward(user, data["isWeekend"])
         user.add_jenny(reward)
         
         usr = await self._get_user(user_id)
