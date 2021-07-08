@@ -14,7 +14,7 @@ class Events(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.token = config['dbl']
+        self.token = config['dbl']['token']
         self.dblpy = dbl.DBLClient(self.client, self.token, autopost=True)
         self.status.start()
 

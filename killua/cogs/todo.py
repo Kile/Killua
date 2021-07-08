@@ -17,7 +17,7 @@ class TodoSystem(commands.Cog):
     def __init__(self,client):
         self.client = client
 
-    async def _get_user(self, u:int):
+    async def _get_user(self, u:int) -> discord.User:
         r = self.client.get_user(u)
         if not r:
             r = await self.client.fetch_user(u)

@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import topgg
 import json
+from killua.classes import User
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
 
@@ -13,21 +14,35 @@ class Vote(commands.Cog):
         self.topgg_webhook = topgg.WebhookManager(self.client).dbl_webhook("/dblwebhook", self.dbl["password"])
         self.topgg_webhook.run(self.dbl["port"])
 
+    def _get_reward(self, user:User, weekend:bool) -> int:
+        """A pretty simple algorithm that adjusts the reward for voting"""
+        if user.votes*2 > 100:
+            reward = int((user.votes*2)/100)*(150 if weekend else 100)
+        else:
+            reward = 100
+        return reward
+
+    async def _get_user(self, u:int) -> discord.User:
+        """Looking for a user in the cache and if not found making a dapi request for them"""
+        r = self.client.get_user(u)
+        if not r:
+            r = await self.client.fetch_user(u)
+        return r
+
     @commands.Cog.listener()
     async def on_dbl_vote(self, data):
         """An event that is called whenever someone votes for the bot on Top.gg."""
-        if data["type"] == "test":
-            # this is roughly equivalent to
-            # `return await on_dbl_test(data)` in this case
-            return self.client.dispatch("dbl_test", data)
-
-        print(f"Received a vote:\n{data}")
-
-    @commands.Cog.listener()
-    async def on_dbl_test(self, data):
-        """An event that is called whenever someone tests the webhook system for your bot on Top.gg."""
-        print(f"Received a test vote:\n{data}")
-
+        user_id = data["user"]
+        user = User(user_id)
+        user.add_vote()
+        reward = self._get_reward(user_id, user["isWeekend"])
+        user.add_jenny(reward)
+        
+        usr = await self._get_user(user_id)
+        try:
+            await usr.send(f"Thank you for voting for Killua! Here take {reward} Jenny as a sign of my gratitude. Remember: the more you vote, the higher the reward gets!")
+        except discord.HTTPException:
+            pass
 
 Cog = Vote
 

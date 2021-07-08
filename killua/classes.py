@@ -93,7 +93,6 @@ class User():
         if not 'cards' in user or not 'met_user' in user:
             self.add_empty(self.id)
             user = teams.find_one({'id': user_id})
-
         
         self.jenny:int = user['points']
         self.daily_cooldown = user['cooldowndaily']
@@ -104,6 +103,7 @@ class User():
         self.all_cards:list = [*self.fs_cards, *self.rs_cards]
         self.badges:list = user['badges']
         self.is_premium:bool = 'premium' in self.badges
+        self.votes = user["votes"] if "votes" in user else 0
 
     @staticmethod
     def remove_all() -> str:
@@ -139,9 +139,9 @@ class User():
     def add_empty(self, user_id, cards:bool=True):
         """Can be called when the user does not have an entry to make the class return empty objects instead of None"""
         if cards:
-            return teams.update_one({'id': user_id}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': []}})  
+            return teams.update_one({'id': user_id}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0}})  
         else:
-            return teams.insert_one({'id': user_id, 'points': 0, 'badges': [], 'cooldowndaily': '','cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': []}) 
+            return teams.insert_one({'id': user_id, 'points': 0, 'badges': [], 'cooldowndaily': '','cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0}) 
 
     def add_badge(self, badge:str, premium=False):
         """Adds a badge to a user"""
@@ -163,6 +163,10 @@ class User():
             if 'premium' in self.badges:    
                 self.badges.remove('premium')
         teams.update_one({'id': self.id}, {'$set': {'badges': self.badges}})
+
+    def add_vote(self):
+        """Keeps track of how many times a user has voted for Killua to increase the rewards over time"""
+        teams.update_one({'id': self.id}, {'$set': {'votes': self.votes+1}})
         
     def has_rs_card(self, card_id:int, fake_allowed:bool=True) -> bool:
         """Checking if the user has a card specified in their restricted slots"""
