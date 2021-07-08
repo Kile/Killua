@@ -14,7 +14,7 @@ class Vote(commands.Cog):
         self.topgg_webhook.run(self.dbl["port"])
 
     @commands.Cog.listener()
-    async def on_dbl_vote(data):
+    async def on_dbl_vote(self, data):
         """An event that is called whenever someone votes for the bot on Top.gg."""
         if data["type"] == "test":
             # this is roughly equivalent to
@@ -24,7 +24,7 @@ class Vote(commands.Cog):
         print(f"Received a vote:\n{data}")
 
     @commands.Cog.listener()
-    async def on_dbl_test(data):
+    async def on_dbl_test(self, data):
         """An event that is called whenever someone tests the webhook system for your bot on Top.gg."""
         print(f"Received a test vote:\n{data}")
 
