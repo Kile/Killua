@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import topgg
+import dbl
 import json
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
@@ -15,7 +15,7 @@ class Vote(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(topgg.__version__)
+        print(dbl.__version__)
 
     @commands.Cog.listener()
     async def on_dbl_vote(self, data):
