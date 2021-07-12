@@ -7,6 +7,7 @@ from random import randint, choice
 import math
 import typing
 import aiohttp
+import json
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 from killua.functions import check, check
 from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams

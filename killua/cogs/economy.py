@@ -12,7 +12,7 @@ class Economy(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    def getmember(self, user: discord.Member):
+    def _getmember(self, user: discord.Member):
         """ Input: 
             user (discord.User): the user to get info about and return it
 
@@ -45,7 +45,7 @@ class Economy(commands.Cog):
             })
         return embed
 
-    def lb(self, ctx, limit=10):
+    def _lb(self, ctx, limit=10):
         members = teams.find({'id': {'$in': [x.id for x in ctx.guild.members]} })
         top = sorted(members, key=lambda x: x['points'], reverse=True)
         points = 0
@@ -62,7 +62,7 @@ class Economy(commands.Cog):
     async def guild(self, ctx):
         #h Displays infos about the current guild
         #u guild
-        top = self.lb(ctx, limit=1)
+        top = self._lb(ctx, limit=1)
 
         guild = guilds.find_one({'id': ctx.guild.id})
         if not guild is None:
@@ -81,7 +81,7 @@ class Economy(commands.Cog):
     async def leaderboard(self, ctx):
         #h Get a leaderboard of members with the most jenny
         #u leaderboard
-        top = self.lb(ctx)
+        top = self._lb(ctx)
         if len(top) == 0:
             return await ctx.send(f"Nobody here has any jenny! Be the first to claim some with `{self.client.command_prefix(self.client, ctx.message)[2]}daily`!")
         embed = discord.Embed.from_dict({
@@ -98,16 +98,16 @@ class Economy(commands.Cog):
         #h Get infos about a certain discord user with ID or mention
         #u profile <user(optional)>
         if user is None:
-            embed = self.getmember(ctx.author)
+            embed = self._getmember(ctx.author)
             return await ctx.send(embed=embed)
         else: 
             if isinstance(user, discord.Member):
-                embed = self.getmember(user)
+                embed = self._getmember(user)
                 return await ctx.send(embed=embed)
             else:
                 try:
                     newuser = await self.client.fetch_user(user)
-                    embed = self.getmember(newuser)
+                    embed = self._getmember(newuser)
                     return await ctx.send(embed=embed)
                 except Exception as e:
                     await ctx.send(f'```diff\n-{e}\n```')

@@ -46,5 +46,6 @@ class Vote(commands.Cog):
 
 Cog = Vote
 
+
 def setup(client):
     client.add_cog(Vote(client))

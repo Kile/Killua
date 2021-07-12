@@ -58,13 +58,12 @@ class TodoSystem(commands.Cog):
         async def assigned_users(td: Todo) -> str:
             at = []
             for user in t.assigned_to:
-                person = await self._get_user(user_id)
+                person = await self._get_user(user)
                 at.append(person)
-            return f'\n`Assigned to: {", ".join(at)}`'
+            return f'\n`Assigned to: {", ".join([str(x) for x in at])}`'
 
-        for thing in enumerate(final_todos if page else l, page*10-10 if page else 0):
-            n, t = thing
-            t = Todo(n, str(todo_list.id))
+        for n, t in enumerate(final_todos if page else l, page*10-10 if page else 0):
+            t = Todo(n+1, str(todo_list.id))
             ma = f'\n`Marked as {t.marked}`' if t.marked else ''
             desc.append(f'{n+1}) {t.todo}{ma}{await assigned_users(t) if len(t.assigned_to) > 0 else ""}')
         desc = '\n'.join(desc) if len(desc) > 0 else "No todos"
@@ -569,6 +568,22 @@ class TodoSystem(commands.Cog):
 
         await self.todo_embed_generator(ctx, todo_list, page=1 if len(todo_list) > 10 else None)
 
+    @check()
+    @todo.command()
+    async def clear(self, ctx):
+        #u todo clear
+        #h Clears all todos from a todo list
+        try:
+            list_id = editing[ctx.author.id]
+        except KeyError:
+            return await ctx.send('You have to be in the editor mode to use this command without providing an id! Use `k!todo edit <todo_list_id>`')
+
+        todo_list = TodoList(str(list_id))
+        if not todo_list.has_edit_permission(ctx.author.id):
+            return await ctx.send("You have to be added as an editor to this list to use this command")
+        todo_list.clear()
+        await ctx.send("Done! Cleared all your todos")
+
     @check(1)
     @todo.command()
     async def info(self, ctx, todo_or_task_id=None, td:int=None):
@@ -862,7 +877,7 @@ Buy 10 more spots for todos for your list''',
 
         todos = todo_list.todos
         todos.append({'todo': td, 'marked': None, 'added_by': ctx.author.id, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"),'views': 0, 'assigned_to': [], 'mark_log': []})
-
+        print("\n".join([x["todo"] for x in todos]))
         todo_list.set_property('todos', todos)
         return await ctx.send(f'Great! Added {td} to your todo list!')
 

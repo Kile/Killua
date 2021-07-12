@@ -1,6 +1,8 @@
+from __future__ import annotations
 from datetime import datetime
 from pymongo import MongoClient
 import json
+import random
 from .constants import FREE_SLOTS, teams, items, guilds, todo
 
 class CardNotFound(Exception):
@@ -496,13 +498,13 @@ class TodoList():
             return self._generate_id()
 
     @staticmethod
-    def create(owner:int, title:str, status:str, done_delete:bool, custom_id:str=None):
+    def create(owner:int, title:str, status:str, done_delete:bool, custom_id:str=None) -> TodoList:
         """Creates a todo list and returns a TodoList class"""
         list_id = TodoList._generate_id()
         todo.insert_one({'_id': list_id, 'name': title, 'owner': owner, 'custom_id': custom_id, 'status': status, 'delete_done': done_delete, 'viewer': [], 'editor': [], 'todos': [{'todo': 'add todos', 'marked': None, 'added_by': 756206646396452975, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"), 'views':0, 'assigned_to': [], 'mark_log': []}], 'marks': [], 'created_at': (datetime.now()).strftime("%b %d %Y %H:%M:%S"), 'spots': 10, 'views': 0 })
         return TodoList(list_id)
 
-    def delete(self):
+    def delete(self) -> None:
         """Deletes a todo list"""
         todo.delete_one({'_id': self.id})
 
@@ -519,35 +521,35 @@ class TodoList():
             return False
         return True
 
-    def add_view(self, viewer:int):
+    def add_view(self, viewer:int) -> None:
         """Adds a view to a todo lists viewcount"""
         if not viewer == self.owner and not viewer in self.viewer and viewer in self.editor:
             todo.update_one({'_id': self.id}, {'$set':{'views': self.views+1 }})
 
-    def set_property(self, prop, value):
+    def set_property(self, prop, value) -> None:
         """Sets/updates a certain property of a todo list"""
         todo.update_one({'_id': self.id}, {'$set':{prop: value}})
 
-    def add_spots(self, spots):
+    def add_spots(self, spots) -> None:
         """Easy way to add max spots"""
         self.set_property('spots', self.spots+spots)
 
-    def add_editor(self, user:int):
+    def add_editor(self, user:int) -> None:
         """Easy way to add an editor"""
         self.editor.append(user)
         self.set_property('editor', self.editor)
 
-    def add_viewer(self, user:int):
+    def add_viewer(self, user:int) -> None:
         """Easy way to add a viewer"""
         self.viewer.append(user)
         self.set_property('viewer', self.viewer)
 
-    def kick_editor(self, editor:int):
+    def kick_editor(self, editor:int) -> None:
         """Easy way to kick an editor"""
         self.editor.remove(editor)
         self.set_property('editor', self.editor)
 
-    def kick_viewer(self, viewer:int):
+    def kick_viewer(self, viewer:int) -> None:
         """Easy way to kick a viewer"""
         self.viewer.remove(viewer)
         self.set_property('viewer', self.viewer)
@@ -561,6 +563,11 @@ class TodoList():
         except Exception:
             return False
         return True
+
+    def clear(self) -> None:
+        """Removes all todos from a todo list"""
+        self.todos = []
+        self.set_property("todos", [])
 
 class Todo(TodoList):
 

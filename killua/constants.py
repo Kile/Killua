@@ -179,7 +179,7 @@ Have fun hunters
 # COMMANDS
 COMMANDS = {
     'todo': [
-        'todo create', 'todo lists', 'todo shop', 'todo edit', 'todo info', 'todo buy', 'todo add', 'todo remove', 'todo mark', 'todo invite', 'todo view', 'todo kick', 'todo status', 'todo name', 'todo autodelete', 'todo color', 'todo thumbnail', 'todo custom_id', 'todo assign', 'todo delete', 'todo exit'
+        'todo create', 'todo lists', 'todo shop', 'todo edit', 'todo info', 'todo buy', 'todo add', 'todo remove', 'todo mark', 'todo invite', 'todo view', 'todo kick', 'todo status', 'todo name', 'todo autodelete', 'todo color', 'todo thumbnail', 'todo custom_id', 'todo assign', 'todo delete', 'todo clear', 'todo exit'
     ],
     'moderation': [
         'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
