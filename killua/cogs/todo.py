@@ -877,7 +877,7 @@ Buy 10 more spots for todos for your list''',
 
         todos = todo_list.todos
         todos.append({'todo': td, 'marked': None, 'added_by': ctx.author.id, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"),'views': 0, 'assigned_to': [], 'mark_log': []})
-        print("\n".join([x["todo"] for x in todos]))
+        
         todo_list.set_property('todos', todos)
         return await ctx.send(f'Great! Added {td} to your todo list!')
 
