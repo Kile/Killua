@@ -66,7 +66,7 @@ class Events(commands.Cog):
         #Changing Killua's status
         await p(self)
         Guild(guild.id).delete()
-        self._post_guild_count()
+        await self._post_guild_count()
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -92,28 +92,28 @@ class Events(commands.Cog):
                     User(after.user.id).add_badge(PREMIUM_ROLES[element], premium=True)
                     return await after.user.send('Thank you for becoming a premium supporter! Check out your shiney badges with `k!profile` and have fun with your new perks!')
 
-    # @commands.Cog.listener()
-    # async def on_command_error(self, ctx, error):
-    #     #This handels the k!bug cooldown
-    #     if isinstance(error, commands.CommandOnCooldown):
-    #         m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        #This handels the k!bug cooldown
+        if isinstance(error, commands.CommandOnCooldown):
+            m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
 
-    #         return await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again, thank you for helping to improve killua :3')
+            return await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again, thank you for helping to improve killua :3')
 
-    #     if isinstance(error, commands.BotMissingPermissions):
-    #         return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
+        if isinstance(error, commands.BotMissingPermissions):
+            return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
 
-    #     if isinstance(error, commands.MissingPermissions):
-    #         return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
+        if isinstance(error, commands.MissingPermissions):
+            return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
 
-    #     if isinstance(error, commands.MissingRequiredArgument):
-    #         return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
+        if isinstance(error, commands.MissingRequiredArgument):
+            return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
 
-    #     guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
-    #     command = ctx.command.name if ctx.command else "Error didn't occur during a command"
-    #     print('------------------------------------------')
-    #     print(f'An error occured\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
-    #     print('------------------------------------------')
+        guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
+        command = ctx.command.name if ctx.command else "Error didn't occur during a command"
+        print('------------------------------------------')
+        print(f'An error occured\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
+        print('------------------------------------------')
 
 Cog = Events
 
