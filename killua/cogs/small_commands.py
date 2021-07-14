@@ -273,6 +273,38 @@ class SmallCommands(commands.Cog):
         prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])
         return await ctx.send("```\n"+prettier+"\n```")
 
+    # I see many errors "command fun not found". A lot of people don't understand they have to use k!help fun and not k!fun for those commands. 
+    # That's why I decided to add helpful messages in case someone does that
+    @check()
+    @commands.command()
+    async def fun(self, ctx):
+        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
+
+    @check()
+    @commands.command()
+    async def moderation(self, ctx):
+        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
+
+    @check()
+    @commands.command()
+    async def actions(self, ctx):
+        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
+
+    @check()
+    @commands.command()
+    async def economy(self, ctx):
+        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
+
+    @check()
+    @commands.command()
+    async def cards(self, ctx):
+        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
+
+    @check()
+    @commands.command()
+    async def other(self, ctx):
+        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
+
 Cog = SmallCommands
 
 def setup(client):
