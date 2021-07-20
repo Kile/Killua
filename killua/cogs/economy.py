@@ -1,10 +1,10 @@
 import discord
 from discord.ext import commands
-from killua.functions import check
+from killua.checks import check
 import typing
 from datetime import datetime, timedelta
 from random import randint
-from killua.classes import User, Guild
+from killua.classes import User, Guild, Category
 from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds
 
 class Economy(commands.Cog):
@@ -12,7 +12,13 @@ class Economy(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    def _getmember(self, user: discord.Member):
+    async def _get_user(self, user_id:int) -> typing.Union[discord.User, None]:
+        u = self.client.get_user(user_id)
+        if not u:
+            u = await self.client.fetch_user(user_id)
+        return u
+
+    def _getmember(self, user: typing.Union[discord.Member, discord.User]) -> discord.Embed:
         """ Input: 
             user (discord.User): the user to get info about and return it
 
@@ -22,12 +28,13 @@ class Economy(commands.Cog):
             Purpose:
             To have a function handle getting infos about a user for less messy code
         """
-        av = user.avatar_url
+        av = user.avatar.url
         joined = (user.created_at).strftime("%b %d %Y %H:%M:%S")
         
         info = User(user.id)
-
         flags = [USER_FLAGS[x[0]] for x in user.public_flags if x[1]]
+        if user.avatar.is_animated or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]): # A very simple nitro check that is not too accurate
+            flags.append(USER_FLAGS["nitro"])
         badges = [KILLUA_BADGES[x] for x in info.badges]
         bal = info.jenny
         
@@ -58,10 +65,9 @@ class Economy(commands.Cog):
         return data
 
     @check()
-    @commands.command(aliases=['server'])
+    @commands.command(aliases=['server'], extras={"category":Category.ECONOMY}, usage="guild")
     async def guild(self, ctx):
-        #h Displays infos about the current guild
-        #u guild
+        """Displays infos about the current guild"""
         top = self._lb(ctx, limit=1)
 
         guild = guilds.find_one({'id': ctx.guild.id})
@@ -71,16 +77,15 @@ class Economy(commands.Cog):
         embed = discord.Embed.from_dict({
             'title': f'Information about {ctx.guild.name}',
             'description': f'{ctx.guild.id}\n\n**Owner**\n{ctx.guild.owner}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Combined Jenny**\n{top["points"]}\n\n**Richest member**\n{top["top"][0]["name"]} with {top["top"][0]["points"]} jenny\n\n**Server created at**\n{(ctx.guild.created_at).strftime("%b %d %Y %H:%M:%S")}\n\n**Members**\n{ctx.guild.member_count}',
-            'thumbnail': {'url': str(ctx.guild.icon_url)},
+            'thumbnail': {'url': str(ctx.guild.icon.url)},
             'color': 0x1400ff
         })
         await ctx.send(embed=embed)
 
     @check()
-    @commands.command(aliases=['lb', 'top'])
+    @commands.command(aliases=['lb', 'top'], extras={"category":Category.ECONOMY}, usage="leaderboard")
     async def leaderboard(self, ctx):
-        #h Get a leaderboard of members with the most jenny
-        #u leaderboard
+        """Get a leaderboard of members with the most jenny"""
         top = self._lb(ctx)
         if len(top) == 0:
             return await ctx.send(f"Nobody here has any jenny! Be the first to claim some with `{self.client.command_prefix(self.client, ctx.message)[2]}daily`!")
@@ -88,15 +93,14 @@ class Economy(commands.Cog):
             "title": f"Top users on guild {ctx.guild.name}",
             "description": '\n'.join([f'#{p+1} `{x["name"]}` with `{x["points"]}` jenny' for p, x in enumerate(top["top"])]),
             "color": 0x1400ff,
-            "thumbnail": {"url": str(ctx.guild.icon_url)}
+            "thumbnail": {"url": str(ctx.guild.icon.url)}
         })
         await ctx.send(embed=embed)
 
     @check()
-    @commands.command()
+    @commands.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
     async def profile(self, ctx,user: typing.Union[discord.Member, int]=None):
-        #h Get infos about a certain discord user with ID or mention
-        #u profile <user(optional)>
+        """Get infos about a certain discord user with ID or mention"""
         if user is None:
             embed = self._getmember(ctx.author)
             return await ctx.send(embed=embed)
@@ -105,18 +109,16 @@ class Economy(commands.Cog):
                 embed = self._getmember(user)
                 return await ctx.send(embed=embed)
             else:
-                try:
-                    newuser = await self.client.fetch_user(user)
-                    embed = self._getmember(newuser)
-                    return await ctx.send(embed=embed)
-                except Exception as e:
-                    await ctx.send(f'```diff\n-{e}\n```')
+                newuser = await self._get_user(user)
+                if not newuser:
+                    return await ctx.send("Could not find anyone with this name/id")
+                embed = self._getmember(newuser)
+                return await ctx.send(embed=embed)
 
     @check()
-    @commands.command(aliases=['bal', 'balance', 'points'])
+    @commands.command(aliases=['bal', 'balance', 'points'], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
     async def jenny(self, ctx, user: typing.Union[discord.User, int]=None):
-        #h Gives you a users balance
-        #u balance <user(optional)>
+        """Gives you a users balance"""
         
         if not user:
             user_id = ctx.author.id
@@ -133,10 +135,9 @@ class Economy(commands.Cog):
         return await ctx.send(f'{user or ctx.author}\'s balance is {real_user.jenny} Jenny')
         
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.ECONOMY}, usage="daily")
     async def daily(self, ctx):
-        #h Claim your daily points with this command!
-        #u daily
+        """Claim your daily Jenny with this command!"""
         now = datetime.today()
         later = datetime.now()+timedelta(hours=24)
         user = User(ctx.author.id)

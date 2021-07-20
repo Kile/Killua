@@ -1,7 +1,5 @@
 import discord
 from discord.ext import commands
-from pymongo import MongoClient
-import json
 from .constants import blacklist
 
 cooldowndic = {}
@@ -80,7 +78,7 @@ def check(time:int=0):
 
         else:
             user = teams.find_one({'id': ctx.author.id})
-            guild = guilds.find_one({'id': ctx.guild.id})
+            guild = guilds.find_one({'id': ctx.guild.id}) if ctx.guild else None
 
             if cd.seconds < time:
                 t = -1*(6-time-cd.seconds)

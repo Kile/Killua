@@ -1,11 +1,9 @@
 from discord.ext import commands
 import discord
-import json
 from datetime import datetime, timedelta
-from pymongo import MongoClient
 import re
-from killua.functions import check, p
-from killua.cogs.cards import Card, User #lgtm [py/unused-import]
+from killua.checks import check, p
+from killua.cogs.cards import Card, User, Category#lgtm [py/unused-import]
 from killua.cogs.pxlapi import PxlClient #lgtm [py/unused-import]
 from killua.constants import teams, guilds, blacklist, presence as pr, items, updates #lgtm [py/unused-import]
 
@@ -15,31 +13,27 @@ class DevStuff(commands.Cog):
         self.client = client
 
     #Eval command, unecessary with the jsk extension but useful for databse stuff
-    @commands.command(aliases=['exec'])
+    @commands.is_owner()
+    @commands.command(aliases=['exec'], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True)
     async def eval(self, ctx, *, code):
-        #h Standart eval command, me restricted ofc
-        #u eval <code>
-        #r user ID: 606162661184372736
-        if ctx.author.id == 606162661184372736:
-            try:
-                await ctx.channel.send(f'```py\n{eval(code)}```')
-            except Exception as e:
-                await ctx.channel.send(str(e))
+        """Standart eval command, owner restricted ofc"""
+        try:
+            await ctx.channel.send(f'```py\n{eval(code)}```')
+        except Exception as e:
+            await ctx.channel.send(str(e))
 
-    @commands.command()
+    @commands.is_owner()
+    @commands.command(extras={"category":Category.OTHER}, usage="publish update <version> <text>", hidden=True)
     async def publish_update(self, ctx, version:str, *, update):
-        #h Allows me to publish Killua updates in a handy formart
-        #u publish_update <version> <text>
-        #r user ID 606162661184372736
-        if ctx.author.id != 606162661184372736:
-            return
+        """Allows me to publish Killua updates in a handy formart"""
+
         old = updates.find_one({'_id':'current'})
         log = updates.find_one({'_id': 'log'})
         embed = discord.Embed.from_dict({
             'title': f'Killua Update `{old["version"]}` -> `{version}`',
             'description': update,
             'color': 0x1400ff,
-            'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar_url)},
+            'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar.url)},
             'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
         })
         try:
@@ -54,10 +48,9 @@ class DevStuff(commands.Cog):
         await msg.publish()
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.OTHER}, usage="update <version(optional)>")
     async def update(self, ctx, version:str=None):
-        #h Allows you to view current and past updates
-        #u update <version(optional)>
+        """Allows you to view current and past updates"""
         if version is None:
             data = updates.find_one({'_id': 'current'})
         else:
@@ -71,17 +64,14 @@ class DevStuff(commands.Cog):
             'title': f'Infos about version `{data["version"]}`',
             'description': str(data["description"]),
             'color': 0x1400ff,
-            'footer': {'icon_url': str(author.avatar_url), 'text': f'Published on {data["published_on"].strftime("%b %d %Y %H:%M:%S")}'}
+            'footer': {'icon_url': str(author.avatar.url), 'text': f'Published on {data["published_on"].strftime("%b %d %Y %H:%M:%S")}'}
         })
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.is_owner() 
+    @commands.command(extras={"category":Category.OTHER}, usage="blacklist <user_id>", hidden=True)
     async def blacklist(self, ctx, id:int, *,reason=None):
-        #h Blacklisting bad people like Hisoka. Owner restricted
-        #u blacklist <user>
-        #r user ID: 606162661184372736
-        if ctx.author.id != 606162661184372736:
-            return
+        """Blacklisting bad people like Hisoka. Owner restricted"""
         try:
             user = await self.client.fetch_user(id)
         except Exception as e:
@@ -90,13 +80,11 @@ class DevStuff(commands.Cog):
         blacklist.insert_one({'id': id, 'reason':reason or "No reason provided", 'date': datetime.now()})
         await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
         
-    @commands.command()
+    @commands.is_owner()
+    @commands.command(extras={"category":Category.OTHER}, usage="whitelist <user_id>", hidden=True)
     async def whitelist(self, ctx, id:int):
-        #u whitelist <user>
-        #h Whitelists a user. Owner restricted
-        #r user ID: 606162661184372736
-        if ctx.author.id != 606162661184372736:
-            return
+        """Whitelists a user. Owner restricted"""
+
         try:
             user = await self.client.fetch_user(id)
         except Exception as e:
@@ -105,22 +93,19 @@ class DevStuff(commands.Cog):
         blacklist.delete_one({'id': id})
         await ctx.send(f'Successfully whitelisted `{user}`')
     
-    @commands.command()
+    @commands.is_owner()
+    @commands.command(extras={"category":Category.OTHER}, usage="say <text>", hidden=True)
     async def say(self, ctx, *, content):
-        #h Let's Killua say what is specified with this command. Possible abuse leads to this being restricted 
-        #r user ID: 606162661184372736
-        #u say <text>
-        if ctx.author.id == 606162661184372736:
-            await ctx.message.delete()
-            await ctx.send(content)
+        """Let's Killua say what is specified with this command. Possible abuse leads to this being restricted"""
 
-    @commands.command(aliases=['st', 'pr', 'status'])
+        await ctx.message.delete()
+        await ctx.send(content, reference=ctx.message.reference)
+
+    @commands.is_owner()
+    @commands.command(aliases=['st', 'pr', 'status'], extras={"category":Category.OTHER}, usage="pr <text>", hidden=True)
     async def presence(self, ctx, *, status):
-        #h Changes the presence of Killua. Owner restricted 
-        #u pr <text>
-        #r user ID: 606162661184372736
-        if ctx.author.id != 606162661184372736:
-            return
+        """Changes the presence of Killua. Owner restricted"""
+
         if status == '-rm':
             pr.update_many({}, {'$set': {'text': None, 'activity': None, 'presence': None}})
             await ctx.send('Done! reset Killua\'s presence')

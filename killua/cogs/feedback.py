@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from killua.functions import check
-
+from killua.checks import check
+from killua.classes import Category
 
 class Feedback(commands.Cog):
 
@@ -9,11 +9,10 @@ class Feedback(commands.Cog):
         self.client = client
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.OTHER}, usage="bug <command> <text>")
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.guild)
     async def bug(self, ctx, command=None, *, bug=None):
-        #h Report Killua bugs with this command! For more info on how to report a bug, use `k!bug`.
-        #u bug <command> <text>
+        """Report Killua bugs with this command! For more info on how to report a bug, use `k!bug`."""
         if command:
             
             if self.client.get_command(command.lower()) is None and command.lower() != 'other':
@@ -58,11 +57,10 @@ class Feedback(commands.Cog):
             await ctx.send(embed=embed)
 
     @check()
-    @commands.command(aliases=['fb'])
+    @commands.command(aliases=['fb'], extras={"category":Category.OTHER}, usage="feedback <type> <text>")
     @commands.cooldown(rate=1, per=3600, type=commands.BucketType.user)
     async def feedback(self, ctx, Type=None, *, feedback=None):
-        #h Submit feedback to Killua with this command! For more information on how do send what, use `k!fb`.
-        #u feedback <type> <text> 
+        """Submit feedback to Killua with this command! For more information on how do send what, use `k!fb`."""
         if Type:
             
             if not Type.lower() in ['topic', '8ball', 'hug', 'apply', 'general', 'idea', 'feature-request', 'complain', 'compliment']:

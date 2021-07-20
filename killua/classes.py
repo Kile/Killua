@@ -1,8 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
-from pymongo import MongoClient
-import json
 import random
+from enum import Enum
 from .constants import FREE_SLOTS, teams, items, guilds, todo
 
 class CardNotFound(Exception):
@@ -19,6 +18,73 @@ class CardLimitReached(Exception):
 
 class TodoListNotFound(Exception):
     pass
+
+class Category(Enum):
+
+    ACTIONS = {
+        "name": "actions",
+        "description": "Commands that can be used to interact with other users, such as hugging them",
+        "emoji": {
+            "unicode": "\U0001f465",
+            "normal": ":busts_in_silhouette:"
+        }
+    }
+    CARDS = {
+        "name": "cards",
+        "description": "The greed island card system with monster, spell and item cards",
+        "emoji": {
+            "unicode": "<:card_number_46:811776158966218802>",
+            "normal": "<:card_number_46:811776158966218802>"
+        }
+    }
+    ECONOMY = {
+        "name": "economy",
+        "description": "Killua's economy with the currency Jenny",
+        "emoji": {
+            "unicode": "\U0001f3c6",
+            "normal": ":trophy:"
+        } 
+    }
+    MODERATION = {
+        "name": "moderation",
+        "description": "Moderation commands",
+        "emoji": {
+            "unicode": "\U0001f6e0",
+            "normal": ":tools:"
+        }
+    }
+    TODO = {
+        "name": "todo",
+        "description": "Todo lists on discord to help you be organised",
+        "emoji": {
+            "unicode": "\U0001f4dc",
+            "normal": ":scroll:"
+        }
+    }
+    FUN = {
+        "name": "fun",
+        "description": "Commands to play around with with friends to pass the time",
+        "emoji": {
+            "unicode": "\U0001f921",
+            "normal": ":clown:"
+        }
+    }
+    OTHER = {
+        "name": "other",
+        "description": "Commands that fit none of the other categories",
+        "emoji": {
+            "unicode": "<:killua_wink:769919176110112778>",
+            "normal": "<:killua_wink:769919176110112778>"
+        }
+    }
+    TAGS = {
+        "name": "tags",
+        "description": "Tags if you want to save some text. Premium only",
+        "emoji": {
+            "unicode": "\U0001f5c4",
+            "normal": ":file_cabinet:"
+        }
+    }
 
 class Card():
     """This class makes it easier to access card information"""

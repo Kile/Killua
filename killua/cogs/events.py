@@ -4,7 +4,7 @@ import discord
 from datetime import datetime
 from discord.utils import find
 from discord.ext import commands, tasks
-from killua.functions import p
+from killua.checks import p
 from killua.classes import User, Guild
 from killua.constants import PREMIUM_ROLES
 with open('config.json', 'r') as config_file:
@@ -108,6 +108,18 @@ class Events(commands.Cog):
 
         if isinstance(error, commands.MissingRequiredArgument):
             return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
+
+        if isinstance(error, commands.UserInputError):
+            return await ctx.send(f"Seems like you provided invalid arguments for this command. This is how you use it: `{self.client.command_prefix(self.client, ctx.message)[2]}{ctx.command.usage}`")
+
+        if isinstance(error, commands.NotOwner):
+            return await ctx.send("Sorry, but you need to be the bot owner to use this command")
+
+        if isinstance(error, commands.BadArgument):
+            return await ctx.send(f"Could not process arguments. Here is the command should be used: {self.client.command_prefix(self.client, ctx.message)[2]}{ctx.command.usage}``")
+
+        if isinstance(error, commands.CommandNotFound): # I don't care if this happens
+            return 
 
         guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
         command = ctx.command.name if ctx.command else "Error didn't occur during a command"

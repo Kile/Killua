@@ -8,14 +8,12 @@ braceexpand==0.1.7
 certifi==2019.11.28
 chardet==3.0.4
 click==7.1.2
-cloud-init==20.4
 command-not-found==0.3
 configobj==5.0.6
 cryptography==3.3.2
-dblpy==0.4.0
 dbus-python==1.2.16
 deep-translator==1.4.4
-discord.py==1.7.3
+discord.py @ git+https://github.com/Rapptz/discord.py@f14e584304d9d6676c90f8aa59d6e4be23d22a10
 distro==1.4.0
 distro-info===0.23ubuntu1
 dnspython==2.1.0

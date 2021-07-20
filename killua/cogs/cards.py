@@ -8,19 +8,140 @@ import typing
 from PIL import Image, ImageFont, ImageDraw
 import io
 import aiohttp
-from killua.functions import check
-from killua.classes import User, Card, CardLimitReached, CardNotFound
+import pathlib
+from killua.checks import check
+from killua.paginator import Paginator
+from killua.classes import User, Card, CardLimitReached, CardNotFound, Category
 from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES, teams, items, shop
 
 # I am NOT writing a detailed description of every function in here, just a brief description for functions in classes
 
-cached_cards = {}
 
 class Cards(commands.Cog):
 
     def __init__(self, client):
         self.client = client
         self.shop_update.start()
+        self.cached_cards = {}
+
+    # Contribution by DerUSBStick (Thank you!)
+    async def _imagefunction(self, data, restricted_slots, page:int):
+        background = await self._getbackground(0 if len(data) == 10 else 1)
+        if len(data) == 18 and restricted_slots:
+            background = await self._numbers(background, data, page)
+        background = await self._cards(background, data, 0 if len(data) == 10 else 1)
+        background = await self._setpage(background, page)
+        return background
+
+    async def _getbackground(self, types):
+        url = ['https://alekeagle.me/XdYUt-P8Xv.png', 'https://alekeagle.me/wp2mKvzvCD.png']
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get(url[types]) as res:
+                image_bytes = await res.read()
+                background = Image.open(io.BytesIO(image_bytes)).convert('RGB') 
+        return background
+
+    async def _getcard(self, url):
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get(url) as res:
+                image_bytes = await res.read()
+                image_card = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+                image_card = image_card.resize((80, 110), Image.ANTIALIAS)
+        await asyncio.sleep(0.3) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
+        return image_card
+
+    async def _setpage(self, image, page):
+        font = await self._getfont(20)
+        draw = ImageDraw.Draw(image)
+        draw.text((5, 385), f'{page*2-1}', (0,0,0), font=font)
+        draw.text((595, 385), f'{page*2}', (0,0,0), font=font)
+        return image
+
+    async def _getfont(self, size):
+        font = ImageFont.truetype(str(pathlib.Path(__file__).parent.parent) + "/font.ttf", size, encoding="unic") 
+        return font
+
+    async def _cards(self, image, data, option):
+
+        card_pos:list = [
+            [(113, 145),(320, 15),(418, 15),(516, 15),(320, 142),(418, 142),(516, 142),(320, 269),(418, 269),(516, 269)],
+            [(15,17),(112,17),(210,17),(15,144),(112,144),(210,144),(15,274),(112,274),(210,274),(320,13),(418,13),(516,13),(320,143),(418,143),(516,143),(320,273),(418,273),(516,273)]
+        ]
+        for n, i in enumerate(data): 
+            if i:
+                if i[1]:
+                    if not str(i[0]) in self.cached_cards: # Kile part (I wrote a small optimasation algorithm which avoids fetching the same card and just uses the same data)
+                        self.cached_cards[str(i[0])] = await self._getcard(i[1])
+
+                    image.paste(self.cached_cards[str(i[0])], (card_pos[option][n]))
+        return image
+
+    async def _numbers(self, image, data, page):
+        page -= 2
+        numbers_pos:list = [
+        [(35, 60),(138, 60),(230, 60),(35, 188),(138, 188),(230, 188),(36, 317),(134, 317),(232, 317),(338, 60),(436, 60),(536, 60),(338, 188),(436, 188),(536, 188),(338, 317),(436, 317),(536, 317)], 
+        [(30, 60),(132, 60),(224, 60),(34, 188),(131, 188),(227, 188),(32, 317),(130, 317),(228, 317),(338, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(533, 317)], 
+        [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(130, 317),(228, 317),(338, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(340, 317),(436, 317),(533, 317)], 
+        [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(133, 317),(228, 317),(338, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(535, 317)], 
+        [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(133, 317),(228, 317),(342, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(535, 317)], 
+        [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(133, 317),(228, 317),(342, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(535, 317)] 
+        ]
+
+        font = await self._getfont(35)
+        draw = ImageDraw.Draw(image)
+        for n, i in enumerate(data):
+            if i[1] is None:
+                draw.text(numbers_pos[page][n], f'0{i[0]}', (165,165,165), font=font)
+        return image
+
+    async def _get_book(self, user, page:int, just_fs_cards:bool=False):
+        rs_cards = list()
+        fs_cards = list()
+        person = User(user.id)
+        if just_fs_cards:
+            page += 6
+        
+        # Bringing the list in the right format for the image generator
+        if page < 7:
+            if page == 1:
+                i = 0
+            else:
+                i = 10+((page-2)*18) 
+                # By calculating where the list should start, I make the code faster because I don't need to
+                # make a list of all cards and I also don't need to deal with a problem I had when trying to get
+                # the right part out of the list. It also saves me lines! 
+            while not len(rs_cards) % 18 == 0 or len(rs_cards) == 0: 
+                # I killed my pc multiple times while testing, don't use while loops!
+                if not i in [x[0] for x in person.rs_cards]:
+                    rs_cards.append([i, None])
+                else:
+                    rs_cards.append([i, Card(i).image_url])
+                if page == 1 and len(rs_cards) == 10:
+                    break
+                i = i+1
+        else:
+            i = (page-7)*18 
+            while (len(fs_cards) % 18 == 0) == False or (len(fs_cards) == 0) == True: 
+                try:
+                    fs_cards.append([person.fs_cards[i][0], Card(person.fs_cards[i][0]).image_url])
+                except IndexError: 
+                    fs_cards.append(None)
+                i = i+1
+
+        image = await self._imagefunction(rs_cards if (page <= 6 and not just_fs_cards) else fs_cards, (page <= 6 and not just_fs_cards), page)
+
+        buffer = io.BytesIO()
+        image.save(buffer, "png") 
+        buffer.seek(0)
+
+        f = discord.File(buffer, filename="image.png")
+        embed = discord.Embed.from_dict({
+            'title': f'{user.display_name}\'s book',
+            'color': 0x2f3136, # making the boarder "invisible" (assuming there are no light mode users)
+            'image': {'url': 'attachment://image.png' },
+            'footer': {'text': ''}
+        })
+        return embed, f
         
     @tasks.loop(hours=6)
     async def shop_update(self):
@@ -63,25 +184,26 @@ class Cards(commands.Cog):
                 shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': None}})
 
     @check(3)
-    @commands.command()
-    async def book(self, ctx, page:int=None):
-        #h Allows you to take a look at your cards
-        #u book <page(optional)>
-        
-        if len(User(ctx.author.id).all_cards) == 0:
+    @commands.command(extras={"category":Category.CARDS}, usage="book <page(optional)>")
+    async def book(self, ctx, page:int=1):
+        """Allows you to take a look at your cards"""
+        user = User(ctx.author.id)
+
+        if len(user.all_cards) == 0:
             return await ctx.send('You don\'t have any cards yet!')
 
         if page:
             if page > 7+math.ceil(len(User(ctx.author.id).fs_cards)/18) or page < 1:
                 return await ctx.send(f'Please choose a page number between 1 and {6+math.ceil(len(User(ctx.author.id).fs_cards)/18)}')
 
-        return await paginator(self, ctx, 1 if not page else page, first_time=True)
+        async def make_embed(page, embed, pages):
+            return await self._get_book(ctx.author, page)
+        return await Paginator(ctx, page=page, func=make_embed, max_pages=6+math.ceil(len(user.fs_cards)/18), has_file=True).start()
 
     @check()
-    @commands.command(aliases=['store'])
+    @commands.command(aliases=['store'], extras={"category":Category.CARDS}, usage="shop")
     async def shop(self, ctx):
-        #h Shows the current cards for sale
-        #u shop
+        """Shows the current cards for sale"""
         
         sh = shop.find_one({'_id': 'daily_offers'})
         shop_items:list = sh['offers']
@@ -103,10 +225,9 @@ class Cards(commands.Cog):
         await ctx.send(embed=embed)
 
     @check(2)
-    @commands.command()
+    @commands.command(extras={"category":Category.CARDS}, usage="buy <card_id>")
     async def buy(self, ctx, item:int):
-        #h Buy a card from the shop with this command
-        #u buy <card_id>
+        """Buy a card from the shop with this command"""
         
         shop_data = shop.find_one({'_id': 'daily_offers'})
         shop_items = shop_data['offers']
@@ -148,10 +269,9 @@ class Cards(commands.Cog):
         return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!')
 
     @check(2)
-    @commands.command()
+    @commands.command(extras={"category":Category.CARDS}, usage="sell <card_id> <amount(optional)>")
     async def sell(self, ctx, item:int, amount=1):
-        #h Sell any amount of cards you own
-        #u sell <card_id> <amount(optional)>
+        """Sell any amount of cards you own"""
         
         user = User(ctx.author.id)
         if amount < 1:
@@ -190,10 +310,9 @@ class Cards(commands.Cog):
                 await ctx.send(f'Sucessfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {int((PRICES[card.rank]*amount)/10)} Jenny!')
 
     @check(20)
-    @commands.command()
+    @commands.command(extras={"category":Category.CARDS}, usage="swap <card_id>")
     async def swap(self, ctx, card_id:int):
-        #h Allows you to swap cards from your free slots with the restrcited slots and the other way around
-        #u swap <card_id>
+        """Allows you to swap cards from your free slots with the restrcited slots and the other way around"""
         
         user = User(ctx.author.id)
         if len(user.all_cards) == 0:
@@ -211,10 +330,9 @@ class Cards(commands.Cog):
         await ctx.send(f'Successfully swapped out card No. {card_id}')
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.CARDS}, usage="hunt <end/time(optional)>")
     async def hunt(self, ctx, end:str=None):
-        #h Go on a hunt! The longer you are on the hunt, the better the rewards!
-        #u hunt <end/time(optional)>
+        """Go on a hunt! The longer you are on the hunt, the better the rewards!"""
         
         user = User(ctx.author.id)
         has_effect, value = user.has_effect('hunting')
@@ -272,10 +390,9 @@ class Cards(commands.Cog):
         await ctx.send('You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get')
 
     @check(120)
-    @commands.command(aliases=['approach'])
+    @commands.command(aliases=['approach'], extras={"category":Category.CARDS}, usage="meet <user>")
     async def meet(self, ctx, user:discord.Member):
-        #h Meet a user who has recently send a message in this channel to enable certain spell card effects
-        #u meet <user>
+        """Meet a user who has recently send a message in this channel to enable certain spell card effects"""
 
         author = User(ctx.author.id)
         past_users = list()
@@ -303,10 +420,9 @@ class Cards(commands.Cog):
         return await ctx.send(f'Done {ctx.author.mention}! Successfully added `{user}` to the list of people you\'ve met', delete_after=5)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.ECONOMY}, usage="give <user> <type> <card_id/amount>")
     async def give(self, ctx, other:discord.Member, t:str, item:int):
-        #h If you're feeling generous give another user cards or jenny. Available types are jenny and card
-        #u give <user> <type> <card_id/amount>
+        """If you're feeling generous give another user cards or jenny. Available types are jenny and card"""
         
         if other == ctx.author:
             return await ctx.send('You can\'t give yourself anything!')
@@ -340,10 +456,9 @@ class Cards(commands.Cog):
             await ctx.send('You need to choose a valid type (`card`|`jenny`)')
             
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.CARDS}, usage="discard <card_id>")
     async def discard(self, ctx, card:int):
-        #h Discard a card you want to get rid of with this command
-        #u discard <card_id>
+        """Discard a card you want to get rid of with this command"""
         
         user = User(ctx.author.id)
         try:
@@ -375,15 +490,21 @@ class Cards(commands.Cog):
                 await ctx.send(f'Successfully thrown away card No. `{card.id}`')
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.CARDS}, usage="use <card_id> <required_arguments>")
     async def use(self, ctx, item: typing.Union[int,str], args: typing.Union[discord.Member, str, int]=None, add_args:int=None):
-        #h Use spell cards you own with this command! Focus on offense or defense, team up with your friends or steal their cards in their sleep!
-        #u use <card_id> <required_arguments>
+        """Use spell cards you own with this command! Focus on offense or defense, team up with your friends or steal their cards in their sleep!"""
         
         if isinstance(item, str):
             if not item.lower() == 'booklet':
                 return await ctx.send('Either use a spell card with this command or the booklet')
-            return await book_paginator(self, ctx, 1, first_time=True)
+
+            def make_embed(page, embed, pages):
+                embed.title = "Introduction booklet"
+                embed.description = pages[page-1]
+                embed.set_image(url="https://cdn.discordapp.com/attachments/759863805567565925/834794115148546058/image0.jpg")
+                return embed
+
+            return await Paginator(ctx, BOOK_PAGES, func=make_embed).start()
 
         if not item in [x[0] for x in User(ctx.author.id).fs_cards] and not item in [1036]:
             return await ctx.send('You are not in possesion of this card!')
@@ -444,10 +565,10 @@ class Cards(commands.Cog):
             return await ctx.send('You can only use this card in response to an attack!')
         await ctx.send('Invalid card!')
 
-    @commands.command()
+    @commands.is_owner()
+    @commands.command(extras={"category":Category.CARDS}, usage="gain <type> <card_id/amount>")
     async def gain(self, ctx, t:str, item:str):
-        #h An owner restricted command allowing the user to obtain any card or amount of jenny
-        #u gain <type> <card_id/amount>
+        """An owner restricted command allowing the user to obtain any card or amount of jenny"""
         if not ctx.author.id == 606162661184372736:
             return
         user = User(ctx.author.id)
@@ -714,8 +835,10 @@ async def card_1015(self, ctx, member:discord.Member):
 
     if len(User(member.id).all_cards) == 0:
         return await ctx.send('This user does not have any cards! ("Clairvoyance" will get used up anyways)')
+    async def make_embed(page, embed, pages):
+        return await self._get_book(member, page)
 
-    return await paginator(self, ctx, 1, first_time=True, user=member) 
+    return await Paginator(ctx, max_pages=6+math.ceil(len(User(member.id).fs_cards)/18), func=make_embed, has_file=True).start()
 
 async def card_1011(self, ctx, member:discord.Member):
     if not isinstance(member, discord.Member):
@@ -824,8 +947,10 @@ async def card_1002(self, ctx, member:discord.Member):
 
     if (await check_view_defense(self, ctx, member, 1002)) is True:
         return
+    async def make_embed(page, embed, pages):
+        return await self._get_book(member, page)
 
-    return await paginator(self, ctx, 1, first_time=True, only_display='rs', user=member)    
+    return await Paginator(ctx, max_pages=6, func=make_embed, has_file=True).start()
 
 async def card_1001(self, ctx, member:discord.Member):
     if not isinstance(member, discord.Member):
@@ -847,55 +972,10 @@ async def card_1001(self, ctx, member:discord.Member):
     if len(User(member.id).fs_cards) == 0:
         return await ctx.send('This user does not have any cards in their free slots! (this info used up card 1001)')
 
-    return await paginator(self, ctx, 7, first_time=True, only_display='fs', user=member)  
+    async def make_embed(page, embed, pages):
+        return await self._get_book(member, page, True)
 
-async def book_paginator(self, ctx, page, msg:discord.Message=None, first_time=False):
-    
-    embed = discord.Embed.from_dict({
-        'title': 'Introduction booklet',
-        'description': BOOK_PAGES[page-1],
-        'color': 0x1400ff,
-        'image': {'url': 'https://cdn.discordapp.com/attachments/759863805567565925/834794115148546058/image0.jpg'},
-        'footer': {'text': f'Page {page}/{len(BOOK_PAGES)}'}
-    })
-
-    if first_time is False:
-        await msg.edit(embed=embed)
-    else:
-        msg = await ctx.send(embed=embed)
-        #arrow backwards
-        await msg.add_reaction('\U000025c0')
-        #arrow forwards
-        await msg.add_reaction('\U000025b6')
-
-    def check(reaction, user):
-        #Checking if everything is right, the bot's reaction does not count
-        return user == ctx.author and reaction.message.id == msg.id and user != ctx.me and(reaction.emoji == '\U000025b6' or reaction.emoji == '\U000025c0')
-    try:
-        reaction, user = await self.client.wait_for('reaction_add', timeout=120, check=check)
-    except asyncio.TimeoutError:
-        try:
-            await msg.remove_reaction('\U000025c0', ctx.me)
-            await msg.remove_reaction('\U000025b6', ctx.me)
-            return
-        except discord.HTTPException:
-            pass
-    else:
-        if reaction.emoji == '\U000025b6':
-            await msg.remove_reaction('\U000025b6', ctx.author)
-            #forward emoji
-            if page == len(BOOK_PAGES):
-                return await book_paginator(self, ctx, 1, msg)
-            else:
-                return await book_paginator(self, ctx, page+1, msg)
-
-        if reaction.emoji == '\U000025c0':
-            await msg.remove_reaction('\U000025c0', ctx.author)
-            #backwards emoji
-            if page == 1:
-                return await book_paginator(self, ctx, len(BOOK_PAGES), msg)
-            else:
-                return await book_paginator(self, ctx, page-1, msg)
+    return await Paginator(ctx, max_pages=math.ceil(len(User(member.id).fs_cards)/18), func=make_embed, has_file=True).start()  
 
 async def check_defense(self, ctx, attacked_user:discord.Member, attack_spell:int, target_card:int): #This function will alow the user to defend themselfes if they have protection spells
     user = User(attacked_user.id)
@@ -1140,76 +1220,6 @@ async def paginator(self, ctx, page:int, msg:discord.Message=None, first_time=Fa
                 if only_display == 'fs' and page == 7:
                     return await paginator(self, ctx, max_pages, msg, only_display='fs', user=user)
                 return await paginator(self, ctx, page-1, msg, only_display=only_display, user=user)
-
-# Contribution by DerUSBStick (Thank you!)
-async def imagefunction(data, restricted_slots, page:int):
-    background = await getbackground(0 if len(data) == 10 else 1)
-    if len(data) == 18 and restricted_slots:
-        background = await numbers(background, data, page)
-    background = await cards(background, data, 0 if len(data) == 10 else 1)
-    background = await setpage(background, page)
-    return background
-
-async def getbackground(types):
-    url = ['https://alekeagle.me/XdYUt-P8Xv.png', 'https://alekeagle.me/wp2mKvzvCD.png']
-    async with aiohttp.ClientSession() as cs:
-        async with cs.get(url[types]) as res:
-            image_bytes = await res.read()
-            background = Image.open(io.BytesIO(image_bytes)).convert('RGB') 
-    return background
-
-async def getcard(url):
-    async with aiohttp.ClientSession() as cs:
-        async with cs.get(url) as res:
-            image_bytes = await res.read()
-            image_card = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-            image_card = image_card.resize((80, 110), Image.ANTIALIAS)
-    await asyncio.sleep(0.3) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
-    return image_card
-
-async def setpage(image, page):
-    font = await getfont(20)
-    draw = ImageDraw.Draw(image)
-    draw.text((5, 385), f'{page*2-1}', (0,0,0), font=font)
-    draw.text((595, 385), f'{page*2}', (0,0,0), font=font)
-    return image
-
-async def getfont(size):
-    font = ImageFont.truetype('/home/bot/Killua/killua/font.ttf', size, encoding="unic") 
-    return font
-
-async def cards(image, data, option):
-
-    card_pos:list = [
-        [(113, 145),(320, 15),(418, 15),(516, 15),(320, 142),(418, 142),(516, 142),(320, 269),(418, 269),(516, 269)],
-        [(15,17),(112,17),(210,17),(15,144),(112,144),(210,144),(15,274),(112,274),(210,274),(320,13),(418,13),(516,13),(320,143),(418,143),(516,143),(320,273),(418,273),(516,273)]
-    ]
-    for n, i in enumerate(data): 
-        if i:
-            if i[1]:
-                if not str(i[0]) in cached_cards: # Kile part (I wrote a small optimasation algorithm which avoids fetching the same card and just uses the same data)
-                    cached_cards[str(i[0])] = await getcard(i[1])
-
-                image.paste(cached_cards[str(i[0])], (card_pos[option][n]))
-    return image
-
-async def numbers(image, data, page):
-    page -= 2
-    numbers_pos:list = [
-      [(35, 60),(138, 60),(230, 60),(35, 188),(138, 188),(230, 188),(36, 317),(134, 317),(232, 317),(338, 60),(436, 60),(536, 60),(338, 188),(436, 188),(536, 188),(338, 317),(436, 317),(536, 317)], 
-      [(30, 60),(132, 60),(224, 60),(34, 188),(131, 188),(227, 188),(32, 317),(130, 317),(228, 317),(338, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(533, 317)], 
-      [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(130, 317),(228, 317),(338, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(340, 317),(436, 317),(533, 317)], 
-      [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(133, 317),(228, 317),(338, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(535, 317)], 
-      [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(133, 317),(228, 317),(342, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(535, 317)], 
-      [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(133, 317),(228, 317),(342, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(535, 317)] 
-      ]
-
-    font = await getfont(35)
-    draw = ImageDraw.Draw(image)
-    for n, i in enumerate(data):
-        if i[1] is None:
-            draw.text(numbers_pos[page][n], f'0{i[0]}', (165,165,165), font=font)
-    return image
 
 Cog = Cards
 
