@@ -2,8 +2,8 @@ import discord
 from discord.ext import commands
 import random
 import asyncio
-from killua.functions import blcheck, check
-from killua.classes import User
+from killua.checks import blcheck, check
+from killua.classes import User, Category
 from killua.constants import teams
 
 class Rps(commands.Cog):
@@ -209,7 +209,7 @@ class Rps(commands.Cog):
             await ctx.send(f'{other.name} does not want to play...')
 
     @check(60)
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="rps <user> <points(optional)>")
     async def rps(self, ctx, member: discord.Member, points: int=None):
         #h Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun.
         #u rps <user> <points(optional)

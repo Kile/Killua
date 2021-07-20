@@ -2,7 +2,8 @@ import discord
 import asyncio
 from discord.utils import find
 from discord.ext import commands
-from killua.functions import check
+from killua.checks import check
+from killua.classes import Category, Guild
 import typing
 
 class Moderation(commands.Cog):
@@ -25,12 +26,11 @@ class Moderation(commands.Cog):
         return None
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.MODERATION}, usage="ban <user> <reason>")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx, member: typing.Union[discord.Member, int], *,reason=None):
-        #h What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason
-        #u ban <user> <reason>
+        """What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason"""
     
         if isinstance(member, int):
             try:
@@ -53,13 +53,11 @@ class Moderation(commands.Cog):
    
     
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.MODERATION}, usage="unban <user>")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     async def unban(self, ctx, *, member:typing.Union[str, int]):
-        #t 1 hour
-        #h Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work :3
-        #u unban <user>
+        """Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work"""
         banned_users = await ctx.guild.bans()
     
         if isinstance(member, int):
@@ -91,13 +89,12 @@ class Moderation(commands.Cog):
                     return await ctx.send('User is not currently banned')
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.MODERATION}, usage="kick <user> <reason>")
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *,reason=None):
+        """What you would expect of a kick command, kicks a user, optional reason"""
 
-        #h What you would expect of a kick command, kicks a user, optional reason
-        #u kick <user> <reason>
         r = await self.check_perms(ctx, member)
         if r:
             return
@@ -110,13 +107,11 @@ class Moderation(commands.Cog):
         await ctx.send(f':hammer: Kicked **{member}** because of: ```\n{reason or "No reason provided"}```Operating moderator: **{ctx.author}**')
         
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.MODERATION}, usage="mute <time/u> <reason>")
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def mute(self, ctx, member: discord.Member, timem=None, *,reason=None):
-
-        #h Mutes a user for the specified duration or unlimited. Requirements: You need to have a role named `muted` (Case insensitve) set up already (Deny this role permission to send messages in every channel)
-        #u mute <user> <time/u> <reason> 
+        """Mutes a user for the specified duration or unlimited. Requirements: You need to have a role named `muted` (Case insensitve) set up already (Deny this role permission to send messages in every channel)"""
 
         r = await self.check_perms(ctx, member)
         if r:
@@ -177,11 +172,10 @@ class Moderation(commands.Cog):
             await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')    
         
     @check()                  
-    @commands.command()
+    @commands.command(extras={"category":Category.MODERATION}, usage="unmute <user> <reason(optional)>")
     async def unmute(self, ctx, member: discord.Member, *, reason=None):
+        """Unmutes a user if they have a `muted` (case insensitve) role"""
 
-        #h Unmutes a user if they have a `muted` (case insensitve) role
-        #u unmute <user> <reason(optional)>
         r = await self.check_perms(ctx, member)
         if r:
             return
@@ -203,6 +197,22 @@ class Moderation(commands.Cog):
         except discord.HTTPException:
             pass
         return await ctx.send(f':lips: Unmuted **{member}** Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
+
+    @check()
+    @commands.command(extras={"category":Category.MODERATION}, usage="prefix <new_prefix(optional)>")
+    async def prefix(self, ctx, pref:str=None):
+        """Change killua's prefix with this command. If you forgot your prefix, mentioning is always a prefix as well"""
+
+        guild = Guild(ctx.guild.id)
+
+        if ctx.author.guild_permissions.administrator and pref:
+            guild.change_prefix(pref)
+            return await ctx.send(f'Successfully changed server prefix to `{pref}`!')
+
+        elif ctx.author.guild_permissions.administrator is False and pref:
+            return await ctx.send('You need `administrator` permissions to change the server prefix!')
+
+        await ctx.send(f'The current server prefix is `{guild.prefix}`')
 
 
 Cog = Moderation        

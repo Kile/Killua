@@ -76,7 +76,9 @@ USER_FLAGS = {
     "team_user": "Contact Kile#0606", # I do not know what that flag means
     "system": "system", # don't have an emoji for that but also don't want a KeyError
     "verified_bot": "<:verifiedBot:788508495846047765>",
-    "verified_bot_developer": "<:EarlyBotDev:788508428779388940>"
+    "verified_bot_developer": "<:EarlyBotDev:788508428779388940>",
+    "discord_certified_moderator": "<:CertifiedModerator:866841508812292096>",
+    "nitro": "<:Nitro:866841996114657280>"
 }
 
 KILLUA_BADGES = {

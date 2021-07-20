@@ -3,8 +3,9 @@ from discord.ext import commands
 import aiohttp
 import random
 import asyncio
-from killua.functions import check
+from killua.checks import check
 from killua.constants import ACTIONS
+from killua.classes import Category
 
 class Actions(commands.Cog):
 
@@ -86,38 +87,33 @@ class Actions(commands.Cog):
             return await ctx.send(embed=embed)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category": Category.ACTIONS}, usage="hug <user>")
     async def hug(self, ctx, members: commands.Greedy[discord.Member]=None):
-        #h Hug a user with this command
-        #u hug <user>
+        """Hug a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.ACTIONS}, usage="pat <user>")
     async def pat(self, ctx, members: commands.Greedy[discord.Member]=None):
-        #h Pat a user with this command
-        #u pat <user>
+        """Pat a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.ACTIONS}, usage="poke <user>")
     async def poke(self, ctx, members: commands.Greedy[discord.Member]=None):
-        #h Poke a user with this command
-        #u poke <user>
+        """Poke a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.ACTIONS}, usage="tickle <usage>")
     async def tickle(self, ctx, members: commands.Greedy[discord.Member]=None):
-        #h Tickle a user wi- ha- hahaha- stop- haha
-        #u tickle <user>
+        """Tickle a user wi- ha- hahaha- stop- haha"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.ACTIONS}, usage="slap <user>")
     async def slap(self, ctx, members: commands.Greedy[discord.Member]=None):
-        #h Slap a user with this command
-        #u slap <user>
+        """Slap a user with this command"""
         return await self.do_action(ctx, members)
 
 Cog = Actions

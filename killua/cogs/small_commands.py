@@ -9,8 +9,9 @@ import typing
 import aiohttp
 import json
 from deep_translator import GoogleTranslator, MyMemoryTranslator
-from killua.functions import check, check
+from killua.checks import check
 from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams
+from killua.classes import Category
 
 class SmallCommands(commands.Cog):
 
@@ -30,7 +31,7 @@ class SmallCommands(commands.Cog):
         #constructing the avatar embed
         embed = discord.Embed.from_dict({
             'title': f'Avatar of {user}',
-            'image': {'url': str(user.avatar_url_as(static_format='png'))},
+            'image': {'url': str(user.avatar.replace(format='png'))},
             'color': 0x1400ff
         })
         return embed
@@ -61,7 +62,7 @@ class SmallCommands(commands.Cog):
         nt = []
         for p, w in enumerate(text.split(' ')):
             if p % 2 == 0:
-                if int(len(text.split(' '))*(randint(1, 5)/10))*stuttering*2 < len(text.split(' ')) and len(w) > 2:
+                if int(len(text.split(' '))*(randint(1, 5)/10))*stuttering*2 < len(text.split(' ')) and len(w) > 2 and w[0] != "\n":
                     nt.append(w[:1]+'-'+w)
                     continue
             nt.append(w)
@@ -87,54 +88,48 @@ class SmallCommands(commands.Cog):
         return cuteified_text
 
     @check()
-    @commands.command(aliases=['uwu', 'owo', 'owofy'])
+    @commands.command(aliases=['uwu', 'owo', 'owofy'], extras={"category":Category.FUN}, usage="uwufy <text>")
     async def uwufy(self, ctx, *, content:str):
-        #h Uwufy any sentence you want with dis command, have fun >_<
-        #u uwu <text>
+        """Uwufy any sentence you want with dis command, have fun >_<"""
         return await ctx.send(self.build_uwufy(content, stuttering=3, cuteness=3))
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="ping")
     async def ping(self, ctx):
-        #h Standart of seeing if the bot is working
-        #u ping
+        """Standart of seeing if the bot is working"""
         start = time.time()
         msg = await ctx.send('Pong!')
         end = time.time()
         await msg.edit(content = str('Pong in `' + str(1000 * (end - start))) + '` ms')
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="topic")
     async def topic(self, ctx):
-        #h From a constatnly updating list of topics to talk about one is chosen here
-        #u topic
+        """From a constatnly updating list of topics to talk about one is chosen here"""
         await ctx.send(random.choice(TOPICS))
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="hi")
     async def hi(self, ctx):
-        #h This is just here because it was Killua's first command and I can't take that from him :3
-        #u hi
+        """This is just here because it was Killua's first command and I can't take that from him"""
         await ctx.send("Hello " + str(ctx.author))
 
     @check()
-    @commands.command(aliases=['8ball'])
+    @commands.command(aliases=['8ball'], extras={"category":Category.FUN}, usage="8ball <question>")
     async def ball(self, ctx, *, question:str):
-        #h Ask Killua anything and he will answer
-        #u 8ball <question>
+        """Ask Killua anything and he will answer"""
         embed = discord.Embed.from_dict({
             'title': f'8ball has spoken 🎱',
             'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n```\n{random.choice(ANSWERS)}```',
-            'footer': {'icon_url': str(ctx.author.avatar_url), 'text': f'Asked by {ctx.author}'},
+            'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Asked by {ctx.author}'},
             'color': 0x1400ff
         })
         await ctx.send(embed=embed)
 
     @check()
-    @commands.command(aliases=['av', 'a'])
+    @commands.command(aliases=['av', 'a'], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
     async def avatar(self, ctx, user: typing.Union[discord.Member, int]=None):
-        #h Shows the avatar of a user
-        #u avatar <user(optional)>
+        """Shows the avatar of a user"""
         if not user:
             embed = self.av(ctx.author)
             return await ctx.send(embed=embed)
@@ -152,10 +147,9 @@ class SmallCommands(commands.Cog):
             return await ctx.send('Invalid user')
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="patreon")
     async def patreon(self, ctx):
-        #h Get infos about my Patreon and feel free to donate for some perks!
-        #u patreon
+        """Get infos about my Patreon and feel free to donate for some perks!"""
         embed = discord.Embed.from_dict({
             'title': '**Support Killua**',
             'thumbnail':{'url': 'https://cdn.discordapp.com/avatars/758031913788375090/e44c0de4678c544e051be22e74bc502d.png?size=1024'},
@@ -165,10 +159,9 @@ class SmallCommands(commands.Cog):
         await ctx.send(embed=embed)
 
     @check()
-    @commands.command(aliases=['stats'])
+    @commands.command(aliases=['stats'], extras={"category":Category.FUN}, usage="info")
     async def info(self, ctx):
-        #h Gives you some infos and stats about Killua
-        #u info
+        """Gives you some infos and stats about Killua"""
         now = datetime.now()
         diff = now - self.client.startup_datetime
         t = f'{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds'
@@ -176,15 +169,14 @@ class SmallCommands(commands.Cog):
             'title': f'Infos about {ctx.me.name}',
             'description': f'This is Killua, a bot designed to be a fun multipurpose bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua\'s status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n**__Bot stats__**\n__Bot uptime:__ `{t}`\n__Bot users:__ `{len(self.client.users)}`\n__Bot guilds:__ `{len(self.client.guilds)}`\n__Registered users:__ `{teams.count_documents({})}`\n__Bot commands:__ `{len(self.client.commands)}`\n__Owner id:__ `606162661184372736`\n__Latency:__ `{int(self.client.latency*100)}` ms',
             'color': 0x1400ff,
-            'thumbnail': {'url': str(ctx.me.avatar_url)}
+            'thumbnail': {'url': str(ctx.me.avatar.url)}
         })
         await ctx.send(embed=embed)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="invite")
     async def invite(self, ctx):
-        #h Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**
-        #u invite
+        """Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**"""
         embed = discord.Embed(
             title = 'Invite',
             description = 'Invite the bot to your server [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414). Thank you a lot for supporting me!',
@@ -193,17 +185,16 @@ class SmallCommands(commands.Cog):
         await ctx.send(embed=embed) 
 
     @check()
-    @commands.command()
+    @commands.command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
     async def permissions(self, ctx):
-        #h Displays the permissions Killua has and has not, useful for checking if Killua has the permissions he needs
-        #u permissions
+        """Displays the permissions Killua has and has not, useful for checking if Killua has the permissions he needs"""
         permissions = '\n'.join([f"{v} {n}" for n, v in ctx.me.guild_permissions])
         prettier = permissions.replace('_', ' ').replace('True', '<:CheckMark:771754620673982484>').replace('False', '<:x_:771754157623214080>')
         embed = discord.Embed.from_dict({
             'title': 'Bot permissions',
             'description': prettier,
             'color': 0x1400ff,
-            'thumbnail': {'url': str(ctx.me.avatar_url)}
+            'thumbnail': {'url': str(ctx.me.avatar.url)}
         })
         try:
             await ctx.send(embed=embed)
@@ -211,17 +202,15 @@ class SmallCommands(commands.Cog):
             await ctx.send('__Bot permissions__\n\n'+prettier)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="vote")
     async def vote(self, ctx):
-        #u vote
-        #h Gived you the links you need if you want to support Killua by voting
+        """Gived you the links you need if you want to support Killua by voting, you will get sone Jenny as a reward"""
         await ctx.send('Thanks for supporting Killua! Vote for him here: https://top.gg/bot/756206646396452975/vote \nAnd here: https://discordbotlist.com/bots/killua/upvote')
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
     async def translate(self, ctx, source:str, target:str, *,args:str):
-        #h Translate anything to 20+ languages with this command! 
-        #u translate <source_lang> <target_lang> <text>
+        """Translate anything to 20+ languages with this command!"""
 
         embed = discord.Embed.from_dict({ 'title': f'Translation',
             'description': f'```\n{args}```\n`{source}` -> `{target}`\n',
@@ -245,10 +234,9 @@ class SmallCommands(commands.Cog):
         await ctx.send(embed=embed)
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="calc <math>")
     async def calc(self, ctx, *,args=None):
-        #h Calculates any equasion you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)
-        #u calc <text>
+        """Calculates any equasion you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)"""
         if not args:
             return await ctx.send("Please give me something to evaluate.\n")
         exprs = str(args).split('\n')
@@ -264,46 +252,14 @@ class SmallCommands(commands.Cog):
         await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
     @check()
-    @commands.command()
+    @commands.command(extras={"category":Category.FUN}, usage="usage")
     async def usage(self, ctx):
-        #h Shows the commands used the most. Added for fun and out of interest
-        #u usage
+        """Shows the commands used the most. Added for fun and out of interest"""
         s = stats.find_one({'_id': 'commands'})['command_usage']
         top = sorted(s.items(), key=lambda x: x[1], reverse=True)[:20]
         prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])
         return await ctx.send("```\n"+prettier+"\n```")
 
-    # I see many errors "command fun not found". A lot of people don't understand they have to use k!help fun and not k!fun for those commands. 
-    # That's why I decided to add helpful messages in case someone does that
-    @check()
-    @commands.command()
-    async def fun(self, ctx):
-        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
-
-    @check()
-    @commands.command()
-    async def moderation(self, ctx):
-        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
-
-    @check()
-    @commands.command()
-    async def actions(self, ctx):
-        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
-
-    @check()
-    @commands.command()
-    async def economy(self, ctx):
-        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
-
-    @check()
-    @commands.command()
-    async def cards(self, ctx):
-        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
-
-    @check()
-    @commands.command()
-    async def other(self, ctx):
-        await ctx.send(f"I think you mean `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`")
 
 Cog = SmallCommands
 
