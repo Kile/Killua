@@ -79,10 +79,8 @@ class Buttons(View):
             embed = (self.func(self.page, self.embed, self.pages)) if not iscoroutinefunction(self.func) else (await self.func(self.page, self.embed, self.pages))
         else:
             self.embed.description = str(self.pages[self.page-1])
-            embed = self.embed # kinda hacky ngl, but else self.embed has a footer if the function does not create its own embed it will get stuck on Page 1/x
-        if not embed.footer:
-            embed.set_footer(text= f"Page {self.page}/{self.max_pages}")
-        self.embed = embed
+        if not embed.footer or embed.footer.text.startswith("Page"):
+            self.embed.set_footer(text= f"Page {self.page}/{self.max_pages}")
 
     async def _handle_file(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
