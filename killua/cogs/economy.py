@@ -98,7 +98,7 @@ class Economy(commands.Cog):
         await ctx.send(embed=embed)
 
     @check()
-    @commands.command(extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
+    @commands.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
     async def profile(self, ctx,user: typing.Union[discord.Member, int]=None):
         """Get infos about a certain discord user with ID or mention"""
         if user is None:

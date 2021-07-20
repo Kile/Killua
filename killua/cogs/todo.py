@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands
 from killua.checks import check, blcheck
 import asyncio
-import typing
-from random import randint
 from datetime import datetime
 import re
 import math
@@ -817,7 +815,7 @@ Buy 10 more spots for todos for your list''',
 
     @check(20)
     @todo.command(extras={"category":Category.TODO}, usage="todo kick <user>")
-    async def kick(self, ctx, user: typing.Union[discord.User, int]):
+    async def kick(self, ctx, user: Union[discord.User, int]):
         """Kick someone with permissions from your todo list (this takes **every** permission) (Only in editor mode)"""
         try:
             list_id = editing[ctx.author.id]
@@ -859,7 +857,7 @@ Buy 10 more spots for todos for your list''',
 
     @check(20)
     @todo.command(extras={"category":Category.TODO}, usage="todo invite <user> <editor/viewer>")
-    async def invite(self, ctx, user: typing.Union[discord.User, int], role):
+    async def invite(self, ctx, user: Union[discord.User, int], role):
         """Wanna let your friend add more todos for you? Invite them! You can also make people view your todo list when it is set on private (Only in editor mode)"""
         try:
             list_id = editing[ctx.author.id]
@@ -931,7 +929,7 @@ Buy 10 more spots for todos for your list''',
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="todo assign <task_id> <user>")
-    async def assign(self, ctx, todo_number:int, user: typing.Union[discord.User, int], rm=None):
+    async def assign(self, ctx, todo_number:int, user: Union[discord.User, int], rm=None):
         """Assign someone a todo task with this to coordinate who does what (Only in editor mode)"""
         try:
             list_id = editing[ctx.author.id]

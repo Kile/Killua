@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-import aiohttp
 import random
 import asyncio
 from killua.checks import check

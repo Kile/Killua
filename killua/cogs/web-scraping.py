@@ -1,9 +1,7 @@
 import discord
 from discord.ext import commands
 from killua.checks import check
-import requests
 from bs4 import BeautifulSoup
-import asyncio
 from killua.classes import Category
 from killua.paginator import Paginator
 
@@ -15,7 +13,7 @@ class WebScraping(commands.Cog):
     def _has_results(self, page) -> bool:
         """Checks if there are any results before activating the paginator"""
         try:
-            bookNr = page.find_all('div', class_="u-anchorTarget")[0].attrs['id']
+            page.find_all('div', class_="u-anchorTarget")[0].attrs['id']
             #If there are no results this will raise an error, in that case Killua will say so
         except Exception as e: 
             return False

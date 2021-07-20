@@ -1,7 +1,5 @@
 from __future__ import annotations
 from datetime import datetime
-from pymongo import MongoClient
-import json
 import random
 from enum import Enum
 from .constants import FREE_SLOTS, teams, items, guilds, todo

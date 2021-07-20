@@ -42,7 +42,7 @@
 
 ## Details
 
-Hello and thanks for checking out Killua's source code! I have been working on Killua for months and I learned Python by programming him. He is frequently updated with a team of 4 developers, each doing their part. 
+Hello and thanks for checking out Killua's source code! I have been working on Killua for months and I learned Python by programming him. He is frequently updated with a team of developers, each doing their part. 
 
 Website: https://killua.dev
 
@@ -52,7 +52,9 @@ Feel free to add issues or PRs, I would really appreciate it
 
 ## What you need to run Killua locally
 
-`requirements.txt` contains the libraries you'll need and probably a few more, I was just too lazy to delete the ones I don't use. To install the libraries use `pip3 install -r requirements.txt`
+First, set up a virtual environment. Do so with `python3 -m venv env; source env/bin/activate`. To leave the virtual environment after you are done, simply run `deactivate`
+
+`requirements.txt` contains the libraries you'll need and probably a few more. To install the libraries use `pip3 install -r requirements.txt`
 
 You will need a mongodb account. Why do I use mongodb and not sql? In my opinion mongo is easier to use and you can manually add and remove data
 
@@ -81,7 +83,11 @@ You will also need a file named `config.json` having the layout like this:
   "token": "your_bots_token",
   "mongodb": "your_mongodb_connection_details",
   "pxlapi": "your_pxlapi_api_key",
-  "dbl": "your_dbl_bot_token"
+  "dbl": {
+    "token": "your_dbl_token",
+    "password": "your_webhook_password",
+    "port": "your_open_port"
+  }
 }
 ```
 

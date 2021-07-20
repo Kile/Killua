@@ -93,7 +93,7 @@ class MyHelp(commands.HelpCommand):
         embed.add_field(name="** **", value="\nFor more info to a specific command,, use ```css\nhelp <command_name>```\n[Support server](https://discord.gg/be4nvwq7rZ)\n[Source code](https://github.com/kile/killua)\n[Website](https://killua.dev)", inline=False)
         view = View(user_id=ctx.author.id, timeout=None)
         view.add_item(Select([discord.SelectOption(label=k.value['name'], value=str(i), emoji=k.value['emoji']['unicode']) for i, k in enumerate(commands.keys())]))
-        msg = await self.send(embed=embed, view=view)
+        msg = await self.send(embed=embed, view=view, reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 
         try:
             await asyncio.wait_for(view.wait(), timeout=100)

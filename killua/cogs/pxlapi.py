@@ -3,9 +3,7 @@ from discord.ext import commands
 import json
 from killua.checks import check
 import typing
-import asyncio
 import re
-import datetime
 from killua.classes import Category
 from killua.constants import CODE
 from pypxl import PxlClient # My own library :sparkles:

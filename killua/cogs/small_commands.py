@@ -2,11 +2,9 @@ import discord
 from discord.ext import commands
 import time
 from datetime import datetime, timedelta
-import random
 from random import randint, choice
 import math
 import typing
-import aiohttp
 import json
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 from killua.checks import check
@@ -106,7 +104,7 @@ class SmallCommands(commands.Cog):
     @commands.command(extras={"category":Category.FUN}, usage="topic")
     async def topic(self, ctx):
         """From a constatnly updating list of topics to talk about one is chosen here"""
-        await ctx.send(random.choice(TOPICS))
+        await ctx.send(choice(TOPICS))
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="hi")
@@ -120,7 +118,7 @@ class SmallCommands(commands.Cog):
         """Ask Killua anything and he will answer"""
         embed = discord.Embed.from_dict({
             'title': f'8ball has spoken 🎱',
-            'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n```\n{random.choice(ANSWERS)}```',
+            'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n```\n{choice(ANSWERS)}```',
             'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Asked by {ctx.author}'},
             'color': 0x1400ff
         })

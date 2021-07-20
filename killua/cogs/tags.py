@@ -1,6 +1,5 @@
 import discord 
 from discord.ext import commands
-from pymongo import MongoClient
 from datetime import datetime
 import math
 import asyncio
@@ -81,7 +80,6 @@ class Tags(commands.Cog):
         self.client = client
 
     def _build_embed(self, ctx:commands.Context, content:list, page:int, user:discord.User=None) -> discord.Embed:
-        max_pages = math.ceil(len(content)/10)
 
         if len(content)-page*10+10 > 10:
             final_tags = content[page*10-10:-(len(content)-page*10)]

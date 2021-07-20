@@ -1,8 +1,6 @@
 from discord.ext import commands
 import discord
-import json
 from datetime import datetime, timedelta
-from pymongo import MongoClient
 import re
 from killua.checks import check, p
 from killua.cogs.cards import Card, User, Category#lgtm [py/unused-import]

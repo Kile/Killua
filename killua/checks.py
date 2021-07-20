@@ -1,7 +1,5 @@
 import discord
 from discord.ext import commands
-from pymongo import MongoClient
-import json
 from .constants import blacklist
 
 cooldowndic = {}

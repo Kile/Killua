@@ -98,7 +98,6 @@ class Cards(commands.Cog):
         rs_cards = list()
         fs_cards = list()
         person = User(user.id)
-        max_pages = 6+math.ceil(len(person.fs_cards)/18)
         if just_fs_cards:
             page += 6
         
