@@ -209,7 +209,5 @@ class Paginator:
         await asyncio.wait_for(self.view.wait(), timeout=None)
         if self.view.ignore: # This is True when the message has been deleted/should not get their buttons disabled
             return
-        try:
-            await self.view.message.edit(view=Disabled())
-        except discord.NotFound: # This is a library bug atm. It will raise a NotFound even though the message was edited
-            pass
+            
+        await self.view.message.edit(view=Disabled())

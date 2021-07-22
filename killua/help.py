@@ -12,13 +12,6 @@ class CommandEmbed(discord.Embed):
         self.color = 0x1400ff
         self.timestamp = datetime.datetime.utcnow()
 
-class DefaultEmbed(discord.Embed):
-    """The default embed to use if no embed is provided"""
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.color = 0x1400ff
-        self.timestamp = datetime.datetime.utcnow()
-
 class HelpEmbed(discord.Embed):
     def __init__(self, av:str, **kwargs):
         super().__init__(**kwargs)
