@@ -19,6 +19,25 @@ presence = GDB['presence']
 todo = GDB['todo']
 updates = GDB['updates']
 
+PATREON_TIERS = {
+    "6002629": {
+        "name": "one_star_hunter",
+        "id": 1
+    },
+    "6002630": {        
+        "name": "two_star_hunter",
+        "id": 2
+    },
+    "6002631": {
+        "name": "triple_star_hunter",
+        "id": 3
+    },
+    "6563669": {
+        "name": "triple_star_hunter", # This tier gives the same benefits as triple star hunter
+        "id": 4
+    }
+}
+
 # TOPICS
 TOPICS = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?', 'What motivates you?', 'What is the best thing about school/work?', 'What\'s better, having high expectations or having low expectations?', 'What was the last movie you saw?', 'Have you read anything good recently?', 'What is your favorite day of the year?', 'What kind of music do you like to listen to?', 'What things are you passionate about?', 'What is your favorite childhood memory?', 'If you could acquire any skill, what would you choose?', 'What is the first thing that you think of in the morning?', 'What was the biggest life change you have gone through?', 'What is your favorite song of all time?', 'If you won $1 million playing the lottery, what would you do?', 'How would you know if you were in love?', 'If you could choose to have any useless super power, what would you pick?',
 'Who is your role model?', 'What\'s the best food you have ever eaten?', 'What accomplishment are you most proud of?', 'Would you rather be the most popular kid in school or the smartest kid in school?', 'Do you prefer to cook or order take out?', 'What is your dream job?', 'What\'s your ideal way to celebrate your birthday?', 'What is a short/long term goal of yours?', 'What are your three must have smart phone apps?', 'Would you rather be the smartest moron or dumbest genius?', 'What was the last gift that you received?', 'If you could give one piece of advice to the whole world, what would it be?', 'Describe your perfect day.', 'How would you define success?', 'What is the first thing that you notice when meeting someone new?', 'Do you prefer to take baths or showers?', 'Do you like to sing out loud when no one else is around?']
@@ -101,13 +120,6 @@ NUMBERS = {
     9: '9️⃣'
 }
 
-# ROLES
-PREMIUM_ROLES = {
-    759891477269839926 : "one_star_hunter",
-    798279223344889957 : "two_star_hunter",
-    798279346389254174 : "triple_star_hunter",
-    769622564648648744 : "one_star_hunter"
-}
 
 # GREED ISLAND STUFF
 
