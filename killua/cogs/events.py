@@ -8,7 +8,7 @@ from discord.utils import find
 from discord.ext import commands, tasks
 from killua.checks import p
 from killua.classes import User, Guild
-from killua.constants import PREMIUM_ROLES, PATREON_TIERS, teams, guilds
+from killua.constants import PATREON_TIERS, teams, guilds
 
 from typing import List, Union
 
@@ -17,7 +17,7 @@ with open('config.json', 'r') as config_file:
 
 class Patrons:
 
-    def __init__(self, patrens:List[dict]):
+    def __init__(self, patrons:List[dict]):
         self.patrons = patrons
         self.invalid = [x for x in self.patrons if x["discord"] is None]
 
@@ -31,7 +31,7 @@ class Patrons:
         if self.pos > len(self.patrons):
             raise StopIteration
 
-        return self.patreons[self.pos-1]["discord"]
+        return self.patrons[self.pos-1]["discord"]
 
 
 class Patreon:
@@ -106,18 +106,19 @@ class Events(commands.Cog):
 
     def _get_differences(self, current:Patrons, saved:List[dict]) -> List[dict]:
         """Returns a list of dictionaries containing a user id and the badge to assign. If the badge is None, they will loose their premium badges"""
-        new_patrons = [{"id": x["discord"], "badge": PATREON_TIERS[x["tier"]]["name"]} for x in current.patrons if x["discord"] not in set([x["id"] for x in saved])]
-        removed_patrons = [{"id": x["discord"], "badge": None} for x in saved if x["id"] not in set(current.patrons)]
-        different_badges = [{"id": x["discord"], "badge": PATREON_TIERS[x["tier"]]["name"]} for x in current if PATREON_TIERS[x["tier"]]["name"] not in saved["badges"]]
+        new_patrons = [{"id": x["discord"], "badge": PATREON_TIERS[x["tier"]]["name"]} for x in current.patrons if x["discord"] not in [x["id"] for x in saved]]
+        removed_patrons = [{"id": x["id"], "badge": None} for x in saved if x["id"] not in current]
+        different_badges = [{"id": x["discord"], "badge": PATREON_TIERS[x["tier"]]["name"]} for x in current.patrons if PATREON_TIERS[x["tier"]]["name"] not in [y["badges"] for y in saved if y["id"] == x["discord"]]]
         return [*new_patrons, *removed_patrons, *different_badges]
 
     def _assign_badges(self, diff:List[dict]) -> None:
         for d in diff:
             user = teams.find_one({"id": d["id"]})
-            premium_guilds = user["premium_guilds"]
+            premium_guilds = user["premium_guilds"] if "premium_guild" in user else []
             badges = user["badges"]
             for k, v in PATREON_TIERS.items():
-                badges.remove(v["name"])
+                if v["name"] in badges:
+                    badges.remove(v["name"])
 
             if d["badge"] == None:
                 badges.remove("premium")

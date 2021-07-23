@@ -128,30 +128,6 @@ class Buttons(View):
         self.page = self.max_pages
         await self._edit_message(interaction)
 
-class Disabled(discord.ui.View):
-    """Basically a Button class but all buttons are disabled"""
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @discord.ui.button(emoji=Button.FIRST_PAGE.value, style=Color.BLURPLE.value, disabled=True)
-    async def first_page(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
-    @discord.ui.button(emoji=Button.BACKWARDS.value, style=Color.BLURPLE.value, disabled=True)
-    async def backwards(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
-    @discord.ui.button(emoji=Button.STOP.value, style=Color.BLURPLE.value, disabled=True)
-    async def delete(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
-    @discord.ui.button(emoji=Button.FORWARD.value, style=Color.BLURPLE.value, disabled=True)
-    async def forward(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
-    @discord.ui.button(emoji=Button.LAST_PAGE.value, style=Color.BLURPLE.value, disabled=True)
-    async def last_page(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
 
 class Paginator:
     """
@@ -209,5 +185,8 @@ class Paginator:
         await asyncio.wait_for(self.view.wait(), timeout=None)
         if self.view.ignore: # This is True when the message has been deleted/should not get their buttons disabled
             return
-            
-        await self.view.message.edit(view=Disabled())
+
+        for i in self.view.children: # Disabling each button 
+            i.disabled = True
+        
+        await self.view.message.edit(view=self.view)

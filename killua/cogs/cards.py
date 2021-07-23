@@ -145,6 +145,7 @@ class Cards(commands.Cog):
         
     @tasks.loop(hours=6)
     async def shop_update(self):
+        return
         #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
         #the challange is to create a balanced system with good items rare enough but not too rare
         shop_items:list = []
