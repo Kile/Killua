@@ -8,7 +8,7 @@ from discord.utils import find
 from discord.ext import commands, tasks
 from killua.checks import p
 from killua.classes import User, Guild
-from killua.constants import PATREON_TIERS, teams, guilds
+from killua.constants import PATREON_TIERS, teams, guilds, GUILD, BOOSTER_ROLE
 
 from typing import List, Union
 
@@ -48,7 +48,7 @@ class Patreon:
     def _catch(self, d:dict) -> Union[str, None]:
         try:
             return d["attributes"]["social_connections"]["discord"]["user_id"]
-        except KeyError: # In case this happens I still want to have a value, just None
+        except KeyError: # In case this happens I still want to have a value, just `None`
             return None
 
     async def _make_request(self, url:str) -> dict:
@@ -99,15 +99,26 @@ class Events(commands.Cog):
         self.topggpy = topgg.DBLClient(self.client, self.token)
         self.status.start()
         self.get_patrons.start()
+        self.invalid = False
 
     async def _post_guild_count(self):
         if self.client.user.id != 758031913788375090: # Not posting guild count with dev bot
             await self.topggpy.post_guild_count()
 
+
+    def _get_boosters(self):
+        guild = self.client.get_guild(GUILD)
+        if not guild: # This should only happen the first time this gets called because the bots cache is ready, that's why we ignore when this is empty.
+            self.invalid = True
+            return []
+        return [x.id for x in guild.members if BOOSTER_ROLE in [r.id for r in x.roles]]
+
     def _get_differences(self, current:Patrons, saved:List[dict]) -> List[dict]:
         """Returns a list of dictionaries containing a user id and the badge to assign. If the badge is None, they will loose their premium badges"""
-        new_patrons = [{"id": x["discord"], "badge": PATREON_TIERS[x["tier"]]["name"]} for x in current.patrons if x["discord"] not in [x["id"] for x in saved]]
-        removed_patrons = [{"id": x["id"], "badge": None} for x in saved if x["id"] not in current]
+        boosters = self._get_boosters()
+        new_patrons = [*[{"id": x["discord"], "badge": PATREON_TIERS[x["tier"]]["name"]} for x in current.patrons if x["discord"] not in [x["id"] for x in saved]], *[{"id": b, "badge": "one_star_hunter"} for b in boosters if b not in [s["id"] for s in saved]]]
+        # Kinda hacky ways to do it but saves lines
+        removed_patrons = [{"id": x["id"], "badge": None} for x in saved if x["id"] not in current and (x["id"] not in boosters and not self.invalid)]
         different_badges = [{"id": x["discord"], "badge": PATREON_TIERS[x["tier"]]["name"]} for x in current.patrons if PATREON_TIERS[x["tier"]]["name"] not in [y["badges"] for y in saved if y["id"] == x["discord"]]]
         return [*new_patrons, *removed_patrons, *different_badges]
 
@@ -126,6 +137,8 @@ class Events(commands.Cog):
                 premium_guilds = []
             else:
                 badges.append(d["badge"])
+                if not "premium" in badges:
+                    badges.append("premium")
             teams.update_one({"id": d["id"]}, {"$set": {"badges": badges, "premium_guilds": premium_guilds}})
 
     @commands.Cog.listener()
@@ -147,6 +160,7 @@ class Events(commands.Cog):
 
         diff = self._get_differences(current_patrons, saved_patrons)
         self._assign_badges(diff)
+        self.invalid = False
 
     @status.before_loop
     async def before_status(self):
@@ -180,26 +194,6 @@ class Events(commands.Cog):
         await p(self)
         Guild(guild.id).delete()
         await self._post_guild_count()
-
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        # The purpose of this function is to kinda automate premium badges
-        if not before.guild.id == 715358111472418908:
-            return
-
-        badges = teams.find_one({"id": after.id})["badges"]
-
-        if 769622564648648744 in [x.id for x in before.roles] and not 769622564648648744 in [x.id for x in after.roles]:
-            if set(["premium", "one_star_hunter"]).intersection(badges) == ["premium", "one_star_hunter"]:
-                guilds.update_many({"id": {"$in": premium_guilds}}, {"$set": {"premium": False}}) # Remove all premium guilds assosiated with that account
-                teams.update_one({"id": after.id}, {"$pull": {"badges": ["premium", "one_star_hunter"]}, "$set": {"premium_guilds": []}})
-                
-
-        if 769622564648648744 in [x.id for x in after.roles] and not 769622564648648744 in [x.id for x in before.roles]:
-            tba = []
-            (tba.append(x) for x in ["premium", "one_star_hunter"] if not x in badges)
-            teams.update_one({"id": after.id}, {"$and": {"$push": {"badges": tba}}})
-
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):

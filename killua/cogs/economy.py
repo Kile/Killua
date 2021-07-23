@@ -33,7 +33,7 @@ class Economy(commands.Cog):
         
         info = User(user.id)
         flags = [USER_FLAGS[x[0]] for x in user.public_flags if x[1]]
-        if user.avatar.is_animated or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]): # A very simple nitro check that is not too accurate
+        if user.avatar.is_animated() or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]) > 0: # A very simple nitro check that is not too accurate
             flags.append(USER_FLAGS["nitro"])
         badges = [KILLUA_BADGES[x] for x in info.badges]
         bal = info.jenny
