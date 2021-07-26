@@ -1,36 +1,11 @@
 from . import cogs
 import discord
-#from discord.ext.commands import command as discord_command, \
-#	group as discord_group
-from discord.ext import commands
+from discord.ext import commands, ipc
 import json
 import aiohttp
 from pymongo import MongoClient
 from typing import Callable, Coroutine
 from .help import MyHelp
-
-# all_commands = []
-
-# def command(*args, **kwargs):
-# 	"""Converts the decorated symbol into a command, and also adds that command to
-# 	the all_commands list."""
-
-# 	def decorator(function: Callable[..., Coroutine]):
-# 		command = discord_command(*args, **kwargs)(function)
-# 		all_commands.append(command)
-# 		return command
-# 	return decorator
-
-# def group(*args, **kwargs):
-# 	"""Converts the decorated symbol into a group, and also adds that group to the
-# 	all_commands list."""
-
-# 	def decorator(function: Callable[..., Coroutine]):
-# 		group = discord_group(*args, **kwargs)(function)
-# 		all_commands.append(group)
-# 		return group
-# 	return decorator
-
 
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
@@ -40,6 +15,15 @@ db = cluster['Killua']
 collection = db['teams']
 top = db['teampoints']
 server = db['guilds']
+
+class Bot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.ipc = ipc.Server(self, secret_key=config["ipc"])
+
+    async def on_ipc_error(self, endpoint, error):
+        print(endpoint, "raised", error)
 
 def get_prefix(bot, message):
 	if bot.user.id == 758031913788375090:
@@ -58,7 +42,7 @@ def main():
 	intents = discord.Intents.all()
 	intents.presences = False
 	# Create the bot instance.
-	bot = commands.Bot(
+	bot = Bot(
 		command_prefix=get_prefix,
 		description="The discord bot Killua",
 		case_insensitive=True,
@@ -68,8 +52,6 @@ def main():
 	bot.session = session
 	# Setup commands.
 	bot.help_command = MyHelp()
-#	for command in all_commands:
-#		bot.add_command(command)
 
 	# Setup cogs.
 	for cog in cogs.all_cogs:
@@ -77,4 +59,5 @@ def main():
 
 	# Start the bot.
 	bot.load_extension("jishaku")
+	bot.ipc.start()
 	bot.run(config['token'])

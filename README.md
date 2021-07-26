@@ -87,7 +87,8 @@ You will also need a file named `config.json` having the layout like this:
     "token": "your_dbl_token",
     "password": "your_webhook_password",
     "port": "your_open_port"
-  }
+  },
+  "ipc": "some_ipc_token"
 }
 ```
 

@@ -13,6 +13,7 @@ configobj==5.0.6
 cryptography==3.3.2
 dbus-python==1.2.16
 deep-translator==1.4.4
+discord-ext-ipc=2.1.1
 discord.py @ git+https://github.com/Rapptz/discord.py@f14e584304d9d6676c90f8aa59d6e4be23d22a10
 distro==1.4.0
 distro-info===0.23ubuntu1

@@ -54,10 +54,10 @@ class Buttons(View):
             page:int, 
             max_pages:int,
             func:Union[Callable[[int, E, T], R], Coroutine[[int, E, T], R], None], 
-            embed:E, 
+            embed:E,
             defer:bool,
             has_file:bool,
-            paginator: Paginator,
+            paginator:Paginator,
             **kwargs
             ):
 
@@ -76,10 +76,10 @@ class Buttons(View):
 
     async def _get_embed(self) -> None:
         if self.func:
-            embed = (self.func(self.page, self.embed, self.pages)) if not iscoroutinefunction(self.func) else (await self.func(self.page, self.embed, self.pages))
+            self.embed = (self.func(self.page, self.embed, self.pages)) if not iscoroutinefunction(self.func) else (await self.func(self.page, self.embed, self.pages))
         else:
             self.embed.description = str(self.pages[self.page-1])
-        if not embed.footer or embed.footer.text.startswith("Page"):
+        if not self.embed.footer or self.embed.footer.text.startswith("Page"):
             self.embed.set_footer(text= f"Page {self.page}/{self.max_pages}")
 
     async def _handle_file(self, interaction: discord.Interaction) -> None:
@@ -128,31 +128,6 @@ class Buttons(View):
         self.page = self.max_pages
         await self._edit_message(interaction)
 
-class Disabled(discord.ui.View):
-    """Basically a Button class but all buttons are disabled"""
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @discord.ui.button(emoji=Button.FIRST_PAGE.value, style=Color.BLURPLE.value, disabled=True)
-    async def first_page(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
-    @discord.ui.button(emoji=Button.BACKWARDS.value, style=Color.BLURPLE.value, disabled=True)
-    async def backwards(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
-    @discord.ui.button(emoji=Button.STOP.value, style=Color.BLURPLE.value, disabled=True)
-    async def delete(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
-    @discord.ui.button(emoji=Button.FORWARD.value, style=Color.BLURPLE.value, disabled=True)
-    async def forward(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
-    @discord.ui.button(emoji=Button.LAST_PAGE.value, style=Color.BLURPLE.value, disabled=True)
-    async def last_page(self, button: discord.ui.button, interaction: discord.Interaction):
-        pass
-
 class Paginator:
     """
     A generic Paginator which supports the following:
@@ -173,7 +148,7 @@ class Paginator:
         page:int=1, 
         max_pages:Union[int, None]=None,
         func:Union[Callable[[int, E, T], R], Coroutine[[int, E, T], R], None]=None, 
-        embed:E=DefaultEmbed(),
+        embed:E=None,
         defer:bool=False, # In case a pageturn can exceed 3 seconds this has to be set to True
         has_file:bool=False
         ):
@@ -184,7 +159,7 @@ class Paginator:
         self.timeout = timeout
         self.page = page
         self.func = func
-        self.embed = embed
+        self.embed = embed or DefaultEmbed()
         self.has_file = has_file
         self.file = None
         self.view = Buttons(user_id=self.ctx.author.id, pages=self.pages, timeout=self.timeout, page=self.page, max_pages=self.max_pages, func=self.func, embed=self.embed, defer=defer, has_file=self.has_file, paginator=self)
@@ -209,7 +184,8 @@ class Paginator:
         await asyncio.wait_for(self.view.wait(), timeout=None)
         if self.view.ignore: # This is True when the message has been deleted/should not get their buttons disabled
             return
-        try:
-            await self.view.message.edit(view=Disabled())
-        except discord.NotFound: # This is a library bug atm. It will raise a NotFound even though the message was edited
-            pass
+
+        for child in self.view.children:
+            child.disabled = True # That just sounds a bit wrong
+
+        await self.view.message.edit(view=self.view)
