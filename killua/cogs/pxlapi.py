@@ -68,12 +68,10 @@ class Api(commands.Cog):
         else:
             data = args
         r = await function(data, t)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r, allowed_mentions=discord.AllowedMentions.none())
         if r.success:
             f = discord.File(r.convert_to_ioBytes(), filename=f'{ctx.command.name}.{r.file_type}')
             return await ctx.send(file=f)
-        return await ctx.send(f':x: '+r.error)
+        return await ctx.send(f':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
 
     @check(120) # Big cooldown >_<
     @commands.command(aliases=['ej', 'emojimosaic'], extras={"category":Category.FUN}, usage="emojaic <user/url>")

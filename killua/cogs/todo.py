@@ -448,7 +448,7 @@ class TodoSystem(commands.Cog):
         todo_list.set_property('description', description)
         return await ctx.send('Congrats! You bought a description for your current todo list')
 
-    @commands.group(hidden=True)
+    @commands.group(hidden=True, extras={"category":Category.TODO})
     async def todo(self, ctx):
         #h You most likely want info about another todo command. Use `k!help command todo <todo_command>` for that
         pass

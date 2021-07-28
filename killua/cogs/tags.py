@@ -95,7 +95,7 @@ class Tags(commands.Cog):
         return embed
 
     @check()
-    @commands.group(hidden=True)
+    @commands.group(hidden=True, extras={"category":Category.TAGS})
     async def tag(self, ctx):
         if not Guild(ctx.guild.id).is_premium:
             await ctx.send('This command group is currently only a premium feature. To enable your guild to use it, become a Patreon (https://patreon.com/kilealkuri) and join the support server')
