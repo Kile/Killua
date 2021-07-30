@@ -5,10 +5,19 @@ from bs4 import BeautifulSoup
 from killua.classes import Category
 from killua.paginator import Paginator
 
+from typing import Any, Callable
+
 class WebScraping(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+
+    def _try_else(self, x:Any, f:Callable[[Any], str], e:str=None) -> str:
+        """Returns a book info it it exists, else "-" or e if provided"""
+        try:
+            return " ".join(f(x).split())
+        except Exception:
+            return e or "-" 
 
     def _has_results(self, page) -> bool:
         """Checks if there are any results before activating the paginator"""
@@ -55,44 +64,22 @@ class WebScraping(commands.Cog):
         content = await res.text()
         book = BeautifulSoup(content.encode(), 'html.parser')
         # get the book values
-        try:
-            rating = " ".join((str)(book.find('span', itemprop="ratingValue").text).split())
-        except Exception: 
-            rating = "-"
-        try:
-            isbn = " ".join((str)(book.find_all('div', class_="infoBoxRowItem")[1].text).split())
-            if not isnb.isdigit():
-                isbn = '-'
-        except Exception:
-            isbn = '-'
-        try:
-            name = " ".join((str)(book.find('div', class_="bookCoverPrimary").find('img').attrs['alt']).split())
-        except Exception:
-            name = '-'
-        try:
-            author = " ".join((str)(book.find('a', class_="authorName").find_all('span')[0].text).split())
-        except Exception:
-            author = '-'
-        try:
-            description = " ".join((str)(book.find('div', id="description").find(style="display:none").text).split())
-            if description.startswith('Alternate cover for this ISBN can be found here'):
-                description = description.replace('Alternate cover for this ISBN can be found here', '')
-        except Exception:
-            description = '-'
-        try:
-            language = " ".join((str)(book.find('div', itemprop="inLanguage").text).split())
-        except Exception:
-            language = '-'
-        try:
-            pages = " ".join((str)(book.find('span', itemprop="numberOfPages").text).split())
-        except Exception:
-            pages = '-'
-        #If a certain thing isn't specified such as number of pages, it is now replaced with '-'
 
-        try:
-            img_url = " ".join((str)(book.find('div', class_="bookCoverPrimary").find('img').attrs['src']).split())
-        except Exception:
-            img_url = 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png';      
+        rating = self._try_else(book, lambda book: book.find('span', itemprop="ratingValue").text)
+        name = self._try_else(book, lambda book: book.find('div', class_="bookCoverPrimary").find('img').attrs['alt'])
+        language = self._try_else(book, lambda book: book.find('div', itemprop="inLanguage").text)
+        pages = self._try_else(book, lambda book: book.find('span', itemprop="numberOfPages").text)
+        author = self._try_else(book, lambda book: book.find('a', class_="authorName").find_all('span')[0].text)
+        img_url = self._try_else(book, lambda book: book.find('div', class_="bookCoverPrimary").find('img').attrs['src'], 'https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png')
+        isbn = self._try_else(book, lambda book:  book.find_all('div', class_="infoBoxRowItem")[1].text)
+        description = self._try_else(book, lambda book: book.find('div', id="description").find(style="display:none").text)
+
+        # Special cases
+        if not isbn.isdigit():
+            isbn = '-'
+
+        if description.startswith('Alternate cover for this ISBN can be found here'):
+            description = description.replace('Alternate cover for this ISBN can be found here', '')
 
         if len(description) > 1000:
             description = description[:1000]+ '...'

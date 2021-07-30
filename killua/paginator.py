@@ -76,10 +76,10 @@ class Buttons(View):
 
     async def _get_embed(self) -> None:
         if self.func:
-            embed = (self.func(self.page, self.embed, self.pages)) if not iscoroutinefunction(self.func) else (await self.func(self.page, self.embed, self.pages))
+            self.embed = (self.func(self.page, self.embed, self.pages)) if not iscoroutinefunction(self.func) else (await self.func(self.page, self.embed, self.pages))
         else:
             self.embed.description = str(self.pages[self.page-1])
-        if not embed.footer or embed.footer.text.startswith("Page"):
+        if not self.embed.footer or self.embed.footer.text.startswith("Page"):
             self.embed.set_footer(text= f"Page {self.page}/{self.max_pages}")
 
     async def _handle_file(self, interaction: discord.Interaction) -> None:
@@ -95,7 +95,7 @@ class Buttons(View):
         if self.has_file:
             return await self._handle_file(interaction)
         if self.defer:
-            await interaction.response.edit_message(content="processing...", attachments=None, embed=interaction.message.embeds[0], view=None)
+            await interaction.response.edit_message(content="processing...", embed=interaction.message.embeds[0], view=None)
             await self._get_embed()
             await interaction.message.edit(content=None, embed=self.embed, view=self)
         else:
