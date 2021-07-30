@@ -29,7 +29,7 @@ class SmallCommands(commands.Cog):
         #constructing the avatar embed
         embed = discord.Embed.from_dict({
             'title': f'Avatar of {user}',
-            'image': {'url': str(user.avatar.replace(format='png'))},
+            'image': {'url': str(user.avatar.url)},
             'color': 0x1400ff
         })
         return embed

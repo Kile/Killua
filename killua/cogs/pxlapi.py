@@ -21,16 +21,16 @@ class Api(commands.Cog):
     async def _validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
         image = None
         if isinstance(args, discord.Member):
-            image = str(args.avatar.replace(format="png"))
+            image = str(args.avatar.url)
 
         if isinstance(args, discord.Emoji):
-            image = str(args.url.replace(ormat="png"))
+            image = str(args.url)
             
         if isinstance(args, str):
             if args.isdigit():
                 try:
                     user = await self.client.fetch_user(int(args))
-                    image = str(user.avatar.replace(format="png"))
+                    image = str(user.avatar.url)
                 except discord.NotFound:
                     return None
             else:
@@ -57,7 +57,7 @@ class Api(commands.Cog):
                         image = embed.thumbnail.url
                         break
         if not image:
-            image = str(ctx.author.avatar.replace(format="png"))  
+            image = str(ctx.author.avatar.url)  
         return image
 
     async def handle_command(self, ctx, args, function, t=None, validate:bool=True):
