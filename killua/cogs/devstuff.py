@@ -16,19 +16,19 @@ class DevStuff(commands.Cog):
     @commands.is_owner()
     @commands.command(aliases=['exec'], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True)
     async def eval(self, ctx, *, code):
-        """Standart eval command, owner restricted ofc"""
+        """Standart eval command, owner restricted"""
         try:
             await ctx.channel.send(f'```py\n{eval(code)}```')
         except Exception as e:
             await ctx.channel.send(str(e))
 
     @commands.is_owner()
-    @commands.command(extras={"category":Category.OTHER}, usage="publish update <version> <text>", hidden=True)
+    @commands.command(extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
     async def publish_update(self, ctx, version:str, *, update):
         """Allows me to publish Killua updates in a handy formart"""
 
         old = updates.find_one({'_id':'current'})
-        log = updates.find_one({'_id': 'log'})
+
         embed = discord.Embed.from_dict({
             'title': f'Killua Update `{old["version"]}` -> `{version}`',
             'description': update,
@@ -36,12 +36,10 @@ class DevStuff(commands.Cog):
             'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar.url)},
             'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
         })
-        try:
-            log.append(old)
-        except Exception:
-            log = [old]
-        updates.update_one({'_id': 'current'}, {'$set': {'version': version, 'description': update, 'published_on': datetime.now(), 'published_by': ctx.author.id}})
-        updates.update_one({'_id': 'log'}, {'$set': {'past_updates': log}})
+
+        data = {'version': version, 'description': update, 'published_on': datetime.now(), 'published_by': ctx.author.id}
+        updates.update_one({'_id': 'current'}, {'$set': data})
+        updates.update_one({'_id': 'log'}, {'$push': {'past_updates': data}})
         channel = self.client.get_channel(757170264294424646)
         msg = await channel.send(content= '<@&795422783261114398>', embed=embed)
         await ctx.message.delete()
@@ -73,11 +71,11 @@ class DevStuff(commands.Cog):
     async def blacklist(self, ctx, id:int, *,reason=None):
         """Blacklisting bad people like Hisoka. Owner restricted"""
         try:
-            user = await self.client.fetch_user(id)
+            user = self.client.get_user(id) or await self.client.fetch_user(id)
         except Exception as e:
             return await ctx.send(e)
         # Inserting the bad person into my databse
-        blacklist.insert_one({'id': id, 'reason':reason or "No reason provided", 'date': datetime.now()})
+        blacklist.insert_one({'id': id, 'reason': reason or "No reason provided", 'date': datetime.now()})
         await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
         
     @commands.is_owner()
@@ -86,7 +84,7 @@ class DevStuff(commands.Cog):
         """Whitelists a user. Owner restricted"""
 
         try:
-            user = await self.client.fetch_user(id)
+            user = self.client.get_user(id) or await self.client.fetch_user(id)
         except Exception as e:
             return await ctx.send(e)
 

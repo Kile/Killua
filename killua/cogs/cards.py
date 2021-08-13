@@ -9,13 +9,15 @@ from PIL import Image, ImageFont, ImageDraw
 import io
 import aiohttp
 import pathlib
+
+from typing import Union, List
+
 from killua.checks import check
 from killua.paginator import Paginator
 from killua.classes import User, Card, CardLimitReached, CardNotFound, Category
 from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES, teams, items, shop
 
 # I am NOT writing a detailed description of every function in here, just a brief description for functions in classes
-
 
 class Cards(commands.Cog):
 
@@ -145,7 +147,6 @@ class Cards(commands.Cog):
         
     @tasks.loop(hours=6)
     async def shop_update(self):
-        return
         #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
         #the challange is to create a balanced system with good items rare enough but not too rare
         shop_items:list = []

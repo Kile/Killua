@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 import random
+import discord
 from enum import Enum
 from .constants import FREE_SLOTS, teams, items, guilds, todo
 
@@ -18,6 +19,37 @@ class CardLimitReached(Exception):
 
 class TodoListNotFound(Exception):
     pass
+
+class ConfirmButton(discord.ui.View):
+    """A button that is used to confirm a certain action or deny it"""
+    def __init__(self, user_id:int, **kwargs):
+        super().__init__(**kwargs)
+        self.user_id = user_id
+        self.value = False
+        self.timed_out = True # defaults to true because if not set otherwise it timed out
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if not (val := interaction.user.id == self.user_id):
+            await interaction.response.defer()
+        return val
+
+    def _disable(self) -> None:
+        for child in self.children:
+            child.disabled = True
+    
+    @discord.ui.button(label="confirm", style=discord.ButtonStyle.green)
+    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = True
+        self.timed_out = False
+        self._disable()
+        self.stop()
+
+    @discord.ui.button(label="cancel", style=discord.ButtonStyle.red)
+    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.value = False
+        self.timed_out = False
+        self._disable()
+        self.stop()
 
 class Category(Enum):
 
@@ -83,6 +115,15 @@ class Category(Enum):
         "emoji": {
             "unicode": "\U0001f5c4",
             "normal": ":file_cabinet:"
+        }
+    }
+
+    GAMES = {
+        "name": "games",
+        "description": "Games you can play with friends or alone",
+        "emoji": {
+            "unicode": "\U0001f3ae",
+            "normal": ":video_game:"
         }
     }
 

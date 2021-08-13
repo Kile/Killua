@@ -19,15 +19,7 @@ class Economy(commands.Cog):
         return u
 
     def _getmember(self, user: typing.Union[discord.Member, discord.User]) -> discord.Embed:
-        """ Input: 
-            user (discord.User): the user to get info about and return it
-
-            Returns:
-            embed: An embed with the users information
-
-            Purpose:
-            To have a function handle getting infos about a user for less messy code
-        """
+        """ a function to handle getting infos about a user for less messy code """
         av = user.avatar.url
         joined = (user.created_at).strftime("%b %d %Y %H:%M:%S")
         
@@ -46,13 +38,15 @@ class Economy(commands.Cog):
 
         embed = discord.Embed.from_dict({
                 'title': f'Information about {user}',
-                'description': f'{user.id}\n{" ".join(flags)}\n\n**Killua Badges**\n{" ".join(badges) if len(badges) > 0 else "No badges"}\n\n**Jenny**\n{bal}\n\n**Account created at**\n{joined}\n\n**`k!daily` cooldown**\n{cooldown or "Never claimed `k!daily` before"}',
+                'description': f'{user.id}\n{" ".join(flags)}',
+                "fields": [{"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, {"name": "Jenny", "value": str(bal), "inline": False}, {"name": "Account created at", "value": joined, "inline": False}, {"name": "daily cooldown", "value": cooldown or "Never claimed `k!daily` before", "inline": False}],
                 'thumbnail': {'url': str(av)},
                 'color': 0x1400ff
             })
         return embed
 
     def _lb(self, ctx, limit=10):
+        """Creates a list of the top members regarding jenny in a server"""
         members = teams.find({'id': {'$in': [x.id for x in ctx.guild.members]} })
         top = sorted(members, key=lambda x: x['points'], reverse=True)
         points = 0
@@ -60,7 +54,7 @@ class Economy(commands.Cog):
             points = points + m['points']
         data = {
             "points": points,
-            "top": [{"name": ctx.guild.get_member(x['id']), "points": x["points"]} for x in top][:limit]
+            "top": [{"name": ctx.guild.get_member(x['id']), "points": x["points"]} for x in top][:(limit or len(top))]
         }
         return data
 
@@ -127,7 +121,7 @@ class Economy(commands.Cog):
         elif user:
             user_id = user
         try:
-            await self.client.fetch_user(user_id)
+            self.get_user(user_id) or await self.client.fetch_user(user_id)
             real_user = User(user_id)
         except discord.NotFound:
             return await ctx.send('User not found')

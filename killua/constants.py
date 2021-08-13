@@ -19,6 +19,9 @@ presence = GDB['presence']
 todo = GDB['todo']
 updates = GDB['updates']
 
+IPC_TOKEN = config["ipc"]
+TOKEN = config["token"]
+
 PATREON_TIERS = {
     "6002629": {
         "name": "one_star_hunter",
@@ -231,9 +234,12 @@ ALIASES = {
 
 UWUS = ['uwu', 'owo', 'ʕ•́ᴥ•̀ʔっ', '≧◠ᴥ◠≦', '>\_<']
 
-# THE KILLUA SUPPORT SERVER AND IT DATA
+# THE KILLUA SUPPORT SERVER AND ITS DATA
 GUILD = 715358111472418908
 BOOSTER_ROLE = 769622564648648744
+
+# WHITESPACE
+WHITESPACE = " "
 
 # FOR THE NOKIA COMMAND OF /IMAGESCRIPT OF PXLAPI
 

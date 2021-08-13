@@ -42,8 +42,10 @@ class View(discord.ui.View):
         super().__init__(**kwargs)
         self.user_id = user_id
 
-    async def interaction_check(self, interaction: discord.Interaction):
-        return interaction.user.id == self.user_id
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if not (val := interaction.user.id == self.user_id):
+            await interaction.response.defer()
+        return val
 
 class Buttons(View):
     """The core of the paginator"""

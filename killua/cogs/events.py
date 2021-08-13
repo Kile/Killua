@@ -198,6 +198,9 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         #This handels the k!bug cooldown
+        if not ctx.me.permissions_in(ctx.channel).send_messages: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
+            return
+
         if isinstance(error, commands.CommandOnCooldown):
             m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
 
