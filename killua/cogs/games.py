@@ -54,7 +54,7 @@ class Rps:
             return True
 
 
-    async def _result(self, p:int, q:int) -> int:
+    def _result(self, p:int, q:int) -> int:
         """Evaluates who won, by doing very smart math"""
         return int(math.sin(math.pi/12*(q-p)*((q-p)**2+5)))
 
@@ -127,7 +127,7 @@ class Rps:
             return
 
         c2 = random.choice(['paper', 'rock', 'scissors'])
-        winlose = await self._result(resp[0].value, c2)
+        winlose = self._result(resp[0].value, c2)
         await self._eval_outcome(winlose, resp[0].value, c2, self.ctx.author, self.ctx.me)
 
     async def multiplayer(self) -> Union[None, discord.Message]:
@@ -157,7 +157,7 @@ class Rps:
         res = await self._wait_for_response([self.ctx.author, self.other])
         if not res:
             return
-        winlose = await self._result(res[0].value, res[1].value)
+        winlose = self._result(res[0].value, res[1].value)
         await self._eval_outcome(winlose, res[0].value, res[1].value, res[0].user, res[1].user)
 
     async def start(self) -> None:

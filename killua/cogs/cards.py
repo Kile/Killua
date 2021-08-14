@@ -26,6 +26,27 @@ class Cards(commands.Cog):
         self.shop_update.start()
         self.cached_cards = {}
 
+    def _format_offers(offers:list, reduced_item:int=None, reduced_by:int=None):
+        formatted:list = []
+        if reduced_item and reduced_by:
+            x:int = 0
+            for offer in offers:
+                formatted.append(self._format_item(offer, reduced_item, reduced_by, x))
+                x = x+1
+        else:
+            for offer in offers:
+                formatted.append(self._format_item(offer))
+
+        return formatted
+
+    def _format_item(offer:int, reduced_item:int=None, reduced_by:int=None, number:int=None):
+        item = items.find_one({'_id': int(offer)})
+        if reduced_item:
+            if number == reduced_item:
+                return {'name':f'**Number {item["_id"]}: {item["name"]}** |{item["emoji"]}|', 'value': f'**Description:** {item["description"]}\n**Price:** {PRICES[item["rank"]]-int(PRICES[item["rank"]]*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item["type"].replace("normal", "item")}\n**Rarity:** {item["rank"]}'}  
+        
+        return {'name':f'**Number {item["_id"]}: {item["name"]}** |{item["emoji"]}|', 'value': f'**Description:** {item["description"]}\n**Price:** {PRICES[item["rank"]]} Jenny\n**Type:** {item["type"].replace("normal", "item")}\n**Rarity:** {item["rank"]}'}
+
     # Contribution by DerUSBStick (Thank you!)
     async def _imagefunction(self, data, restricted_slots, page:int):
         background = await self._getbackground(0 if len(data) == 10 else 1)
@@ -1098,130 +1119,6 @@ def construct_rewards(reward_score:int):
 
     return rewards
 
-def format_offers(offers:list, reduced_item:int=None, reduced_by:int=None):
-    formatted:list = []
-    if reduced_item and reduced_by:
-        x:int = 0
-        for offer in offers:
-            formatted.append(format_item(offer, reduced_item, reduced_by, x))
-            x = x+1
-    else:
-        for offer in offers:
-            formatted.append(format_item(offer))
-
-    return formatted
-
-def format_item(offer:int, reduced_item:int=None, reduced_by:int=None, number:int=None):
-    item = items.find_one({'_id': int(offer)})
-    if reduced_item and reduced_by and number: #Uneccesssary to check for all but why not
-        if number == reduced_item:
-            return {'name':f'**Number {item["_id"]}: {item["name"]}** |{item["emoji"]}|', 'value': f'**Description:** {item["description"]}\n**Price:** {PRICES[item["rank"]]-int(PRICES[item["rank"]]*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item["type"].replace("normal", "item")}\n**Rarity:** {item["rank"]}'}  
-    
-    return {'name':f'**Number {item["_id"]}: {item["name"]}** |{item["emoji"]}|', 'value': f'**Description:** {item["description"]}\n**Price:** {PRICES[item["rank"]]} Jenny\n**Type:** {item["type"].replace("normal", "item")}\n**Rarity:** {item["rank"]}'}
-
-async def paginator(self, ctx, page:int, msg:discord.Message=None, first_time=False, only_display=None, user=None):
-    if user is None:
-        name = ctx.author
-        person = User(ctx.author.id)
-    else:
-        name = user
-        person = User(user.id)
-    
-    rs_cards = list()
-    fs_cards = list()
-    max_pages = 6+math.ceil(len(person.fs_cards)/18)
-    
-    # Bringing the list in the right format for the image generator
-    if page < 7:
-        if page == 1:
-            i = 0
-        else:
-            i = 10+((page-2)*18) 
-            # By calculating where the list should start, I make the code faster because I don't need to
-            # make a list of all cards and I also don't need to deal with a problem I had when trying to get
-            # the right part out of the list. It also saves me lines! 
-        while not len(rs_cards) % 18 == 0 or len(rs_cards) == 0: 
-            # I killed my pc multiple times while testing, don't use while loops!
-            if not i in [x[0] for x in person.rs_cards]:
-                rs_cards.append([i, None])
-            else:
-                rs_cards.append([i, Card(i).image_url])
-            if page == 1 and len(rs_cards) == 10:
-                break
-            i = i+1
-    else:
-        i = (page-7)*18 
-        while (len(fs_cards) % 18 == 0) == False or (len(fs_cards) == 0) == True: 
-            try:
-                fs_cards.append([person.fs_cards[i][0], Card(person.fs_cards[i][0]).image_url])
-            except IndexError: 
-                fs_cards.append(None)
-            i = i+1
-
-    if page <= 6:
-        cards = rs_cards
-        restricted_slots = True
-    else:
-        cards = fs_cards
-        restricted_slots = False
-
-    image = await imagefunction(cards, restricted_slots, page)
-
-    buffer = io.BytesIO()
-    image.save(buffer, "png") 
-    buffer.seek(0)
-
-    f = discord.File(buffer, filename="image.png")
-    embed = discord.Embed.from_dict({
-        'title': f'{name}\'s book',
-        'color': 0x2f3136, # making the boarder "invisible" (assuming there are no light mode users)
-        'image': {'url': 'attachment://image.png' }
-    })
-
-    if first_time is False:
-        await msg.delete()
-    
-    msg = await ctx.send(file=f, embed=embed)
-    #arrow backwards
-    await msg.add_reaction('\U000025c0')
-    #arrow forwards
-    await msg.add_reaction('\U000025b6')
-
-    def check(reaction, u):
-        #Checking if everything is right, the bot's reaction does not count
-        return u == ctx.author and reaction.message.id == msg.id and u != ctx.me and(reaction.emoji == '\U000025b6' or reaction.emoji == '\U000025c0')
-    try:
-        reaction, u = await self.client.wait_for('reaction_add', timeout=120, check=check)
-    except asyncio.TimeoutError:
-        try:
-            await msg.remove_reaction('\U000025c0', ctx.me)
-            await msg.remove_reaction('\U000025b6', ctx.me)
-            return
-        except discord.HTTPException:
-            pass
-    else:
-        if reaction.emoji == '\U000025b6':
-            #forward emoji
-            if page == max_pages:
-                if only_display == 'fs':
-                    return await paginator(self, ctx, 7, msg, only_display='fs', user=user)
-                return await paginator(self, ctx, 1, msg, only_display=only_display, user=user)
-            else:
-                if page == 6 and only_display == 'rs':
-                    return await paginator(self, ctx, 1, msg, only_display='rs', user=user)
-                
-                return await paginator(self, ctx, page+1, msg, only_display=only_display, user=user)
-
-        if reaction.emoji == '\U000025c0':
-            #backwards emoji
-            if page == 1:
-                if only_display == 'rs':
-                    return await paginator(self, ctx, 6, msg, only_display='rs', user=user)
-                return await paginator(self, ctx, max_pages, msg, only_display=only_display, user=user)
-            else:
-                if only_display == 'fs' and page == 7:
-                    return await paginator(self, ctx, max_pages, msg, only_display='fs', user=user)
-                return await paginator(self, ctx, page-1, msg, only_display=only_display, user=user)
 
 Cog = Cards
 

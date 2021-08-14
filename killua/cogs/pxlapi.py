@@ -60,7 +60,7 @@ class Api(commands.Cog):
             image = str(ctx.author.avatar.url)  
         return image
 
-    async def handle_command(self, ctx, args, function, t=None, validate:bool=True):
+    async def handle_command(self, ctx, args, function, censor:bool=False, t=None, validate:bool=True):
         if validate:
             data = await self._validate_input(ctx, args)
             if not data:
@@ -68,12 +68,10 @@ class Api(commands.Cog):
         else:
             data = args
         r = await function(data, t)
-        if isinstance(r, str):
-            return await ctx.send(":x: "+r, allowed_mentions=discord.AllowedMentions.none())
         if r.success:
-            f = discord.File(r.convert_to_ioBytes(), filename=f'{ctx.command.name}.{r.file_type}')
+            f = discord.File(r.convert_to_ioBytes(), filename=f'{ctx.command.name}.{r.file_type}', spoiler=censor)
             return await ctx.send(file=f)
-        return await ctx.send(f':x: '+r.error)
+        return await ctx.send(f':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
 
     @check(120) # Big cooldown >_<
     @commands.command(aliases=['ej', 'emojimosaic'], extras={"category":Category.FUN}, usage="emojaic <user/url>")
@@ -139,6 +137,14 @@ class Api(commands.Cog):
             return await self.pxl.jpeg(images=[data])
         await self.handle_command(ctx, args, func)
 
+    @check(4)
+    @commands.command(extras={"category":Category.FUN}, usage="ajit <user/url>")
+    async def ajit(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+        """  Overlays an image of Ajit Pai snacking on some popcorn!"""
+        async def func(data, *args):
+            return await self.pxl.ajit(images=[data])
+        await self.handle_command(ctx, args, func)
+
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="nokia <user/url>")
     async def nokia(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
@@ -147,6 +153,14 @@ class Api(commands.Cog):
             d = "const url = '" + data + ";'" + CODE
             return await self.pxl.imagescript(version="1.2.0", code=d)
         await self.handle_command(ctx, args, func)
+
+    @check(4)
+    @commands.command(extras={"category":Category.FUN}, usage="flash <user/url>")
+    async def flash(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+        """Greates a flashing GIF"""
+        async def func(data, *args):
+            return await self.pxl.flash(images=[data])
+        await self.handle_command(ctx, args, func, censor=True)
 
     @check(3)
     @commands.command(extras={"category":Category.FUN}, usage="thonkify <text>")
@@ -204,7 +218,7 @@ class Api(commands.Cog):
 
             return await Paginator(ctx, r.data, func=make_embed).start()
         else:
-            return await ctx.send(':x: '+r.error)
+            return await ctx.send(':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
 
 Cog = Api
 
