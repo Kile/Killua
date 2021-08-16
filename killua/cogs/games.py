@@ -145,7 +145,10 @@ class Rps:
         msg = await self.ctx.send(f'{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other.name}** accept the challange?', view=view)
         await view.wait()
 
-        await msg.edit(view=view) # looks like this line does nothing. In fact it edits the message so that the views children are all disabled which was set inside of the view and only comes into effect when editing
+        for child in view.children:
+            child.disabled = True
+
+        await msg.edit(view=view)
 
         if not view.value:
             if view.timed_out:

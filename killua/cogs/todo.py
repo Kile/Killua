@@ -6,7 +6,7 @@ from datetime import datetime
 import re
 import math
 from typing import Union
-from killua.classes import TodoList, Todo, User, TodoListNotFound, Category
+from killua.classes import TodoList, Todo, User, TodoListNotFound, Category, ConfirmButton
 from killua.constants import teams, todo
 from killua.paginator import Paginator
 
@@ -18,15 +18,18 @@ class TodoSystem(commands.Cog):
         self.client = client
 
     async def _get_user(self, u:int) -> discord.User:
+        """Gets a user from cache if possible, else makes an API request"""
         r = self.client.get_user(u)
         if not r:
             r = await self.client.fetch_user(u)
         return r
 
     def _get_color(self, l:TodoList):
+        """A shortcut to get the correct embed color for a todo list"""
         return l.color if l.color else 0x1400ff
 
     async def _wait_for_response(self, step, check) -> Union[discord.Message, None]:
+        """Waits for a response and returns the response message"""
         try:
             confirmmsg = await self.client.wait_for('message', check=check, timeout=60)
         except asyncio.TimeoutError:
@@ -42,6 +45,7 @@ class TodoSystem(commands.Cog):
             return confirmmsg
 
     async def _build_embed(self, todo_list:TodoList, page:int=None) -> discord.Embed:
+        """Creates an embed for a todo list page"""
         owner = await self._get_user(todo_list.owner)
         l = todo_list.todos
         desc = []
@@ -83,16 +87,7 @@ class TodoSystem(commands.Cog):
 
 
     async def todo_name(self, ctx):
-        """async function todo_name
-        Input:
-        ctx: to have somthing to use .send() on
-
-        Returns:
-        title: title of the todo list
-
-        Purpose: 
-        outsourcing todo create in smaller functions
-        """
+        """outsourcing todo create in smaller functions. Will be rewritten once discord adds text input interaction"""
         embed = discord.Embed.from_dict({
             'title': f'Editing settings',
             'description': f'Please start choose a title for your todo list',
@@ -117,16 +112,7 @@ class TodoSystem(commands.Cog):
         return title
 
     async def todo_status(self, ctx):
-        """async function todo_status
-        Input:
-        ctx: to have somthing to use .send() on
-
-        Returns:
-        status: if the todo list is public/private
-
-        Purpose: 
-        outsourcing todo create in smaller functions
-        """
+        """outsourcing todo create in smaller functions. Will be rewritten once discord adds text input interaction"""
         embed = discord.Embed.from_dict({
             'title': f'Editing settings',
             'description': f'Please choose if this todo list will be `public` (everyone can see the list by ID) or `private` (Only you and people you invite can see this todo list) ',
@@ -143,16 +129,7 @@ class TodoSystem(commands.Cog):
         return confirmmsg.content.lower()
 
     async def todo_done_delete(self, ctx):
-        """async function todo_done_delete
-        Input:
-        ctx: to have somthing to use .send() on
-
-        Returns:
-        (boolean): If todos should be deleted when they are marketr as done
-
-        Purpose: 
-        outsourcing todo create in smaller functions
-        """
+        """outsourcing todo create in smaller functions"""
         embed = discord.Embed.from_dict({
             'title': f'Editing settings',
             'description': f'Should todo tasks marked as "done" be automatically deleted? **[y/n]**',
@@ -170,16 +147,7 @@ class TodoSystem(commands.Cog):
         return confirmmsg.content.lower() == 'y'
 
     async def todo_custom_id(self, ctx):
-        """async function todo_custom_id
-        Input:
-        ctx: to have somthing to use .send() on
-
-        Returns:
-        (boolean): if the todo list has been assigned to a custom status
-
-        Purpose: 
-        outsourcing todo create in smaller functions
-        """
+        """outsourcing todo create in smaller functions. Will be rewritten once discord adds text input interaction"""
         embed = discord.Embed.from_dict({
             'title': f'Editing',
             'description': f'Since you are a premium supporter you have the option to use a custom to-do id which can also be a string (f.e. Killua). You can still use to id to go into the todo list. If you want a custom id, enter it now, if you don\'t then enter **n**',
@@ -203,17 +171,7 @@ class TodoSystem(commands.Cog):
         return confirmmsg.content.lower()
 
     async def todo_info_embed_generator(self, ctx, list_id):
-        """async function todo_info_embed_generator
-        Input:
-        ctx: to have somthing to use .send() on
-        list_id (string/int): the todo list's id
-
-        Returns:
-        embed: An embed with infos about a todo list
-
-        Purpose: 
-        outsourcing big embed production 🛠
-        """
+        """outsourcing big embed production 🛠 """
         try:
             todo_list = TodoList(list_id)
         except TodoListNotFound:
@@ -244,19 +202,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(embed=embed)
 
     async def single_todo_info_embed_generator(self, ctx, list_id, task_id):
-        """async function single_todo_info_embed_generator
-        Input:
-        ctx: to have somthing to use .send() on
-        todo_id (integer): the number of the todo task
-        list_id: the id of the list the todo is from
-
-        Returns:
-        embed: An embed with infos about a todo task
-
-        Purpose: 
-        outsourcing big embed production 🛠
-        """
-        
+        """outsourcing big embed production 🛠"""
         try:
             todo_list = TodoList(list_id)
         except TodoListNotFound:
@@ -293,16 +239,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(embed=embed)
 
     async def buy_color(self, ctx):
-        """async function buy_color
-        Input:
-        ctx: to have somthing to use .send() on
-
-        Returns:
-        (discord.Message)/itself: Either a confirm message or itself if something was invalid
-
-        Purpose: 
-        outsourcing todo buy in smaller functions
-        """
+        """outsourcing todo buy in smaller functions. Will be rewritten once discord adds text input interaction"""
         list_id = editing[ctx.author.id]
         todo_list = TodoList(list_id)
         user = User(ctx.author.id)
@@ -334,16 +271,7 @@ class TodoSystem(commands.Cog):
 
 
     async def buy_thumbnail(self, ctx):
-        """async function buy_thumbnail
-        Input:
-        ctx: to have somthing to use .send() on
-
-        Returns:
-        (discord.Message)/itself: Either a confirm message or itself if something was invalid
-
-        Purpose: 
-        outsourcing todo buy in smaller functions
-        """
+        """outsourcing todo buy in smaller functions. Will be rewritten once discord adds text input interaction"""
         list_id = editing[ctx.author.id]
         todo_list = TodoList(list_id)
         user = User(ctx.author.id)
@@ -379,16 +307,7 @@ class TodoSystem(commands.Cog):
 
     async def buy_space(self, ctx):
         # This is the best thing to buy for your todo list
-        """async function buy_space
-        Input:
-        ctx: to have somthing to use .send() on
-
-        Returns:
-        (discord.Message): Confirm message
-
-        Purpose: 
-        outsourcing todo buy in smaller functions
-        """
+        """outsourcing todo buy in smaller functions"""
         list_id = editing[ctx.author.id]
         todo_list = TodoList(list_id)
         user = User(ctx.author.id)
@@ -399,16 +318,20 @@ class TodoSystem(commands.Cog):
         if todo_list.spots >= 100:
             return await ctx.send('You can\'t buy more than 100 spots')
 
-        step = await ctx.send(f'Do you want to buy 10 more to-do spots for this list? Current spots: {todo_list.spots} Cost: {todo_list.spots*100*0.5} points \n**[y/n]**')
-        def check(m):
-            return m.content.lower() in ['y', 'n'] and m.author.id == ctx.author.id
+        view = ConfirmButton(ctx.author.id, timeout=10)
+        msg = await ctx.send(f'Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points', view=view)
+        await view.wait()
+        
+        for child in view.children:
+            child.disabled = True
+            
+        await msg.edit(view=view)
 
-        confirmmsg = await self._wait_for_response(step, check)
-        if not confirmmsg:
-            return
-
-        if confirmmsg.content.lower() == 'n':
-            return await ctx.send('Alright, see you later then :3')
+        if not view.value:
+            if view.timed_out:
+                return await ctx.send(f'Timed out')
+            else:
+                return await ctx.send(f"Alright, see you later then :3")
 
         user.remove_jenny(int(100*todo_list.spots*0.5))
         todo_list.add_spots(10)
@@ -416,17 +339,7 @@ class TodoSystem(commands.Cog):
 
     async def buy_description(self, ctx):
         #Hi! You found a random comment! Now you have to vote for Killua :3 (Also thanks for checking out my code)
-        """async function buy_description
-        Input:
-        self: inputting because function is outside of cog
-        ctx: to have somthing to use .send() on
-
-        Returns:
-        (discord.Message)/itself: Either a confirm message or itself if something was invalid
-
-        Purpose: 
-        outsourcing todo buy in smaller functions
-        """
+        """outsourcing todo buy in smaller functions"""
         list_id = editing[ctx.author.id]
         todo_list = TodoList(list_id)
         user = User(ctx.author.id)
@@ -450,7 +363,6 @@ class TodoSystem(commands.Cog):
 
     @commands.group(hidden=True)
     async def todo(self, ctx):
-        #h You most likely want info about another todo command. Use `k!help command todo <todo_command>` for that
         pass
 
     @check(10)
@@ -785,7 +697,7 @@ class TodoSystem(commands.Cog):
 `description` add a description to your todo list (recommended for public lists with custom id)
 
 **Cost**: number of current spots * 100 * 0.5
-Buy 10 more spots for todos for your list''',
+`space` buy 10 more spots for todos for your list''',
             'color': 0x1400ff
         })
         await ctx.send(embed=embed)

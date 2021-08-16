@@ -21,23 +21,29 @@ updates = GDB['updates']
 
 IPC_TOKEN = config["ipc"]
 TOKEN = config["token"]
+PATREON = config["patreon"]
+DBL = config["dbl"]
 
 PATREON_TIERS = {
     "6002629": {
         "name": "one_star_hunter",
-        "id": 1
+        "id": 1,
+        "premium_guilds": 1
     },
     "6002630": {        
         "name": "two_star_hunter",
-        "id": 2
+        "id": 2,
+        "premium_guilds": 2
     },
     "6002631": {
         "name": "triple_star_hunter",
-        "id": 3
+        "id": 3,
+        "premium_guilds": 3
     },
     "6563669": {
         "name": "triple_star_hunter", # This tier gives the same benefits as triple star hunter
-        "id": 4
+        "id": 4,
+        "premium_guilds": 3
     }
 }
 
@@ -104,9 +110,9 @@ USER_FLAGS = {
 }
 
 KILLUA_BADGES = {
-    "one_star_hunter": "<:badge_one_star_hunter:788935576836374548>",
-    "two_star_hunter": "<:badge_double_star_hunter:788935576120066048>",
-    "triple_star_hunter": "<:badge_triple_star_hunter:788935576925372417>",
+    "6002629": "<:badge_one_star_hunter:788935576836374548>",
+    "6002630": "<:badge_double_star_hunter:788935576120066048>",
+    "6002631": "<:badge_triple_star_hunter:788935576925372417>",
     "premium": "<:badge_premium:829118525398188052>",
     "owner": "<:badge_killua_owner:788940157599612948>"
 }

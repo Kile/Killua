@@ -145,7 +145,7 @@ class SmallCommands(commands.Cog):
             return await ctx.send('Invalid user')
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="patreon")
+    @commands.command(aliases=["support"], extras={"category":Category.FUN}, usage="patreon")
     async def patreon(self, ctx):
         """Get infos about my Patreon and feel free to donate for some perks!"""
         embed = discord.Embed.from_dict({

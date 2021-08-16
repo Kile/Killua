@@ -5,7 +5,7 @@ import typing
 from datetime import datetime, timedelta
 from random import randint
 from killua.classes import User, Guild, Category
-from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds
+from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, PATREON_TIERS
 
 class Economy(commands.Cog):
 
@@ -28,6 +28,8 @@ class Economy(commands.Cog):
         if user.avatar.is_animated() or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]) > 0: # A very simple nitro check that is not too accurate
             flags.append(USER_FLAGS["nitro"])
         badges = [KILLUA_BADGES[x] for x in info.badges]
+        if len([x for x in info.badges if x in PATREON_TIERS.keys()]) > 0: # if the user has any premium tier
+            badges.append(KILLUA_BADGES["premium"])
         bal = info.jenny
         
         if str(datetime.now()) > str(info.daily_cooldown):

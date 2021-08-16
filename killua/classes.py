@@ -3,7 +3,7 @@ from datetime import datetime
 import random
 import discord
 from enum import Enum
-from .constants import FREE_SLOTS, teams, items, guilds, todo
+from .constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS
 
 class CardNotFound(Exception):
     pass
@@ -25,30 +25,26 @@ class ConfirmButton(discord.ui.View):
     def __init__(self, user_id:int, **kwargs):
         super().__init__(**kwargs)
         self.user_id = user_id
-        self.value = False
-        self.timed_out = True # defaults to true because if not set otherwise it timed out
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if not (val := interaction.user.id == self.user_id):
             await interaction.response.defer()
         return val
 
-    def _disable(self) -> None:
-        for child in self.children:
-            child.disabled = True
+    async def on_timeout(self):
+        self.value = False
+        self.timed_out = True
     
     @discord.ui.button(label="confirm", style=discord.ButtonStyle.green)
     async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.value = True
         self.timed_out = False
-        self._disable()
         self.stop()
 
     @discord.ui.button(label="cancel", style=discord.ButtonStyle.red)
     async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.value = False
         self.timed_out = False
-        self._disable()
         self.stop()
 
 class Category(Enum):
@@ -211,8 +207,10 @@ class User():
         self.fs_cards:list = user['cards']['fs']
         self.all_cards:list = [*self.fs_cards, *self.rs_cards]
         self.badges:list = user['badges']
-        self.is_premium:bool = 'premium' in self.badges
+        self.is_premium:bool = len([x for x in self.badges if x in PATREON_TIERS.keys()]) > 0
+        self.premium_tier:str = [x for x in self.badges if x in PATREON_TIERS.keys()][0] if self.is_premium else None
         self.votes = user["votes"] if "votes" in user else 0
+        self.premium_guilds:dict = user["premium_guilds"] if "premium_guilds" in user else {}
 
     @staticmethod
     def remove_all() -> str:
@@ -276,6 +274,16 @@ class User():
     def add_vote(self):
         """Keeps track of how many times a user has voted for Killua to increase the rewards over time"""
         teams.update_one({'id': self.id}, {'$set': {'votes': self.votes+1}})
+
+    def add_premium_guild(self, guild_id:int) -> None:
+        """Adds a guild to a users premium guilds"""
+        self.premium_guilds[str(guild_id)] = datetime.now()
+        teams.update_one({"id": self.id}, {"$set": {"premium_guilds": self.premium_guilds}})
+
+    def remove_premium_guild(self, guild_id:int) -> None:
+        """Removes a guild from a users premium guilds"""
+        del self.premium_guilds[str(guild_id)]
+        teams.update_one({"id": self.id}, {"$set": {"premium_guilds": self.premium_guilds}})
         
     def has_rs_card(self, card_id:int, fake_allowed:bool=True) -> bool:
         """Checking if the user has a card specified in their restricted slots"""
@@ -719,3 +727,11 @@ class Guild():
     def change_prefix(self, prefix:str):
         "Changes the prefix of a guild"
         guilds.update_one({'id': self.id}, {'$set': {'prefix': prefix}})
+
+    def add_premium(self):
+        """Adds premium to a guild"""
+        guilds.update_one({"id": self.id}, {"$push": {"badges": "premium"}})
+
+    def remove_premium(self):
+        """"Removes premium from a guild"""
+        guilds.update_one({"id": self.id}, {"$pull": {"badges": "premium"}})

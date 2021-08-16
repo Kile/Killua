@@ -94,16 +94,15 @@ class Tags(commands.Cog):
             })
         return embed
 
+    @commands.guild_only()
     @check()
     @commands.group(hidden=True)
     async def tag(self, ctx):
         if not Guild(ctx.guild.id).is_premium:
-            await ctx.send('This command group is currently only a premium feature. To enable your guild to use it, become a Patreon (https://patreon.com/kilealkuri) and join the support server')
-            raise Exception("tag command used on non premium guild")
-            
-        if not ctx.guild:
-            await ctx.send('Not usable in dms')
-            raise Exception("tag command used on non premium guild")
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, label="Premium", url="https://patreon.com/kilealkuri"))
+            await ctx.send("This command group is currently only a premium feature. To enable your guild to use it, become a Patreon!", view=view)
+            raise commands.CommandNotFound() # I raise this error because it is the only one I ignore in the error handler. Hacky but whatever
 
     @tag.command(extras={"category":Category.TAGS}, usage="tag create <tag_name>")
     async def create(self, ctx, *, tag_name:str):
