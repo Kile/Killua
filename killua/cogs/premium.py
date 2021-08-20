@@ -1,13 +1,15 @@
 import discord
 from discord.ext import commands, tasks
 
+from random import randint, choice
 from typing import List, Union
 from aiohttp import ClientSession
+from datetime import datetime, timedelta
 
-from datetime import datetime
 from killua.constants import PATREON_TIERS, teams, guilds, GUILD, BOOSTER_ROLE
-from killua.classes import User, Guild
-from killua.constants import PATREON
+from killua.classes import User, Guild, Category, Card, LootBox
+from killua.constants import PATREON, LOOTBOXES
+from killua.checks import check
 
 class Patrons:
 
@@ -110,9 +112,10 @@ class Premium(commands.Cog):
 
     def _assign_badges(self, diff:List[dict]) -> None:
         for d in diff:
-            user = teams.find_one({"id": d["discord"]})
-            premium_guilds = user["premium_guilds"] if "premium_guild" in user else {}
-            badges = user["badges"]
+            user = User(d["discord"])
+            premium_guilds = user.premium_guilds
+            badges = user.badges
+
             for k in PATREON_TIERS.keys():
                 if k in badges:
                     badges.remove(k)
@@ -134,8 +137,9 @@ class Premium(commands.Cog):
         self.invalid = False
 
     @commands.guild_only()
-    @commands.command()
+    @commands.command(extras={"category": Category.OTHER}, usage="premium <add/remove>")
     async def premium(self, ctx, action:str):
+        """Add or remove the premium status of a guild with this command"""
         if action.lower() == "add":
 
             if not (user:= User(ctx.author.id)).is_premium:
@@ -168,6 +172,27 @@ class Premium(commands.Cog):
 
         else:
             await ctx.send("You either need to use `remove` or `add` as an argument for this command")
+
+    @check()
+    @commands.command(extras={"category": Category.ECONOMY}, usage="weekly")
+    async def weekly(self, ctx):
+        """Claim your weekly lootbox with this command. Premium only"""
+        if not (user:=User(ctx.author.id)).is_premium:
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri", style=discord.ButtonStyle.grey))
+            return await ctx.send("You need to be a premium subscriber to use this command!", view=view)
+
+        if user.weekly_cooldown and user.weekly_cooldown > datetime.now():
+            difference = user.weekly_cooldown - datetime.now()
+            cooldown = f'{difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds'
+            return await ctx.send(f"You can claim your weekly lootbox the next time in {cooldown}")
+
+        lootbox = LootBox.get_random_lootbox()
+        user.claim_weekly()
+        user.add_lootbox(lootbox)
+
+        await ctx.send(f"Successfully claimed lootbox: {LOOTBOXES[lootbox]['name']}")
+
 
 Cog = Premium
 

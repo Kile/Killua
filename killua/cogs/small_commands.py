@@ -113,7 +113,7 @@ class SmallCommands(commands.Cog):
         await ctx.send("Hello " + str(ctx.author))
 
     @check()
-    @commands.command(aliases=['8ball'], extras={"category":Category.FUN}, usage="8ball <question>")
+    @commands.command(name='8ball', extras={"category":Category.FUN}, usage="8ball <question>")
     async def ball(self, ctx, *, question:str):
         """Ask Killua anything and he will answer"""
         embed = discord.Embed.from_dict({
@@ -137,7 +137,7 @@ class SmallCommands(commands.Cog):
             return await ctx.send(embed=embed)
             #If the user args is a mention the bot can just get everything from there
         try:
-            newuser = await self.client.fetch_user(user)
+            newuser = self.get_user(user) or await self.client.fetch_user(user)
             embed = self.av(newuser)
             return await ctx.send(embed=embed)
             #If the args is an integer the bot will try to get a user with the integer as ID
@@ -203,7 +203,10 @@ class SmallCommands(commands.Cog):
     @commands.command(extras={"category":Category.FUN}, usage="vote")
     async def vote(self, ctx):
         """Gived you the links you need if you want to support Killua by voting, you will get sone Jenny as a reward"""
-        await ctx.send('Thanks for supporting Killua! Vote for him here: https://top.gg/bot/756206646396452975/vote \nAnd here: https://discordbotlist.com/bots/killua/upvote')
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://top.gg/bot/756206646396452975/vote", label="top.gg"))
+        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://discordbotlist.com/bots/killua/upvote", label="dbl"))
+        await ctx.send('Thanks for supporting Killua! Vote for him by clicking on the buttons!', view=view)
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")

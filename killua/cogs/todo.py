@@ -238,135 +238,13 @@ class TodoSystem(commands.Cog):
             embed.set_thumbnail(url=todo_list.thumbnail)
         return await ctx.send(embed=embed)
 
-    async def buy_color(self, ctx):
-        """outsourcing todo buy in smaller functions. Will be rewritten once discord adds text input interaction"""
-        list_id = editing[ctx.author.id]
-        todo_list = TodoList(list_id)
-        user = User(ctx.author.id)
-        if user.jenny < 1000:
-            return await ctx.send('You don\'t have enough Jenny to buy a color for your todo list. You need 1000 Jenny')
-        
-        if todo_list.color:
-            return await ctx.send('You already have bought a color for this list! Update it with `k!todo color <color>`')
-
-        step = await ctx.send('Please provide a color you want your todo list to have, you can always change it later')
-        def check(m):
-            return m.author.id == ctx.author.id
-
-        confirmmsg = await self._wait_for_response(step, check)
-        if not confirmmsg:
-            return
-        c = f'0x{confirmmsg.content}'
-        try:
-            if not int(c, 16) <= 16777215:
-                await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
-                return await self.buy_color(ctx)
-        except Exception:
-            await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
-            return await self.buy_color(ctx)
-
-        user.remove_jenny(1000)
-        todo_list.set_property('color', int(c, 16))
-        return await ctx.send(f'Successfully bought the color {confirmmsg.content} for your list! You can change it with `k!todo color <url>`')
-
-
-    async def buy_thumbnail(self, ctx):
-        """outsourcing todo buy in smaller functions. Will be rewritten once discord adds text input interaction"""
-        list_id = editing[ctx.author.id]
-        todo_list = TodoList(list_id)
-        user = User(ctx.author.id)
-        if user.jenny < 1000:
-            return await ctx.send('You don\'t have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny')
-
-        if todo_list.thumbnail:
-            return await ctx.send('You already have bought a thumbnail for this list! Update it with `k!todo thumbnail <thumbnail_url>`')
-
-        step = await ctx.send('Please provide a thumbnail you want your todo list to have, you can always change it later')
-        def check(m):
-            return m.author.id == ctx.author.id
-
-        confirmmsg = await self._wait_for_response(step, check)
-        if not confirmmsg:
-            return
-
-        url = re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))', confirmmsg.content)
-
-        if url:
-            image = re.search(r'png|jpg|gif|svg', confirmmsg.content)
-        else:
-            await ctx.send('You didn\'t provide a valid url with an image! Please make sure you do that')
-            return await self.buy_thumbnail(ctx)
-                
-        if image:
-            user.remove_jenny(1000)
-            todo_list.set_property('thumbnail', confirmmsg.content)
-            return await ctx.send(f'Successfully bought the thumbmail `{confirmmsg.content}` for your list! You can change it with `k!todo thumbnail <url>`')
-        else:
-            await ctx.send('You didn\'t provide a valid url with an image! Please make sure you do that')
-            return await self.buy_thumbnail(ctx)
-
-    async def buy_space(self, ctx):
-        # This is the best thing to buy for your todo list
-        """outsourcing todo buy in smaller functions"""
-        list_id = editing[ctx.author.id]
-        todo_list = TodoList(list_id)
-        user = User(ctx.author.id)
-
-        if user.jenny < (todo_list.spots * 100 * 0.5):
-            return await ctx.send(f'You don\'t have enough Jenny to buy more space for your todo list. You need {todo_list["spots"]*100} Jenny')
-
-        if todo_list.spots >= 100:
-            return await ctx.send('You can\'t buy more than 100 spots')
-
-        view = ConfirmButton(ctx.author.id, timeout=10)
-        msg = await ctx.send(f'Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points', view=view)
-        await view.wait()
-        
-        for child in view.children:
-            child.disabled = True
-            
-        await msg.edit(view=view)
-
-        if not view.value:
-            if view.timed_out:
-                return await ctx.send(f'Timed out')
-            else:
-                return await ctx.send(f"Alright, see you later then :3")
-
-        user.remove_jenny(int(100*todo_list.spots*0.5))
-        todo_list.add_spots(10)
-        return await ctx.send('Congrats! You just bought 10 more todo spots for the current todo list!')
-
-    async def buy_description(self, ctx):
-        #Hi! You found a random comment! Now you have to vote for Killua :3 (Also thanks for checking out my code)
-        """outsourcing todo buy in smaller functions"""
-        list_id = editing[ctx.author.id]
-        todo_list = TodoList(list_id)
-        user = User(ctx.author.id)
-        if user.jenny < 1000:
-            return await ctx.send('You don\'t have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny')
-        
-        step = await ctx.send(f'What should the description of your todo list be? (max 200 characters)')
-        def check(m):
-            return m.author.id == ctx.author.id
-        
-        confirmmsg = await self._wait_for_response(step, check)
-        if not confirmmsg:
-            return
-
-        if len(confirmmsg.content) > 200:
-            await ctx.send('Your description can\'t be over 200 characters!')
-            return await self.buy_description(ctx)
-        tuser.remove_jenny(1000)
-        todo_list.set_property('description', description)
-        return await ctx.send('Congrats! You bought a description for your current todo list')
 
     @commands.group(hidden=True)
     async def todo(self, ctx):
         pass
 
     @check(10)
-    @todo.command(extras={"category":Category.TODO}, usage="todo create")
+    @todo.command(extras={"category":Category.TODO}, usage="create")
     async def create(self, ctx):
         """Let's you create your todo list in an interactive menu"""
         
@@ -399,7 +277,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{todo_id}`' + f'or through your custom id {custom_id}' if custom_id else '')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo view <list_id(optional)>")
+    @todo.command(extras={"category":Category.TODO}, usage="view <list_id(optional)>")
     async def view(self, ctx, todo_id=None):
         """Allows you to view what is on any todo list- provided you have the permissions"""
         if todo_id is None:
@@ -427,7 +305,7 @@ class TodoSystem(commands.Cog):
         await Paginator(ctx, todo_list, max_pages=math.ceil(len(todo_list)/10),func=make_embed).start()
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo clear")
+    @todo.command(extras={"category":Category.TODO}, usage="clear")
     async def clear(self, ctx):
         """Clears all todos from a todo list"""
         try:
@@ -461,7 +339,7 @@ class TodoSystem(commands.Cog):
             return await self.single_todo_info_embed_generator(ctx, todo_or_task_id, int(td))
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo edit <list_id>")
+    @todo.command(extras={"category":Category.TODO}, usage="edit <list_id>")
     async def edit(self, ctx, list_id):
         """The command with which you can change stuff on your todo list"""
         try:
@@ -475,7 +353,7 @@ class TodoSystem(commands.Cog):
         editing[ctx.author.id] = todo_list.id
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo name <new_name>")
+    @todo.command(extras={"category":Category.TODO}, usage="name <new_name>")
     async def name(self, ctx, new_name:str):
         """Rename your todo list with thsi command (Only in editor mode)"""
         try:
@@ -486,7 +364,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f'Done! Update your todo list\'s name to "{new_name}"')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo status <new_status>")
+    @todo.command(extras={"category":Category.TODO}, usage="status <new_status>")
     async def status(self, ctx, status):
         """Change the status of your todo list (public/private) with this command (Only in editor mode)"""
         try:
@@ -499,7 +377,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f'Done! Updated your todo list\'s status to `{status.lower()}`')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo color <new_color_in_hex>")
+    @todo.command(extras={"category":Category.TODO}, usage="color <new_color_in_hex>")
     async def color(self, ctx, color):
         """Change your todo list's color with this command (Only in editor mode)"""
         try:
@@ -521,7 +399,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f'Done! Updated your todo list\'s color to `{c}`')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo thumbnail <new_thumbnail>")
+    @todo.command(extras={"category":Category.TODO}, usage="thumbnail <new_thumbnail>")
     async def thumbnail(self, ctx, url):
         """Change your todo lists thumbnail with this command (Only in editor mode)"""
         try:
@@ -547,7 +425,7 @@ class TodoSystem(commands.Cog):
             await ctx.send('You didn\'t provide a valid url with an image! Please make sure you do that')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo custom_id <new_id>")
+    @todo.command(extras={"category":Category.TODO}, usage="custom_id <new_id>")
     async def custom_id(self, ctx, custom_id):
         """Lets you change your todo lists custom id- provided you are premium supporter (Only in editor mode)"""
         try:
@@ -570,7 +448,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(f'Done! Updated your todo list\'s custom id to `{custom_id}`')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo autodelete <on/off>")
+    @todo.command(extras={"category":Category.TODO}, usage="autodelete <on/off>")
     async def autodelete(self, ctx, on_or_off):
         """Let's you change if you mark a todo task as done if it should automatically delete it or not (Only in editor mode)"""
         try:
@@ -594,7 +472,7 @@ class TodoSystem(commands.Cog):
             return await ctx.send(f'Done! Deactivated your lists auto delete feature when something is marked as `done`')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo remove <task_id>")
+    @todo.command(extras={"category":Category.TODO}, usage="remove <task_id>")
     async def remove(self, ctx, todo_numbers: commands.Greedy[int]):
         """Remove a todo with this command. YAY, GETTING THINGS DONE!! (Only in editor mode)"""
         try:
@@ -616,7 +494,7 @@ class TodoSystem(commands.Cog):
             return await ctx.send('You need to provide only valid numbers!')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo mark <task_id> <text>")
+    @todo.command(extras={"category":Category.TODO}, usage="mark <task_id> <text>")
     async def mark(self, ctx, todo_number:int, *,marked_as:str):
         """Mark a todo with a comment like `done` or `too lazy` (Only in editor mode)"""
         try:
@@ -655,61 +533,14 @@ class TodoSystem(commands.Cog):
             todo_list.set_property('todos', todos)
             return await ctx.send(f'Marked to-do number {todo_number} as `{marked_as}`!')
 
-    @check(2)
-    @todo.command(extras={"category":Category.TODO}, usage="todo buy <item>")
-    async def buy(self, ctx, what):
-        """Buy cool stuff for your todo list with this command! (Only in editor mode)"""
-        try:
-            list_id = editing[ctx.author.id]
-        except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
-        user = teams.find_one({'id': ctx.author.id})
-        if user is None:
-            return await ctx.send('This is a feature you have to buy, to gain Jenny claim `k!daily`')
-        
-        if not what.lower() in ['color', 'thumbnail', 'space', 'description']:
-            return await ctx.send('You need to provide a valid thing you want to buy (color, thumbnail, space)')
-
-        if what.lower() == 'color':
-            return await self.buy_color(ctx)
-        elif what.lower() == 'thumbnail':
-            return await self.buy_thumbnail(ctx)
-        elif what.lower() == 'space':
-            return await self.buy_space(ctx)
-        elif what.lower() == 'description':
-            return await self.buy_description(ctx)
-
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo shop")
-    async def shop(self, ctx):
-        """Get some info about what cool stuff you can buy for your todo list with this command"""
-        embed = discord.Embed.from_dict({
-            'title': '**The todo shop**',
-            'description': '''You can buy the following items with `k!todo buy <item>` while you are in the edit menu for the todo list you want to buy the item for
-            
-**Cost**: 1000 Jenny
-`color` change the color of the embed which displays your todo list!
-
-**Cost**: 1000 Jenny
-`thumbnail` add a neat thumbnail to your todo list (small image on the top right)
-
-**Cost**: 1000 Jenny
-`description` add a description to your todo list (recommended for public lists with custom id)
-
-**Cost**: number of current spots * 100 * 0.5
-`space` buy 10 more spots for todos for your list''',
-            'color': 0x1400ff
-        })
-        await ctx.send(embed=embed)
-
-    @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo add <text>")
+    @todo.command(extras={"category":Category.TODO}, usage="add <text>")
     async def add(self, ctx, *, td):
         """Add a todo to your list, *yay, more work* (Only in editor mode)"""
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
+            return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`')
 
         todo_list = TodoList(list_id)
 
@@ -726,7 +557,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(f'Great! Added {td} to your todo list!')
 
     @check(20)
-    @todo.command(extras={"category":Category.TODO}, usage="todo kick <user>")
+    @todo.command(extras={"category":Category.TODO}, usage="kick <user>")
     async def kick(self, ctx, user: Union[discord.User, int]):
         """Kick someone with permissions from your todo list (this takes **every** permission) (Only in editor mode)"""
         try:
@@ -768,7 +599,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send('Exiting editing mode!')
 
     @check(20)
-    @todo.command(extras={"category":Category.TODO}, usage="todo invite <user> <editor/viewer>")
+    @todo.command(extras={"category":Category.TODO}, usage="invite <user> <editor/viewer>")
     async def invite(self, ctx, user: Union[discord.User, int], role):
         """Wanna let your friend add more todos for you? Invite them! You can also make people view your todo list when it is set on private (Only in editor mode)"""
         try:
@@ -840,7 +671,7 @@ class TodoSystem(commands.Cog):
                 await ctx.author.send(f'You have been reported for inviting {user}, a staff member will look into the issue soon')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo assign <task_id> <user>")
+    @todo.command(extras={"category":Category.TODO}, usage="assign <task_id> <user>")
     async def assign(self, ctx, todo_number:int, user: Union[discord.User, int], rm=None):
         """Assign someone a todo task with this to coordinate who does what (Only in editor mode)"""
         try:
@@ -904,7 +735,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(f'Succesfully assigned the task with number {todo_number} to `{user}`')
     
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="todo delete <list_id>")
+    @todo.command(extras={"category":Category.TODO}, usage="delete <list_id>")
     async def delete(self, ctx, todo_id):
         """Use this command to delete your todo list. Make sure to say goodbye a last time"""
         try:

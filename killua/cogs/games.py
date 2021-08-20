@@ -8,7 +8,6 @@ import math
 
 from killua.paginator import View
 from killua.classes import User, ConfirmButton, Category
-from killua.constants import WHITESPACE
 from killua.checks import blcheck
 
 class RpsChoice(discord.ui.View):
@@ -204,7 +203,7 @@ class CountButtons(discord.ui.Button):
             return await interaction.response.edit_message(content="Can you remember?", view=view)
 
     async def callback(self, interaction: discord.Interaction):
-        """Is called when a button is clicked and determines wether it was correct or not, then passes that on to self.other functions"""
+        """Is called when a button is clicked and determines wether it was correct or not, then passes that on to other functions"""
         self.view.correct:bool = self.solutions[self.view.stage] == self.index # if the button was correct
         last: bool = self.view.stage == len(self.solutions) # if this is the last stage
 
@@ -249,7 +248,7 @@ class CountGame:
         view = View(self.ctx.author.id)
         view.stage = 1
         for i in range(25):
-            view.add_item(discord.ui.Button(label=str([k for k, v in self.solutions.items() if v-1 == i][0]) if i+1 in list(self.solutions.values()) else WHITESPACE, disabled=True, style=discord.ButtonStyle.grey))
+            view.add_item(discord.ui.Button(label=str([k for k, v in self.solutions.items() if v-1 == i][0]) if i+1 in list(self.solutions.values()) else " ", disabled=True, style=discord.ButtonStyle.grey))
         if not msg:
             msg = await self.ctx.send("Press the buttons in the order displayed as soon as the time starts. Good luck!", view=view)
         else:
@@ -263,7 +262,7 @@ class CountGame:
         view = View(self.ctx.author.id, timeout=self.level*10*(0.5 if self.difficulty == "easy" else 1))
         view.stage = 1
         for i in range(25):
-            view.add_item(CountButtons(self.solutions, i+1, label=WHITESPACE))
+            view.add_item(CountButtons(self.solutions, i+1, label=" "))
         await msg.edit(content="Can you remember?", view=view)
         await view.wait()
 
@@ -273,7 +272,7 @@ class CountGame:
             for child in view.children:
                 child.disabled = True
             await msg.edit(view=view)
-            #self.user.add_jenny(reward)
+            self.user.add_jenny(reward)
             return await self.ctx.send(resp + " But well done, you made it to level " + str(self.level) + " which brings you a reward of " + str(reward) + " Jenny!")
 
         self.level += 1
@@ -299,7 +298,7 @@ class Games(commands.Cog):
         self.client = client
 
     @commands.command(extras={"category": Category.GAMES}, usage="count <easy/hard>")
-    async def count(self, ctx, difficulty:str):
+    async def count(self, ctx, difficulty:str="easy"):
         """See how many numbers you can remember with this count game!"""
         if not difficulty.lower() in  ["easy", "hard"]:
             return await ctx.send("Invalid difficulty")
@@ -309,7 +308,6 @@ class Games(commands.Cog):
     @commands.command(extras={"category":Category.GAMES}, usage="rps <user> <points(optional)>")
     async def rps(self, ctx, member: discord.Member, points: int=None):
         """Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun."""
-        #u rps <user> <points(optional)
         
         if member.id == ctx.author.id:
             return await ctx.send('Baka! You can\'t play against yourself')

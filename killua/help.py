@@ -23,16 +23,19 @@ class HelpEmbed(discord.Embed):
 
 class Select(discord.ui.Select):
     """Creates a select menu to view the command groups"""
-    def __init__(self, options:list):
-        super().__init__(
-            placeholder="Select a command group", 
+    def __init__(self, options, **kwargs):
+        super().__init__( 
             min_values=1, 
             max_values=1, 
-            options=options
+            options=options,
+            **kwargs
         )
 
     async def callback(self, interaction: discord.Interaction):
         self.view.value = int(interaction.data["values"][0])
+        for opt in self.options:
+            if opt.value == str(self.view.value):
+                opt.default = True
         self.view.stop()
 
 class MyHelp(commands.HelpCommand):
@@ -44,20 +47,20 @@ class MyHelp(commands.HelpCommand):
                 "aliases": ['commands']
             }
         )
-        self.prefix = Guild(self.context.guild.id).prefix if (self.context.guild if self.context else None) else "k!"
         self.cache = None
     
     async def send(self, **kwargs):
         """a short cut to sending to get_destination"""
         return await self.get_destination().send(**kwargs)
 
-    async def _send_group_help(self, group:int, commands:dict):
-        key = [x for i, x in enumerate(commands.keys()) if i == group][0]
-        c = commands[key]
+    async def _send_group_help(self, group:int, prefix:str) -> None:
+        k, v = [x for i, x in enumerate(self.cache.items()) if i == group][0]
+        c = v["commands"]
 
         def make_embed(page, embed, pages):
-            embed.title = "Commands from the group `"+key.value["name"] + "`"
-            embed.description = pages[page-1]
+            embed.title = "Commands from the group `"+ k + "`"
+            data = pages[page-1]
+            embed.description = f"Command: `{prefix}{(data['parent'] + ' ') if data['parent'] else ''}{data['name']}`\n\n{data['help']}\n\nUsage: ```html\n{prefix}{(data['parent'] + ' ') if data['parent'] else ''}{data['usage']}\n```"
             return embed
 
         await Paginator(self.context, c, timeout=100, func=make_embed, embed=CommandEmbed()).start()
@@ -65,27 +68,21 @@ class MyHelp(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         """triggers when a `<prefix>help` is called"""
         ctx = self.context
-        commands = {}
+        prefix = ctx.bot.command_prefix(ctx.bot, ctx.message)[2]
         embed = HelpEmbed(str(ctx.me.avatar.url))
-        if self.cache:
-            commands = self.cache
-        else:
-            for cmds in mapping.values(): #iterating through our mapping of commands
-                for command in cmds:
-                    if command.hidden or command.name == "jishaku":
-                        continue
-                    text = f"\nCommand: `{self.prefix}{command.name}`\n\n{command.help}\n\nUsage:```markdown\n{self.prefix}{command.usage}\n```"
-                    if command.extras["category"] in commands:
-                        commands[command.extras["category"]].append(text)  
-                    else:
-                        commands[command.extras["category"]] = [text]
-            self.cache = commands
+        if not self.cache:
+            self.cache = ctx.bot.get_formatted_commands()
 
-        for k, v in commands.items():
-            embed.add_field(name=f"** **", value=f"{k.value['emoji']['normal']} `{k.value['name']}` ({len(v)} commands)\n{k.value['description']}", inline=False)
-        embed.add_field(name="** **", value="\nFor more info to a specific command,, use ```css\nhelp <command_name>```\n[Support server](https://discord.gg/be4nvwq7rZ)\n[Source code](https://github.com/kile/killua)\n[Website](https://killua.dev)", inline=False)
+        for k, v in self.cache.items():
+            embed.add_field(name=f"{v['emoji']['normal']} `{k}` ({len(v['commands'])} commands)", value=v['description'], inline=False)
+        embed.add_field(name="** **", value="\nFor more info to a specific command, use ```css\nhelp <command_name>```", inline=False)
         view = View(user_id=ctx.author.id, timeout=None)
-        view.add_item(Select([discord.SelectOption(label=k.value['name'], value=str(i), emoji=k.value['emoji']['unicode']) for i, k in enumerate(commands.keys())]))
+        view.add_item(Select([discord.SelectOption(label=k, value=str(i), emoji=v['emoji']['unicode']) for i, (k, v) in enumerate(self.cache.items())], placeholder="Select a command group"))
+
+        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://discord.gg/be4nvwq7rZ", label="Support server"))
+        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://github.com/kile/killua", label="Source code"))
+        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://killua.dev", label="Website"))
+        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://patreon.com/kilealkuri", label="Premium"))
         msg = await self.send(embed=embed, view=view, reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 
         try:
@@ -95,18 +92,20 @@ class MyHelp(commands.HelpCommand):
         else:
             #await msg.edit(embed=msg.embeds[0], view=discord.ui.View())
             await msg.delete()
-            return await self._send_group_help(view.value, commands)
+            return await self._send_group_help(view.value, prefix)
 
     async def send_command_help(self, command):
         """triggers when a `<prefix>help <command>` is called"""
-        embed = CommandEmbed(title="Infos about command " + self.prefix + command.name, description=command.help or "No help found...")
+        ctx = self.context
+        prefix = ctx.bot.command_prefix(ctx.bot, ctx.message)[2]
+        embed = CommandEmbed(title="Infos about command " + prefix + command.name, description=command.help or "No help found...")
 
         embed.add_field(name="Category", value=command.extras["category"].value["name"])
 
         can_run = "No"
         # command.can_run to test if the cog is usable
         with contextlib.suppress(commands.CommandError):
-            if await command.can_run(self.context):
+            if await command.can_run(ctx):
                 can_run = "Yes"
             
         embed.add_field(name="Usable", value=can_run, inline=False)
@@ -118,7 +117,7 @@ class MyHelp(commands.HelpCommand):
                 inline=False
             )
         
-        embed.add_field(name="Usage", value=f"```css\n{command.usage}\n```", inline=False)
+        embed.add_field(name="Usage", value=f"```css\n{prefix}{command.usage}\n```", inline=False)
 
         await self.send(embed=embed)
 

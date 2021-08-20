@@ -10,12 +10,12 @@ import io
 import aiohttp
 import pathlib
 
-from typing import Union, List
+from typing import Union, List, Optional
 
 from killua.checks import check
 from killua.paginator import Paginator
 from killua.classes import User, Card, CardLimitReached, CardNotFound, Category
-from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES, teams, items, shop
+from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES, teams, items, shop, LOOTBOXES
 
 # I am NOT writing a detailed description of every function in here, just a brief description for functions in classes
 
@@ -23,29 +23,8 @@ class Cards(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.shop_update.start()
         self.cached_cards = {}
-
-    def _format_offers(offers:list, reduced_item:int=None, reduced_by:int=None):
-        formatted:list = []
-        if reduced_item and reduced_by:
-            x:int = 0
-            for offer in offers:
-                formatted.append(self._format_item(offer, reduced_item, reduced_by, x))
-                x = x+1
-        else:
-            for offer in offers:
-                formatted.append(self._format_item(offer))
-
-        return formatted
-
-    def _format_item(offer:int, reduced_item:int=None, reduced_by:int=None, number:int=None):
-        item = items.find_one({'_id': int(offer)})
-        if reduced_item:
-            if number == reduced_item:
-                return {'name':f'**Number {item["_id"]}: {item["name"]}** |{item["emoji"]}|', 'value': f'**Description:** {item["description"]}\n**Price:** {PRICES[item["rank"]]-int(PRICES[item["rank"]]*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item["type"].replace("normal", "item")}\n**Rarity:** {item["rank"]}'}  
-        
-        return {'name':f'**Number {item["_id"]}: {item["name"]}** |{item["emoji"]}|', 'value': f'**Description:** {item["description"]}\n**Price:** {PRICES[item["rank"]]} Jenny\n**Type:** {item["type"].replace("normal", "item")}\n**Rarity:** {item["rank"]}'}
+        self.cached_background = {}
 
     # Contribution by DerUSBStick (Thank you!)
     async def _imagefunction(self, data, restricted_slots, page:int):
@@ -56,20 +35,37 @@ class Cards(commands.Cog):
         background = await self._setpage(background, page)
         return background
 
-    async def _getbackground(self, types):
+    def _get_from_cache(self, types:int) -> Union[Image.Image, None]:
+        if types == 0:
+            if "first_page" in self.cached_background:
+                return self.cached_background["first_page"]
+            return
+        else:
+            if "default_background" in self.cached_background:
+                return self.cached_background["default_background"]
+            return
+        
+    def _set_cache(self, data:Image, first_page:bool) -> None:
+        self.cached_background["first_page" if first_page else "default_background"] = data
+
+    async def _getbackground(self, types) -> Image.Image:
         url = ['https://alekeagle.me/XdYUt-P8Xv.png', 'https://alekeagle.me/wp2mKvzvCD.png']
-        async with aiohttp.ClientSession() as cs:
-            async with cs.get(url[types]) as res:
-                image_bytes = await res.read()
-                background = Image.open(io.BytesIO(image_bytes)).convert('RGB') 
+        if (res:= self._get_from_cache(types)):
+            return res.convert("RGB")
+
+        async with self.client.session.get(url[types]) as res: 
+            image_bytes = await res.read()
+            background = (img:= Image.open(io.BytesIO(image_bytes))).convert('RGB') 
+
+        self._set_cache(img, types == 0)
         return background
 
-    async def _getcard(self, url):
-        async with aiohttp.ClientSession() as cs:
-            async with cs.get(url) as res:
-                image_bytes = await res.read()
-                image_card = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-                image_card = image_card.resize((80, 110), Image.ANTIALIAS)
+    async def _getcard(self, url) -> Image.Image:
+
+        async with self.client.session.get(url) as res:
+            image_bytes = await res.read()
+            image_card = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+            image_card = image_card.resize((80, 110), Image.ANTIALIAS)
         await asyncio.sleep(0.3) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
         return image_card
 
@@ -80,7 +76,7 @@ class Cards(commands.Cog):
         draw.text((595, 385), f'{page*2}', (0,0,0), font=font)
         return image
 
-    async def _getfont(self, size):
+    async def _getfont(self, size) -> ImageFont.ImageFont:
         font = ImageFont.truetype(str(pathlib.Path(__file__).parent.parent) + "/font.ttf", size, encoding="unic") 
         return font
 
@@ -165,46 +161,6 @@ class Cards(commands.Cog):
             'footer': {'text': ''}
         })
         return embed, f
-        
-    @tasks.loop(hours=6)
-    async def shop_update(self):
-        #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
-        #the challange is to create a balanced system with good items rare enough but not too rare
-        shop_items:list = []
-        number_of_items = random.randint(3,5) #How many items the shop has
-        if random.randint(1,100) > 95:
-            #Add a S/A card to the shop
-            thing = [i['_id'] for i in items.find({'type': 'normal', 'rank': random.choice(['A', 'S'])})]
-            shop_items.append(random.choice(thing))
-        if random.randint(1,100) > 20: #80% chance for spell
-            if random.randint(1, 100) > 95: #5% chance for a good spell (they are rare)
-                spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': 'A'})]
-                shop_items.append(random.choice(spells))
-            elif random.randint(1,50): #50% chance of getting a medium good card
-                spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': random.choice(['B', 'C'])})]
-                shop_items.append(random.choice(spells))
-            else: #otherwise getting a fairly normal card
-                spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': random.choice(['D', 'E', 'F', 'G'])})]
-                shop_items.append(random.choice(spells))
-
-            while len(shop_items) != number_of_items: #Filling remaining spots
-                thing = [t['_id'] for t in items.find({'type': 'normal', 'rank': random.choice(['D', 'B'])})] 
-                #There is just one D item so there is a really high probablility of it being in the shop EVERY TIME
-                t = random.choice(thing)
-                if not t in shop_items:
-                    shop_items.append(t)
-
-            log = shop.find_one({'_id': 'daily_offers'})['log']
-            if random.randint(1, 10) > 6: #40% to have an item in the shop reduced
-                reduced_item = random.randint(0, len(shop_items)-1)
-                reduced_by = random.randint(15, 40)
-                print('Updated shop with following cards: ' + ', '.join([str(x) for x in shop_items])+f', reduced item number {shop_items[reduced_item]} by {reduced_by}%')
-                log.append({'time': datetime.now(), 'items': shop_items, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}})
-                shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}}})
-            else:
-                print('Updated shop with following cards: ' + ', '.join([str(x) for x in shop_items]))
-                log.append({'time': datetime.now(), 'items': shop_items, 'redued': None})
-                shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': None}})
 
     @check(3)
     @commands.command(extras={"category":Category.CARDS}, usage="book <page(optional)>")
@@ -222,74 +178,6 @@ class Cards(commands.Cog):
         async def make_embed(page, embed, pages):
             return await self._get_book(ctx.author, page)
         return await Paginator(ctx, page=page, func=make_embed, max_pages=6+math.ceil(len(user.fs_cards)/18), has_file=True).start()
-
-    @check()
-    @commands.command(aliases=['store'], extras={"category":Category.CARDS}, usage="shop")
-    async def shop(self, ctx):
-        """Shows the current cards for sale"""
-        
-        sh = shop.find_one({'_id': 'daily_offers'})
-        shop_items:list = sh['offers']
-
-        if not sh['reduced'] is None:
-            reduced_item = sh['reduced']['reduced_item']
-            reduced_by = sh['reduced']['reduced_by']
-            formatted = format_offers(shop_items, reduced_item, reduced_by)
-            embed = discord.Embed(title='Current Card shop', description=f'**{items.find_one({"_id": shop_items[reduced_item]})["name"]} is reduced by {reduced_by}%**')
-        else:
-            formatted:list = format_offers(shop_items)
-            embed = discord.Embed(title='Current Card shop')
-
-        embed.color = 0x1400ff
-        embed.set_thumbnail(url='https://static.wikia.nocookie.net/hunterxhunter/images/0/08/Spell_Card_Store.png/revision/latest?cb=20130328063032')
-        for item in formatted:
-            embed.add_field(name=item['name'], value=item['value'], inline=False)
-
-        await ctx.send(embed=embed)
-
-    @check(2)
-    @commands.command(extras={"category":Category.CARDS}, usage="buy <card_id>")
-    async def buy(self, ctx, item:int):
-        """Buy a card from the shop with this command"""
-        
-        shop_data = shop.find_one({'_id': 'daily_offers'})
-        shop_items = shop_data['offers']
-        user = User(ctx.author.id)
-
-        try:
-            card = Card(item)
-        except CardNotFound:
-            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`')
-
-        if not item in shop_items:
-            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`')
-
-        if not shop_data['reduced'] is None:
-            if shop_items.index(card.id) == shop_data['reduced']['reduced_item']:
-                price = int(PRICES[card.rank] - int(PRICES[card.rank] * shop_data['reduced']['reduced_by']/100))
-            else:
-                price = PRICES[card.rank]
-        else:
-            price = PRICES[card.rank]
-
-        if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
-            return await ctx.send('Unfortunatly the global maximal limit of this card is reached! Someone needs to sell their card for you to buy one or trade/give it to you')
-
-        if len(user.fs_cards) >= FREE_SLOTS:
-            return await ctx.send(f'Looks like your free slots are filled! Get rid of some with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`')
-
-        if user.jenny < price:
-            return await ctx.send(f'I\'m afraid you don\'t have enough Jenny to buy this card. Your balance is {user.jenny} while the card costs {price} Jenny')
-        try:
-            user.add_card(item)
-        except Exception as e:
-            if isinstance(e, CardLimitReached):
-                return await ctx.send(f'Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell <card>`')
-            else:
-                print(e)
-
-        user.remove_jenny(price) #Always putting substracting points before giving the item so if the payment errors no iten is given
-        return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!')
 
     @check(2)
     @commands.command(extras={"category":Category.CARDS}, usage="sell <card_id> <amount(optional)>")
@@ -441,42 +329,6 @@ class Cards(commands.Cog):
         except discord.HTTPException:
             pass
         return await ctx.send(f'Done {ctx.author.mention}! Successfully added `{user}` to the list of people you\'ve met', delete_after=5)
-
-    @check()
-    @commands.command(extras={"category":Category.ECONOMY}, usage="give <user> <type> <card_id/amount>")
-    async def give(self, ctx, other:discord.Member, t:str, item:int):
-        """If you're feeling generous give another user cards or jenny. Available types are jenny and card"""
-        
-        if other == ctx.author:
-            return await ctx.send('You can\'t give yourself anything!')
-        if other.bot:
-            return await ctx.send('🤖')
-        user = User(ctx.author.id)
-        o = User(other.id)
-        if t.lower() == 'jenny':
-            if item < 1:
-                return await ctx.send(f'You can\'t transfer less than 1 Jenny!')
-            if user.jenny < item:
-                return await ctx.send('You can\'t transfer more Jenny than you have')
-            o.add_jenny(item)
-            user.remove_jenny(item)
-            return await ctx.send(f'✉️ transferred {item} Jenny to `{other}`!')
-        elif t.lower() == 'card':
-            try:
-                Card(item)
-            except CardNotFound:
-                return await ctx.send('Invalid card number')
-            if user.has_any_card(item, False) is False:
-                return await ctx.send('You don\'t have any not fake copies of this card!')
-            if (len(o.fs_cards) >= 40 and item < 100 and o.has_rs_card(item)) or (len(o.fs_cards) >= 40 and item > 99):
-                return await ctx.send('The user you are trying to give the cards\'s free slots are full!')
-
-            removed_card = user.remove_card(item)
-            o.add_card(item, clone=removed_card[1]["clone"])
-            return await ctx.send(f'✉️ gave `{other}` card No. {item}!')
-
-        else:
-            await ctx.send('You need to choose a valid type (`card`|`jenny`)')
             
     @check()
     @commands.command(extras={"category":Category.CARDS}, usage="discard <card_id>")
@@ -588,15 +440,13 @@ class Cards(commands.Cog):
             return await ctx.send('You can only use this card in response to an attack!')
         await ctx.send('Invalid card!')
 
-    @commands.is_owner()
-    @commands.command(extras={"category":Category.CARDS}, usage="gain <type> <card_id/amount>")
+    @commands.has_role(874625525287649360)
+    @commands.command(extras={"category":Category.CARDS}, usage="gain <type> <card_id/amount/lootbox>")
     async def gain(self, ctx, t:str, item:str):
-        """An owner restricted command allowing the user to obtain any card or amount of jenny"""
-        if not ctx.author.id == 606162661184372736:
-            return
+        """An owner restricted command allowing the user to obtain any card or amount of jenny or any lootbox"""
         user = User(ctx.author.id)
-        if not t.lower() in ["jenny", "card"]:
-            return await ctx.send(f'You need to provide a valid type! `{self.client.command_prefix(self.client, ctx.message)[2]}gain <jenny/card> <amount/id>`')
+        if not t.lower() in ["jenny", "card", "lootbox"]:
+            return await ctx.send(f'You need to provide a valid type! `{self.client.command_prefix(self.client, ctx.message)[2]}gain <jenny/card/lootbox> <amount/id>`')
         if t.lower() == 'card':
             try:
                 item = int(item)
@@ -620,6 +470,12 @@ class Cards(commands.Cog):
                 return await ctx.send('Be reasonable.')
             user.add_jenny(item)
             return await ctx.send(f'Added {item} Jenny to your account')
+
+        if t.lower() == "lootbox":
+            if not item.isdigit() or not int(item) in list(LOOTBOXES.keys()):
+                return await ctx.send("Invalid lootbox!")
+            user.add_lootbox(int(item))
+            return await ctx.send(f"Done! Added lootbox \"{LOOTBOXES[int(item)]['name']}\" to your inventory")
 
 async def card_1038(self, ctx, card_id:int, without_removing=False):
     if not isinstance(card_id, int):

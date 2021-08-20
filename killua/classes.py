@@ -1,9 +1,15 @@
 from __future__ import annotations
-from datetime import datetime
+"""
+This file comtains classes that are not specific to one group and are used across several files
+"""
+from datetime import datetime, timedelta
 import random
 import discord
 from enum import Enum
-from .constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS
+from typing import Union, Tuple, List
+
+from .paginator import View
+from .constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES
 
 class CardNotFound(Exception):
     pass
@@ -19,6 +25,149 @@ class CardLimitReached(Exception):
 
 class TodoListNotFound(Exception):
     pass
+
+class _LootBoxButton(discord.ui.Button):
+    """A class used for lootbox buttons"""
+    def __init__(self, index:int, rewards:List[Union[Card, int, None]],**kwargs):
+        super().__init__(**kwargs)
+        self.index = index
+        if self.index != 24:
+            self.reward = rewards[self.index]
+            self.has_reward = not not self.reward
+
+    def _create_view(self) -> View:
+        """Creates a new view after the callback depending on if this button has a reward"""
+        for c in self.view.children:
+            if c.index == self.index and not c.index == 24:
+                c.disabled=True
+                c.label=("" if isinstance(self.reward, Card) else str(self.reward)) if self.has_reward else ""
+                c.style=discord.ButtonStyle.success if self.has_reward else discord.ButtonStyle.red
+                c.emoji=(self.reward.emoji if isinstance(self.reward, Card) else None) if self.has_reward else "\U0001f4a3"
+            elif c.index == 24:
+                c.disabled = not self.has_reward
+            else:
+                c.disabled=c.disabled if self.has_reward else True
+                c.label=(("" if isinstance(c.reward, Card) else str(c.reward)) if c.has_reward else "") if not self.has_reward else c.label
+                c.emoji=((c.reward.emoji if isinstance(c.reward, Card) else None) if c.has_reward else "\U0001f4a3") if not self.has_reward else c.emoji
+            
+        return self.view
+
+    async def _respond(self, correct:bool, last:bool, view:View, interaction:discord.Interaction) -> discord.Message:
+        """Responds with the new view"""
+        if correct and last:
+            return await interaction.response.edit_message(content="Congrats, you move on to the next level!", view=view)
+        if not correct:
+            return await interaction.response.edit_message(content="Oh no! This was not the right order! Better luck next time", view=view)
+        if not last:
+            return await interaction.response.edit_message(content="Can you remember?", view=view)
+
+    def _format_rewards(self) -> str:
+        """Creates a readable string from rewards"""
+        jenny = 0
+        for rew in self.view.claimed:
+            if isinstance(rew, int):
+                jenny += rew
+
+        rewards = ("cards " + ", ".join(cards)+(" and " if jenny > 0 else "") if len(cards:= [c.emoji for c in self.view.claimed if isinstance(c, Card)]) > 0 else "") + (str(jenny) + " jenny" if jenny > 0 else "")
+        return rewards
+
+    async def _end_button(self, interaction: discord.Interaction) -> Union[None, discord.Message]:
+        """Handles the "save" button"""
+        if len(self.view.claimed) == 0: # User cannot click save not having clicked any button yet
+            return await interaction.response.send_message(content="You can't save with no rewards!", ephemeral=True)
+
+        self.has_reward = False # important for _create_view
+        view = self._create_view()
+        self.view.saved = True
+
+        await interaction.response.edit_message(content=f"Successfully claimed the following rewards from the box: {self._format_rewards()}", view=view)
+        self.view.stop()
+
+    async def _handle_incorrect(self, interaction: discord.Interaction) -> None:
+        """Handles an incorrect button click"""
+        view = self._create_view()
+        await interaction.response.edit_message(content="Oh no! You lost all rewards! Better luck next time. You lost: " + (r if len((r:= self._format_rewards())) > 1 else "no rewards"), view=view)
+        self.view.stop()
+
+    async def _handle_correct(self, interaction: discord.Interaction) -> None:
+        """Handles a correct button click"""
+        view = self._create_view()
+        self.view.claimed.append(self.reward)
+        await interaction.response.edit_message(content="Correct! To save your current rewards and exit, press save. Current rewards: " + (r if len((r:= self._format_rewards())) > 1 else "no rewards"), view=view)
+
+    async def callback(self, interaction: discord.Interaction):
+        """The callback of the button which calls the right method depending on the reward and index"""        
+        if self.index == 24:
+            return await self._end_button(interaction)
+
+        if not self.has_reward:
+            await self._handle_incorrect(interaction)
+        
+        else:
+            await self._handle_correct(interaction)
+    
+class LootBox:
+    """A class which contains infos about a lootbox and can open one"""
+    def __init__(self, ctx:commands.Context, rewards:List[Union[None, Card, int]]):
+        self.ctx = ctx
+        self.rewards = rewards
+
+    def _assign_until_unique(self, taken:List[int]) -> int:
+        if taken[(res:= random.randint(0, 23))]:
+            return self._assign_until_unique(taken)
+        return res
+
+    def _create_view(self) -> discord.ui.View:
+        l = [None for x in range(24)] # creating a list of no rewards as the base
+        for rew in self.rewards:
+            l[self._assign_until_unique(l)] = rew
+        
+        view = View(self.ctx.author.id)
+        view.rewards = l 
+        view.saved = False
+        view.claimed = []
+
+        for i in range(24):
+            view.add_item(_LootBoxButton(index=i, style=discord.ButtonStyle.grey, rewards=l, label=" "))
+        view.add_item(_LootBoxButton(index=24, style=discord.ButtonStyle.blurple, rewards=l, label="Save rewards"))
+
+        return view
+
+    @staticmethod
+    def get_random_lootbox() -> int:
+        """Gets a random lootbox from the LOOTBOXES constant"""
+        return random.choices(list(LOOTBOXES.keys()), [x["probability"] for x in LOOTBOXES.values()])[0]
+
+    @classmethod
+    def generate_rewards(self, box:int) -> List[Union[Card, int]]:
+        """Generates a list of rewards that can be used to pass to this class"""
+        data = LOOTBOXES[box]
+        rew = []
+        for i in range((cards:=random.choice(data["cards_total"]))):
+            r = [x["_id"] for x in items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}})]
+            rew.append(Card(random.choice(r)))
+
+        for i in range(data["rewards_total"]-cards):
+            rew.append(random.randint(*data["rewards"]["jenny"]))
+
+        return rew
+
+    async def open(self):
+        """Opens a lootbox"""
+        view = self._create_view()
+        msg = await self.ctx.send(f"There are {len(self.rewards)} rewards hidden in this box. Click a button to reveal a reward. You can reveal buttons as much as you like, but careful, if you hit a bomb you loose all rewards! If you are happy with your rewards and don't want to risk anything, hit save to claim them", view=view)
+        await view.wait()
+        await view.disable(msg)
+
+        if not view.saved:
+            return
+        
+        user = User(self.ctx.author.id)
+        for r in view.claimed:
+            if isinstance(r, Card):
+                user.add_card(r.id)
+            else:
+                user.add_jenny(r)
 
 class ConfirmButton(discord.ui.View):
     """A button that is used to confirm a certain action or deny it"""
@@ -211,6 +360,8 @@ class User():
         self.premium_tier:str = [x for x in self.badges if x in PATREON_TIERS.keys()][0] if self.is_premium else None
         self.votes = user["votes"] if "votes" in user else 0
         self.premium_guilds:dict = user["premium_guilds"] if "premium_guilds" in user else {}
+        self.lootboxes:list = user["lootboxes"] if "lootboxes" in user else []
+        self.weekly_cooldown = user["weekly_cooldown"] if "weekly_cooldown" in user else None
 
     @staticmethod
     def remove_all() -> str:
@@ -284,6 +435,25 @@ class User():
         """Removes a guild from a users premium guilds"""
         del self.premium_guilds[str(guild_id)]
         teams.update_one({"id": self.id}, {"$set": {"premium_guilds": self.premium_guilds}})
+
+    def claim_weekly(self) -> None:
+        """Sets the weekly cooldown new"""
+        self.weekly_cooldown = datetime.now() +  timedelta(days=7)
+        teams.update_one({"id": self.id}, {"$set": {"weekly_cooldown": self.weekly_cooldown}})
+
+    def has_lootbox(self, box:int) -> bool:
+        """Returns wether the user has the lootbox specified"""
+        return box in self.lootboxes
+
+    def add_lootbox(self, box:int) -> None:
+        """Adds a lootbox to a users inventory"""
+        self.lootboxes.append(box)
+        teams.update_one({"id": self.id}, {"$set": {"lootboxes": self.lootboxes}})
+
+    def remove_lootbox(self, box:int) -> None:
+        """Removes a lootbox from a user"""
+        self.lootboxes.remove(box)
+        teams.update_one({"id": self.id}, {"$set": {"lootboxes": self.lootboxes}})
         
     def has_rs_card(self, card_id:int, fake_allowed:bool=True) -> bool:
         """Checking if the user has a card specified in their restricted slots"""

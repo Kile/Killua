@@ -1,24 +1,47 @@
 import discord
 from discord.ext import commands
-from killua.checks import check
-import typing
+from typing import Union, List, Tuple
 from datetime import datetime, timedelta
-from random import randint
-from killua.classes import User, Guild, Category
-from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, PATREON_TIERS
+from random import randint, choice
+
+from killua.checks import check
+from killua.paginator import View
+from killua.help import Select
+from killua.classes import User, Guild, Category, Card, LootBox, Card
+from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, PATREON_TIERS, LOOTBOXES, items
 
 class Economy(commands.Cog):
 
     def __init__(self, client):
         self.client = client
 
-    async def _get_user(self, user_id:int) -> typing.Union[discord.User, None]:
+    async def _get_user(self, user_id:int) -> Union[discord.User, None]:
         u = self.client.get_user(user_id)
         if not u:
             u = await self.client.fetch_user(user_id)
         return u
 
-    def _getmember(self, user: typing.Union[discord.Member, discord.User]) -> discord.Embed:
+    def _fieldify_lootboxes(self, lootboxes:List[int]):
+        """Creates a list of fields from the lootboxes in the passed list"""
+        lbs:List[Tuple[int, int]] = []
+        res: List[dict] = []
+
+        for lb in lootboxes:
+            if not lb in (l:= [y for x, y in lbs]):
+                lbs.append((1, lb))
+            else:
+                indx = l.index(lb)
+                lbs[indx] = (lbs[indx][0]+1, lb)
+                
+        for lb in lbs:
+            n, i = lb
+            data = LOOTBOXES[i]
+            res.append({"name": f"{n}x {data['emoji']} {data['name']} (id:{i})", "value": data["description"], "inline": False})
+
+        return res
+         
+
+    def _getmember(self, user: Union[discord.Member, discord.User]) -> discord.Embed:
         """ a function to handle getting infos about a user for less messy code """
         av = user.avatar.url
         joined = (user.created_at).strftime("%b %d %Y %H:%M:%S")
@@ -43,6 +66,7 @@ class Economy(commands.Cog):
                 'description': f'{user.id}\n{" ".join(flags)}',
                 "fields": [{"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, {"name": "Jenny", "value": str(bal), "inline": False}, {"name": "Account created at", "value": joined, "inline": False}, {"name": "daily cooldown", "value": cooldown or "Never claimed `k!daily` before", "inline": False}],
                 'thumbnail': {'url': str(av)},
+                "image": {"url": user.banner.url if user.banner else None},
                 'color': 0x1400ff
             })
         return embed
@@ -95,25 +119,24 @@ class Economy(commands.Cog):
 
     @check()
     @commands.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
-    async def profile(self, ctx,user: typing.Union[discord.Member, int]=None):
+    async def profile(self, ctx,user: Union[discord.Member, int]=None):
         """Get infos about a certain discord user with ID or mention"""
         if user is None:
-            embed = self._getmember(ctx.author)
-            return await ctx.send(embed=embed)
+            user = await self.client.fetch_user(ctx.author.id)
         else: 
             if isinstance(user, discord.Member):
-                embed = self._getmember(user)
-                return await ctx.send(embed=embed)
+                user = await self.client.fetch_user(user.id)
             else:
-                newuser = await self._get_user(user)
-                if not newuser:
+                user = await self.fetch_user(user)
+                if not user:
                     return await ctx.send("Could not find anyone with this name/id")
-                embed = self._getmember(newuser)
-                return await ctx.send(embed=embed)
+
+        embed = self._getmember(user)
+        return await ctx.send(embed=embed)
 
     @check()
     @commands.command(aliases=['bal', 'balance', 'points'], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
-    async def jenny(self, ctx, user: typing.Union[discord.User, int]=None):
+    async def jenny(self, ctx, user: Union[discord.User, int]=None):
         """Gives you a users balance"""
         
         if not user:
@@ -123,7 +146,7 @@ class Economy(commands.Cog):
         elif user:
             user_id = user
         try:
-            self.get_user(user_id) or await self.client.fetch_user(user_id)
+            self.client.get_user(user_id) or await self.client.fetch_user(user_id)
             real_user = User(user_id)
         except discord.NotFound:
             return await ctx.send('User not found')
@@ -140,11 +163,11 @@ class Economy(commands.Cog):
         min = 50
         max = 100
         if user.is_premium:
-            min = min+ 50
-            max = max+50
+            min+=50
+            max+=50
         if Guild(ctx.guild.id).is_premium:
-            min = min+ 50
-            max = max+50
+            min=+50
+            max=+50
         daily = randint(min, max)
         if str(user.daily_cooldown) < str(now):
             teams.update_one({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': user.jenny + daily}})
@@ -153,6 +176,82 @@ class Economy(commands.Cog):
             cd = user.daily_cooldown-datetime.now()
             cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'
             await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
+
+    @check()
+    @commands.command(extras={"category": Category.ECONOMY}, usage="open")
+    async def open(self, ctx):
+        """Open a lootbox with an interactive UI"""
+        if len((user:=User(ctx.author.id)).lootboxes) == 0:
+            return await ctx.send("Sadly you don't have any lootboxes!")
+
+        lootboxes = self._fieldify_lootboxes(user.lootboxes)
+        embed = discord.Embed.from_dict({
+            "title": "Choose a lootbox to open!",
+            "fields": lootboxes,
+            "color": 0x1400ff
+        })
+        lbs = []
+        for l in user.lootboxes:
+            if l not in lbs:
+                lbs.append(l)
+
+        view = View(ctx.author.id)
+        select = Select(options=[discord.SelectOption(label=LOOTBOXES[lb]["name"], emoji=LOOTBOXES[lb]["emoji"], value=str(lb), description=d if len((d:=LOOTBOXES[lb]["description"])) < 47 else d[:47] + "...") for lb in lbs], placeholder="Select a box to open")
+        view.add_item(item=select)
+
+        msg = await ctx.send(embed=embed, view=view)
+        await view.wait()
+
+        await view.disable(msg)
+
+        if hasattr(view, "value"):
+            user.remove_lootbox(view.value)
+            values = LootBox.generate_rewards(view.value)
+            box = LootBox(ctx, values)
+            return await box.open()
+
+        await ctx.send("Timed out!")
+
+    @check()
+    @commands.command(aliases=["lootboxes"], extras={"category": Category.ECONOMY}, usage="inventory")
+    async def inventory(self, ctx):
+        """Displays the owned lootboxes"""
+        if len((user:=User(ctx.author.id)).lootboxes) == 0:
+            return await ctx.send("Sadly you don't have any lootboxes!")
+
+        lootboxes = self._fieldify_lootboxes(user.lootboxes)
+        embed = discord.Embed.from_dict({
+            "title": "Lootbox inventory",
+            "description": f"open a lootbox with `{self.client.command_prefix(self.client, ctx.message)[2]}open`",
+            "color": 0x1400ff,
+            "fields": lootboxes
+        })
+        embed.timestamp = datetime.utcnow()
+        await ctx.send(embed=embed)
+
+    @check()
+    @commands.command(extras={"category": Category.ECONOMY}, usage="boxinfo <box_id>")
+    async def boxinfo(self, ctx, box:int):
+        if not box in LOOTBOXES.keys():
+            return await ctx.send("Invalid box id")
+
+        data = LOOTBOXES[box]
+
+        c_min, c_max = data["cards_total"]
+        j_min, j_max = data["rewards"]["jenny"]
+        contains = f"{data['rewards_total']} total rewards\n{f'{c_min}-{c_max}' if c_max != c_min else c_min} cards\n{j_min}-{j_max} jenny per field\n" + ("" if c_max == 0 else f"card rarities: {' or '.join(data['rewards']['cards']['rarities'])}\ncard types: {' or '.join(data['rewards']['cards']['types'])}")
+        embed = discord.Embed.from_dict({
+            "title": f"Infos about lootbox {data['emoji']} {data['name']}",
+            "description": data["description"],
+            "fields": [
+                {"name": "Contains", "value": contains, "inline": False},
+                {"name": "Price", "value": data["price"], "inline": False},
+                {"name": "Buyable", "value": "Yes" if data["available"] else "No"},
+            ],
+            "color": 0x1400ff
+        })
+        await ctx.send(embed=embed)
+
 
 Cog = Economy
 

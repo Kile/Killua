@@ -23,6 +23,7 @@ IPC_TOKEN = config["ipc"]
 TOKEN = config["token"]
 PATREON = config["patreon"]
 DBL = config["dbl"]
+PXLAPI = config["pxlapi"]
 
 PATREON_TIERS = {
     "6002629": {
@@ -130,6 +131,43 @@ NUMBERS = {
 }
 
 
+LOOTBOXES = {
+    1: {
+        "name": "Standart Box",
+        "price": 250,
+        "emoji": "<:standard_box:877917415470690375>",
+        "description": "A mass produced box sold everywhere",
+        "rewards": {
+            "jenny": (10, 30),
+            "cards": {
+                "rarities": [],
+                "types": []
+            }
+        },
+        "rewards_total": 20,
+        "cards_total": (0, 0),
+        "probability": 20,
+        "available": True
+    },
+    2: {
+        "name": "Box of Legends",
+        "price": 10000,
+        "emoji": "<:box_of_legends:877928029647691856>",
+        "description": "A box so rare that nobody has seen one yet, its existence is only a legend",
+        "rewards": {
+            "jenny": (200, 1000),
+            "cards": {
+                "rarities": ["S", "A"],
+                "types": ["normal", "spell"]
+            }
+        },
+        "rewards_total": 10,
+        "cards_total": (2, 3),
+        "probability": 1,
+        "available": True
+    }
+}
+
 # GREED ISLAND STUFF
 
 ALLOWED_AMOUNT_MULTIPLE = 3
@@ -199,33 +237,6 @@ Have fun hunters
 - The Gamemaster"""
 ]   
 
-# COMMANDS
-COMMANDS = {
-    'todo': [
-        'todo create', 'todo lists', 'todo shop', 'todo edit', 'todo info', 'todo buy', 'todo add', 'todo remove', 'todo mark', 'todo invite', 'todo view', 'todo kick', 'todo status', 'todo name', 'todo autodelete', 'todo color', 'todo thumbnail', 'todo custom_id', 'todo assign', 'todo delete', 'todo clear', 'todo exit'
-    ],
-    'moderation': [
-        'prefix', 'ban', 'kick', 'unban', 'mute', 'unmute'
-    ],
-    'fun': [
-        'topic', 'calc', 'translate', '8ball', 'avatar', 'uwufy', 'novel', 'emojaic', 'image', 'rps', 'flag', 'glitch', 'lego', 'snapchat', 'eyes', 'nokia', 'thonkify', 'screenshot', 'sonic', 'jpeg', 'google'
-    ],
-    'actions': [
-        'hug', 'poke', 'slap', 'tickle', 'pat'
-    ],
-    'cards': [
-        'book', 'shop', 'buy', 'sell', 'swap', 'hunt', 'meet', 'discard', 'use'
-    ],
-    'other': [
-        'info', 'patreon', 'invite', 'permissions', 'bug', 'feedback', 'usage'
-    ],
-    'economy': [
-        'daily', 'profile', 'give', 'server', 'bal', 'leaderboard'
-    ],
-    'tags': [
-        'tag get', 'tag create', 'tag edit', 'tag list', 'tag delete', 'tag user', 'tag info'
-    ]
-}
 
 # FOR THE UWU COMMAND
 
@@ -243,9 +254,6 @@ UWUS = ['uwu', 'owo', 'ʕ•́ᴥ•̀ʔっ', '≧◠ᴥ◠≦', '>\_<']
 # THE KILLUA SUPPORT SERVER AND ITS DATA
 GUILD = 715358111472418908
 BOOSTER_ROLE = 769622564648648744
-
-# WHITESPACE
-WHITESPACE = " "
 
 # FOR THE NOKIA COMMAND OF /IMAGESCRIPT OF PXLAPI
 

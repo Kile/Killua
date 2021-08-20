@@ -1,22 +1,20 @@
 import discord
 from discord.ext import commands
-import json
 from killua.checks import check
 import typing
 import re
-from killua.classes import Category
-from killua.constants import CODE
-from pypxl import PxlClient # My own library :sparkles:
-from killua.paginator import Paginator
 
-with open('config.json', 'r') as config_file:
-	config = json.loads(config_file.read())
+from pypxl import PxlClient # My own library :sparkles:
+
+from killua.classes import Category
+from killua.constants import CODE, PXLAPI
+from killua.paginator import Paginator
 
 class Api(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.pxl = PxlClient(token=config["pxlapi"], stop_on_error=False, session=self.client.session)
+        self.pxl = PxlClient(token=PXLAPI, stop_on_error=False, session=self.client.session)
 
     async def _validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
         image = None
@@ -64,7 +62,7 @@ class Api(commands.Cog):
         if validate:
             data = await self._validate_input(ctx, args)
             if not data:
-                return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help command {ctx.command.name}`')
+                return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`')
         else:
             data = args
         r = await function(data, t)

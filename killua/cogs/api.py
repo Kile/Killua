@@ -3,21 +3,12 @@ from discord.ext import ipc, commands
 from killua.classes import Category, User
 from killua.constants import teams
 
-from typing import List
+from typing import List, Union
 
 class IPCRoutes(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-
-    def format_command(self, res:dict, cmd:commands.Command) -> dict:
-
-        if cmd.name in ["jishaku", "help"] or cmd.hidden:
-            return res
-
-        res[cmd.extras["category"].value["name"]]["commands"].append({"name": cmd.name, "usage": cmd.usage, "help": cmd.help})
-        
-        return res
 
     @ipc.server.route()
     async def top(self, data) -> List[dict]:
@@ -33,16 +24,7 @@ class IPCRoutes(commands.Cog):
     @ipc.server.route()
     async def commands(self, data) -> dict:
         """Returns all commands with descriptions etc"""
-        res = {c.value["name"]:{"description":c.value["description"], "emoji": c.value["emoji"], "commands": [], "group_prefix": None} for c in Category}
-
-        for cmd in self.client.commands:
-            if isinstance(cmd, commands.Group) and cmd.name != "jishaku":
-                res[cmd.extras["category"].value["name"]]["group_prefix"] = cmd.qualified_name
-                for c in cmd.commands:
-                    res = self.format_command(res, c)
-            res = self.format_command(res, cmd)
-
-        return res
+        return self.client.get_formatted_commands()
 
     @ipc.server.route()
     async def save_user(self, data) -> None:

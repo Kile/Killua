@@ -90,7 +90,7 @@ class WebScraping(commands.Cog):
         #Making sure title limit isn't exceeded
     
         return discord.Embed.from_dict({
-            'title': f'Book: {name}',
+            'title': name,
             'thumbnail':{
                 'url': img_url},
             'description': f'\n**Rating:** {rating}/5\n**Author:** {author}\n**Language:** {language}\n**Number of pages:** {pages}\n**Book description:**\n{description}\n**ISBN:**{isbn}',

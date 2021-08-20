@@ -104,7 +104,7 @@ class Tags(commands.Cog):
             await ctx.send("This command group is currently only a premium feature. To enable your guild to use it, become a Patreon!", view=view)
             raise commands.CommandNotFound() # I raise this error because it is the only one I ignore in the error handler. Hacky but whatever
 
-    @tag.command(extras={"category":Category.TAGS}, usage="tag create <tag_name>")
+    @tag.command(extras={"category":Category.TAGS}, usage="create <tag_name>")
     async def create(self, ctx, *, tag_name:str):
         """Create a tag with this command! After first using the command it will ask you for the content of the tag"""
         guild = guilds.find_one({'id': ctx.guild.id})
@@ -145,7 +145,7 @@ class Tags(commands.Cog):
             guilds.update_one({'id': ctx.guild.id}, {'$set': {'tags': tags}})
             return await ctx.send(f'Sucesfully created tag `{tag_name}`')
 
-    @tag.command(extras={"category":Category.TAGS}, usage="tag delete <tag_name>")
+    @tag.command(extras={"category":Category.TAGS}, usage="delete <tag_name>")
     async def delete(self, ctx, *, tag_name:str):
         """Delete a tag you own with this command or any tag if you have manage build permissions"""
         tag = Tag(ctx.guild.id, tag_name)
@@ -159,7 +159,7 @@ class Tags(commands.Cog):
         tag.delete()
         await ctx.send(f'Sucessfully deleted tag `{tag.name}`')
 
-    @tag.command(extras={"category":Category.TAGS}, usage="tag edit <tag_name>")
+    @tag.command(extras={"category":Category.TAGS}, usage="edit <tag_name>")
     async def edit(self, ctx, *, tag_name:str):
         """Chose wrong tag description? Edit a tag's description with this command (only if you own it)"""
         tag = Tag(ctx.guild.id, tag_name)
@@ -185,7 +185,7 @@ class Tags(commands.Cog):
             tag.update(msg.content)
             return await ctx.send(f'Sucesfully updated tag `{tag.name}`')
 
-    @tag.command(extras={"category":Category.TAGS}, usage="tag get <tag_name>")
+    @tag.command(extras={"category":Category.TAGS}, usage="get <tag_name>")
     async def get(self, ctx, *, tag_name:str):
         """Get the content of any tag"""
         tag = Tag(ctx.guild.id, tag_name)
@@ -194,7 +194,7 @@ class Tags(commands.Cog):
         tag.add_use()
         return await ctx.send(tag.content, allowed_mentions=discord.AllowedMentions.none(), reference=ctx.message.reference or ctx.message)
     
-    @tag.command(extras={"category":Category.TAGS}, usage="tag info <tag_name>")
+    @tag.command(extras={"category":Category.TAGS}, usage="info <tag_name>")
     async def info(self, ctx, *, tag_name:str):
         """Get information about any tag"""
         tag = Tag(ctx.guild.id, tag_name.lower())
@@ -212,7 +212,7 @@ class Tags(commands.Cog):
         })
         await ctx.send(embed=embed)
     
-    @tag.command(aliases=['list'], extras={"category":Category.TAGS}, usage="tag list")
+    @tag.command(aliases=['list'], extras={"category":Category.TAGS}, usage="list")
     async def l(self, ctx, p:int=1):
         """Get a list of tags on the current server sorted by uses"""
         guild = guilds.find_one({'id': ctx.guild.id})
@@ -237,7 +237,7 @@ class Tags(commands.Cog):
     
         await Paginator(ctx, tags, func=make_embed, max_pages=math.ceil(len(tags)/10)).start()
 
-    @tag.command(extras={"category":Category.TAGS}, usage="tag user <user>")
+    @tag.command(extras={"category":Category.TAGS}, usage="user <user>")
     async def user(self, ctx, user:discord.Member, amount:int=None):
         """Get the tags a user own sorted by uses"""
         member = Member(user.id, ctx.guild.id)
