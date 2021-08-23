@@ -1,9 +1,22 @@
 import discord
 from discord.ext import commands
+from typing import Union, Type
 from .constants import blacklist
 
-cooldowndic = {}
+cooldowndict = {}
 
+def _clean_command_name(command:Union[commands.Command, Type[commands.Command]]) -> str:
+	"""returns the clean command make of a command"""
+	if not command.parent:
+		return command.name
+	else:
+		name = ""
+		c = command
+		while c.parent:
+			name = c.parent.qualified_name + " " + name
+			c = c.parent
+		else:
+			return name + command.name
 
 def blcheck(userid:int): # It is necessary to define it twice as I might have to use this function on its own
     """
@@ -31,12 +44,13 @@ def check(time:int=0):
     from datetime import datetime, timedelta
     from killua.constants import guilds, teams, blacklist, stats
 
-    def add_usage(command:str):
+    def add_usage(command:Union[commands.Command, Type[commands.Command]]) -> None:
         data = stats.find_one({'_id': 'commands'})['command_usage']
+        command = _clean_command_name(command)
         data[command] = data[command]+1 if command in data else 1
         stats.update_one({'_id': 'commands'}, {'$set': {'command_usage': data}})
 
-    def blcheck(userid:int):
+    def blcheck(userid:int) -> bool:
         """
         Input:
             userid (int): The id of the user who should be checked
@@ -55,25 +69,25 @@ def check(time:int=0):
         else:
             return True
     
-    async def custom_cooldown(ctx, time:int):
-        global cooldowndic
+    async def custom_cooldown(ctx, time:int) -> bool:
+        global cooldowndict
         now = datetime.today()
         later = datetime.now()+timedelta(seconds=time)
         try:
-            cdwn = cooldowndic[ctx.author.id][ctx.command.name]
+            cdwn = cooldowndict[ctx.author.id][ctx.command.name]
         except KeyError as e:
             error = e.args[0]
             if error == ctx.author.id:
-                cooldowndic = {ctx.author.id: {ctx.command.name: later}}
+                cooldowndict = {ctx.author.id: {ctx.command.name: later}}
                 return True
             if error == ctx.command.name:
-                cooldowndic[ctx.author.id][ctx.command.name] = later
+                cooldowndict[ctx.author.id][ctx.command.name] = later
                 return True
 
         cd = cdwn-now 
 
         if str(cdwn) < str(now):
-            cooldowndic[ctx.author.id][ctx.command.name] = later
+            cooldowndict[ctx.author.id][ctx.command.name] = later
             return True 
 
         else:
@@ -88,7 +102,7 @@ def check(time:int=0):
                     if int(cd.seconds) > time/2:
                         t = t/2
                     else:
-                        cooldowndic[ctx.author.id][ctx.command.name] = later
+                        cooldowndict[ctx.author.id][ctx.command.name] = later
                         return True
 
                 if user is None:
@@ -100,14 +114,14 @@ def check(time:int=0):
                         await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds\n\nHalf your cooldown by becoming a patreon here: https://patreon.com/kilealkuri', delete_after=5)
                         return False
                     else:
-                        cooldowndic[ctx.author.id][ctx.command.name] = later
+                        cooldowndict[ctx.author.id][ctx.command.name] = later
                         return True
                     
                 await ctx.send(f':x: Command on cooldown! Try again after `{t}` seconds\n\nHalf your cooldown by becoming a patreon here: https://patreon.com/kilealkuri', delete_after=5)
                 return False
             return True
 
-    async def settings_check(ctx):
+    async def settings_check(ctx) -> bool:
 
         guild = guilds.find_one({'id': ctx.guild.id})
 
@@ -164,13 +178,13 @@ def check(time:int=0):
             pass
 
         if time == 0:
-            add_usage(ctx.command.name)
+            add_usage(ctx.command)
             return True
 
         if await custom_cooldown(ctx, time) is False:
             return False
 
-        add_usage(ctx.command.name)
+        add_usage(ctx.command)
 
         return True
 

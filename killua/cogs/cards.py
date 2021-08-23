@@ -198,27 +198,27 @@ class Cards(commands.Cog):
         if in_possesion < amount:
             return await ctx.send(f'Seems you don\'t own enough copis of this card. You own {in_possesion} cop{"y" if in_possesion == 1 else "ies"} of this card')
         
-        await ctx.send(f'You will recieve {int((PRICES[card.rank]*amount)/10)} Jenny for selling {"this card" if amount == 1 else "those cards"}, do you want to proceed? **[y/n]**')
 
-        def check(msg):
-            return msg.author.id == ctx.author.id and (msg.content.lower() in ['y', 'n'])
-        try:
-            msg = await self.client.wait_for('message', timeout=20, check=check)
-        except asyncio.TimeoutError:
-            return await ctx.send('Timed out!')
-        else:
-            if msg.content.lower() == 'n':
-                return await ctx.send('Sucessfully canceled!')
-            
-            card_amount = user.count_card(item, False)
+        view = ConfirmButton(ctx.author.id, timeout=80)
+        msg = await ctx.send(f"You will recieve {int((PRICES[card.rank]*amount)/10)} Jenny for selling {'this card' if amount == 1 else 'those cards'}, do you want to proceed?", view=view)
+        await view.wait()
+        await view.disable(msg)
 
-            if not card_amount >= amount:
-                return await ctx.send('Seems like you don\'t own enoug ch non-fake copies of this card you try to sell')
+        if not view.value:
+            if view.timed_out:
+                return await ctx.send(f'Timed out!')
             else:
-                for i in range(amount):
-                    user.remove_card(item, False)
-                user.add_jenny(int((PRICES[card.rank]*amount)/10))
-                await ctx.send(f'Sucessfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {int((PRICES[card.rank]*amount)/10)} Jenny!')
+                return await ctx.send(f"Successfully canceled!")
+            
+        card_amount = user.count_card(item, False)
+
+        if not card_amount >= amount:
+            return await ctx.send('Seems like you don\'t own enoug ch non-fake copies of this card you try to sell')
+        else:
+            for i in range(amount):
+                user.remove_card(item, False)
+            user.add_jenny(int((PRICES[card.rank]*amount)/10))
+            await ctx.send(f'Sucessfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {int((PRICES[card.rank]*amount)/10)} Jenny!')
 
     @check(20)
     @commands.command(extras={"category":Category.CARDS}, usage="swap <card_id>")
@@ -344,25 +344,19 @@ class Cards(commands.Cog):
         if not user.has_any_card(card.id):
             return await ctx.send('You are not in possesion of this card!')
 
-        await ctx.send(f'Do you really want to throw this card away? (be aware that this will throw the first card you own with this id away, if you want to get rid of a fake swap it out of your album with `{self.client.command_prefix(self.client, ctx.message)[2]}swap <card_id>`) **[y/n]**')
+        view = ConfirmButton(ctx.author.id, timeout=20)
+        msg = await ctx.send(f"Do you really want to throw this card away? (be aware that this will throw the first card you own with this id away, if you want to get rid of a fake swap it out of your album with `{self.client.command_prefix(self.client, ctx.message)[2]}swap <card_id>`)", view=view)
+        await view.wait()
+        await view.disable(msg)
 
-        def check(msg):
-            return msg.author.id == ctx.author.id and (msg.content.lower() in ['y', 'n'])
-        try:
-            msg = await self.client.wait_for('message', timeout=20, check=check)
-        except asyncio.TimeoutError:
-            return await ctx.send('Timed out!')
-        else:
-            if msg.content.lower() == 'n':
-                await msg.delete()
-                await ctx.message.delete()
-                return await ctx.send('Sucessfully canceled!')
+        if not view.value:
+            if view.timed_out:
+                return await ctx.send(f'Timed out!')
+            else:
+                return await sctx.send(f"Successfully canceled!")
 
-            elif msg.content.lower() == 'y':
-                user.remove_card(card.id)
-                await msg.delete()
-                await ctx.message.delete()
-                await ctx.send(f'Successfully thrown away card No. `{card.id}`')
+            user.remove_card(card.id)
+            await ctx.send(f'Successfully thrown away card No. `{card.id}`')
 
     @check()
     @commands.command(extras={"category":Category.CARDS}, usage="use <card_id> <required_arguments>")

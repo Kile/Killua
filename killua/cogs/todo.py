@@ -132,19 +132,25 @@ class TodoSystem(commands.Cog):
         """outsourcing todo create in smaller functions"""
         embed = discord.Embed.from_dict({
             'title': f'Editing settings',
-            'description': f'Should todo tasks marked as "done" be automatically deleted? **[y/n]**',
+            'description': f'Should todo tasks marked as "done" be automatically deleted?',
             'color': 0x1400ff,
             'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Requested by {ctx.author}'}
         })
         step = await ctx.send(embed=embed)
-        def check(m):
-            return m.content.lower() in ['y', 'n'] and m.author.id == ctx.author.id
 
-        confirmmsg = await self._wait_for_response(step, check)
 
-        if not confirmmsg:
-            return None
-        return confirmmsg.content.lower() == 'y'
+        view = ConfirmButton(ctx.author.id, timeout=80)
+        msg = await ctx.send(embed=embed, view=view)
+        await view.wait()
+        await view.disable(msg)
+
+        if not view.value:
+            if view.timed_out:
+                return None
+            else:
+                return False
+
+        return True
 
     async def todo_custom_id(self, ctx):
         """outsourcing todo create in smaller functions. Will be rewritten once discord adds text input interaction"""
@@ -626,49 +632,38 @@ class TodoSystem(commands.Cog):
 
         embed = discord.Embed.from_dict({
             'title': f'You were invited to to-do list {todo_list.name} (ID: {todo_list.id})',
-            'description': f'{ctx.author} invited you to be {role} in their to-do list. To accept, reply with **[y/n]**. To report abuse/harrassment, reply with **r**',
+            'description': f'{ctx.author} invited you to be {role} in their to-do list. To accept, click "confirm"',
             'color': self._get_color(todo_list),
             'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Requested by {ctx.author}'}
         })
 
         try:
-            await user.send(embed=embed)
+            view = ConfirmButton(user.id, timeout=80)
+            msg = await user.send(embed=embed, view=view)
             await ctx.send('Successfully send the invitation to the specified user! They have 24 hours to accept or deny')
         except discord.Forbidden:
             return await ctx.send('Failed to send the user a dm. Make sure they are on a guild Killua is on and has their dms open')
 
-        def check(m):
-            return m.author.id == user.id and m.guild is None and m.content.lower() in ['y', 'n', 'r']
+        await view.wait()
+        await view.disable(msg)
 
-        try:
-            confirmmsg = await self.client.wait_for('message', check=check, timeout=86400)
-        except asyncio.TimeoutError:
-            try:
-                await user.send('Time to respond is up')
-            except discord.Forbidden:
-                pass
-            return await ctx.author.send(f'{user} has not responded to your invitation in 24 hours so the invitation went invalid')
-        else:
-            if confirmmsg.content.lower() == 'y':
-                if role.lower() == 'viewer':
-                    todo_list.add_viewer(user.id)
-
-                if role.lower() == 'editor':
-                    todo_list.add_editor(user.id)
-
-                await user.send(f'Sucess! You have now {role} permissions in the todo list `{todo_list.name}`')
-                return await ctx.author.send(f'{user} accepted your invitation to your todo list `{todo_list.name}`!')
-
-            elif confirmmsg.content.lower() == 'n':
+        if not view.value:
+            if view.timed_out:
+                await user.send("Timed out!")
+                return await ctx.author.send(f"{user} has not responded to your invitation in 24 hours so the invitation went invalid")
+            else:
                 await user.send('Successfully denied invitation')
                 return await ctx.author.send(f'{user} has denied your invitation the todo list `{todo_list.name}`')
 
-            elif confirmmsg.content.lower() == 'r':
-                channel = self.client.get_channel(796306329756893184)
+        if role.lower() == 'viewer':
+            todo_list.add_viewer(user.id)
 
-                await channel.send(f'Report: \nReported by {user} (id: {user.id})\nInvite author {ctx.author} (id: {ctx.author.id})\ntodo list name: {todo_list["name"]} (id: {todo_list["_id"]})')
-                await user.send('User has been reported for harrasment/abuse of the invite command. Abuse of reporting may lead to blacklisting')
-                await ctx.author.send(f'You have been reported for inviting {user}, a staff member will look into the issue soon')
+        if role.lower() == 'editor':
+            todo_list.add_editor(user.id)
+
+        await user.send(f'Sucess! You have now {role} permissions in the todo list `{todo_list.name}`')
+        return await ctx.author.send(f'{user} accepted your invitation to your todo list `{todo_list.name}`!')
+
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="assign <task_id> <user>")

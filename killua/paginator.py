@@ -47,17 +47,13 @@ class View(discord.ui.View):
             await interaction.response.defer()
         return val
 
-    async def disable(self, msg:discord.Message=None, interaction:discord.Interaction=None) -> Union[discord.Message, None]:
+    async def disable(self, msg:discord.Message) -> Union[discord.Message, None]:
         """"Disables the children inside of the view"""
         if len([c for c in self.children if not c.disabled]) == 0: # if every child is already disabled, we don't need to edit the message again
             return
 
         for c in self.children:
             c.disabled = True
-
-        if interaction:
-            if not interaction.is_done():
-                return interaction.response.edit_message(view=self)
 
         await msg.edit(view=self)
 

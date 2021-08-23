@@ -39,6 +39,7 @@ class Bot(commands.Bot):
 
 		return res
 
+
 def get_prefix(bot, message):
 	if bot.user.id == 758031913788375090:
 		return commands.when_mentioned_or('kil!', 'kil.')(bot, message)

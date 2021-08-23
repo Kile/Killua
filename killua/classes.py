@@ -180,6 +180,15 @@ class ConfirmButton(discord.ui.View):
             await interaction.response.defer()
         return val
 
+    async def disable(self, msg:discord.Message) -> discord.Message:
+        if len([c for c in self.children if not c.disabled]) == 0: # if every child is already disabled, we don't need to edit the message again
+            return
+
+        for child in self.children:
+            child.disabled = True
+
+        await msg.edit(view=self)
+
     async def on_timeout(self):
         self.value = False
         self.timed_out = True

@@ -264,11 +264,7 @@ class Shop(commands.Cog):
         view = ConfirmButton(ctx.author.id, timeout=10)
         msg = await ctx.send(f'Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points', view=view)
         await view.wait()
-        
-        for child in view.children:
-            child.disabled = True
-            
-        await msg.edit(view=view)
+        await view.disable(msg)
 
         if not view.value:
             if view.timed_out:
@@ -417,8 +413,7 @@ class Shop(commands.Cog):
     async def jenny(self, ctx, other:discord.Member, item:int):
         """If you're feeling generous give another user jenny"""
         
-        val = await self._validate(ctx, other)
-        if isinstance(val, discord.Message):
+        if isinstance((val:=await self._validate(ctx, other)), discord.Message):
             return
         else:
             user, o = val
@@ -436,8 +431,7 @@ class Shop(commands.Cog):
     async def _card(self, ctx, other:discord.Member, item:int):
         """If you're feeling generous give another user a card"""
 
-        val = await self._validate(ctx, other)
-        if isinstance(val, discord.Message):
+        if isinstance((val:=await self._validate(ctx, other)), discord.Message):
             return
         else:
             user, o = val
@@ -460,8 +454,7 @@ class Shop(commands.Cog):
     async def _lootbox(self, ctx, other:discord.Member, item:int):
         """If you're feeling generous give another user a lootbox, maybe they have luck"""
 
-        val = await self._validate(ctx, other)
-        if isinstance(val, discord.Message):
+        if isinstance((val:=await self._validate(ctx, other)), discord.Message):
             return
         else:
             user, o = val

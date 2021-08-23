@@ -2,35 +2,94 @@ import discord
 from discord.ext import commands
 
 from typing import Union, List, Tuple
+from aiohttp import ClientSession
 import random
 import asyncio
 import math
 
 from killua.paginator import View
 from killua.classes import User, ConfirmButton, Category
-from killua.checks import blcheck
+from killua.checks import blcheck, check
+from killua.help import Select
 
-class RpsChoice(discord.ui.View):
+class Trivia:
+    """Handles a trivia game"""
 
-    def __init__(self, user:discord.Member, **kwargs):
-        super().__init__(**kwargs)
-        self.user = user
+    def __init__(self, ctx:commands.Context, difficulty:str, session: ClientSession):
+        self.url = f"https://opentdb.com/api.php?amount=1&difficulty={difficulty}&type=multiple"
+        self.difficulty = difficulty.lower()
+        self.session = session
+        self.ctx = ctx
+        self.timed_out = False
+        self.result = None
+        self.rewards = {
+            "easy": (5, 10),
+            "medium": (10, 20),
+            "hard": (20, 30)
+        }
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if not (val := interaction.user.id == self.user.id):
-            await interaction.response.defer()
-        return val
+    async def _get(self) -> dict:
+        """Requests the trivia url"""
+        res = await self.session.get(self.url)
+        self.res = await res.json()
+        self.failed = (self.res["response_code"] != 0)
 
-    @discord.ui.select(placeholder="Choose what to pick", min_values=1, max_values=1, options=[discord.SelectOption(label="rock", value="-1", emoji="\U0001f5ff"), discord.SelectOption(label="paper", value="0", emoji="\U0001f4c4"), discord.SelectOption(label="scissors", value="1", emoji="\U00002702")])
-    async def select(self, select: discord.ui.Select, interaction: discord.Interaction):
-        self.value = int(select.values[0])
-        for c in self.children:
-            c.disabled = True
-        await interaction.response.edit_message(view=self)
-        self.stop()
+    def _create_embed(self) -> discord.Embed:
+        """Creates the trivia embed"""
+        question = self.data['question'].replace('&quot;', '"')
+        self.embed = discord.Embed.from_dict({
+            "title": f"Trivia of category {self.data['category']}",
+            "description": f"**difficulty:** {self.data['difficulty']}\n\n**Question:**\n{question}",
+            "color": 0x1400ff
+        })
+
+    def _create_view(self) -> None:
+        """Creates a select with the options needed"""
+        self.view = View(self.ctx.author.id)
+        self.data["incorrect_answers"].append(self.data["correct_answer"])
+        self.options = random.sample(self.data["incorrect_answers"], k=4)
+        self.correct_index = self.options.index(self.data["correct_answer"])
+        self.view.add_item(Select(options=[discord.SelectOption(label=x if len(x) < 50 else x[:47] + "...", value=str(i)) for i, x in enumerate(self.options)]))
+
+    async def create(self) -> None:
+        """Creates all properties necessary"""
+        await self._get()
+        if not self.failed:
+            self.data = self.res["results"][0]
+            self._create_embed()
+            self._create_view()
+
+    async def send(self) -> Union[discord.Message, None]:
+        """Sends the embed and view and awaits a response"""
+        if self.failed:
+            return await self.ctx.send(":x: There was an issue with the API. Please try again. If this should happen frequently, please report it")
+        self.msg = await self.ctx.send(embed=self.embed, view=self.view)
+        await self.view.wait()
+        await self.view.disable(self.msg)
+
+        if not hasattr(self.view, "value"):
+            self.timed_out = True
+        else:
+            self.result = self.view.value
+
+    async def send_result(self) -> None:
+        """Sends the result of the trivia and hands out jenny as rewards"""
+        if self.failed:
+            return
+
+        elif self.timed_out:
+            await self.ctx.send("Timed out!", reference=self.msg)
+
+        elif self.result != self.correct_index:
+            await self.ctx.send(f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}")
+
+        else:
+            User(self.ctx.author.id).add_jenny((rew:= random.randint(*self.rewards[self.difficulty])))
+            await self.ctx.send(f"Correct! Here are {rew} Jenny as a reward!")
+
 
 class Rps:
-    
+    """A class handling someone playing rps alone or with someone else"""
     def __init__(self, ctx:commands.Context, points:int=None, other:discord.Member=None):
         self.ctx = ctx
         self.points = points
@@ -52,6 +111,9 @@ class Rps:
                 return True
             return True
 
+    def _get_options(self) -> List[discord.SelectOption]:
+        """Returns a new instance of the option list so it doesn't get mixed up when editing"""
+        return [discord.SelectOption(label="rock", value="-1", emoji="\U0001f5ff"), discord.SelectOption(label="paper", value="0", emoji="\U0001f4c4"), discord.SelectOption(label="scissors", value="1", emoji="\U00002702")]
 
     def _result(self, p:int, q:int) -> int:
         """Evaluates who won, by doing very smart math"""
@@ -74,19 +136,20 @@ class Rps:
             else:
                 await x.send('Too late, time to respond is up!')
 
-    async def _wait_for_response(self, users:List[discord.Member]) -> Union[None, List[asyncio.Future]]:
+    async def _wait_for_response(self, users:List[discord.Member]) -> Union[None, List[View]]:
         data = []
         for u in users:
-            view = RpsChoice(user=u, timeout=None)
+            view = View(user_id=u.id, timeout=None)
+            select = Select(options=self._get_options())
+            view.add_item(select)
+            view.user = u
             msg = await u.send("You chose to play Rock Paper Scissors, what\'s your choice Hunter?", view=view)
             data.append((msg, view))
 
         done, pending = await asyncio.wait([v.wait() for m, v in data], return_when=asyncio.ALL_COMPLETED, timeout=100)
 
         for m, v in data:
-            for child in v.children:
-                child.disabled = True
-            edited = await m.edit(view=v)
+            await v.disable(m)
 
         if False in [x.done() == True for x in [*done, *pending]]:
             # Handles the case that one or both players don't respond to the dm in time
@@ -143,11 +206,7 @@ class Rps:
         view = ConfirmButton(self.other.id, timeout=80)
         msg = await self.ctx.send(f'{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other.name}** accept the challange?', view=view)
         await view.wait()
-
-        for child in view.children:
-            child.disabled = True
-
-        await msg.edit(view=view)
+        await view.disable(msg)
 
         if not view.value:
             if view.timed_out:
@@ -334,6 +393,15 @@ class Games(commands.Cog):
     
         game = Rps(ctx, points, member)
         await game.start()
+
+    @check(20)
+    @commands.command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
+    async def trivia(self, ctx, difficulty:str="easy"):
+        """Play trivial and earn some jenny if you're right!"""
+        game = Trivia(ctx, difficulty, self.client.session)
+        await game.create()
+        await game.send()
+        await game.send_result()
 
 Cog = Games
 
