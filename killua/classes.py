@@ -782,7 +782,7 @@ class TodoList():
     def _generate_id() -> int:
         l = []
         while len(l) != 6:
-            l.append(str(randint(0,9)))
+            l.append(str(random.randint(0,9)))
 
         todo_id = todo.find_one({'_id': ''.join(l)})
 

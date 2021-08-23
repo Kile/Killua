@@ -136,13 +136,17 @@ class TodoSystem(commands.Cog):
             'color': 0x1400ff,
             'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Requested by {ctx.author}'}
         })
-        step = await ctx.send(embed=embed)
-
 
         view = ConfirmButton(ctx.author.id, timeout=80)
         msg = await ctx.send(embed=embed, view=view)
         await view.wait()
         await view.disable(msg)
+
+        try:
+            await ctx.message.delete()
+        except:
+            pass
+        await msg.delete()
 
         if not view.value:
             if view.timed_out:
@@ -279,8 +283,8 @@ class TodoSystem(commands.Cog):
         else:
             custom_id = None
         
-        TodoList.create(owner=ctx.author.id, title=title, status=status, done_delete=done_delete, custom_id=custom_id)
-        await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{todo_id}`' + f'or through your custom id {custom_id}' if custom_id else '')
+        l = TodoList.create(owner=ctx.author.id, title=title, status=status, done_delete=done_delete, custom_id=custom_id)
+        await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{l.id}`' + f' or through your custom id {custom_id}' if custom_id else '')
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="view <list_id(optional)>")
@@ -304,7 +308,7 @@ class TodoSystem(commands.Cog):
         todo_list.add_view(ctx.author.id)
 
         if len(todo_list) <= 10:
-            return await ctx.send(self._build_embed(todo_list))
+            return await ctx.send(embed=await self._build_embed(todo_list))
 
         async def make_embed(page, embed, pages):
             return await self._build_embed(pages, page)
@@ -541,7 +545,7 @@ class TodoSystem(commands.Cog):
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="add <text>")
-    async def add(self, ctx, *, td):
+    async def add(self, ctx, *, task):
         """Add a todo to your list, *yay, more work* (Only in editor mode)"""
         try:
             list_id = editing[ctx.author.id]
@@ -550,17 +554,17 @@ class TodoSystem(commands.Cog):
 
         todo_list = TodoList(list_id)
 
-        if len(td) > 100:
+        if len(task) > 100:
             return await ctx.send('Your todo can\'t have more than 100 characters')
         
         if len(todo_list.todos) >= todo_list.spots:
             return await ctx.send(f'You don\'t have enough spots for that! Buy spots with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy space`. You can currently only have up to {todo_list.spots} spots in this list')
 
         todos = todo_list.todos
-        todos.append({'todo': td, 'marked': None, 'added_by': ctx.author.id, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"),'views': 0, 'assigned_to': [], 'mark_log': []})
+        todos.append({'todo': task, 'marked': None, 'added_by': ctx.author.id, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"),'views': 0, 'assigned_to': [], 'mark_log': []})
         
         todo_list.set_property('todos', todos)
-        return await ctx.send(f'Great! Added {td} to your todo list!')
+        return await ctx.send(f'Great! Added {task} to your todo list!')
 
     @check(20)
     @todo.command(extras={"category":Category.TODO}, usage="kick <user>")

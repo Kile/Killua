@@ -92,7 +92,7 @@ class Api(commands.Cog):
     async def glitch(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
         """Tranform a users pfp into a glitchy GIF!"""
         async def func(data, *args):
-            return await self.pxl.glitch(images=[data])
+            return await self.pxl.glitch(images=[data], gif=True)
         await self.handle_command(ctx, args, func)
 
     @check(10)

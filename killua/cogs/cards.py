@@ -10,7 +10,7 @@ import io
 import aiohttp
 import pathlib
 
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Tuple
 
 from killua.checks import check
 from killua.paginator import Paginator
@@ -162,6 +162,60 @@ class Cards(commands.Cog):
         })
         return embed, f
 
+    def _get_single_reward(self, score:int) -> dict:
+            if score == 1:
+                if random.randint(1,10) < 5:
+                    return 1, random.choice([x['_id'] for x in items.find({'type': 'normal', 'rank': { "$in": ['A', 'B', 'C']}})])
+                else:
+                    return 1, random.choice([x['_id'] for x in items.find({'type': 'spell', 'rank': {"$in": ['B', 'C']}})])
+
+            if score < 3000/10000:
+                rarities = ['E', 'G', 'H']
+            elif score < 7000/10000:
+                rarities = ['D', 'E', 'F']
+            else:
+                rarities = ['C', 'D', 'E']
+
+            amount = math.ceil(score*(score*random.randint(5, 15)))
+            card = random.choice([x['_id'] for x in items.find({'type': 'monster', 'rank': {"$in": rarities}})])
+            return amount, card
+    
+    def _construct_rewards(self, score:int) -> List[Tuple[int, int]]:
+        # reward_score will be minutes/10000 which equals a week. Max rewards will get returned once a user has hunted for a week
+        rewards = []
+
+        if score >= 1:
+            rewards.append(self._get_single_reward(1))
+            score = 0.5
+
+        for i in range(math.ceil(score*(score*random.randint(5, 20)))):
+            r = self._get_single_reward(score)
+            rewards.append(r)
+    
+        final_rewards = []
+        for reward in rewards: 
+            # This avoid duplicates e.g. 4xPaladins Neclace, 2xPaladins Necklace => 6xPaladins Necklace
+            if reward[1] in (l:= [y for x, y in final_rewards]):
+                index = l.index(reward[1])
+                final_rewards[index] = (final_rewards[index][0]+reward[0], final_rewards[index][1])
+            else:
+                final_rewards.append(reward)
+        return final_rewards
+
+    def _format_rewards(self, rewards:List[Tuple[int, int]], user:User, score:float) -> Tuple[List[list], List[str], bool]:
+        """Formats the generated rewards for further use"""
+        formatted_rewards = []
+        formatted_text = []
+        for reward in rewards:
+            for i in range(reward[0]):
+                if len([*user.fs_cards,*[x for x in rewards if x[1] > 99 and not user.has_rs_card(x[0])]]) >= 40 and (reward[1] > 99 or (not user.has_rs_card(reward[1]) and reward[1] < 100)):
+                    return rewards, True
+                formatted_rewards.append([reward[1], {"fake": False, "clone": False}])
+            card = Card(reward[1])
+            formatted_text.append(f"{reward[0]}x **{card.name}**{card.emoji}")
+
+        return formatted_rewards, formatted_text, False
+
     @check(3)
     @commands.command(extras={"category":Category.CARDS}, usage="book <page(optional)>")
     async def book(self, ctx, page:int=1):
@@ -264,38 +318,27 @@ class Cards(commands.Cog):
                     return await ctx.send('You must be at least hunting for twelve hours!')
 
                 minutes = int(difference.seconds/60+difference.days*24*60)
-                reward_score = minutes/10000 # There are 10080 minutes in a week if I'm not completely wrong
+                score = minutes/10800 # There are 10080 minutes in a week if I'm not completely wrong
                 
-                rewards = construct_rewards(reward_score)
-                r = f'You\'ve been hunting for {difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds. You brought back the following items from your hunt: \n\n'
-                def form(rewards, r):
-                    r_l = list()
-                    l = list()
-                    
-                    for rew in rewards:
-                        for i in range(rew[1]):
-                            if len([*user.fs_cards,*[x for x in l if x[0] > 99 and not user.has_rs_card(x[0])]]) >= 40 and (rew[0] > 99 or (not user.has_rs_card(rew[0]) and rew[0] < 100)):
-                                r = f':warning:*Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`*:warning:\n\n' + r
-                                return r_l, r, l
-                            l.append([rew[0], {"fake": False, "clone": False}])
-                        r_l.append(f'{rew[1]}x **{Card(rew[0]).name}**{Card(rew[0]).emoji}')
-                    return r_l, r, l
-
-                r_l, r, l = form(rewards, r)
+                rewards = self._construct_rewards(score)
+                formatted_rewards, formatted_text, hit_limit = self._format_rewards(rewards, user, score)
+                text = f'You\'ve been hunting for {difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds. You brought back the following items from your hunt: \n\n'
+                if hit_limit:
+                    text += f":warning:Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`*:warning:\n\n"
 
                 embed = discord.Embed.from_dict({
                     'title': 'Hunt returned!',
-                    'description': r + ('\n'.join(r_l) if len(r_l) else "Seems like you didn't bring anything back from your hunt"),
+                    'description': text + "\n".join(formatted_text),
                     'color': 0x1400ff
                 })
                 user.remove_effect('hunting')
-                user.add_multi(l)
+                user.add_multi(formatted_rewards)
                 return await ctx.send(embed=embed)
                 
             elif end.lower() == 'end': 
                 return await ctx.send(f'You aren\'t on a hunt yet! Start one with `{self.client.command_prefix(self.client, ctx.message)[2]}hunt`')
 
-        if user.has_effect('hunting')[0] is True:
+        if has_effect:
             return await ctx.send(f'You are already on a hunt! Get the results with `{self.client.command_prefix(self.client, ctx.message)[2]}hunt end`')
         user.add_effect('hunting', datetime.now())
         await ctx.send('You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get')
@@ -929,45 +972,6 @@ async def check_view_defense(self, ctx, attacked_user:discord.Member, attack_spe
             await ctx.send(f'Successfully defended against card `{attack_spell}`!')
             return True    
     
-def construct_rewards(reward_score:int):
-    # reward_score will be minutes/10000 which equals a week. Max rewards will get returned once a user has hunted for a week
-    if reward_score > 1:
-        reward_score = 1
-
-    rewards = list()
-    def rw(reward_score:int):
-        if reward_score == 1:
-            if random.randint(1,10) < 5:
-                return (random.choice([x['_id'] for x in items.find({'type': 'normal', 'rank': random.choice(['A', 'B', 'C'])})]), 1), 0.3
-            else:
-                return (random.choice([x['_id'] for x in items.find({'type': 'spell', 'rank': random.choice(['B', 'C'])})]), 1), 0.3
-        if reward_score < 3000/10000:
-            rarities = ['E', 'G', 'H']
-        elif reward_score < 7000/10000:
-            rarities = ['D', 'E', 'F']
-        else:
-            rarities = ['C', 'D', 'E']
-        amount = int(random.randint(int(100*reward_score), int(130*reward_score))/25)
-        return (random.choice([x['_id'] for x in items.find({'type': 'monster', 'rank': random.choice(rarities)})]), amount if amount != 0 else 1), reward_score
-
-    card_amount = int(random.randint(4, 10)*reward_score)
-    for i in range(card_amount if card_amount >= 1 else 1):
-        r, s = rw(reward_score) # I get a type error if I don't pass the score idk why
-        rewards.append(r)
-        reward_score = s
-  
-    other_rewards = rewards
-    for reward in other_rewards: 
-        # This avoid duplicates e.g. 4xPaladins Neclace, 2xPaladins Necklace => 6xPaladins Necklace
-        if [x[0] for x in other_rewards].count(reward[0]) > 1:
-            total = 0
-            for x in other_rewards:
-                if x[0] == reward[0]:
-                    total = total+x[1]
-                    rewards.remove(x)
-            rewards.append([reward[0], total])
-
-    return rewards
 
 
 Cog = Cards
