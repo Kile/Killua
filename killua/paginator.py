@@ -9,20 +9,18 @@ from inspect import iscoroutinefunction
 from typing import List, Union, Type, TypeVar, Coroutine, Tuple
 from collections.abc import Callable
 
-from enum import Enum
-
 E = TypeVar(Union[discord.Embed, Type[discord.Embed]])
 R = TypeVar(Union[E, Tuple[E, discord.File]])
 T = TypeVar("T")
 
-class Button(Enum):
+class Button:
     FIRST_PAGE = "\U000023ea"
     BACKWARDS = "\U000025c0"
     FORWARD = "\U000025b6"
     LAST_PAGE = "\U000023e9"
     STOP = "\U000023f9"
 
-class Color(Enum):
+class Color:
     BLURPLE = discord.ButtonStyle.blurple
     GREY = discord.ButtonStyle.grey
     RED = discord.ButtonStyle.red
@@ -35,6 +33,7 @@ class DefaultEmbed(discord.Embed):
         super().__init__(**kwargs)
         self.color = 0x1400ff
         self.timestamp = datetime.datetime.utcnow()
+        self.set_footer()
 
 class View(discord.ui.View):
     """Subclassing this for buttons enabled us to not have to define interaction_check anymore, also not if we want a select menu"""
@@ -91,7 +90,7 @@ class Buttons(View):
             self.embed = (self.func(self.page, self.embed, self.pages)) if not iscoroutinefunction(self.func) else (await self.func(self.page, self.embed, self.pages))
         else:
             self.embed.description = str(self.pages[self.page-1])
-        if not self.embed.footer or self.embed.footer.text.startswith("Page"):
+        if isinstance(self.embed, DefaultEmbed):
             self.embed.set_footer(text= f"Page {self.page}/{self.max_pages}")
 
     async def _handle_file(self, interaction: discord.Interaction) -> None:
@@ -114,28 +113,28 @@ class Buttons(View):
             await self._get_embed()
             await interaction.response.edit_message(embed=self.embed, view=self)
 
-    @discord.ui.button(emoji=Button.FIRST_PAGE.value, style=Color.BLURPLE.value)
+    @discord.ui.button(emoji=Button.FIRST_PAGE, style=Color.BLURPLE)
     async def first_page(self, button: discord.ui.button, interaction: discord.Interaction):
         self.page = 1
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=Button.BACKWARDS.value, style=Color.BLURPLE.value)
+    @discord.ui.button(emoji=Button.BACKWARDS, style=Color.BLURPLE)
     async def backwards(self, button: discord.ui.button, interaction: discord.Interaction):
         self.page = self.page - 1 if self.page > 1 else self.max_pages
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=Button.STOP.value, style=Color.BLURPLE.value)
+    @discord.ui.button(emoji=Button.STOP, style=Color.BLURPLE)
     async def delete(self, button: discord.ui.button, interaction: discord.Interaction):
         await interaction.message.delete()
         self.ignore = True
         self.stop()
 
-    @discord.ui.button(emoji=Button.FORWARD.value, style=Color.BLURPLE.value)
+    @discord.ui.button(emoji=Button.FORWARD, style=Color.BLURPLE)
     async def forward(self, button: discord.ui.button, interaction: discord.Interaction):
         self.page = self.page + 1 if not self.page >= self.max_pages else 1
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=Button.LAST_PAGE.value, style=Color.BLURPLE.value)
+    @discord.ui.button(emoji=Button.LAST_PAGE, style=Color.BLURPLE)
     async def last_page(self, button: discord.ui.button, interaction: discord.Interaction):
         self.page = self.max_pages
         await self._edit_message(interaction)
@@ -187,7 +186,7 @@ class Paginator:
         else:
             desc = str(self.pages[self.page-1])
             self.embed.description = desc
-        if not self.embed.footer:
+        if isinstance(self.embed, DefaultEmbed):
             self.embed.set_footer(text=f"Page {self.page}/{self.max_pages}")
 
     async def start(self):
@@ -198,4 +197,4 @@ class Paginator:
         if self.view.ignore: # This is True when the message has been deleted/should not get their buttons disabled
             return
 
-        await self.view.disable(self.view.message) # disableing the views children
+        await self.view.disable(self.view.message) # disabling the views children
