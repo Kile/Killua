@@ -27,24 +27,24 @@ PXLAPI = config["pxlapi"]
 
 PATREON_TIERS = {
     "6002629": {
-        "name": "one_star_hunter",
+        "name": "tier_one",
         "id": 1,
         "premium_guilds": 1
     },
     "6002630": {        
-        "name": "two_star_hunter",
+        "name": "tier_two",
         "id": 2,
         "premium_guilds": 2
     },
     "6002631": {
-        "name": "triple_star_hunter",
+        "name": "tier_three",
         "id": 3,
         "premium_guilds": 3
     },
     "6563669": {
-        "name": "triple_star_hunter", # This tier gives the same benefits as triple star hunter
+        "name": "tier_four", 
         "id": 4,
-        "premium_guilds": 3
+        "premium_guilds": 10
     }
 }
 
@@ -111,23 +111,22 @@ USER_FLAGS = {
 }
 
 KILLUA_BADGES = {
-    "6002629": "<:badge_one_star_hunter:788935576836374548>",
-    "6002630": "<:badge_double_star_hunter:788935576120066048>",
-    "6002631": "<:badge_triple_star_hunter:788935576925372417>",
-    "premium": "<:badge_premium:829118525398188052>",
+    "6002629": "<:tier_one_badge:879390548857880597>",
+    "6002630": "<:tier_two_badge:879390669368614982>",
+    "6002631": "<:tier_three_badge:879390807315087451>",
+    "partner": "<:partner_badge:879391663460610078>",
+    "artist": "<:artist_badge:879391368076734464>",
+    "greed_island_badge": "<:greed_island_badge:879391821938180116>",
+    "early_supporter": "",
+    "developer": "",
     "owner": "<:badge_killua_owner:788940157599612948>"
 }
 
-NUMBERS = {
-    1: '1️⃣',
-    2: '2️⃣',
-    3: '3️⃣',
-    4: '4️⃣',
-    5: '5️⃣',
-    6: '6️⃣',
-    7: '7️⃣',
-    8: '8️⃣',
-    9: '9️⃣'
+SERVER_BADGES = {
+    "premium": "",
+    "early supporter": "",
+    "partner": "<:partner_badge:879391663460610078>",
+    "official": ""
 }
 
 
@@ -174,7 +173,7 @@ ALLOWED_AMOUNT_MULTIPLE = 3
 FREE_SLOTS = 40
 DEF_SPELLS= [1003, 1004, 1019]
 VIEW_DEF_SPELLS = [1025]
-INDESTRUCTABLE = [1026]
+INDESTRUCTABLE = [1026, 0]
 
 PRICES:dict = {
     'S': 10000,
@@ -198,33 +197,19 @@ A beginners guide of the greed island card system
 
 📖::📖::📖
 """,
-f"""If you are not familiar with how this works in the anime:
-The main goal of the game is to obtain all 100 cards in the book. How hard it is to
-obtain a card is determined by it's **rank**. You can find it on the top right of the 
-card. Next to it to the right is a number. This number times {ALLOWED_AMOUNT_MULTIPLE} is the 
-maximum amount of those cards to exist globally. If that limit is exceeded you can't 
-obtain any more cards unless someone looses one of their copies which means one 
+f"""If you are not familiar with how this works in the anime: 
+
+The main goal of the game is to obtain all 100 cards in the book. How hard it is to obtain a card is determined by it's **rank**. You can find it on the top right of the card. Next to it to the right is a number. This number times {ALLOWED_AMOUNT_MULTIPLE} is the maximum amount of those cards to exist globally. If that limit is exceeded you can't obtain any more cards unless someone looses one of their copies which means one 
 other person can obtain the card again""",
 
-f"""On the top left, you can see the card number. Typically, spell cards have a number
-one thousand and ... and item cards have a number less than 100. Cards with a 
-number below 100 count towards your goal of colleting all 100 **restricted slot** 
-cards. When you obtain a card which has an id below 100 but you already have one 
-in your restricted slots, or the card id is above 100, the card comes into your 
-**free slots**. You can have a maximum of {FREE_SLOTS} cards in your free slots""",
+f"""On the top left, you can see the card number. 
+Typically, spell cards have a number one thousand and ... and item cards have a number less than 100. Cards with a number below 100 count towards your goal of collecting all 100 **restricted slot** cards.
+When you obtain a card which has an id below 100 but you already have one in your restricted slots, or the card id is above 100, the card comes into your **free slots**. You can have a maximum of {FREE_SLOTS} cards in your free slots""",
 
-"""I have mentioned before that there are **spell cards**. You can use them to steal 
-cards from other users, gamble and a lot more. To use a spell card, use 
-`k!use <card> <arguments>`. Some spell cards only work in a **short range**. 
-In discord terms that means that the target must have send a message
-recently in the channel the command is used in. You can also use permament 
-spell cards to protect yourself from others or tranform cards into fakes.""",
+"""I have mentioned before that there are **spell cards**. You can use them to steal cards from other users, gamble and a lot more. To use a spell card, use `use <card> <arguments>`. Some spell cards only work in a **short range**. In discord terms that means that the target must have send a message recently in the channel the command is used in. You can also use permament spell cards to protect yourself from others or tranform cards into fakes.""",
 
-"""A word about **fakes**. The main usecase I see them as is bait. You can't 
-sell fakes, you can't use them and they don't count towards the 100 card goal. 
-If you want to swap out a fake in your album with a real card in your free slots 
-or the other way around, use `k!swap <card_id>`. If you want to get rid of a fake, 
-make sure it's in your free slots and discard it with `k!discard <card_id>`""",
+"""A word about **fakes**. The main usecase I see them as is bait. You can't sell fakes, you can't use them and they don't count towards the 100 card goal. 
+If you want to swap out a fake in your album with a real card in your free slots or the other way around, use `swap <card_id>`. If you want to get rid of a fake, make sure it's in your free slots and discard it with `discard <card_id>`""",
 
 """You have reached the end of the introduction!
 

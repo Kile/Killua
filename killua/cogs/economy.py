@@ -7,7 +7,8 @@ from random import randint, choice
 from killua.checks import check
 from killua.paginator import View
 from killua.help import Select
-from killua.classes import User, Guild, Category, Card, LootBox, Card
+from killua.cards import Card
+from killua.classes import User, Guild, Category, LootBox
 from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, PATREON_TIERS, LOOTBOXES, items
 
 class Economy(commands.Cog):
@@ -51,8 +52,6 @@ class Economy(commands.Cog):
         if user.avatar.is_animated() or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]) > 0: # A very simple nitro check that is not too accurate
             flags.append(USER_FLAGS["nitro"])
         badges = [KILLUA_BADGES[x] for x in info.badges]
-        if len([x for x in info.badges if x in PATREON_TIERS.keys()]) > 0: # if the user has any premium tier
-            badges.append(KILLUA_BADGES["premium"])
         bal = info.jenny
         
         if str(datetime.now()) > str(info.daily_cooldown):
@@ -108,7 +107,7 @@ class Economy(commands.Cog):
         """Get a leaderboard of members with the most jenny"""
         top = self._lb(ctx)
         if len(top) == 0:
-            return await ctx.send(f"Nobody here has any jenny! Be the first to claim some with `{self.client.command_prefix(self.client, ctx.message)[2]}daily`!")
+            return await ctx.send(f"Nobody here has any jenny! Be the first to claim some with `{self.client.command_prefix(self.client, ctx.message)[2]}daily`!", allowed_mentions=discord.AllowedMentions.none())
         embed = discord.Embed.from_dict({
             "title": f"Top users on guild {ctx.guild.name}",
             "description": '\n'.join([f'#{p+1} `{x["name"]}` with `{x["points"]}` jenny' for p, x in enumerate(top["top"])]),
@@ -170,7 +169,8 @@ class Economy(commands.Cog):
             max=+50
         daily = randint(min, max)
         if str(user.daily_cooldown) < str(now):
-            teams.update_one({'id': ctx.author.id},{'$set':{'cooldowndaily': later,'points': user.jenny + daily}})
+            user.claim_daily()
+            user.add_jenny(daily)
             await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(user.jenny) + int(daily)}')
         else:
             cd = user.daily_cooldown-datetime.now()

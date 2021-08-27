@@ -40,6 +40,11 @@ class View(discord.ui.View):
     def __init__(self, user_id:int, **kwargs):
         super().__init__(**kwargs)
         self.user_id = user_id
+        self.value = None
+        self.timed_out = False
+
+    async def on_timeout(self):
+        self.timed_out = True
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if not (val := interaction.user.id == self.user_id):

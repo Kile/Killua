@@ -62,7 +62,7 @@ class Api(commands.Cog):
         if validate:
             data = await self._validate_input(ctx, args)
             if not data:
-                return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`')
+                return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`', allowed_mentions=discord.AllowedMentions.none())
         else:
             data = args
         r = await function(data, t)

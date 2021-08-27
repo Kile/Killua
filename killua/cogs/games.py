@@ -36,7 +36,7 @@ class Trivia:
 
     def _create_embed(self) -> discord.Embed:
         """Creates the trivia embed"""
-        question = self.data['question'].replace('&quot;', '"')
+        question = self.data['question'].replace('&quot;', '"').replace("&#039;", "'")
         self.embed = discord.Embed.from_dict({
             "title": f"Trivia of category {self.data['category']}",
             "description": f"**difficulty:** {self.data['difficulty']}\n\n**Question:**\n{question}",
@@ -398,6 +398,9 @@ class Games(commands.Cog):
     @commands.command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
     async def trivia(self, ctx, difficulty:str="easy"):
         """Play trivial and earn some jenny if you're right!"""
+        if not difficulty.lower() in ["easy", "medium", "hard"]:
+            return await ctx.send("Invalid difficulty! Please either choose one of the following: `easy`, `medium`, `hard`")
+
         game = Trivia(ctx, difficulty, self.client.session)
         await game.create()
         await game.send()

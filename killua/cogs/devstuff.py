@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 from datetime import datetime, timedelta
 import re
-from killua.checks import check, p
+from killua.checks import check
 from killua.cogs.cards import Card, User, Category#lgtm [py/unused-import]
 from killua.cogs.pxlapi import PxlClient #lgtm [py/unused-import]
 from killua.constants import teams, guilds, blacklist, presence as pr, items, updates #lgtm [py/unused-import]
@@ -107,7 +107,7 @@ class DevStuff(commands.Cog):
         if status == '-rm':
             pr.update_many({}, {'$set': {'text': None, 'activity': None, 'presence': None}})
             await ctx.send('Done! reset Killua\'s presence')
-            return await p(self)
+            return await self.client.update_presence()
 
         activity = re.search(r'as\(.*?\)ae', status)
         if activity:
@@ -122,7 +122,7 @@ class DevStuff(commands.Cog):
                 return await ctx.send('Invalid presence!')
         text = re.search(r'ts\(.*?\)te', status)
         pr.update_many({}, {'$set': {'text': text[0][3:-3], 'presence': presence, 'activity': activity}})
-        await p(self)
+        await self.client.update_presence()
         await ctx.send(f'Succesfully changed Killua\'s status to `{text[0][3:-3]}`! (I hope people like it >-<)')
 
 

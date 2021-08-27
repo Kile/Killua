@@ -34,7 +34,7 @@ class TodoSystem(commands.Cog):
             confirmmsg = await self.client.wait_for('message', check=check, timeout=60)
         except asyncio.TimeoutError:
             await step.delete()
-            await ctx.send('Too late...', delete_after=5)
+            await step.channel.send('Too late...', delete_after=5)
             return None
         else:
             await step.delete()
@@ -67,7 +67,7 @@ class TodoSystem(commands.Cog):
             return f'\n`Assigned to: {", ".join([str(x) for x in at])}`'
 
         for n, t in enumerate(final_todos if page else l, page*10-10 if page else 0):
-            t = Todo(n+1, str(todo_list.id))
+            t = Todo(n+1, todo_list.id)
             ma = f'\n`Marked as {t.marked}`' if t.marked else ''
             desc.append(f'{n+1}) {t.todo}{ma}{await assigned_users(t) if len(t.assigned_to) > 0 else ""}')
         desc = '\n'.join(desc) if len(desc) > 0 else "No todos"
@@ -178,7 +178,18 @@ class TodoSystem(commands.Cog):
         if len(confirmmsg.content) > 20:
             await ctx.send('Your custom id can have max 20 characters')
             return await self.todo_custom_id(ctx)
-        return confirmmsg.content.lower()
+
+        if confirmmsg.content.lower().isdigit():
+            await ctx.send("Your custom id needs to contain at least one character that isn't an integer", delete_after=5)
+            return await self.todo_custom_id(ctx)
+
+        try:
+            TodoList(confirmmsg.content.lower())
+        except TodoListNotFound:
+            return confirmmsg.content.lower()
+        else:
+            await ctx.send('This custom id is already taken', delete_after=5)
+            return await self.todo_custom_id(ctx)
 
     async def todo_info_embed_generator(self, ctx, list_id):
         """outsourcing big embed production 🛠 """
@@ -248,6 +259,19 @@ class TodoSystem(commands.Cog):
             embed.set_thumbnail(url=todo_list.thumbnail)
         return await ctx.send(embed=embed)
 
+    async def _set_check(self, ctx:commands.Context) -> Union[None, TodoList]:
+        """A generic check before every command that edits a todo list property"""
+        try:
+            list_id = editing[ctx.author.id]
+        except KeyError:
+            await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`', allowed_mentions=discord.AllowedMentions.none())
+        else:
+            todo_list = TodoList(list_id)
+
+            if getattr(todo_list, ctx.command.name) is None:
+                await ctx.send(f'You need to have bought this feature for your current todo list with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy {attr}`', allowed_mentions=discord.AllowedMentions.none())
+
+            return todo_list
 
     @commands.group(hidden=True)
     async def todo(self, ctx):
@@ -284,19 +308,17 @@ class TodoSystem(commands.Cog):
             custom_id = None
         
         l = TodoList.create(owner=ctx.author.id, title=title, status=status, done_delete=done_delete, custom_id=custom_id)
-        await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{l.id}`' + f' or through your custom id {custom_id}' if custom_id else '')
+        await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{l.id}`' + f' or through your custom id {custom_id}' if custom_id else '', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="view <list_id(optional)>")
-    async def view(self, ctx, todo_id=None):
+    async def view(self, ctx, todo_id:Union[int, str]=None):
         """Allows you to view what is on any todo list- provided you have the permissions"""
         if todo_id is None:
             try:
-                list_id = editing[ctx.author.id]
+                todo_id = editing[ctx.author.id]
             except KeyError:
                 return await ctx.send('You have to be in the editor mode to use this command without providing an id! Use `k!todo edit <todo_list_id>`')
-
-            todo_id = str(list_id)
 
         try:
             todo_list = TodoList(todo_id)
@@ -323,15 +345,15 @@ class TodoSystem(commands.Cog):
         except KeyError:
             return await ctx.send('You have to be in the editor mode to use this command without providing an id! Use `k!todo edit <todo_list_id>`')
 
-        todo_list = TodoList(str(list_id))
+        todo_list = TodoList(list_id)
         if not todo_list.has_edit_permission(ctx.author.id):
             return await ctx.send("You have to be added as an editor to this list to use this command")
         todo_list.clear()
         await ctx.send("Done! Cleared all your todos")
 
     @check(1)
-    @todo.command(extras={"category":Category.TODO}, usage="todo info <list_id/task_id> <task_id(if list_id provided)>")
-    async def info(self, ctx, todo_or_task_id=None, td:int=None):
+    @todo.command(extras={"category":Category.TODO}, usage="info <list_id/task_id> <task_id(if list_id provided)>")
+    async def info(self, ctx, todo_or_task_id:Union[int, str]=None, td:int=None):
         """This gives you info about either a todo task or list"""
         if td is None:
             if todo_or_task_id is None:
@@ -339,7 +361,7 @@ class TodoSystem(commands.Cog):
                     list_id = editing[ctx.author.id]
                 except KeyError:
                     return await ctx.send('You need to be in editor mode for a list or provide an id to use this command')
-                return await self.todo_info_embed_generator(ctx, str(list_id))
+                return await self.todo_info_embed_generator(ctx, list_id)
             try:
                 list_id = editing[ctx.author.id]
             except KeyError:
@@ -350,7 +372,7 @@ class TodoSystem(commands.Cog):
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="edit <list_id>")
-    async def edit(self, ctx, list_id):
+    async def edit(self, ctx, list_id: Union[int, str]):
         """The command with which you can change stuff on your todo list"""
         try:
             todo_list = TodoList(list_id)
@@ -359,44 +381,42 @@ class TodoSystem(commands.Cog):
 
         if not todo_list.has_edit_permission(ctx.author.id):
             return await ctx.send('You do not have the permission to edit this todo list')
-        await ctx.send(f'You are now in editor mode for todo list "{todo_list.name}"')
+        await ctx.send(f'You are now in editor mode for todo list "{todo_list.name}"', allowed_mentions=discord.AllowedMentions.none())
         editing[ctx.author.id] = todo_list.id
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="name <new_name>")
-    async def name(self, ctx, new_name:str):
-        """Rename your todo list with thsi command (Only in editor mode)"""
-        try:
-            list_id = editing[ctx.author.id]
-        except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
-        TodoList(list_id).set_property('name', new_name)
-        await ctx.send(f'Done! Update your todo list\'s name to "{new_name}"')
+    async def name(self, ctx, *, new_name:str):
+        """Rename your todo list with this command (Only in editor mode)"""
+        res = await self._set_check(ctx)
+        if not res:
+            return
+
+        if len(new_name) > 30:
+            return await ctx.send("The name cannot be longer than 30 characters!")
+        res.set_property("name", new_name)
+        await ctx.send(f'Done! Update your todo list\'s name to "{new_name}"', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="status <new_status>")
     async def status(self, ctx, status):
         """Change the status of your todo list (public/private) with this command (Only in editor mode)"""
-        try:
-            list_id = editing[ctx.author.id]
-        except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
+        res = await self._set_check(ctx)
+        if not res:
+            return
+
         if not status.lower() in ['private', 'public']:
             return await ctx.send('You need to chose a valid status (private/public)')
-        TodoList(list_id).set_property('status', status.lower())
-        await ctx.send(f'Done! Updated your todo list\'s status to `{status.lower()}`')
+        res.set_property("status", status.lower())
+        await ctx.send(f'Done! Updated your todo list\'s status to `{status.lower()}`', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="color <new_color_in_hex>")
     async def color(self, ctx, color):
         """Change your todo list's color with this command (Only in editor mode)"""
-        try:
-            list_id = editing[ctx.author.id]
-        except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
-        todo_list = TodoList(list_id)
-        if not todo_list.color:
-            return await ctx.send('You need to have bought this feature for your current todo list with `k!todo buy color`')
+        res = await self._set_check(ctx)
+        if not res:
+            return
             
         c = f'0x{color}'
         try:
@@ -405,34 +425,29 @@ class TodoSystem(commands.Cog):
         except Exception:
             await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
 
-        todo_list.set_property('color', int(c, 16))
+        res.set_property("color", int(c, 16))
         await ctx.send(f'Done! Updated your todo list\'s color to `{c}`')
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="thumbnail <new_thumbnail>")
     async def thumbnail(self, ctx, url):
         """Change your todo lists thumbnail with this command (Only in editor mode)"""
-        try:
-            list_id = editing[ctx.author.id]
-        except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
-        todo_list = TodoList(list_id)
-
-        if not todo_list.thumbnail:
-            return await ctx.send('You need to have bought this feature for your current todo list with `k!todo buy color`')
+        res = await self._set_check(ctx)
+        if not res:
+            return
 
         search_url = re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))', url)
 
         if search_url:
             image = re.search(r'png|jpg|gif|svg', url)
         else:
-            await ctx.send('You didn\'t provide a valid url with an image! Please make sure you do')
+            await ctx.send('You didn\'t provide a valid url with an image! Please make sure your url is valid')
             
         if image:
-            todo_list.set_property('thumbnail', url)
-            return await ctx.send(f'Done! Updated your todo list\'s thumbnail to `{url}`')
+            res.set_property("thumbnail", url)
+            return await ctx.send(f'Done! Updated your todo list\'s thumbnail to `{url}`', allowed_mentions=discord.AllowedMentions.none())
         else:
-            await ctx.send('You didn\'t provide a valid url with an image! Please make sure you do that')
+            await ctx.send('You didn\'t provide a valid url with an image! Please make sure your url is valid')
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="custom_id <new_id>")
@@ -441,7 +456,7 @@ class TodoSystem(commands.Cog):
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
+            return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`', allowed_mentions=discord.AllowedMentions.none())
         user = User(ctx.author.id)
         todo_list = TodoList(list_id)
 
@@ -452,34 +467,51 @@ class TodoSystem(commands.Cog):
             return await ctx.send('Your custom id can not have more than 20 characters')
 
         if custom_id.lower() == '-rm' or custom_id.lower() == '-r':
-            todo_list.set_property('custom_id', None)
+            todo_list.custom_id = None
             return await ctx.send(f'Done! Removed the custom id from your list')
-        todo_list.set_property('custom_id', custom_id)
-        return await ctx.send(f'Done! Updated your todo list\'s custom id to `{custom_id}`')
+
+        try:
+            TodoList(custom_id.lower())
+        except TodoListNotFound:
+            todo_list.set_property("custom_id", custom_id.lower())
+            return await ctx.send(f'Done! Updated your todo list\'s custom id to `{custom_id}`', allowed_mentions=discord.AllowedMentions.none())
+        else:
+            await ctx.send("This custom id is already taken!")
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="autodelete <on/off>")
     async def autodelete(self, ctx, on_or_off):
         """Let's you change if you mark a todo task as done if it should automatically delete it or not (Only in editor mode)"""
-        try:
-            list_id = editing[ctx.author.id]
-        except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
+        res = await self._set_check(ctx)
+        if not res:
+            return
+
         if not on_or_off.lower() in ['on', 'off']:
             return await ctx.send('You either need to activate this feature (**on**) or deactivate it (**off**)')
-        
-        todo_list = TodoList(list_id)
 
         if on_or_off.lower() == 'on':
-            if todo_list.delete_done is True:
+            if res.delete_done is True:
                 return await ctx.send('You already have this feature enabled')
-            todo_list.set_property('delete_done', True)
+            res.set_property("delete_done", True)
             return await ctx.send(f'Done! Activated your lists auto delete feature when something is marked as `done`')
         elif on_or_off.lower() == 'off':
-            if todo_list.delete_done is False:
+            if res.delete_done is False:
                 return await ctx.send('You already have this feature disabled')
-            todo_list.set_property('delete_done', False)
+            res.set_property("delete_done", False)
             return await ctx.send(f'Done! Deactivated your lists auto delete feature when something is marked as `done`')
+
+    @check()
+    @todo.command(extras={"category":Category.TODO}, usage="name <new_name>")
+    async def description(self, ctx, *, new_desc:str):
+        """Change the description of your todo list with this command (Only in editor mode)"""
+        res = await self._set_check(ctx)
+        if not res:
+            return
+
+        if len(new_name) > 200:
+            return await ctx.send("The name cannot be longer than 200 characters!")
+        res.set_property("description", new_desc)
+        await ctx.send(f'Done! Update your todo list\'s description!')
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="remove <task_id>")
@@ -488,7 +520,7 @@ class TodoSystem(commands.Cog):
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
+            return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`')
         
         todo_list = TodoList(list_id)
         for n in todo_numbers:
@@ -498,8 +530,8 @@ class TodoSystem(commands.Cog):
             todos = todo_list.todos
             for n in todo_numbers:
                 todos.pop(n-1)
-            todo_list.set_property('todos', todos)
-            return await ctx.send(f'You removed todo number{"s" if len(todo_numbers) > 1 else ""} {", ".join(todo_numbers)} successfully')
+            todo_list.set_property("todos", todos)
+            return await ctx.send(f'You removed todo number{"s" if len(todo_numbers) > 1 else ""} {", ".join(todo_numbers)} successfully', allowed_mentions=discord.AllowedMentions.none())
         except Exception:
             return await ctx.send('You need to provide only valid numbers!')
 
@@ -510,17 +542,17 @@ class TodoSystem(commands.Cog):
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
+            return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`')
         
         todo_list = TodoList(list_id)
         todos = todo_list.todos
 
         if not todo_list.has_todo(todo_number):
-            return await ctx.send(f'You don\'t have a number {todo_number} on your current todo list')
+            return await ctx.send(f'You don\'t have a number {todo_number} on your current todo list', allowed_mentions=discord.AllowedMentions.none())
 
         if  marked_as.lower() == 'done' and todo_list.delete_done is True:
             todos.pop(todo_number-1)
-            todo_list.set_property('todos', todos)
+            todo_list.set_property("todos", todos)
             return await ctx.send(f'Marked to-do number {todo_number} as done and deleted it per default')
         elif marked_as.lower() == '-r' or marked_as.lower() == '-rm':
             todos[todo_number-1]['marked'] = None
@@ -530,8 +562,8 @@ class TodoSystem(commands.Cog):
                 'date': (datetime.now()).strftime("%b %d %Y %H:%M:%S")
             }
             todos[todo_number-1]['mark_log'].append(mark_log)
-            todo_list.set_property('todos', todos)
-            return await ctx.send(f'Removed to-do number {todo_number} successfully!')
+            todo_list.set_property("todos", todos)
+            return await ctx.send(f'Removed to-do number {todo_number} successfully!', allowed_mentions=discord.AllowedMentions.none())
         else:
             todos[todo_number-1]['marked'] = marked_as
             mark_log = {
@@ -540,8 +572,8 @@ class TodoSystem(commands.Cog):
                 'date': (datetime.now()).strftime("%b %d %Y %H:%M:%S")
             }
             todos[todo_number-1]['mark_log'].append(mark_log)
-            todo_list.set_property('todos', todos)
-            return await ctx.send(f'Marked to-do number {todo_number} as `{marked_as}`!')
+            todo_list.set_property("todos", todos)
+            return await ctx.send(f'Marked to-do number {todo_number} as `{marked_as}`!', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="add <text>")
@@ -550,7 +582,7 @@ class TodoSystem(commands.Cog):
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`')
+            return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`', allowed_mentions=discord.AllowedMentions.none())
 
         todo_list = TodoList(list_id)
 
@@ -558,13 +590,13 @@ class TodoSystem(commands.Cog):
             return await ctx.send('Your todo can\'t have more than 100 characters')
         
         if len(todo_list.todos) >= todo_list.spots:
-            return await ctx.send(f'You don\'t have enough spots for that! Buy spots with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy space`. You can currently only have up to {todo_list.spots} spots in this list')
+            return await ctx.send(f'You don\'t have enough spots for that! Buy spots with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy space`. You can currently only have up to {todo_list.spots} spots in this list', allowed_mentions=discord.AllowedMentions.none())
 
         todos = todo_list.todos
         todos.append({'todo': task, 'marked': None, 'added_by': ctx.author.id, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"),'views': 0, 'assigned_to': [], 'mark_log': []})
         
-        todo_list.set_property('todos', todos)
-        return await ctx.send(f'Great! Added {task} to your todo list!')
+        todo_list.set_property("todos", todos)
+        return await ctx.send(f'Great! Added {task} to your todo list!', allowed_mentions=discord.AllowedMentions.none())
 
     @check(20)
     @todo.command(extras={"category":Category.TODO}, usage="kick <user>")
@@ -574,7 +606,7 @@ class TodoSystem(commands.Cog):
             list_id = editing[ctx.author.id]
         except KeyError:
             return await ctx.send('You are not editing a list at the moment')
-        todo_list = TodoList(str(list_id))
+        todo_list = TodoList(list_id)
 
         if isinstance(user, int):
             try:
@@ -590,11 +622,11 @@ class TodoSystem(commands.Cog):
 
         if user.id in todo_list.editor:
             todo_list.kick_editor(user.id)
-            await ctx.send(f'You have successfully taken the editor permission from {user}')
+            await ctx.send(f'You have successfully taken the editor permission from {user}', allowed_mentions=discord.AllowedMentions.none())
 
         if user.id in todo_list.viewer:
             todo_list.kick_viewer(user.id)
-            await ctx.send(f'You have successfully taken the viewer permission from {user}')
+            await ctx.send(f'You have successfully taken the viewer permission from {user}', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="exit")
@@ -632,7 +664,7 @@ class TodoSystem(commands.Cog):
         todo_list = TodoList(list_id)
 
         if not role.lower() in ['editor', 'viewer']:
-            return await ctx.send(f'Please choose a valid role to grant {user.name} (either `viewer` or `editor`)')
+            return await ctx.send(f'Please choose a valid role to grant {user.name} (either `viewer` or `editor`)', allowed_mentions=discord.AllowedMentions.none())
 
         embed = discord.Embed.from_dict({
             'title': f'You were invited to to-do list {todo_list.name} (ID: {todo_list.id})',
@@ -657,7 +689,7 @@ class TodoSystem(commands.Cog):
                 return await ctx.author.send(f"{user} has not responded to your invitation in 24 hours so the invitation went invalid")
             else:
                 await user.send('Successfully denied invitation')
-                return await ctx.author.send(f'{user} has denied your invitation the todo list `{todo_list.name}`')
+                return await ctx.author.send(f'{user} has denied your invitation the todo list `{todo_list.name}`', allowed_mentions=discord.AllowedMentions.none())
 
         if role.lower() == 'viewer':
             todo_list.add_viewer(user.id)
@@ -665,8 +697,8 @@ class TodoSystem(commands.Cog):
         if role.lower() == 'editor':
             todo_list.add_editor(user.id)
 
-        await user.send(f'Sucess! You have now {role} permissions in the todo list `{todo_list.name}`')
-        return await ctx.author.send(f'{user} accepted your invitation to your todo list `{todo_list.name}`!')
+        await user.send(f'Sucess! You have now {role} permissions in the todo list `{todo_list.name}`', allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.author.send(f'{user} accepted your invitation to your todo list `{todo_list.name}`!', allowed_mentions=discord.AllowedMentions.none())
 
 
     @check()
@@ -709,16 +741,16 @@ class TodoSystem(commands.Cog):
                     except discord.Forbidden:
                         pass
                 todos[todo_number-1]['assigned_to'].remove(user.id)
-                todo_list.set_property('todos', todos)
+                todo_list.set_property("todos", todos)
                 return await ctx.send(f'Succesfully removed assignment of todo task {todo_number} to {user}')
             else:
-                await ctx.send(f'Invalid argument for `rm`. Command usage: `{self.client.command_prefix(self.client, ctx.message)[2]}todo assign <todo_number> <user> <optional_rm>` where -rm would remove them from that task')
+                await ctx.send(f'Invalid argument for `rm`. Command usage: `{self.client.command_prefix(self.client, ctx.message)[2]}todo assign <todo_number> <user> <optional_rm>` where -rm would remove them from that task', allowed_mentions=discord.AllowedMentions.none())
 
         if user in todos[todo_number-1]['assigned_to']:
             return await ctx.send('The user specified is already assigned to that todo task')
 
         todos[todo_number-1]['assigned_to'].append(user.id)
-        todo_list.set_property('todos', todos)
+        todo_list.set_property("todos", todos)
 
         if not ctx.author == user:
             embed = discord.Embed.from_dict({
@@ -731,11 +763,11 @@ class TodoSystem(commands.Cog):
                 await user.send(embed=embed)
             except discord.Forbidden:
                 pass
-        return await ctx.send(f'Succesfully assigned the task with number {todo_number} to `{user}`')
+        return await ctx.send(f'Succesfully assigned the task with number {todo_number} to `{user}`', allowed_mentions=discord.AllowedMentions.none())
     
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="delete <list_id>")
-    async def delete(self, ctx, todo_id):
+    async def delete(self, ctx, todo_id:Union[int, str]):
         """Use this command to delete your todo list. Make sure to say goodbye a last time"""
         try:
             todo_list = TodoList(todo_id)
@@ -746,7 +778,7 @@ class TodoSystem(commands.Cog):
             return await ctx.send('Only the owner of a todo list can delete it')
 
         todo_list.delete()
-        return await ctx.send(f'Done! Deleted todo list {todo_list.name}')
+        return await ctx.send(f'Done! Deleted todo list {todo_list.name}', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="lists")

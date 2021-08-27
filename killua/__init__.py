@@ -2,11 +2,12 @@ from . import cogs
 import discord
 import aiohttp
 from discord.ext import commands, ipc
-from typing import Union
+from datetime import datetime, timedelta, date
+from typing import Union, Callable, List, Tuple
 
 from .help import MyHelp
 from .classes import Category
-from .constants import guilds, TOKEN, IPC_TOKEN
+from .constants import guilds, TOKEN, IPC_TOKEN, presence
 
 class Bot(commands.Bot):
 	def __init__(self, *args, **kwargs):
@@ -39,6 +40,35 @@ class Bot(commands.Bot):
 
 		return res
 
+	async def update_presence(self):
+		status = presence.find_one({})
+		if status['text']:
+			if not status['activity']:
+				status['activity'] = 'playing'
+			if status['activity'] == 'playing':
+				s = discord.Activity(name=status['text'], type=discord.ActivityType.playing)
+			if status['activity'] == 'watching':
+				s = discord.Activity(name=status['text'], type=discord.ActivityType.watching)
+			if status['activity'] == 'listening':
+				s = discord.Activity(name=status['text'], type=discord.ActivityType.listening)
+			if status['activity'] == 'competing':
+				s = discord.Activity(name=status['text'], type=discord.ActivityType.competing)
+
+				
+			if not status['presence']:
+				status['presence'] = 'online'
+			if status['presence'] == 'online':
+				return await self.change_presence(status=discord.Status.online, activity=s)
+			if status['presence'] == 'dnd':
+				return await self.change_presence(status=discord.Status.dnd, activity=s)
+			if status['presence'] == 'idle':
+				return await self.change_presence(status=discord.Status.idle, activity=s)
+		a = date.today()
+		#The day Killua was born!!
+		b = date(2020,9,17)
+		delta = a - b
+		playing = discord.Activity(name=f'over {len(self.guilds)} guilds | k! | day {delta.days}', type=discord.ActivityType.watching)
+		return await self.change_presence(status=discord.Status.online, activity=playing)
 
 def get_prefix(bot, message):
 	if bot.user.id == 758031913788375090:

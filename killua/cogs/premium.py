@@ -7,7 +7,8 @@ from aiohttp import ClientSession
 from datetime import datetime, timedelta
 
 from killua.constants import PATREON_TIERS, teams, guilds, GUILD, BOOSTER_ROLE
-from killua.classes import User, Guild, Category, Card, LootBox
+from killua.classes import User, Guild, Category, LootBox
+from killua.cards import Card
 from killua.constants import PATREON, LOOTBOXES
 from killua.checks import check
 
@@ -92,12 +93,11 @@ class Premium(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.get_patrons.start()
-        self.invalid = False
+        self.invalid = True
 
     def _get_boosters(self):
         guild = self.client.get_guild(GUILD)
-        if not guild: # This should only happen the first time this gets called because the bots cache is ready, that's why we ignore when this is empty.
-            self.invalid = True
+        if not guild:
             return []
         return [x.id for x in guild.members if BOOSTER_ROLE in [r.id for r in x.roles]]
 
@@ -121,11 +121,12 @@ class Premium(commands.Cog):
                     badges.remove(k)
 
             if d["tier"] == None:
-                guilds.update_many({"id": {"$in": [int(x) for x in premium_guilds.keys()]}}, {"$set": {"premium": False}})
-                premium_guilds = []
+                Guild.bullk_remove_premium([int(x) for x in premium_guilds.keys()])
+                user.remove_premium_guilds()
             else:
                 badges.append(d["tier"])
-            teams.update_one({"id": d["discord"]}, {"$set": {"badges": badges, "premium_guilds": premium_guilds}})
+
+            user.set_badges(badges)
 
     @tasks.loop(minutes=2)
     async def get_patrons(self):

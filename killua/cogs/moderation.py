@@ -207,12 +207,12 @@ class Moderation(commands.Cog):
 
         if ctx.author.guild_permissions.administrator and pref:
             guild.change_prefix(pref)
-            return await ctx.send(f'Successfully changed server prefix to `{pref}`!')
+            return await ctx.send(f'Successfully changed server prefix to `{pref}`!', allowed_mentions=discord.AllowedMentions.none())
 
         elif ctx.author.guild_permissions.administrator is False and pref:
             return await ctx.send('You need `administrator` permissions to change the server prefix!')
 
-        await ctx.send(f'The current server prefix is `{guild.prefix}`')
+        await ctx.send(f'The current server prefix is `{guild.prefix}`', allowed_mentions=discord.AllowedMentions.none())
 
 
 Cog = Moderation        

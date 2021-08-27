@@ -5,7 +5,8 @@ from datetime import datetime
 from typing import Union, Tuple
 
 from killua.cogs.todo import editing
-from killua.classes import Category, User, Card, TodoList
+from killua.cards import Card
+from killua.classes import Category, User, TodoList, PrintColors
 from killua.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES
 from killua.checks import check
 from killua.paginator import DefaultEmbed, View
@@ -47,41 +48,44 @@ class Shop(commands.Cog):
     async def cards_shop_update(self):
         #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
         #the challange is to create a balanced system with good items rare enough but not too rare
-        shop_items:list = []
-        number_of_items = randint(3,5) #How many items the shop has
-        if randint(1,100) > 95:
-            #Add a S/A card to the shop
-            thing = [i['_id'] for i in items.find({'type': 'normal', 'rank': {"$in": ['A', 'S']}})]
-            shop_items.append(choice(thing))
-        if randint(1,100) > 20: #80% chance for spell
-            if randint(1, 100) > 95: #5% chance for a good spell (they are rare)
-                spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': 'A'})]
-                shop_items.append(choice(spells))
-            elif randint(1,50): #50% chance of getting a medium good card
-                spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['B', 'C']}})]
-                shop_items.append(choice(spells))
-            else: #otherwise getting a fairly normal card
-                spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['D', 'E', 'F', 'G']}})]
-                shop_items.append(choice(spells))
+        try:
+            shop_items:list = []
+            number_of_items = randint(3,5) #How many items the shop has
+            if randint(1,100) > 95:
+                #Add a S/A card to the shop
+                thing = [i['_id'] for i in items.find({'type': 'normal', 'rank': {"$in": ['A', 'S']}})]
+                shop_items.append(choice(thing))
+            if randint(1,100) > 20: #80% chance for spell
+                if randint(1, 100) > 95: #5% chance for a good spell (they are rare)
+                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': 'A'})]
+                    shop_items.append(choice(spells))
+                elif randint(1,50): #50% chance of getting a medium good card
+                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['B', 'C']}})]
+                    shop_items.append(choice(spells))
+                else: #otherwise getting a fairly normal card
+                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['D', 'E', 'F', 'G']}})]
+                    shop_items.append(choice(spells))
 
-            while len(shop_items) != number_of_items: #Filling remaining spots
-                thing = [t['_id'] for t in items.find({'type': 'normal', 'rank': {"$in": ['D', 'B']}})] 
-                #There is just one D item so there is a really high probablility of it being in the shop EVERY TIME
-                t = choice(thing)
-                if not t in shop_items:
-                    shop_items.append(t)
+                while len(shop_items) != number_of_items: #Filling remaining spots
+                    thing = [t['_id'] for t in items.find({'type': 'normal', 'rank': {"$in": ['D', 'B']}})] 
+                    #There is just one D item so there is a really high probablility of it being in the shop EVERY TIME
+                    t = choice(thing)
+                    if not t in shop_items:
+                        shop_items.append(t)
 
-            log = shop.find_one({'_id': 'daily_offers'})['log']
-            if randint(1, 10) > 6: #40% to have an item in the shop reduced
-                reduced_item = randint(0, len(shop_items)-1)
-                reduced_by = randint(15, 40)
-                print('Updated shop with following cards: ' + ', '.join([str(x) for x in shop_items])+f', reduced item number {shop_items[reduced_item]} by {reduced_by}%')
-                log.append({'time': datetime.now(), 'items': shop_items, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}})
-                shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}}})
-            else:
-                print('Updated shop with following cards: ' + ', '.join([str(x) for x in shop_items]))
-                log.append({'time': datetime.now(), 'items': shop_items, 'redued': None})
-                shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': None}})
+                log = shop.find_one({'_id': 'daily_offers'})['log']
+                if randint(1, 10) > 6: #40% to have an item in the shop reduced
+                    reduced_item = randint(0, len(shop_items)-1)
+                    reduced_by = randint(15, 40)
+                    print(f'{PrintColors.OKBLUE}Updated shop with following cards: ' + ', '.join([str(x) for x in shop_items])+f', reduced item number {shop_items[reduced_item]} by {reduced_by}%{PrintColors.ENDC}')
+                    log.append({'time': datetime.now(), 'items': shop_items, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}})
+                    shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}}})
+                else:
+                    print(f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}")
+                    log.append({'time': datetime.now(), 'items': shop_items, 'redued': None})
+                    shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': None}})
+        except IndexError:
+            print(f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}")
 
     @commands.group(aliases=["store"])
     async def shop(self, ctx):
@@ -190,7 +194,7 @@ class Shop(commands.Cog):
             return await ctx.send('You don\'t have enough Jenny to buy a color for your todo list. You need 1000 Jenny')
         
         if todo_list.color:
-            return await ctx.send(f'You already have bought a color for this list! Update it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo color <color>`')
+            return await ctx.send(f'You already have bought a color for this list! Update it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo color <color>`', allowed_mentions=discord.AllowedMentions.none())
 
         step = await ctx.send('Please provide a color you want your todo list to have, you can always change it later')
         def check(m):
@@ -210,7 +214,7 @@ class Shop(commands.Cog):
 
         user.remove_jenny(1000)
         todo_list.set_property('color', int(c, 16))
-        return await ctx.send(f'Successfully bought the color {confirmmsg.content} for your list! You can change it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo color <url>`')
+        return await ctx.send(f'Successfully bought the color {confirmmsg.content} for your list! You can change it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo color <url>`', allowed_mentions=discord.AllowedMentions.none())
 
 
     async def buy_thumbnail(self, ctx):
@@ -222,7 +226,7 @@ class Shop(commands.Cog):
             return await ctx.send('You don\'t have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny')
 
         if todo_list.thumbnail:
-            return await ctx.send(f'You already have bought a thumbnail for this list! Update it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo thumbnail <thumbnail_url>`')
+            return await ctx.send(f'You already have bought a thumbnail for this list! Update it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo thumbnail <thumbnail_url>`', allowed_mentions=discord.AllowedMentions.none())
 
         step = await ctx.send('Please provide a thumbnail you want your todo list to have, you can always change it later')
         def check(m):
@@ -243,7 +247,7 @@ class Shop(commands.Cog):
         if image:
             user.remove_jenny(1000)
             todo_list.set_property('thumbnail', confirmmsg.content)
-            return await ctx.send(f'Successfully bought the thumbmail `{confirmmsg.content}` for your list! You can change it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo thumbnail <url>`')
+            return await ctx.send(f'Successfully bought the thumbmail `{confirmmsg.content}` for your list! You can change it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo thumbnail <url>`', allowed_mentions=discord.AllowedMentions.none())
         else:
             await ctx.send('You didn\'t provide a valid url with an image! Please make sure you your url is valid')
             return await self.buy_thumbnail(ctx)
@@ -318,10 +322,10 @@ class Shop(commands.Cog):
         try:
             card = Card(item)
         except CardNotFound:
-            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`')
+            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`', allowed_mentions=discord.AllowedMentions.none())
 
         if not item in shop_items:
-            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`')
+            return await ctx.send(f'This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`', allowed_mentions=discord.AllowedMentions.none())
 
         if not shop_data['reduced'] is None:
             if shop_items.index(card.id) == shop_data['reduced']['reduced_item']:
@@ -335,7 +339,7 @@ class Shop(commands.Cog):
             return await ctx.send('Unfortunatly the global maximal limit of this card is reached! Someone needs to sell their card for you to buy one or trade/give it to you')
 
         if len(user.fs_cards) >= FREE_SLOTS:
-            return await ctx.send(f'Looks like your free slots are filled! Get rid of some with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`')
+            return await ctx.send(f'Looks like your free slots are filled! Get rid of some with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`', allowed_mentions=discord.AllowedMentions.none())
 
         if user.jenny < price:
             return await ctx.send(f'I\'m afraid you don\'t have enough Jenny to buy this card. Your balance is {user.jenny} while the card costs {price} Jenny')
@@ -343,12 +347,12 @@ class Shop(commands.Cog):
             user.add_card(item)
         except Exception as e:
             if isinstance(e, CardLimitReached):
-                return await ctx.send(f'Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell <card>`')
+                return await ctx.send(f'Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell <card>`', allowed_mentions=discord.AllowedMentions.none())
             else:
                 print(e)
 
         user.remove_jenny(price) #Always putting substracting points before giving the item so if the payment errors no iten is given
-        return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!')
+        return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!', allowed_mentions=discord.AllowedMentions.none())
 
     @check(2)
     @buy.command(aliases=["box"], extras={"category": Category.ECONOMY}, usage="lootbox <item>")
@@ -424,7 +428,7 @@ class Shop(commands.Cog):
             return await ctx.send('You can\'t transfer more Jenny than you have')
         o.add_jenny(item)
         user.remove_jenny(item)
-        return await ctx.send(f'✉️ transferred {item} Jenny to `{other}`!')
+        return await ctx.send(f'✉️ transferred {item} Jenny to `{other}`!', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @give.command(name="card", extras={"category":Category.ECONOMY}, usage="card <user> <card_id>")
@@ -447,7 +451,7 @@ class Shop(commands.Cog):
 
         removed_card = user.remove_card(item)
         o.add_card(item, clone=removed_card[1]["clone"])
-        return await ctx.send(f'✉️ gave `{other}` card No. {item}!')
+        return await ctx.send(f'✉️ gave `{other}` card No. {item}!', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @give.command(name="lootbox", aliases=["box"], extras={"category":Category.ECONOMY}, usage="lootbox <user> <box_id>")
@@ -465,7 +469,7 @@ class Shop(commands.Cog):
             return await ctx.send("You don't own this lootbox!")
         user.remove_lootbox(item)
         o.add_lootbox(item)
-        await ctx.send(f"✉️ gave {other.display_name} the box \"{LOOTBOXES[item]['name']}\"")
+        await ctx.send(f"✉️ gave {other.display_name} the box \"{LOOTBOXES[item]['name']}\"", allowed_mentions=discord.AllowedMentions.none())
 
 
 

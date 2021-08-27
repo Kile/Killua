@@ -4,13 +4,7 @@ import contextlib
 import asyncio
 from discord.ext import commands
 from .classes import Category, Guild
-from .paginator import Paginator, View
-
-class CommandEmbed(discord.Embed):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.color = 0x1400ff
-        self.timestamp = datetime.datetime.utcnow()
+from .paginator import Paginator, View, DefaultEmbed
 
 class HelpEmbed(discord.Embed):
     def __init__(self, av:str, **kwargs):
@@ -63,7 +57,7 @@ class MyHelp(commands.HelpCommand):
             embed.description = f"Command: `{prefix}{(data['parent'] + ' ') if data['parent'] else ''}{data['name']}`\n\n{data['help']}\n\nUsage: ```html\n{prefix}{(data['parent'] + ' ') if data['parent'] else ''}{data['usage']}\n```"
             return embed
 
-        await Paginator(self.context, c, timeout=100, func=make_embed, embed=CommandEmbed()).start()
+        await Paginator(self.context, c, timeout=100, func=make_embed).start()
 
     async def send_bot_help(self, mapping):
         """triggers when a `<prefix>help` is called"""
@@ -98,7 +92,7 @@ class MyHelp(commands.HelpCommand):
         """triggers when a `<prefix>help <command>` is called"""
         ctx = self.context
         prefix = ctx.bot.command_prefix(ctx.bot, ctx.message)[2]
-        embed = CommandEmbed(title="Infos about command " + prefix + command.name, description=command.help or "No help found...")
+        embed = DefaultEmbed(title="Infos about command " + prefix + command.name, description=command.help or "No help found...")
 
         embed.add_field(name="Category", value=command.extras["category"].value["name"])
 
