@@ -272,7 +272,7 @@ class TodoSystem(commands.Cog):
 
             return todo_list
 
-    @commands.group(hidden=True)
+    @commands.group(hidden=True, extras={"category":Category.TODO})
     async def todo(self, ctx):
         pass
 

@@ -79,6 +79,15 @@ class Bot(commands.Bot):
 		return msg
 
 
+class Bot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.ipc = ipc.Server(self, secret_key=config["ipc"])
+
+    async def on_ipc_error(self, endpoint, error):
+        print(endpoint, "raised", error)
+
 def get_prefix(bot, message):
 	if bot.user.id == 758031913788375090:
 		return commands.when_mentioned_or('kil!', 'kil.')(bot, message)
