@@ -96,7 +96,7 @@ class Tags(commands.Cog):
 
     @commands.guild_only()
     @check()
-    @commands.group(hidden=True)
+    @commands.group(hidden=True, extras={"category":Category.TAGS})
     async def tag(self, ctx):
         if not Guild(ctx.guild.id).is_premium:
             view = discord.ui.View()

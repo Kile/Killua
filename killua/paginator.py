@@ -70,10 +70,10 @@ class Buttons(View):
             page:int, 
             max_pages:int,
             func:Union[Callable[[int, E, T], R], Coroutine[[int, E, T], R], None], 
-            embed:E, 
+            embed:E,
             defer:bool,
             has_file:bool,
-            paginator: Paginator,
+            paginator:Paginator,
             **kwargs
             ):
 
@@ -95,6 +95,7 @@ class Buttons(View):
             self.embed = (self.func(self.page, self.embed, self.pages)) if not iscoroutinefunction(self.func) else (await self.func(self.page, self.embed, self.pages))
         else:
             self.embed.description = str(self.pages[self.page-1])
+
         if isinstance(self.embed, DefaultEmbed):
             self.embed.set_footer(text= f"Page {self.page}/{self.max_pages}")
 
@@ -167,7 +168,7 @@ class Paginator:
         page:int=1, 
         max_pages:Union[int, None]=None,
         func:Union[Callable[[int, E, T], R], Coroutine[[int, E, T], R], None]=None, 
-        embed:E=DefaultEmbed(),
+        embed:E=None,
         defer:bool=False, # In case a pageturn can exceed 3 seconds this has to be set to True
         has_file:bool=False,
         **kwargs
@@ -179,8 +180,8 @@ class Paginator:
         self.timeout = timeout
         self.page = page
         self.func = func
-        self.embed = embed
         self.defer = defer
+        self.embed = embed or DefaultEmbed()
         self.has_file = has_file
         self.file = None
         self.user_id = self.ctx.author.id
