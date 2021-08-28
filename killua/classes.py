@@ -10,11 +10,10 @@ from PIL import Image, ImageFont, ImageDraw
 import io
 import aiohttp
 import pathlib
-import asyncio
 from typing import Union, Tuple, List, Any
 
 from .paginator import View
-from .constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, ALLOWED_AMOUNT_MULTIPLE
+from .constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES
 
 class NotInPossesion(Exception):
     pass
@@ -725,7 +724,6 @@ class User:
 
     def remove_card(self, card_id:int, remove_fake:bool=None, restricted_slot:bool=None, clone:bool=None) -> List[int, dict]:
         """Removes a card from a user"""
-        card = PartialCard(card_id)
         if self.has_any_card(card_id) is False:
             raise NotInPossesion('This card is not in possesion of the specified user!')
 
@@ -811,7 +809,7 @@ class User:
                     if not item[0] in [x[0] for x in rs_cards]:
                         rs_cards.append(item)
                         continue
-            s_cards = fs_append(item)
+            fs_append(item)
 
         self.rs_cards = [*self.rs_cards, *rs_cards]
         self.fs_cards = [*self.fs_cards, *fs_cards]
@@ -1042,7 +1040,7 @@ class TodoList():
     def kick_viewer(self, viewer:int) -> None:
         """Easy way to kick a viewer"""
         self.viewer.remove(viewer)
-        self.set_property("viewer", viewer, "$pull")
+        self._update_val("viewer", viewer, "$pull")
 
     def has_todo(self, task:int) -> bool:
         """Checks if a list contains a certain todo task"""

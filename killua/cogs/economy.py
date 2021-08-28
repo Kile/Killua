@@ -2,14 +2,13 @@ import discord
 from discord.ext import commands
 from typing import Union, List, Tuple
 from datetime import datetime, timedelta
-from random import randint, choice
+from random import randint
 
 from killua.checks import check
 from killua.paginator import View
 from killua.help import Select
-from killua.cards import Card
 from killua.classes import User, Guild, Category, LootBox
-from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, PATREON_TIERS, LOOTBOXES, items
+from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, LOOTBOXES
 
 class Economy(commands.Cog):
 
@@ -156,8 +155,6 @@ class Economy(commands.Cog):
     @commands.command(extras={"category":Category.ECONOMY}, usage="daily")
     async def daily(self, ctx):
         """Claim your daily Jenny with this command!"""
-        now = datetime.today()
-        later = datetime.now()+timedelta(hours=24)
         user = User(ctx.author.id)
         min = 50
         max = 100

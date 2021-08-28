@@ -391,7 +391,7 @@ class Shop(commands.Cog):
     async def _todo(self, ctx, what:str):
         """Buy cool stuff for your todo list with this command! (Only in editor mode)"""
         try:
-            list_id = editing[ctx.author.id]
+            editing[ctx.author.id]
         except KeyError:
             return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`', allowed_mentions=discord.AllowedMentions.none())
         

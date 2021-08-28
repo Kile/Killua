@@ -1,9 +1,9 @@
 import discord
 from discord.ext import ipc, commands
-from killua.classes import Category, User
+from killua.classes import User
 from killua.constants import teams
 
-from typing import List, Union
+from typing import List
 
 class IPCRoutes(commands.Cog):
 

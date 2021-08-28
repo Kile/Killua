@@ -3,9 +3,9 @@ import random
 import discord
 from discord.ext import commands
 from datetime import datetime
-from typing import Union, List, Any
+from typing import List
 
-from .constants import items, teams, INDESTRUCTABLE, ALLOWED_AMOUNT_MULTIPLE, DEF_SPELLS, VIEW_DEF_SPELLS, FREE_SLOTS
+from .constants import items, INDESTRUCTABLE, ALLOWED_AMOUNT_MULTIPLE, DEF_SPELLS, VIEW_DEF_SPELLS, FREE_SLOTS
 from .classes import User, SuccessfullDefense, CheckFailure, CardNotFound, Book, Button, ConfirmButton
 from .paginator import View, Paginator
 from .help import Select
@@ -49,29 +49,6 @@ class Card:
         self.owners.remove(user_id)
         items.update_one({'_id': self.id}, {'$set': {'owners': self.owners}})
         return
-
-    def __eq__(self, other):
-        """"This function isn't used but I thought it would be nice to implement"""
-        if isinstance(other, Card): # Checking if the other card is a Card object
-            if self.id == other.id:
-                return True
-            else:
-                return False
-        if isinstance(other, int): # Checking if just the card id was passed
-            if self.id == other:
-                return True
-            else: 
-                return False
-        if isinstance(other, list): # Checking if it's passed like it would be in an inventory [int, {"fake": bool}]
-            if self.id == other[0]:
-                return True
-            else:
-                return False
-        if isinstance(other, dict): # Checking if it's passed from a pymongo items.find_one({"_id": int})
-            if self.id == other['_id']:
-                return True
-            else:
-                return False
 
     async def _wait_for_defense(self, ctx:commands.Context, other:User, effects:list) -> None:
 
@@ -456,8 +433,8 @@ class Card1024(Card):
             other.rs_cards.remove(c)
         for c in fs_tbr:
             other.fs_cards.remove(c)
-        # Why in the world do I use native pymongo instead of my class? 'Cause it's kinda useless to make a function I will just use here
-        teams.update_one({'id': other.id}, {'$set': {'cards': {'rs': other.rs_cards, 'fs': other.fs_cards, 'effects': other.effects}}})  
+            
+        other._update_val('cards', {'rs': other.rs_cards, 'fs': other.fs_cards, 'effects': other.effects}) 
         await self.ctx.send(f'Successfully removed all cloned and fake cards from `{member}`. Cards removed in total: {len(tbr)}')
 
 class Card1026(Card):
@@ -511,7 +488,7 @@ class Card1028(Card):
         target_card = random.choice([x for x in other.fs_cards if not x[0] in INDESTRUCTABLE])
         author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
-        destroyed = other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=False, clone=target_card[1]["clone"])
+        other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=False, clone=target_card[1]["clone"])
         await self.ctx.send(f'Success, you destroyed card No. {target_card[0]}!')
 
 class Card1029(Card):

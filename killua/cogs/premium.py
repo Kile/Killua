@@ -1,14 +1,12 @@
 import discord
 from discord.ext import commands, tasks
 
-from random import randint, choice
 from typing import List, Union
 from aiohttp import ClientSession
 from datetime import datetime, timedelta
 
-from killua.constants import PATREON_TIERS, teams, guilds, GUILD, BOOSTER_ROLE
+from killua.constants import PATREON_TIERS, teams, GUILD, BOOSTER_ROLE
 from killua.classes import User, Guild, Category, LootBox
-from killua.cards import Card
 from killua.constants import PATREON, LOOTBOXES
 from killua.checks import check
 
@@ -120,7 +118,7 @@ class Premium(commands.Cog):
                 if k in badges:
                     badges.remove(k)
 
-            if d["tier"] == None:
+            if d["tier"] is None:
                 Guild.bullk_remove_premium([int(x) for x in premium_guilds.keys()])
                 user.remove_premium_guilds()
             else:

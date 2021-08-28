@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 from typing import Union, Type
 from .constants import blacklist
@@ -15,8 +14,7 @@ def _clean_command_name(command:Union[commands.Command, Type[commands.Command]])
 		while c.parent:
 			name = c.parent.qualified_name + " " + name
 			c = c.parent
-		else:
-			return name + command.name
+		return name + command.name
 
 def blcheck(userid:int): # It is necessary to define it twice as I might have to use this function on its own
     """

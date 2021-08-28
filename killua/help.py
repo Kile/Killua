@@ -1,9 +1,8 @@
 import discord
 import datetime
-import contextlib
 import asyncio
 from discord.ext import commands
-from .classes import Category, Guild, Button
+from .classes import Category, Button
 from .paginator import Paginator, View, DefaultEmbed
 
 class HelpPaginator(Paginator):

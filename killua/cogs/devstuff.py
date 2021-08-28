@@ -5,7 +5,7 @@ import re
 from killua.checks import check
 from killua.cogs.cards import Card, User, Category#lgtm [py/unused-import]
 from killua.cogs.pxlapi import PxlClient #lgtm [py/unused-import]
-from killua.constants import teams, guilds, blacklist, presence as pr, items, updates #lgtm [py/unused-import]
+from killua.constants import teams, guilds, blacklist, presence as pr, items, updates, UPDATE_CHANNEL #lgtm [py/unused-import]
 
 class DevStuff(commands.Cog):
 
@@ -40,7 +40,7 @@ class DevStuff(commands.Cog):
         data = {'version': version, 'description': update, 'published_on': datetime.now(), 'published_by': ctx.author.id}
         updates.update_one({'_id': 'current'}, {'$set': data})
         updates.update_one({'_id': 'log'}, {'$push': {'past_updates': data}})
-        channel = self.client.get_channel(757170264294424646)
+        channel = self.client.get_channel(UPDATE_CHANNEL)
         msg = await channel.send(content= '<@&795422783261114398>', embed=embed)
         await ctx.message.delete()
         await msg.publish()

@@ -5,7 +5,6 @@ import time
 from datetime import datetime, timedelta
 from random import randint, choice
 import math
-import typing
 from typing import Union
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 

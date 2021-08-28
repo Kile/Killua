@@ -1,18 +1,16 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import random
 from datetime import datetime, timedelta
-import asyncio
 import math
 
-from inspect import iscoroutinefunction
-from typing import Union, List, Optional, Tuple, Type, Any, Optional
+from typing import Union, List, Optional, Tuple, Optional
 
 from killua.checks import check
 from killua.paginator import Paginator
-from killua.classes import User, CardNotFound, CardLimitReached, Category, CheckFailure, Book, ConfirmButton
+from killua.classes import User, CardNotFound, Category, CheckFailure, Book, ConfirmButton
 from killua.cards import Card
-from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, INDESTRUCTABLE, PRICES, BOOK_PAGES, teams, items, shop, LOOTBOXES
+from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, items, LOOTBOXES
 
 
 class Cards(commands.Cog):

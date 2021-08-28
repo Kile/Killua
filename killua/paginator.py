@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import discord
 from discord.ext import commands
-import asyncio
 import datetime
 from inspect import iscoroutinefunction
 
-from typing import List, Union, Type, TypeVar, Coroutine, Tuple
-from collections.abc import Callable
+from typing import List, Union, Type, TypeVar, Coroutine, Tuple, Callable
 
 E = TypeVar(Union[discord.Embed, Type[discord.Embed]])
 R = TypeVar(Union[E, Tuple[E, discord.File]])

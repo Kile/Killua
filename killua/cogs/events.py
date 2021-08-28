@@ -2,13 +2,12 @@ import io
 import topgg
 import discord
 
-from aiohttp import ClientSession
 from datetime import datetime
 from discord.utils import find
 from discord.ext import commands, tasks
 from PIL import Image
 
-from killua.classes import User, Guild, Book, PrintColors
+from killua.classes import Guild, Book, PrintColors
 from killua.constants import DBL, items
 
 class Events(commands.Cog):
