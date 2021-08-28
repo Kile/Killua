@@ -356,6 +356,7 @@ class Games(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @check(500)
     @commands.command(extras={"category": Category.GAMES}, usage="count <easy/hard>")
     async def count(self, ctx, difficulty:str="easy"):
         """See how many numbers you can remember with this count game!"""
@@ -364,6 +365,7 @@ class Games(commands.Cog):
         game = CountGame(ctx, difficulty.lower())
         await game.start()
 
+    @check(30)
     @commands.command(extras={"category":Category.GAMES}, usage="rps <user> <points(optional)>")
     async def rps(self, ctx, member: discord.Member, points: int=None):
         """Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun."""

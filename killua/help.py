@@ -114,14 +114,6 @@ class MyHelp(commands.HelpCommand):
 
         embed.add_field(name="Category", value=command.extras["category"].value["name"])
 
-        can_run = "No"
-        # command.can_run to test if the cog is usable
-        with contextlib.suppress(commands.CommandError):
-            if await command.can_run(ctx):
-                can_run = "Yes"
-            
-        embed.add_field(name="Usable", value=can_run, inline=False)
-
         if command._buckets and (cooldown := command._buckets._cooldown): # use of internals to get the cooldown of the command
             embed.add_field(
                 name="Cooldown",
