@@ -6,11 +6,10 @@ from datetime import datetime
 import re
 import math
 from typing import Union
-from killua.classes import TodoList, Todo, User, TodoListNotFound, Category, ConfirmButton
-from killua.constants import teams, todo
-from killua.paginator import Paginator
 
-editing = {}
+from killua.classes import TodoList, Todo, User, TodoListNotFound, Category, ConfirmButton, Button
+from killua.constants import teams, todo, editing, REPORT_CHANNEL
+from killua.paginator import Paginator
 
 class TodoSystem(commands.Cog):
 
@@ -159,7 +158,7 @@ class TodoSystem(commands.Cog):
     async def todo_custom_id(self, ctx):
         """outsourcing todo create in smaller functions. Will be rewritten once discord adds text input interaction"""
         embed = discord.Embed.from_dict({
-            'title': f'Editing',
+            'title': f'Editing settings',
             'description': f'Since you are a premium supporter you have the option to use a custom to-do id which can also be a string (f.e. Killua). You can still use to id to go into the todo list. If you want a custom id, enter it now, if you don\'t then enter **n**',
             'color': 0x1400ff,
             'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Requested by {ctx.author}'}
@@ -170,7 +169,7 @@ class TodoSystem(commands.Cog):
             return m.author.id == ctx.author.id
         confirmmsg = await self._wait_for_response(step, check)
         if not confirmmsg:
-            return None
+            return False
 
         if confirmmsg.content.lower() == 'n':
             return None
@@ -302,13 +301,13 @@ class TodoSystem(commands.Cog):
         user = User(ctx.author.id)
         if user.is_premium:
             custom_id = await self.todo_custom_id(ctx)
-            if custom_id is None:
+            if custom_id is False:
                 return
         else:
             custom_id = None
         
         l = TodoList.create(owner=ctx.author.id, title=title, status=status, done_delete=done_delete, custom_id=custom_id)
-        await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{l.id}`' + f' or through your custom id {custom_id}' if custom_id else '', allowed_mentions=discord.AllowedMentions.none())
+        await ctx.send(f'Created the todo list with the name {title}. You can look at it and edit it through the id `{l.id}`' + (f' or through your custom id {custom_id}' if custom_id else ''), allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="view <list_id(optional)>")
@@ -374,6 +373,8 @@ class TodoSystem(commands.Cog):
     @todo.command(extras={"category":Category.TODO}, usage="edit <list_id>")
     async def edit(self, ctx, list_id: Union[int, str]):
         """The command with which you can change stuff on your todo list"""
+        if ctx.author.id in editing and editing[ctx.author.id] == list_id:
+            return await ctx.send("You are already editing this list!")
         try:
             todo_list = TodoList(list_id)
         except TodoListNotFound:
@@ -522,18 +523,23 @@ class TodoSystem(commands.Cog):
         except KeyError:
             return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`')
         
+        if len(todo_numbers) == 0:
+            return await ctx.send("No valid numbers provided")
+
         todo_list = TodoList(list_id)
+        todos = todo_list.todos
+
+        failed = []
         for n in todo_numbers:
-            if n < 0:
-                return await ctx.send('You can\'t remove a number less than 1')
-        try:
-            todos = todo_list.todos
-            for n in todo_numbers:
-                todos.pop(n-1)
-            todo_list.set_property("todos", todos)
-            return await ctx.send(f'You removed todo number{"s" if len(todo_numbers) > 1 else ""} {", ".join(todo_numbers)} successfully', allowed_mentions=discord.AllowedMentions.none())
-        except Exception:
-            return await ctx.send('You need to provide only valid numbers!')
+            if not todo_list.has_todo(n):
+                failed.append(n)
+                continue
+            todos.pop(n-1)
+        if len(todo_numbers) == len(failed):
+            return await ctx.send("All inputs are invalid task ids. Please try again.")
+
+        todo_list.set_property("todos", todos)
+        return await ctx.send(f'You removed todo number{"s" if len(todo_numbers) > 1 else ""} {", ".join([str(x) for x in todo_numbers])} successfully' + (". Failed to remove the following numbers because they are invalid: " + ", ".join([str(x) for x in failed]) if len(failed) > 0 else ""), allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="mark <task_id> <text>")
@@ -647,13 +653,7 @@ class TodoSystem(commands.Cog):
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
-
-        if isinstance(user, int):
-            try:
-                user = await self._get_user(user)
-            except discord.NotFound:
-                return await ctx.send('Invalid user id')
+            return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`', allowed_mentions=discord.AllowedMentions.none())
 
         if user.id == ctx.author.id:
             return await ctx.send('You are already owner, you don\'t need to invite yourself')
@@ -666,15 +666,25 @@ class TodoSystem(commands.Cog):
         if not role.lower() in ['editor', 'viewer']:
             return await ctx.send(f'Please choose a valid role to grant {user.name} (either `viewer` or `editor`)', allowed_mentions=discord.AllowedMentions.none())
 
+        if role.lower() == "viewer" and todo_list.status == "public":
+            return await ctx.send("You can't add viewers to a public todo list. Everyone has viewing permissions on this list")
+
+        if user.id in getattr(todo_list, role.lower()):
+            return await ctx.send("The specified user already has that role!")
+
+        if role == "viewer" and user.id in todo_list.editor:
+            return await ctx.send("User already has editor permissions, you can't also add viewer permission")
+
         embed = discord.Embed.from_dict({
             'title': f'You were invited to to-do list {todo_list.name} (ID: {todo_list.id})',
-            'description': f'{ctx.author} invited you to be {role} in their to-do list. To accept, click "confirm"',
+            'description': f'{ctx.author} invited you to be {role} in their to-do list. To accept, click "confirm", to deny click "cancel". If this invitation was inappropriate, click "report"',
             'color': self._get_color(todo_list),
             'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Requested by {ctx.author}'}
         })
 
         try:
             view = ConfirmButton(user.id, timeout=80)
+            view.add_item(Button(label="Report", custom_id="report", style=discord.ButtonStyle.red))
             msg = await user.send(embed=embed, view=view)
             await ctx.send('Successfully send the invitation to the specified user! They have 24 hours to accept or deny')
         except discord.Forbidden:
@@ -690,11 +700,30 @@ class TodoSystem(commands.Cog):
             else:
                 await user.send('Successfully denied invitation')
                 return await ctx.author.send(f'{user} has denied your invitation the todo list `{todo_list.name}`', allowed_mentions=discord.AllowedMentions.none())
+        
+        elif view.value == "report":
+            channel = self.client.get_channel(REPORT_CHANNEL)
+            embed = discord.Embed.from_dict({
+                "title": f"Report from {user}",
+                "fields": [
+                    {"name": "Guild", "value": f"ID: {ctx.guild.id}\nName: {ctx.guild.name}"},
+                    {"name": "Reported user", "value": f"ID: {ctx.author.id}\nName: {ctx.author.name}"},
+                    {"name": "Todo list", "value": f"ID: {todo_list.id}\nName: {todo_list.name}"}
+                ],
+                "color": 0xff0000,
+                "footer": {"text": user.id, "icon_url": str(user.avatar.url)},
+                "thumbnail": {"url": str(ctx.author.avatar.url)}
+            })
+            await channel.send(embed=embed)
+            await ctx.author.send(f"{user} reported your invite to your todo list")
+            return await user.send(f"Successfully reported {ctx.author.name}!")
 
         if role.lower() == 'viewer':
             todo_list.add_viewer(user.id)
 
         if role.lower() == 'editor':
+            if user.id in todo_list.viewer:
+                todo_list.kick_viewer(user.id) # handled like a promotion and exchanges viewer perms for edit perms
             todo_list.add_editor(user.id)
 
         await user.send(f'Sucess! You have now {role} permissions in the todo list `{todo_list.name}`', allowed_mentions=discord.AllowedMentions.none())

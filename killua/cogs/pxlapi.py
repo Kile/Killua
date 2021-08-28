@@ -7,7 +7,7 @@ import re
 from pypxl import PxlClient # My own library :sparkles:
 
 from killua.classes import Category
-from killua.constants import CODE, PXLAPI
+from killua.constants import NOKIA_CODE, PXLAPI
 from killua.paginator import Paginator
 
 class Api(commands.Cog):
@@ -148,7 +148,7 @@ class Api(commands.Cog):
     async def nokia(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
         """Turns a face into multilple animal faces"""
         async def func(data, *args):
-            d = "const url = '" + data + ";'" + CODE
+            d = "const url = '" + data + ";'" + NOKIA_CODE
             return await self.pxl.imagescript(version="1.2.0", code=d)
         await self.handle_command(ctx, args, func)
 

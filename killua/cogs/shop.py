@@ -4,10 +4,9 @@ from discord.ext import commands, tasks
 from datetime import datetime
 from typing import Union, Tuple
 
-from killua.cogs.todo import editing
 from killua.cards import Card
 from killua.classes import Category, User, TodoList, PrintColors
-from killua.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES
+from killua.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, editing
 from killua.checks import check
 from killua.paginator import DefaultEmbed, View
 from killua.help import Select
@@ -151,7 +150,7 @@ class Shop(commands.Cog):
 **Cost**: 1000 Jenny
 `description` add a description to your todo list (recommended for public lists with custom id)
 
-**Cost**: number of current spots * 100 * 0.5
+**Cost**: number of current spots * 50
 `space` buy 10 more spots for todos for your list''',
             'color': 0x1400ff
         })
@@ -185,6 +184,22 @@ class Shop(commands.Cog):
 
 ####################################### Buy commands ################################################
 
+    async def _wait_for_response(self, step, check) -> Union[discord.Message, None]:
+        """Waits for a response and returns the response message"""
+        try:
+            confirmmsg = await self.client.wait_for('message', check=check, timeout=60)
+        except asyncio.TimeoutError:
+            await step.delete()
+            await step.channel.send('Too late...', delete_after=5)
+            return None
+        else:
+            await step.delete()
+            try:
+                await confirmmsg.delete()
+            except discord.HTTPException:
+                pass
+            return confirmmsg
+
     async def buy_color(self, ctx):
         """outsourcing todo buy in smaller functions. Will be rewritten once discord adds text input interaction"""
         list_id = editing[ctx.author.id]
@@ -214,7 +229,7 @@ class Shop(commands.Cog):
 
         user.remove_jenny(1000)
         todo_list.set_property('color', int(c, 16))
-        return await ctx.send(f'Successfully bought the color {confirmmsg.content} for your list! You can change it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo color <url>`', allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.send(f'Successfully bought the color {confirmmsg.content} for your list! You can change it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo color <color>`', allowed_mentions=discord.AllowedMentions.none())
 
 
     async def buy_thumbnail(self, ctx):
@@ -226,7 +241,7 @@ class Shop(commands.Cog):
             return await ctx.send('You don\'t have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny')
 
         if todo_list.thumbnail:
-            return await ctx.send(f'You already have bought a thumbnail for this list! Update it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo thumbnail <thumbnail_url>`', allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f'You already have bought a thumbnail for this list! Update it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo thumbnail <url>`', allowed_mentions=discord.AllowedMentions.none())
 
         step = await ctx.send('Please provide a thumbnail you want your todo list to have, you can always change it later')
         def check(m):
@@ -378,10 +393,7 @@ class Shop(commands.Cog):
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send('You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`')
-        user = teams.find_one({'id': ctx.author.id})
-        if user is None:
-            return await ctx.send('This is a feature you have to buy, to gain Jenny claim `k!daily`')
+            return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`', allowed_mentions=discord.AllowedMentions.none())
         
         if not what.lower() in ['color', 'thumbnail', 'space', 'description']:
             return await ctx.send('You need to provide a valid thing you want to buy (color, thumbnail, space)')

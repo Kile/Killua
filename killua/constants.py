@@ -48,6 +48,9 @@ PATREON_TIERS = {
     }
 }
 
+# Tips that can be added to any send message send with bot.send_message
+TIPS = ["Did you know you gain doubled jenny **every time** you collect jenny somehow with premium tier 3?", "With premium you can choose an *entire server* whose cooldowns will be halved", "Want to get started collecting cards and need a guilde? Use `use booklet`!"]
+
 # TOPICS
 TOPICS = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?', 'What motivates you?', 'What is the best thing about school/work?', 'What\'s better, having high expectations or having low expectations?', 'What was the last movie you saw?', 'Have you read anything good recently?', 'What is your favorite day of the year?', 'What kind of music do you like to listen to?', 'What things are you passionate about?', 'What is your favorite childhood memory?', 'If you could acquire any skill, what would you choose?', 'What is the first thing that you think of in the morning?', 'What was the biggest life change you have gone through?', 'What is your favorite song of all time?', 'If you won $1 million playing the lottery, what would you do?', 'How would you know if you were in love?', 'If you could choose to have any useless super power, what would you pick?',
 'Who is your role model?', 'What\'s the best food you have ever eaten?', 'What accomplishment are you most proud of?', 'Would you rather be the most popular kid in school or the smartest kid in school?', 'Do you prefer to cook or order take out?', 'What is your dream job?', 'What\'s your ideal way to celebrate your birthday?', 'What is a short/long term goal of yours?', 'What are your three must have smart phone apps?', 'Would you rather be the smartest moron or dumbest genius?', 'What was the last gift that you received?', 'If you could give one piece of advice to the whole world, what would it be?', 'Describe your perfect day.', 'How would you define success?', 'What is the first thing that you notice when meeting someone new?', 'Do you prefer to take baths or showers?', 'Do you like to sing out loud when no one else is around?']
@@ -66,6 +69,9 @@ PAT_TEXTS = ['**(a)** was too tired to hug **(u)** so they gave a pat instead', 
 SLAP_TEXTS = ['**(a)** slaps **(u)**', '**(a)** stares at **(u)** for a long time and then slaps them', '**(a)** has no mercy; they slap **(u)**', '**(a)** is unsure how to react so they slap **(u)**']
 POKE_TEXTS = ['**(a)** pokes **(u)**', '*Poke* *Poke*, **(a)** pokes **(u)**', '**(a)** starts poking **(u)**', '**(a)** pokes **(u)** with a big smile on their face']
 TICKLE_TEXTS = ['**(u)** didn\'t let **(a)** eat cookies, so they get tickled!', '**(a)** couldn\'t resist their chance to tickle **(a)**','**(a)** tickles **(u)**', '**(a)** has no mercy; they tickle **(u)**', '**(a)** knows there is just one way, so they tickle **(u)**']
+
+# the todo editing cache, needs to be defined here so I can use it across files
+editing = {}
 
 # ACTION DATA
 ACTIONS = {
@@ -239,15 +245,17 @@ UWUS = ['uwu', 'owo', 'ʕ•́ᴥ•̀ʔっ', '≧◠ᴥ◠≦', '>\_<']
 # THE KILLUA SUPPORT SERVER AND ITS DATA
 GUILD = 715358111472418908
 BOOSTER_ROLE = 769622564648648744
+REPORT_CHANNEL = 796306329756893184
 
 # FOR THE NOKIA COMMAND OF /IMAGESCRIPT OF PXLAPI
 
-CODE = """
-let ext = url.split('.').pop(); let ext2 = ext.substring(0,ext.length-(ext.length-3)).replace('jpe', 'jpeg');
-let canvas;
-if(ext2 == "gif") {
+NOKIA_CODE = """
+let e = url.split('.').pop(); let ext = e.substring(0,e.length-(e.length-3)).replace('jpe', 'jpeg');
 const mybuffer = await fetch(url).then(r => r.arrayBuffer());
 const mybuffer2 = await fetch('https://cdn.discordapp.com/attachments/762926280793784350/817847142668304444/1615060247537.png').then(r => r.arrayBuffer());
+
+let canvas;
+if(ext == "gif") {
 let overlay = await Image.decode(mybuffer2);
 let image = await GIF.decode(mybuffer);
 let frames = [];
@@ -264,8 +272,6 @@ for(const [x, y] of image[n]) {
  frames.push(canva); n = n+1}
 canvas = new GIF(frames);
 } else {
-    const mybuffer = await fetch(url).then(r => r.arrayBuffer());
-    const mybuffer2 = await fetch('https://cdn.discordapp.com/attachments/762926280793784350/817847142668304444/1615060247537.png').then(r => r.arrayBuffer());
     let overlay = await Image.decode(mybuffer2);
     let image = await Image.decode(mybuffer);
      canvas = new Image(overlay.width, overlay.height);

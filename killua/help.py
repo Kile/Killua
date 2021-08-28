@@ -3,8 +3,26 @@ import datetime
 import contextlib
 import asyncio
 from discord.ext import commands
-from .classes import Category, Guild
+from .classes import Category, Guild, Button
 from .paginator import Paginator, View, DefaultEmbed
+
+class HelpPaginator(Paginator):
+    """A normal paginator with a button that returns to the original help command"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.view.add_item(Button(label="Menu", style=discord.ButtonStyle.red ,custom_id="1"))
+
+    async def start(self):
+        view = await self._start()
+
+        if view.ignore:
+            return
+        
+        await self.view.message.delete()
+        await self.ctx.command.__call__(self.ctx)
+
 
 class HelpEmbed(discord.Embed):
     def __init__(self, av:str, **kwargs):
@@ -57,7 +75,7 @@ class MyHelp(commands.HelpCommand):
             embed.description = f"Command: `{prefix}{(data['parent'] + ' ') if data['parent'] else ''}{data['name']}`\n\n{data['help']}\n\nUsage: ```html\n{prefix}{(data['parent'] + ' ') if data['parent'] else ''}{data['usage']}\n```"
             return embed
 
-        await Paginator(self.context, c, timeout=100, func=make_embed).start()
+        await HelpPaginator(self.context, c, timeout=100, func=make_embed).start()
 
     async def send_bot_help(self, mapping):
         """triggers when a `<prefix>help` is called"""

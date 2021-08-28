@@ -1,13 +1,14 @@
 from . import cogs
 import discord
 import aiohttp
+from random import randint, choice
 from discord.ext import commands, ipc
 from datetime import datetime, timedelta, date
-from typing import Union, Callable, List, Tuple
+from typing import Union, Callable, List, Tuple, Optional
 
 from .help import MyHelp
 from .classes import Category
-from .constants import guilds, TOKEN, IPC_TOKEN, presence
+from .constants import guilds, TOKEN, IPC_TOKEN, presence, TIPS
 
 class Bot(commands.Bot):
 	def __init__(self, *args, **kwargs):
@@ -69,6 +70,14 @@ class Bot(commands.Bot):
 		delta = a - b
 		playing = discord.Activity(name=f'over {len(self.guilds)} guilds | k! | day {delta.days}', type=discord.ActivityType.watching)
 		return await self.change_presence(status=discord.Status.online, activity=playing)
+
+	async def send_message(self, messageable:discord.abc.Messageable, *args, **kwargs) -> discord.Message:
+		"""A helper function sending messages and adding a tip with the probability of 5%"""
+		msg = await messageable.send(*args, **kwargs)
+		if randint(1, 100) > 6: # 5% probability to send a top afterwards
+			await messageable.send(f"**Tip:** {choice(TIPS)}")
+		return msg
+
 
 def get_prefix(bot, message):
 	if bot.user.id == 758031913788375090:

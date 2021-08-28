@@ -77,7 +77,7 @@ class Buttons(View):
             **kwargs
             ):
 
-        super().__init__(user_id=user_id, timeout=timeout, **kwargs)
+        super().__init__(user_id=user_id, timeout=timeout)
         self.pages = pages
         self.page = page
         self.max_pages = max_pages
@@ -104,7 +104,8 @@ class Buttons(View):
 
         self.ignore = True
         self.stop()
-        await Paginator(self.paginator.ctx, self.paginator.pages, self.paginator.timeout, self.page, self.max_pages, self.func, self.paginator.embed, self.defer, self.has_file).start()
+        self.paginator.page = self.page # setting that to be up to date
+        await self.paginator.__class__(**vars(self.paginator)).start() # purpose of this is that this calls the subclasses `start` if a subclass exists
 
     async def _edit_message(self, interaction: discord.Interaction) -> None:
         self.message = interaction.message
@@ -157,6 +158,7 @@ class Paginator:
 
     The paginator will disable all buttons after the timeout has run out. 
     The paginator will not run into any ratelimiting issues except for when `defer` or `has_file` is `True`
+    The paginator supports subclassing to for example modify buttons
     """
     def __init__(self,
         ctx:commands.Context,
@@ -167,7 +169,8 @@ class Paginator:
         func:Union[Callable[[int, E, T], R], Coroutine[[int, E, T], R], None]=None, 
         embed:E=DefaultEmbed(),
         defer:bool=False, # In case a pageturn can exceed 3 seconds this has to be set to True
-        has_file:bool=False
+        has_file:bool=False,
+        **kwargs
         ):
 
         self.ctx = ctx
@@ -177,9 +180,12 @@ class Paginator:
         self.page = page
         self.func = func
         self.embed = embed
+        self.defer = defer
         self.has_file = has_file
         self.file = None
-        self.view = Buttons(user_id=self.ctx.author.id, pages=self.pages, timeout=self.timeout, page=self.page, max_pages=self.max_pages, func=self.func, embed=self.embed, defer=defer, has_file=self.has_file, paginator=self)
+        self.user_id = self.ctx.author.id
+        self.paginator = self
+        self.view = Buttons(user_id=self.user_id, pages=self.pages, timeout=self.timeout, page=self.page, max_pages=self.max_pages, func=self.func, embed=self.embed, defer=defer, has_file=self.has_file, paginator=self.paginator)
 
     async def _get_first_embed(self) -> None:
         if self.func:
@@ -194,12 +200,17 @@ class Paginator:
         if isinstance(self.embed, DefaultEmbed):
             self.embed.set_footer(text=f"Page {self.page}/{self.max_pages}")
 
-    async def start(self):
+    async def _start(self) -> View:
         await  self._get_first_embed()
         self.view.message = (await self.ctx.send(file=self.file, embed=self.embed, view=self.view)) if self.file else (await self.ctx.send(embed=self.embed, view=self.view))
         
-        await asyncio.wait_for(self.view.wait(), timeout=None)
-        if self.view.ignore: # This is True when the message has been deleted/should not get their buttons disabled
-            return
+        await self.view.wait()
 
-        await self.view.disable(self.view.message) # disabling the views children
+        if not self.view.ignore: # This is False when the message has been deleted/should not get their buttons disabled
+            await self.view.disable(self.view.message) # disabling the views children
+
+        return self.view # this is important for subclassing
+
+    async def start(self) -> View:
+        """This method simply calls the private one so it's easy to overwrite"""
+        return await self._start()

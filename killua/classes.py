@@ -237,6 +237,7 @@ class ConfirmButton(discord.ui.View):
     def __init__(self, user_id:int, **kwargs):
         super().__init__(**kwargs)
         self.user_id = user_id
+        self.timed_out = False # helps subclasses using Button to have set this to False
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if not (val := interaction.user.id == self.user_id):
@@ -945,7 +946,6 @@ class TodoList():
         self.color:int = td_list['color'] if 'color' in td_list else None
         self.description:str = td_list['description'] if 'description' in td_list else None
 
-        print("Raw data: ", vars(self))
         if self._custom_id:
             self.custom_id_cache[self._custom_id] = self.id
         self.cache[self.id] = self
@@ -993,7 +993,6 @@ class TodoList():
 
     def has_view_permission(self, user_id:int) -> bool:
         """Checks if someone has permission to view a todo list"""
-        print(vars(self))
         if self.status == 'private':
             if not (user_id in self.viewer or user_id in self.editor or user_id == self.owner):
                 return False
@@ -1048,8 +1047,8 @@ class TodoList():
     def has_todo(self, task:int) -> bool:
         """Checks if a list contains a certain todo task"""
         try:
-            if task == 0:
-                raise Exception('Error!')
+            if task < 1:
+                return False
             self.todos[task-1]
         except Exception:
             return False
@@ -1057,11 +1056,8 @@ class TodoList():
 
     def clear(self) -> None:
         """Removes all todos from a todo list"""
-        print("Before setting property: ", vars(self))
         self.todos = []
-        print("After setting property ", vars(self))
         self._update_val("todos", [])
-        print("After calling db method: ", vars(self))
 
 class Todo(TodoList):
 
