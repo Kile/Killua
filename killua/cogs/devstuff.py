@@ -23,14 +23,18 @@ class DevStuff(commands.Cog):
             await ctx.channel.send(str(e))
 
     @commands.is_owner()
-    @commands.command(extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
+    @commands.command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
     async def publish_update(self, ctx, version:str, *, update):
         """Allows me to publish Killua updates in a handy formart"""
 
         old = updates.find_one({'_id':'current'})
+        old_version = old["version"] if "version" in old else "No version"
+
+        if version in [*[old_version],*[x["version"] for x in updates.find_one({"_id": "log"})["past_updates"]]]:
+            return await ctx.send("This is an already existing version")
 
         embed = discord.Embed.from_dict({
-            'title': f'Killua Update `{old["version"]}` -> `{version}`',
+            'title': f'Killua Update `{old_version}` -> `{version}`',
             'description': update,
             'color': 0x1400ff,
             'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar.url)},

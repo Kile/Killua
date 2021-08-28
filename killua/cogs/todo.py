@@ -8,7 +8,7 @@ import math
 from typing import Union
 
 from killua.classes import TodoList, Todo, User, TodoListNotFound, Category, ConfirmButton, Button
-from killua.constants import teams, todo, editing, REPORT_CHANNEL
+from killua.constants import todo, editing, REPORT_CHANNEL
 from killua.paginator import Paginator
 
 class TodoSystem(commands.Cog):
@@ -143,7 +143,7 @@ class TodoSystem(commands.Cog):
 
         try:
             await ctx.message.delete()
-        except:
+        except discord.HTTPException:
             pass
         await msg.delete()
 

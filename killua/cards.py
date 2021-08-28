@@ -433,7 +433,7 @@ class Card1024(Card):
             other.rs_cards.remove(c)
         for c in fs_tbr:
             other.fs_cards.remove(c)
-            
+
         other._update_val('cards', {'rs': other.rs_cards, 'fs': other.fs_cards, 'effects': other.effects}) 
         await self.ctx.send(f'Successfully removed all cloned and fake cards from `{member}`. Cards removed in total: {len(tbr)}')
 
@@ -508,7 +508,7 @@ class Card1029(Card):
         target_card = random.choice([x for x in other.rs_cards if not x[0] in INDESTRUCTABLE])
         author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
-        destroyed = other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=True, clone=target_card[1]["clone"])
+        other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=True, clone=target_card[1]["clone"])
         await self.ctx.send(f'Success, you destroyed card No. {target_card[0]}!')
 
 class Card1031(Card):
