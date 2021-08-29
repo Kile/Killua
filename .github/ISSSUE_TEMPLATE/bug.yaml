@@ -21,7 +21,7 @@ body:
     id: what-happened
     attributes:
       label: What happened?
-      description: Describe what your issue was
+      description: Describe briefly what issue you had
       placeholder: Tell us what you see!
       value: "A bug happened!"
     validations:
@@ -38,14 +38,27 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: What did you expect to happen after following the steps described above?
-      description: What was the expected response?
+      label: What was the expected response?
+      description: What did you expect to happen after following the steps described above?
       placeholder: What should have happened
       value: "I should have gotten cookies"
+    validations:
+      required: true
   - type: textarea
     id: reality
     attributes:
-      label: What actually happened after doing these steps?
-      description: What broke?
+      label: What did happen?
+      description: What actually happened after doing these steps?
       placeholder: What was the result
       value: "I got vegetables :c"
+    validations:
+      required: true
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Provide additional info
+      description: Provide additional info here such as screenshots, ids or other comments you want to add
+      placeholder: What else do you want to say?
+      value: "The vegetables did taste pretty good though"
+    validations:
+      required: false
