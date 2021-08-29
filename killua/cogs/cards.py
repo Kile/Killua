@@ -113,8 +113,11 @@ class Cards(commands.Cog):
         if item == 0:
             return await ctx.send("You cannot sell this card!")
 
+        jenny = int((PRICES[card.rank]*amount)/10)
+        if user.is_entitled_to_double_jenny:
+            jenny *= 2
         view = ConfirmButton(ctx.author.id, timeout=80)
-        msg = await ctx.send(f"You will recieve {int((PRICES[card.rank]*amount)/10)} Jenny for selling {'this card' if amount == 1 else 'those cards'}, do you want to proceed?", view=view)
+        msg = await ctx.send(f"You will recieve {jenny} Jenny for selling {'this card' if amount == 1 else 'those cards'}, do you want to proceed?", view=view)
         await view.wait()
         await view.disable(msg)
 
@@ -131,8 +134,8 @@ class Cards(commands.Cog):
         else:
             for i in range(amount):
                 user.remove_card(item, False)
-            user.add_jenny(int((PRICES[card.rank]*amount)/10))
-            await ctx.send(f'Sucessfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {int((PRICES[card.rank]*amount)/10)} Jenny!')
+            user.add_jenny(jenny)
+            await ctx.send(f'Sucessfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {jenny} Jenny!')
 
     @check(20)
     @commands.command(extras={"category":Category.CARDS}, usage="swap <card_id>")

@@ -9,7 +9,7 @@ from typing import Union
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 
 from killua.checks import check
-from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams
+from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS
 from killua.classes import Category
 from killua.paginator import Paginator
 
@@ -124,7 +124,7 @@ class SmallCommands(commands.Cog):
             'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Asked by {ctx.author}'},
             'color': 0x1400ff
         })
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(aliases=['av', 'a'], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
@@ -150,13 +150,15 @@ class SmallCommands(commands.Cog):
     @commands.command(aliases=["support"], extras={"category":Category.FUN}, usage="patreon")
     async def patreon(self, ctx):
         """Get infos about my Patreon and feel free to donate for some perks!"""
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri"))
         embed = discord.Embed.from_dict({
             'title': '**Support Killua**',
             'thumbnail':{'url': 'https://cdn.discordapp.com/avatars/758031913788375090/e44c0de4678c544e051be22e74bc502d.png?size=1024'},
-            'description': 'Hey, do you have too much money? I have a solution for that! I now have a Patreon account where you can donate to support me and get special stuff, helping with building Killua. Not that I expect anyone to do this, but I have it set up now. Make sure you are on my server before you become a Patreon so you get the perks!\n\n https://www.patreon.com/KileAlkuri',
+            'description': PREMIUM_BENEFITS,
             'color': 0x1400ff
         })
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, view=view)
 
     @check()
     @commands.command(aliases=['stats'], extras={"category":Category.FUN}, usage="info")
@@ -234,7 +236,7 @@ class SmallCommands(commands.Cog):
                 return await ctx.send(error)
             
         embed.description = embed.description + f'```\n{translated}```'
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="calc <math>")

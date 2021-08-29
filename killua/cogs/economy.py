@@ -165,6 +165,8 @@ class Economy(commands.Cog):
             min=+50
             max=+50
         daily = randint(min, max)
+        if user.is_entitled_to_double_jenny:
+            daily *= 2
         if str(user.daily_cooldown) < str(now):
             user.claim_daily()
             user.add_jenny(daily)

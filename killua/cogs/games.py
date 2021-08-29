@@ -84,7 +84,11 @@ class Trivia:
             await self.ctx.send(f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}")
 
         else:
-            User(self.ctx.author.id).add_jenny((rew:= random.randint(*self.rewards[self.difficulty])))
+            user = User(self.ctx.author.id)
+            rew = random.randint(*self.rewards[self.difficulty])
+            if user.is_entitled_to_double_jenny:
+                rew *= 2
+            user.add_jenny(rew)
             await self.ctx.send(f"Correct! Here are {rew} Jenny as a reward!")
 
 
@@ -204,7 +208,7 @@ class Rps:
             return await ctx.send('You can\'t play against someone blacklisted')
 
         view = ConfirmButton(self.other.id, timeout=80)
-        msg = await self.ctx.send(f'{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other.name}** accept the challange?', view=view)
+        msg = await self.ctx.send(f'{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other}** accept the challange?', view=view)
         await view.wait()
         await view.disable(msg)
 
@@ -285,7 +289,7 @@ class CountGame:
 
     def _handle_reward(self) -> int:
         """Creates a jenny reward based on the level and difficulty"""
-        return int(random.randint(20, 30) * self.level * (0.5 if self.difficulty == "easy" else 1))
+        return ((2 if self.user.is_entitled_to_double_jenny else 1) * int(random.randint(20, 30) * self.level * (0.5 if self.difficulty == "easy" else 1))) if level > 1 else 0
 
     def _assign_until_unique(self, already_assigned:List[int]) -> int:
         """Picks one random free spot to put the next number in"""

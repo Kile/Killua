@@ -68,7 +68,7 @@ class Api(commands.Cog):
         r = await function(data, t)
         if r.success:
             f = discord.File(r.convert_to_ioBytes(), filename=f'{ctx.command.name}.{r.file_type}', spoiler=censor)
-            return await ctx.send(file=f)
+            return await self.client.send_message(ctx, file=f)
         return await ctx.send(f':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
 
     @check(120) # Big cooldown >_<

@@ -220,6 +220,8 @@ class LootBox:
             if isinstance(r, Card):
                 user.add_card(r.id)
             else:
+                if user.is_entitled_to_double_jenny:
+                    r *= 2
                 user.add_jenny(r)
 
 class Button(discord.ui.Button):
@@ -326,14 +328,6 @@ class Category(Enum):
             "normal": "<:killua_wink:769919176110112778>"
         }
     }
-    TAGS = {
-        "name": "tags",
-        "description": "Tags if you want to save some text. Premium only",
-        "emoji": {
-            "unicode": "\U0001f5c4",
-            "normal": ":file_cabinet:"
-        }
-    }
 
     GAMES = {
         "name": "games",
@@ -341,6 +335,15 @@ class Category(Enum):
         "emoji": {
             "unicode": "\U0001f3ae",
             "normal": ":video_game:"
+        }
+    }
+
+    TAGS = {
+        "name": "tags",
+        "description": "Tags if you want to save some text. `[PREMIUM ONLY]`",
+        "emoji": {
+            "unicode": "\U0001f5c4",
+            "normal": ":file_cabinet:"
         }
     }
 
@@ -547,6 +550,10 @@ class User:
     @property
     def premium_tier(self) -> Union[str, None]:
         return [x for x in self.badges if x in PATREON_TIERS.keys()][0] if self.is_premium else None
+
+    @property
+    def is_entitled_to_double_jenny(self) -> bool:
+        return self.is_premium and self.premium_tier in PATREON_TIERS.keys()[2:]
 
     @all_cards.setter
     def all_cards(self, other):
