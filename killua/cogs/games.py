@@ -289,7 +289,7 @@ class CountGame:
 
     def _handle_reward(self) -> int:
         """Creates a jenny reward based on the level and difficulty"""
-        return ((2 if self.user.is_entitled_to_double_jenny else 1) * int(random.randint(20, 30) * self.level * (0.5 if self.difficulty == "easy" else 1))) if level > 1 else 0
+        return ((2 if self.user.is_entitled_to_double_jenny else 1) * int(random.randint(20, 30) * self.level * (0.5 if self.difficulty == "easy" else 1))) if self.level > 1 else 0
 
     def _assign_until_unique(self, already_assigned:List[int]) -> int:
         """Picks one random free spot to put the next number in"""

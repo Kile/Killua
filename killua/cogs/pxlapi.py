@@ -1,11 +1,11 @@
 import discord
 from discord.ext import commands
-from killua.checks import check
-import typing
+from typing import Union, Any
 import re
 
 from pypxl import PxlClient # My own library :sparkles:
 
+from killua.checks import check
 from killua.classes import Category
 from killua.constants import NOKIA_CODE, PXLAPI
 from killua.paginator import Paginator
@@ -58,7 +58,7 @@ class Api(commands.Cog):
             image = str(ctx.author.avatar.url)  
         return image
 
-    async def handle_command(self, ctx, args, function, censor:bool=False, t=None, validate:bool=True):
+    async def handle_command(self, ctx, args, function, t:Any=None, censor:bool=False, validate:bool=True):
         if validate:
             data = await self._validate_input(ctx, args)
             if not data:
@@ -73,7 +73,7 @@ class Api(commands.Cog):
 
     @check(120) # Big cooldown >_<
     @commands.command(aliases=['ej', 'emojimosaic'], extras={"category":Category.FUN}, usage="emojaic <user/url>")
-    async def emojaic(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def emojaic(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
         """Emoji mosaic an image; let emojis recreate an image you gave Killua! Takes in a mention, ID or image url"""
         async def func(data, *args):
             return await self.pxl.emojaic([data], groupSize=6)
@@ -81,7 +81,7 @@ class Api(commands.Cog):
 
     @check(5)
     @commands.command(extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
-    async def flag(self, ctx, flag:str, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def flag(self, ctx, flag:str, args:Union[discord.Member, discord.Emoji, str]=None):
         """Valid flags: asexual, aromantic, bisexual, pansexual, gay, lesbian, trans, nonbinary, genderfluid, genderqueer, polysexual, austria, belgium, botswana, bulgaria, ivory, estonia, france, gabon, gambia, germany, guinea, hungary, indonesia, ireland, italy, luxembourg, monaco, nigeria, poland, russia, romania, sierraleone, thailand, ukraine, yemen"""
         async def func(data, flag):
             return await self.pxl.flag(flag=flag, images=[data])
@@ -89,7 +89,7 @@ class Api(commands.Cog):
 
     @check(5)
     @commands.command(extras={"category":Category.FUN}, usage="glitch <user/url>")
-    async def glitch(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def glitch(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
         """Tranform a users pfp into a glitchy GIF!"""
         async def func(data, *args):
             return await self.pxl.glitch(images=[data], gif=True)
@@ -97,7 +97,7 @@ class Api(commands.Cog):
 
     @check(10)
     @commands.command(extras={"category":Category.FUN}, usage="lego <user/url>")
-    async def lego(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def lego(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
         """Legofies an image"""
         async def func(data, *args):
             return await self.pxl.lego(images=[data], scale=True, groupSize=10)
@@ -105,7 +105,7 @@ class Api(commands.Cog):
 
     @check(3)
     @commands.command(aliases=['snap'], extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
-    async def snapchat(self, ctx, fil:str, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def snapchat(self, ctx, fil:str, args:Union[discord.Member, discord.Emoji, str]=None):
         """Valid filters: dog, dog2, dog3, pig, flowers, random"""
         async def func(data, fil):
             return await self.pxl.snapchat(filter=fil, images=[data])
@@ -113,7 +113,7 @@ class Api(commands.Cog):
 
     @check(3)
     @commands.command(aliases=['eye'], extras={"category":Category.FUN}, usage="eyes <eye_type> <user/url>")
-    async def eyes(self, ctx, t:str, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def eyes(self, ctx, t:str, args:Union[discord.Member, discord.Emoji, str]=None):
         """Valid eyes: big, black, bloodshot, blue, default, googly, green, horror, illuminati, money, pink, red, small, spinner, spongebob, white, yellow, random"""
         async def func(data, t):
             return await self.pxl.eyes(eyes=t, images=[data])
@@ -121,7 +121,7 @@ class Api(commands.Cog):
 
     @check(3)
     @commands.command(aliases=['animal'], extras={"category":Category.FUN}, usage="ganimal <user/url")
-    async def ganimal(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def ganimal(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
         """Turns a face into multilple animal faces"""
         async def func(data, *args):
             return await self.pxl.ganimal(images=[data])
@@ -129,7 +129,7 @@ class Api(commands.Cog):
 
     @check(4)
     @commands.command(aliases=['8bit', 'blurr'], extras={"category":Category.FUN}, usage="jpeg <user/url>")
-    async def jpeg(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def jpeg(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
         """Did you ever want to decrease image quality? Then this is the command for you!"""
         async def func(data, *args):
             return await self.pxl.jpeg(images=[data])
@@ -137,7 +137,7 @@ class Api(commands.Cog):
 
     @check(4)
     @commands.command(extras={"category":Category.FUN}, usage="ajit <user/url>")
-    async def ajit(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def ajit(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
         """  Overlays an image of Ajit Pai snacking on some popcorn!"""
         async def func(data, *args):
             return await self.pxl.ajit(images=[data])
@@ -145,7 +145,7 @@ class Api(commands.Cog):
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="nokia <user/url>")
-    async def nokia(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def nokia(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
         """Turns a face into multilple animal faces"""
         async def func(data, *args):
             d = "const url = '" + data + ";'" + NOKIA_CODE
@@ -154,7 +154,7 @@ class Api(commands.Cog):
 
     @check(4)
     @commands.command(extras={"category":Category.FUN}, usage="flash <user/url>")
-    async def flash(self, ctx, args:typing.Union[discord.Member, discord.Emoji, str]=None):
+    async def flash(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
         """Greates a flashing GIF"""
         async def func(data, *args):
             return await self.pxl.flash(images=[data])

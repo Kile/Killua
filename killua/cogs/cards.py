@@ -272,6 +272,9 @@ class Cards(commands.Cog):
         if item in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
             raise CheckFailure('You can only use this card in response to an attack!')
 
+        if Card(item).type != "spell":
+            raise CheckFailure("You can only use spell cards!")
+
         if not item in [x[0] for x in User(ctx.author.id).fs_cards] and not item in [1036]:
             raise CheckFailure('You are not in possesion of this card!')
 

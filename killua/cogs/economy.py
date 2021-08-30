@@ -155,6 +155,7 @@ class Economy(commands.Cog):
     @commands.command(extras={"category":Category.ECONOMY}, usage="daily")
     async def daily(self, ctx):
         """Claim your daily Jenny with this command!"""
+        now = datetime.now()
         user = User(ctx.author.id)
         min = 50
         max = 100
