@@ -272,8 +272,11 @@ class Cards(commands.Cog):
         if item in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
             raise CheckFailure('You can only use this card in response to an attack!')
 
-        if Card(item).type != "spell":
-            raise CheckFailure("You can only use spell cards!")
+        try:
+            if Card(item).type != "spell":
+                raise CheckFailure("You can only use spell cards!")
+        except CardNotFound:
+            raise CheckFailure("Invalid card id")
 
         if not item in [x[0] for x in User(ctx.author.id).fs_cards] and not item in [1036]:
             raise CheckFailure('You are not in possesion of this card!')
@@ -295,10 +298,7 @@ class Cards(commands.Cog):
 
     async def _use_core(self, ctx, item:int, *args) -> None:
         """This passes the execution to the right class """
-        try:
-            card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{item}"][0]
-        except IndexError:
-            return await ctx.send("Invalid card!")
+        card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{item}"][0]
         
         l = []
         for p, (k, v) in enumerate([x for x in card_class.exec.__annotations__.items() if not str(x[0]) == "return"]):

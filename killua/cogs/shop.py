@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Union, Tuple
 
 from killua.cards import Card
-from killua.classes import Category, User, TodoList, PrintColors
+from killua.classes import Category, User, TodoList, PrintColors, CardNotFound
 from killua.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, editing
 from killua.checks import check
 from killua.paginator import DefaultEmbed, View
@@ -58,7 +58,7 @@ class Shop(commands.Cog):
                 if randint(1, 100) > 95: #5% chance for a good spell (they are rare)
                     spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': 'A'})]
                     shop_items.append(choice(spells))
-                elif randint(1,50): #50% chance of getting a medium good card
+                elif randint(1,10) > 5: #50% chance of getting a medium good card
                     spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['B', 'C']}})]
                     shop_items.append(choice(spells))
                 else: #otherwise getting a fairly normal card
@@ -157,11 +157,11 @@ class Shop(commands.Cog):
         await ctx.send(embed=embed)
 
     @check()
-    @shop.command(aliases=["boxes"], extras={"category": Category.ECONOMY}, usage="lootboxes")
-    async def lootboxes(self, ctx):
+    @shop.command(name="lootboxes", aliases=["boxes"], extras={"category": Category.ECONOMY}, usage="lootboxes")
+    async def _lootboxes(self, ctx):
         """Get the current lootbox shop with this command"""
         prefix = self.client.command_prefix(self.client, ctx.message)[2]
-        fields = [{"name": data["emoji"] + " " + data["name"] + " (id: " + str(id) + ")", "value": f"{data['description']}\n\nPrice: {data['price']}"} for id, data in LOOTBOXES.items() if data["available"]]
+        fields = [{"name": data["emoji"] + " " + data["name"] + " (id: " + str(id) + ")", "value": f"{data['description']}\nPrice: {data['price']}"} for id, data in LOOTBOXES.items() if data["available"]]
 
         def make_embed(pages, embed, page):
             embed.title = "Current lootbox shop"

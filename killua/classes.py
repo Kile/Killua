@@ -553,7 +553,7 @@ class User:
 
     @property
     def is_entitled_to_double_jenny(self) -> bool:
-        return self.is_premium and self.premium_tier in PATREON_TIERS.keys()[2:]
+        return self.is_premium and self.premium_tier in list(PATREON_TIERS.keys())[2:]
 
     @all_cards.setter
     def all_cards(self, other):
@@ -698,17 +698,17 @@ class User:
         if self.jenny < amount:
             raise Exception('Trying to remove more Jenny than the user has')
         self.jenny -= amount
-        self._update_val("jenny", -amount, "$inc")
+        self._update_val("points", -amount, "$inc")
 
     def add_jenny(self, amount:int):
         """Adds x Jenny to a users balance"""
         self.jenny += amount
-        self._update_val("jenny", amount, "$inc")
+        self._update_val("points", amount, "$inc")
 
     def set_jenny(self, amount:int):
         """Sets the users jenny to the specified value. Only used for testing"""
         self.jenny = amount
-        self._update_val("jenny", amount)
+        self._update_val("points", amount)
 
     def _find_match(self, cards:List[list], card_id:int, fake:Optional[bool], clone:Optional[bool]) -> Tuple[Union[List[List[int, dict]], None], Union[List[int, dict], None]]:
         counter = 0
