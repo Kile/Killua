@@ -57,7 +57,7 @@ def check(time:int=0):
             (boolean): if the user is blacklisted or not
 
         Purpose:
-            Checking before everry command if the user is blacklisted
+            Checking before every command if the user is blacklisted
         """
 
         result = blacklist.find_one({'id': userid})
@@ -135,7 +135,7 @@ def check(time:int=0):
         if command['enabled'] is False:
             return False
 
-        # Checking if the member is whitelisted (not implemeted)
+        # Checking if the member is whitelisted (not implemented)
         #if ctx.author.id in [int(x) for x in command['restricted_to_members'] if len(command['restricted_to_members']) > 0]:
             #return True
 
@@ -172,7 +172,7 @@ def check(time:int=0):
         try:
             if (await settings_check(ctx)) is False:
                 return False
-        except Exception: #If someone used the api and messed up the guilds data struture
+        except Exception: #If someone used the api and messed up the guilds data structure
             pass
 
         if time == 0:

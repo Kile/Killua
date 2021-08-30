@@ -122,7 +122,7 @@ class Api(commands.Cog):
     @check(3)
     @commands.command(aliases=['animal'], extras={"category":Category.FUN}, usage="ganimal <user/url")
     async def ganimal(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
-        """Turns a face into multilple animal faces"""
+        """Turns a face into multiple animal faces"""
         async def func(data, *args):
             return await self.pxl.ganimal(images=[data])
         await self.handle_command(ctx, args, func)
@@ -146,7 +146,7 @@ class Api(commands.Cog):
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="nokia <user/url>")
     async def nokia(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
-        """Turns a face into multilple animal faces"""
+        """Turns a face into multiple animal faces"""
         async def func(data, *args):
             d = "const url = '" + data + ";'" + NOKIA_CODE
             return await self.pxl.imagescript(version="1.2.0", code=d)

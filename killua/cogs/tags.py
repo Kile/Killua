@@ -143,7 +143,7 @@ class Tags(commands.Cog):
                 return await ctx.send('Too many characters!')
             tags.append([tag_name.lower(), {'name': tag_name, 'created_at': datetime.now(), 'owner': ctx.author.id, 'content': msg.content, 'uses': 0}])
             guilds.update_one({'id': ctx.guild.id}, {'$set': {'tags': tags}})
-            return await ctx.send(f'Sucesfully created tag `{tag_name}`')
+            return await ctx.send(f'Successfully created tag `{tag_name}`')
 
     @tag.command(extras={"category":Category.TAGS}, usage="delete <tag_name>")
     async def delete(self, ctx, *, tag_name:str):
@@ -157,7 +157,7 @@ class Tags(commands.Cog):
             return await ctx.send('You need to be tag owner or have the `manage server` permission to delete tags!')
 
         tag.delete()
-        await ctx.send(f'Sucessfully deleted tag `{tag.name}`')
+        await ctx.send(f'Successfully deleted tag `{tag.name}`')
 
     @tag.command(extras={"category":Category.TAGS}, usage="edit <tag_name>")
     async def edit(self, ctx, *, tag_name:str):
@@ -183,7 +183,7 @@ class Tags(commands.Cog):
             await ms.delete()
             await msg.delete()
             tag.update(msg.content)
-            return await ctx.send(f'Sucesfully updated tag `{tag.name}`')
+            return await ctx.send(f'Successfully updated tag `{tag.name}`')
 
     @tag.command(extras={"category":Category.TAGS}, usage="get <tag_name>")
     async def get(self, ctx, *, tag_name:str):

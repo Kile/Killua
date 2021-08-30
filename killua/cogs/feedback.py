@@ -22,7 +22,7 @@ class Feedback(commands.Cog):
                 return await ctx.send('Please tell us what exactly the with the provided command is. For more info on how to do that, use `k!bug`')
 
             if command.lower() == 'other':
-                matter = f'Bug regarding no spefific command'
+                matter = f'Bug regarding no specific command'
             else:
                 matter = f'Bug regarding the command `{command.lower()}`'
 
@@ -95,7 +95,7 @@ class Feedback(commands.Cog):
     `8ball` - suggestion for a response for `k8ball`
     `hug` - submit a hug text or image (Killua only) 
     `apply` - apply for the team, we are looking for artists, programmer, people looking out for the server etc. Of course being part of the team comes with it's advantages
-    `general` - you just wanna give general feedback to us, no specific or too many cathegories for the other options
+    `general` - you just wanna give general feedback to us, no specific or too many categories for the other options
     `idea` - you have a good idea for a command (like `k!book <booktitle>`, a idea I had today and I wil implement cause it's cool). Please describe it as detailed as possible though
     `feature`-request - request a feature, kinda like idea but idk. Again, lease describe it as detailed as possible
     `complain` - complain about something

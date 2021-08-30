@@ -12,7 +12,7 @@ class DevStuff(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    #Eval command, unecessary with the jsk extension but useful for databse stuff
+    #Eval command, unnecessary with the jsk extension but useful for database stuff
     @commands.is_owner()
     @commands.command(aliases=['exec'], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True)
     async def eval(self, ctx, *, code):
@@ -78,7 +78,7 @@ class DevStuff(commands.Cog):
             user = self.client.get_user(id) or await self.client.fetch_user(id)
         except Exception as e:
             return await ctx.send(e)
-        # Inserting the bad person into my databse
+        # Inserting the bad person into my database
         blacklist.insert_one({'id': id, 'reason': reason or "No reason provided", 'date': datetime.now()})
         await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
         
@@ -127,7 +127,7 @@ class DevStuff(commands.Cog):
         text = re.search(r'ts\(.*?\)te', status)
         pr.update_many({}, {'$set': {'text': text[0][3:-3], 'presence': presence, 'activity': activity}})
         await self.client.update_presence()
-        await ctx.send(f'Succesfully changed Killua\'s status to `{text[0][3:-3]}`! (I hope people like it >-<)')
+        await ctx.send(f'Successfully changed Killua\'s status to `{text[0][3:-3]}`! (I hope people like it >-<)')
 
 
 
