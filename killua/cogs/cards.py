@@ -369,7 +369,7 @@ class Cards(commands.Cog):
             item = int(item)
             if item < 1:
                 return await ctx.send('Please provide a valid amount of jenny!')
-            if item > 20000:
+            if item > 69420:
                 return await ctx.send('Be reasonable.')
             user.add_jenny(item)
             return await ctx.send(f'Added {item} Jenny to your account')
