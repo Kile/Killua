@@ -51,7 +51,7 @@ class Cards(commands.Cog):
     
         final_rewards = []
         for reward in rewards: 
-            # This avoid duplicates e.g. 4xPaladins Neclace, 2xPaladins Necklace => 6xPaladins Necklace
+            # This avoid duplicates e.g. 4xPaladins Necklace, 2xPaladins Necklace => 6xPaladins Necklace
             if reward[1] in (l:= [y for x, y in final_rewards]):
                 index = l.index(reward[1])
                 final_rewards[index] = (final_rewards[index][0]+reward[0], final_rewards[index][1])
@@ -117,7 +117,7 @@ class Cards(commands.Cog):
         if user.is_entitled_to_double_jenny:
             jenny *= 2
         view = ConfirmButton(ctx.author.id, timeout=80)
-        msg = await ctx.send(f"You will recieve {jenny} Jenny for selling {'this card' if amount == 1 else 'those cards'}, do you want to proceed?", view=view)
+        msg = await ctx.send(f"You will receive {jenny} Jenny for selling {'this card' if amount == 1 else 'those cards'}, do you want to proceed?", view=view)
         await view.wait()
         await view.disable(msg)
 
@@ -130,17 +130,17 @@ class Cards(commands.Cog):
         card_amount = user.count_card(item, False)
 
         if not card_amount >= amount:
-            return await ctx.send('Seems like you don\'t own enoug ch non-fake copies of this card you try to sell')
+            return await ctx.send('Seems like you don\'t own enough non-fake copies of this card you try to sell')
         else:
             for i in range(amount):
                 user.remove_card(item, False)
             user.add_jenny(jenny)
-            await ctx.send(f'Sucessfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {jenny} Jenny!')
+            await ctx.send(f'Successfully sold {amount} cop{"y" if amount == 1 else "ies"} of card number {item} for {jenny} Jenny!')
 
     @check(20)
     @commands.command(extras={"category":Category.CARDS}, usage="swap <card_id>")
     async def swap(self, ctx, card_id:int):
-        """Allows you to swap cards from your free slots with the restrcited slots and the other way around"""
+        """Allows you to swap cards from your free slots with the restricted slots and the other way around"""
         
         user = User(ctx.author.id)
         if len(user.all_cards) == 0:
@@ -262,7 +262,7 @@ class Cards(commands.Cog):
             if view.timed_out:
                 return await ctx.send(f'Timed out!')
             else:
-                return await sctx.send(f"Successfully canceled!")
+                return await ctx.send(f"Successfully canceled!")
 
         user.remove_card(card.id)
         await ctx.send(f'Successfully thrown away card No. `{card.id}`')

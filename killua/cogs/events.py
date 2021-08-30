@@ -132,7 +132,7 @@ class Events(commands.Cog):
     #     guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
     #     command = ctx.command.name if ctx.command else "Error didn't occur during a command"
     #     print(f'{PrintColors.FAIL}------------------------------------------')
-    #     print(f'An error occured\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
+    #     print(f'An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
     #     print(f'------------------------------------------{PrintColors.ENDC}')
 
 Cog = Events

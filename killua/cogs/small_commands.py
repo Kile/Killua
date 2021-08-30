@@ -105,7 +105,7 @@ class SmallCommands(commands.Cog):
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="topic")
     async def topic(self, ctx):
-        """From a constatnly updating list of topics to talk about one is chosen here"""
+        """From a constantly updating list of topics to talk about one is chosen here"""
         await ctx.send(choice(TOPICS))
 
     @check()
@@ -241,7 +241,7 @@ class SmallCommands(commands.Cog):
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="calc <math>")
     async def calc(self, ctx, *,args=None):
-        """Calculates any equasion you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)"""
+        """Calculates any equation you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)"""
         if not args:
             return await ctx.send("Please give me something to evaluate.\n")
         exprs = str(args).split('\n')

@@ -251,7 +251,7 @@ class Card1007(Card):
 
         removed_card = other.remove_card(target_card, restricted_slot=True)
         author.add_card(target_card, removed_card[1]["fake"])
-        await self.ctx.send(f'Sucessfully stole card number `{target_card}` from `{member}`!')
+        await self.ctx.send(f'Successfully stole card number `{target_card}` from `{member}`!')
 
 class Card1008(Card):
 

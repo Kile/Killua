@@ -210,7 +210,7 @@ class TodoSystem(commands.Cog):
     **Status**: `{todo_list.status}`\n
     **Editors**: `{", ".join([str(await self._get_user(u)) for u in todo_list.editor]) if len(todo_list.editor) > 0 else "Nobody has editor perissions"}`\n
     **Viewers**: `{", ".join([str(await self._get_user(u)) for u in todo_list.viewer]) if len(todo_list.viewer) > 0 else "Nobody has viewer permissions"}`\n
-    **Todos**: `{len(todo_list)}/{todo_list.spots}`\n
+    **Todo's**: `{len(todo_list)}/{todo_list.spots}`\n
     **Created on:** `{todo_list.created_at}`\n
     *{todo_list.views} views*
     ''',
@@ -726,7 +726,7 @@ class TodoSystem(commands.Cog):
                 todo_list.kick_viewer(user.id) # handled like a promotion and exchanges viewer perms for edit perms
             todo_list.add_editor(user.id)
 
-        await user.send(f'Sucess! You have now {role} permissions in the todo list `{todo_list.name}`', allowed_mentions=discord.AllowedMentions.none())
+        await user.send(f'Success! You have now {role} permissions in the todo list `{todo_list.name}`', allowed_mentions=discord.AllowedMentions.none())
         return await ctx.author.send(f'{user} accepted your invitation to your todo list `{todo_list.name}`!', allowed_mentions=discord.AllowedMentions.none())
 
 
@@ -771,7 +771,7 @@ class TodoSystem(commands.Cog):
                         pass
                 todos[todo_number-1]['assigned_to'].remove(user.id)
                 todo_list.set_property("todos", todos)
-                return await ctx.send(f'Succesfully removed assignment of todo task {todo_number} to {user}')
+                return await ctx.send(f'Successfully removed assignment of todo task {todo_number} to {user}')
             else:
                 await ctx.send(f'Invalid argument for `rm`. Command usage: `{self.client.command_prefix(self.client, ctx.message)[2]}todo assign <todo_number> <user> <optional_rm>` where -rm would remove them from that task', allowed_mentions=discord.AllowedMentions.none())
 
@@ -792,7 +792,7 @@ class TodoSystem(commands.Cog):
                 await user.send(embed=embed)
             except discord.Forbidden:
                 pass
-        return await ctx.send(f'Succesfully assigned the task with number {todo_number} to `{user}`', allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.send(f'Successfully assigned the task with number {todo_number} to `{user}`', allowed_mentions=discord.AllowedMentions.none())
     
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="delete <list_id>")
@@ -812,7 +812,7 @@ class TodoSystem(commands.Cog):
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="lists")
     async def lists(self, ctx):
-        """This shows a liat of todo lists you own or have access to"""
+        """This shows a list of todo lists you own or have access to"""
         lists_owning = todo.find({'owner': ctx.author.id})
         lists_viewing = todo.find({'viewer': ctx.author.id})
         lists_editing = todo.find({'editor': ctx.author.id})

@@ -46,7 +46,7 @@ class Shop(commands.Cog):
     @tasks.loop(hours=6)
     async def cards_shop_update(self):
         #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
-        #the challange is to create a balanced system with good items rare enough but not too rare
+        #the challenge is to create a balanced system with good items rare enough but not too rare
         try:
             shop_items:list = []
             number_of_items = randint(3,5) #How many items the shop has
@@ -67,7 +67,7 @@ class Shop(commands.Cog):
 
                 while len(shop_items) != number_of_items: #Filling remaining spots
                     thing = [t['_id'] for t in items.find({'type': 'normal', 'rank': {"$in": ['D', 'B']}})] 
-                    #There is just one D item so there is a really high probablility of it being in the shop EVERY TIME
+                    #There is just one D item so there is a really high probability of it being in the shop EVERY TIME
                     t = choice(thing)
                     if not t in shop_items:
                         shop_items.append(t)
@@ -151,7 +151,7 @@ class Shop(commands.Cog):
 `description` add a description to your todo list (recommended for public lists with custom id)
 
 **Cost**: number of current spots * 50
-`space` buy 10 more spots for todos for your list''',
+`space` buy 10 more spots for todo's for your list''',
             'color': 0x1400ff
         })
         await ctx.send(embed=embed)
@@ -315,7 +315,7 @@ class Shop(commands.Cog):
         if len(confirmmsg.content) > 200:
             await ctx.send('Your description can\'t be over 200 characters!')
             return await self.buy_description(ctx)
-        tuser.remove_jenny(1000)
+        user.remove_jenny(1000)
         todo_list.set_property('description', description)
         return await ctx.send('Congrats! You bought a description for your current todo list')
 
@@ -323,7 +323,7 @@ class Shop(commands.Cog):
     async def buy(self, ctx):
         # have a shop for everything, you also need a buy for everything 
         if not ctx.invoked_subcommand:
-            return await ctx.send("You need to provide a valid subcommand! Subommands are: `card`, `lootbox` and `todo`")
+            return await ctx.send("You need to provide a valid subcommand! Subcommands are: `card`, `lootbox` and `todo`")
 
     @check(2)
     @buy.command(extras={"category": Category.CARDS}, usage="card <card_id>")
@@ -351,7 +351,7 @@ class Shop(commands.Cog):
             price = PRICES[card.rank]
 
         if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
-            return await ctx.send('Unfortunatly the global maximal limit of this card is reached! Someone needs to sell their card for you to buy one or trade/give it to you')
+            return await ctx.send('Unfortunately the global maximal limit of this card is reached! Someone needs to sell their card for you to buy one or trade/give it to you')
 
         if len(user.fs_cards) >= FREE_SLOTS:
             return await ctx.send(f'Looks like your free slots are filled! Get rid of some with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`', allowed_mentions=discord.AllowedMentions.none())
@@ -366,8 +366,8 @@ class Shop(commands.Cog):
             else:
                 print(e)
 
-        user.remove_jenny(price) #Always putting substracting points before giving the item so if the payment errors no iten is given
-        return await ctx.send(f'Sucessfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!', allowed_mentions=discord.AllowedMentions.none())
+        user.remove_jenny(price) #Always putting substracting points before giving the item so if the payment errors no item is given
+        return await ctx.send(f'Successfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!', allowed_mentions=discord.AllowedMentions.none())
 
     @check(2)
     @buy.command(aliases=["box"], extras={"category": Category.ECONOMY}, usage="lootbox <item>")
@@ -413,7 +413,7 @@ class Shop(commands.Cog):
     @commands.group()
     async def give(self, ctx):
         if not ctx.invoked_subcommand:
-            return await ctx.send("You need to provide a valid subcommand! Subommands are: `card`, `lootbox` and `jenny`")
+            return await ctx.send("You need to provide a valid subcommand! Subcommands are: `card`, `lootbox` and `jenny`")
 
     async def _validate(self, ctx:commands.Context, other:discord.Member) -> Union[discord.Message, Tuple[User, User]]:
         """Validates if someone is a bot or the author and returns a tuple of users if correct, else a message"""

@@ -557,7 +557,7 @@ class User:
 
     @all_cards.setter
     def all_cards(self, other):
-        """The only time I'd realisticly call this is to remove all cards"""
+        """The only time I'd realistically call this is to remove all cards"""
         if not isinstance(other, list) or len(other) == 0:
             raise TypeError("Can only set this property to an empty list") # setting this to something else by accident could be fatal
         self.fs_cards = []
@@ -887,7 +887,7 @@ class User:
         setattr(self, cards, [])
 
     def nuke_cards(self, t='all') -> bool:
-        """A function only intended to be used by bot owners, not in any actual command, that's why it returns True, so the owner can see if it suceeded"""
+        """A function only intended to be used by bot owners, not in any actual command, that's why it returns True, so the owner can see if it succeeded"""
         if t == 'all': 
             self._remove("all_cards")
             self.effects = {}
@@ -966,7 +966,7 @@ class TodoList():
         self.custom_id_cache[value] = self.id
 
     def __len__(self) -> int:
-        """Makes it nicer to get the "lenght" of a todo list, or rather the length of its todos"""
+        """Makes it nicer to get the "length" of a todo list, or rather the length of its todo's"""
         return len(self.todos)
 
     @staticmethod

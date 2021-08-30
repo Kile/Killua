@@ -51,7 +51,7 @@ class WebScraping(commands.Cog):
         nr (int): number of result
 
         Returns:
-        embed: the embed with the informations about the book
+        embed: the embed with the information about the book
 
         Purpose:
         Get result x of book with title y

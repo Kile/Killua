@@ -201,7 +201,7 @@ class Moderation(commands.Cog):
     @check()
     @commands.command(extras={"category":Category.MODERATION}, usage="prefix <new_prefix(optional)>")
     async def prefix(self, ctx, pref:str=None):
-        """Change killua's prefix with this command. If you forgot your prefix, mentioning is always a prefix as well"""
+        """Change Killua's prefix with this command. If you forgot your prefix, mentioning is always a prefix as well"""
 
         guild = Guild(ctx.guild.id)
 
