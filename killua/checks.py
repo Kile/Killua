@@ -1,6 +1,10 @@
+
+import discord
 from discord.ext import commands
 from typing import Union, Type
-from .constants import blacklist
+
+from .constants import blacklist, PatreonBanner
+from .classes import User, Guild
 
 cooldowndict = {}
 
@@ -89,47 +93,43 @@ def check(time:int=0):
             return True 
 
         else:
-            user = teams.find_one({'id': ctx.author.id})
-            guild = guilds.find_one({'id': ctx.guild.id}) if ctx.guild else None
-
+            user = User(ctx.author.id)
+            guild = Guild(ctx.guild.id) if ctx.guild else None
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri", style=discord.ButtonStyle.blurple)) # sadly I cannot color a link button :c
             if cd.seconds < time:
                 t = -1*(6-time-cd.seconds)
                 if guild is None:
                     pass
-                elif 'partner' in guild['badges'] or 'premium' in guild['badges']:
+                elif guild.is_premium:
                     if int(cd.seconds) > time/2:
                         t = t/2
                     else:
                         cooldowndict[ctx.author.id][ctx.command.name] = later
                         return True
 
-                if user is None:
-                    await ctx.send(f':x: Command on cooldown! Try again after `{t}` seconds\n\nHalf your cooldown by becoming a patreon here: https://patreon.com/kilealkuri', delete_after=5)
-                    return False
-
-                if 'premium' in user['badges']:
+                if user.is_premium:
                     if int(cd.seconds) > t/2:
-                        await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds\n\nHalf your cooldown by becoming a patreon here: https://patreon.com/kilealkuri', delete_after=5)
+                        await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon',file=PatreonBanner.VALUE, view=view, delete_after=10)
                         return False
                     else:
                         cooldowndict[ctx.author.id][ctx.command.name] = later
                         return True
                     
-                await ctx.send(f':x: Command on cooldown! Try again after `{t}` seconds\n\nHalf your cooldown by becoming a patreon here: https://patreon.com/kilealkuri', delete_after=5)
+                await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon',file=PatreonBanner.VALUE, view=view, delete_after=10)
                 return False
             return True
 
     async def settings_check(ctx) -> bool:
-
-        guild = guilds.find_one({'id': ctx.guild.id})
-
-        if not 'commands' in guild:
+        if not ctx.guild:
             return True
+
+        guild = Guild(ctx.guild.id)
             
-        if not ctx.command.name in guild['commands']:
+        if not ctx.command.name in guild.commands:
             return True
 
-        command = guild['commands'][ctx.command.name]
+        command = guild.commands[ctx.command.name]
 
         # Checking if a command is disabled
         if command['enabled'] is False:
@@ -148,7 +148,7 @@ def check(time:int=0):
             return False
 
         # Checking if the channel is whitelisted if it is only whitelisted to a few channels
-        if not ctx.channel.id in command['restricted_to_channels'] and len(command['restricted_to_channels']) > 0:
+        if not ctx.channel.id in command['restricted_to_channels']:
             return False
 
         # Checking if the user has a role the command is restricted to
@@ -160,8 +160,11 @@ def check(time:int=0):
             return False
 
         # Checking if the command invokation should be deleted
-        if command['delete_invokation']:
-            await ctx.message.delete() # This could break stuff, fixing later
+        if "delete_invokation" in command and command['delete_invokation']:
+            try:
+                await ctx.message.delete()
+            except discord.HTTPException: # if it is already deleted for some reason
+                pass
 
         return True
 

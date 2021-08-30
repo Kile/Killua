@@ -1,6 +1,6 @@
 import discord
 from discord.ext import ipc, commands
-from killua.classes import User
+from killua.classes import User, Guild
 from killua.constants import teams
 
 from typing import List
@@ -42,6 +42,13 @@ class IPCRoutes(commands.Cog):
         """Getting some info about guild roles and channels for black and whitelisting"""
         res = self.client.get_guild(int(data.guild))
         return {"roles": [{"name": r.name, "id": str(r.id), "color": r.color.value} for r in res.roles], "channels": [{"name": c.name, "id": c.id} for c in res.channels if isinstance(c, discord.TextChannel)]}
+
+    @ipc.server.route()
+    async def update_guild_cache(self, data) -> None:
+        """Makes sure the local cache is up to date with the db"""
+        guild = Guild(data.id)
+        guild.prefix = data.prefix
+        guild.commands = {v for k, v in data.commands.items()}
 
 Cog = IPCRoutes
 

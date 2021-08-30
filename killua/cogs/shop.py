@@ -109,8 +109,8 @@ class Shop(commands.Cog):
             await subcommands[int(view.value)].__call__(ctx) # calls a shop subcommand if a shop was specified
 
     @check()
-    @shop.command(extras={"category":Category.CARDS}, usage="cards")
-    async def cards(self, ctx):
+    @shop.command(name="cards", extras={"category":Category.CARDS}, usage="cards")
+    async def _cards(self, ctx):
         """Shows the current cards for sale"""
         
         sh = shop.find_one({'_id': 'daily_offers'})

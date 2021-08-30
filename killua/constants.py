@@ -129,6 +129,11 @@ ACTIONS = {
     }
 }
 
+# the patreon banner being a discord.File in the cache because it's unnecessary to fetch every time I need it. The current value is the url to be fetched
+class PatreonBanner: # using a normal var instead of a class did not work
+    URL = "https://cdn.discordapp.com/attachments/795448739258040341/882017244484345916/killua-logo-banners-patreon2.png"
+    VALUE = None
+
 # EMOTES
 USER_FLAGS = {
     "staff": "<:DiscordStaff:788508648245952522>",

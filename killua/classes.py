@@ -1107,6 +1107,7 @@ class Guild():
         self.id:int = guild_id
         self.badges:list = g['badges']
         self.prefix:str = g['prefix']
+        self.commands:dict = {v for k, v in g["commands"].items()} if "commands" in g else {}
         
         if 'tags' in g:
             self.tags = g['tags']

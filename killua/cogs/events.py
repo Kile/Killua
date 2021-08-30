@@ -8,7 +8,7 @@ from discord.ext import commands, tasks
 from PIL import Image
 
 from killua.classes import Guild, Book, PrintColors
-from killua.constants import DBL, items
+from killua.constants import DBL, items, PatreonBanner
 
 class Events(commands.Cog):
 
@@ -48,6 +48,12 @@ class Events(commands.Cog):
 
         print(f"{PrintColors.OKGREEN}All cards successfully cached{PrintColors.ENDC}")
 
+    async def _set_patreon_banner(self) -> None:
+        res = await self.client.session.get(PatreonBanner.URL)
+        image_bytes = await res.read()
+        PatreonBanner.VALUE= discord.File(filename="patreon.png", fp=io.BytesIO(image_bytes))
+        print(f"{PrintColors.OKGREEN}Successfully loaded patreon banner{PrintColors.ENDC}")
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{PrintColors.HEADER}{PrintColors.OKGREEN}------")
@@ -85,6 +91,7 @@ class Events(commands.Cog):
         #Changing Killua's status
         await self.client.update_presence()
         await self._post_guild_count()
+        await self._set_patreon_banner()
         await self._load_cards_cache()
 
     @commands.Cog.listener()
@@ -94,46 +101,46 @@ class Events(commands.Cog):
         Guild(guild.id).delete()
         await self._post_guild_count()
 
-    # @commands.Cog.listener()
-    # async def on_command_error(self, ctx, error):
-    #     # This handels the k!bug cooldown
-    #     if ctx.guild and not ctx.channel.permissions_for(ctx.me).send_messages: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
-    #         return
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        # This handels the k!bug cooldown
+        if ctx.guild and not ctx.channel.permissions_for(ctx.me).send_messages: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
+            return
 
-    #     if isinstance(error, commands.CommandOnCooldown):
-    #         m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
+        if isinstance(error, commands.CommandOnCooldown):
+            m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
 
-    #         return await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again, thank you for helping to improve killua :3')
+            return await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again, thank you for helping to improve killua :3')
 
-    #     if isinstance(error, commands.BotMissingPermissions):
-    #         return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
+        if isinstance(error, commands.BotMissingPermissions):
+            return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
 
-    #     if isinstance(error, commands.MissingPermissions):
-    #         return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
+        if isinstance(error, commands.MissingPermissions):
+            return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
 
-    #     if isinstance(error, commands.MissingRequiredArgument):
-    #         return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
+        if isinstance(error, commands.MissingRequiredArgument):
+            return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
 
-    #     if isinstance(error, commands.UserInputError):
-    #         return await ctx.send(f"Seems like you provided invalid arguments for this command. This is how you use it: `{self.client.command_prefix(self.client, ctx.message)[2]}{ctx.command.usage}`", allowed_mentions=discord.AllowedMentions.none())
+        if isinstance(error, commands.UserInputError):
+            return await ctx.send(f"Seems like you provided invalid arguments for this command. This is how you use it: `{self.client.command_prefix(self.client, ctx.message)[2]}{ctx.command.usage}`", allowed_mentions=discord.AllowedMentions.none())
 
-    #     if isinstance(error, commands.NotOwner):
-    #         return await ctx.send("Sorry, but you need to be the bot owner to use this command")
+        if isinstance(error, commands.NotOwner):
+            return await ctx.send("Sorry, but you need to be the bot owner to use this command")
 
-    #     if isinstance(error, commands.BadArgument):
-    #         return await ctx.send(f"Could not process arguments. Here is the command should be used: {self.client.command_prefix(self.client, ctx.message)[2]}{ctx.command.usage}``", allowed_mentions=discord.AllowedMentions.none())
+        if isinstance(error, commands.BadArgument):
+            return await ctx.send(f"Could not process arguments. Here is the command should be used: {self.client.command_prefix(self.client, ctx.message)[2]}{ctx.command.usage}``", allowed_mentions=discord.AllowedMentions.none())
 
-    #     if isinstance(error, commands.NoPrivateMessage):
-    #         return await ctx.send("This command can only be used inside of a guild")
+        if isinstance(error, commands.NoPrivateMessage):
+            return await ctx.send("This command can only be used inside of a guild")
 
-    #     if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.CheckFailure): # I don't care if this happens
-    #         return 
+        if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.CheckFailure): # I don't care if this happens
+            return 
 
-    #     guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
-    #     command = ctx.command.name if ctx.command else "Error didn't occur during a command"
-    #     print(f'{PrintColors.FAIL}------------------------------------------')
-    #     print(f'An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
-    #     print(f'------------------------------------------{PrintColors.ENDC}')
+        guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
+        command = ctx.command.name if ctx.command else "Error didn't occur during a command"
+        print(f'{PrintColors.FAIL}------------------------------------------')
+        print(f'An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
+        print(f'------------------------------------------{PrintColors.ENDC}')
 
 Cog = Events
 
