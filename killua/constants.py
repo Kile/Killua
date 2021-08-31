@@ -232,7 +232,7 @@ LOOTBOXES = {
         "name": "Golden box",
         "price": 5000,
         "emoji": "<:golden_box:882181724941979729>",
-        "description": "A box for the rich and priviledged. It made some incredibly rich and ruined others",
+        "description": "A box for the rich and priviledged. It made some even richer and ruined others",
         "rewards": {
             "jenny": (1000, 2500),
             "cards": {
@@ -325,15 +325,14 @@ When you obtain a card which has an id below 100 but you already have one in you
 
 """I have mentioned before that there are **spell cards**. You can use them to steal cards from other users, gamble and a lot more. To use a spell card, use `use <card> <arguments>`. Some spell cards only work in a **short range**. In discord terms that means that the target must have send a message recently in the channel the command is used in. You can also use permament spell cards to protect yourself from others or tranform cards into fakes.""",
 
-"""A word about **fakes**. The main usecase I see them as is bait. You can't sell fakes, you can't use them and they don't count towards the 100 card goal. 
+"""A word about **fakes**. Fakes can be created with the spell card 1020 and look like real cards in the book but are not. The main usecase I see them as is bait. You can't sell fakes, you can't use them and they don't count towards the 100 card goal. 
 If you want to swap out a fake in your album with a real card in your free slots or the other way around, use `swap <card_id>`. If you want to get rid of a fake, make sure it's in your free slots and discard it with `discard <card_id>`""",
 
 """You have reached the end of the introduction!
 
 Now it's time for you to explore the world of cards, steal, collect, form alliances and so on. 
 
-Do you want to add a card to the game you have a good idea for? That is possible, if you can make the
-card design with image we will be happy to have a look at your idea!
+Do you want to add a card to the game you have a good idea for? That is possible, if you can make the card design with image we will be happy to have a look at your idea!
 
 Have fun hunters
 - The Gamemaster"""

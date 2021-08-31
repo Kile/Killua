@@ -7,7 +7,6 @@ from random import randint
 from killua.checks import check
 from killua.paginator import View
 from killua.help import Select
-from killua.cards import Card
 from killua.classes import User, Guild, Category, LootBox
 from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, LOOTBOXES
 
