@@ -108,8 +108,11 @@ class MyHelp(commands.HelpCommand):
     async def send_command_help(self, command):
         """triggers when a `<prefix>help <command>` is called"""
         ctx = self.context
+        if isinstance(command, commands.Group) or command.hidden or command.qualified_name.startswith("jishaku") or command.name == "help": # not showing what it's not supposed to. Hacky I know
+            return await ctx.send(f"No command called \"{command.name}\" found.")
+
         prefix = ctx.bot.command_prefix(ctx.bot, ctx.message)[2]
-        embed = DefaultEmbed(title="Infos about command " + prefix + command.name, description=command.help or "No help found...")
+        embed = DefaultEmbed(title="Infos about command " + prefix + command.qualified_name, description=command.help or "No help found...")
 
         embed.add_field(name="Category", value=command.extras["category"].value["name"])
 
@@ -119,8 +122,8 @@ class MyHelp(commands.HelpCommand):
                 value=f"{cooldown.rate} per {cooldown.per:.0f} seconds",
                 inline=False
             )
-        
-        embed.add_field(name="Usage", value=f"```css\n{prefix}{command.usage}\n```", inline=False)
+        usage = f"```css\n{prefix}{(command.parent.name + ' ') if command.parent else ''}{command.usage}\n```"
+        embed.add_field(name="Usage", value=usage, inline=False)
 
         await self.send(embed=embed)
 

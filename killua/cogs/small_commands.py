@@ -18,24 +18,6 @@ class SmallCommands(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    def av(self, user) -> discord.Embed:
-        """ Input:
-            user: the user to get the avatar from
-
-            Returns:
-            embed: an embed with the users avatar
-
-            Purpose: 
-            "outsourcing" a bit of the avatar command
-        """
-        #constructing the avatar embed
-        embed = discord.Embed.from_dict({
-            'title': f'Avatar of {user}',
-            'image': {'url': str(user.avatar.url)},
-            'color': 0x1400ff
-        })
-        return embed
-
     def hardcoded_aliases(self, text:str) -> str:
         l = []
         for w in text.split(' '):
@@ -131,20 +113,25 @@ class SmallCommands(commands.Cog):
     async def avatar(self, ctx, user: Union[discord.Member, int]=None):
         """Shows the avatar of a user"""
         if not user:
-            embed = self.av(ctx.author)
-            return await ctx.send(embed=embed)
+            avatar = str(ctx.author.avatar.url)
             #Showing the avatar of the author if no user is provided
-        if isinstance(user, discord.Member):
-            embed = self.av(user)
-            return await ctx.send(embed=embed)
+        elif isinstance(user, discord.Member):
+            avatar = str(user.avatar.url)
             #If the user args is a mention the bot can just get everything from there
-        try:
-            newuser = self.get_user(user) or await self.client.fetch_user(user)
-            embed = self.av(newuser)
-            return await ctx.send(embed=embed)
-            #If the args is an integer the bot will try to get a user with the integer as ID
-        except discord.NotFound:
-            return await ctx.send('Invalid user')
+        else:
+            try:
+                user = self.get_user(user) or await self.client.fetch_user(user)
+                avatar = str(user.avatar.url)
+                #If the args is an integer the bot will try to get a user with the integer as ID
+            except discord.NotFound:
+                return await ctx.send('Invalid user')
+
+        embed = discord.Embed.from_dict({
+            'title': f'Avatar of {user or ctx.author}',
+            'image': {'url': avatar},
+            'color': 0x1400ff
+        })
+        await ctx.send(embed=embed)
 
     @check()
     @commands.command(aliases=["support"], extras={"category":Category.FUN}, usage="patreon")
@@ -179,12 +166,14 @@ class SmallCommands(commands.Cog):
     @commands.command(extras={"category":Category.FUN}, usage="invite")
     async def invite(self, ctx):
         """Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**"""
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Invite", url="https://discord.com/oauth2/authorize?client_id={self.client.user.id}&scope=bot&permissions=268723414"))
         embed = discord.Embed(
             title = 'Invite',
-            description = f'Invite the bot to your server [here](https://discord.com/oauth2/authorize?client_id={self.client.user.id}&scope=bot&permissions=268723414). Thank you a lot for supporting me!',
+            description = f'Invite the bot to your server by clicking on the button. Thank you a lot for supporting me!',
             color = 0x1400ff
         )
-        await ctx.send(embed=embed) 
+        await ctx.send(embed=embed, view=view) 
 
     @check()
     @commands.command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
@@ -275,6 +264,55 @@ class SmallCommands(commands.Cog):
 
         return await Paginator(ctx, top, func=make_embed, max_pages=math.ceil(len(top)/10)).start()
 
+    @check(3600)
+    @commands.command(aliases=['fb'], extras={"category":Category.OTHER}, usage="feedback <type> <text>")
+    async def feedback(self, ctx, t=None, *, feedback=None):
+        """Submit feedback to Killua with this command! For more information on how do send what, use `k!fb`."""
+        if t:
+            if not t.lower() in ['topic', '8ball', 'hug', 'apply', 'general', 'idea', 'feature-request', 'complain', 'compliment']:
+                ctx.command.reset_cooldown(ctx)
+                return ctx.send('Type not found. To see what types of feeback you can submit, use `k!fb`')
+
+            if feedback is None:
+                return await ctx.send('Please tell us what you have to say about the chosen point. For more info use `k!fb`')
+
+            embed = discord.Embed.from_dict({
+                'title': f'Feedback from guild {ctx.guild.name} (ID: {ctx.guild.id})',
+                'description': f'''Type of feedback: `{t}`  \n\n**Provided feedback:**\n\n{feedback}\n\nFeedback by **{ctx.author}, ID: {ctx.author.id}**''',
+                'color': 0x1400ff
+            })
+            
+            channel = self.client.get_channel(790002080625983558)
+
+            message = await channel.send(embed=embed)
+            await message.add_reaction('\U00002705')
+            await message.add_reaction('\U0000274c')
+
+            await ctx.send(':white_check_mark: thanks for sending your feedback! The feedback will be looked at as soon as possible!')
+        else:
+            ctx.command.reset_cooldown(ctx)
+            embed = discord.Embed.from_dict({
+                'title': f'Sending feedback',
+                'description': f'''Since this bot is in its early stages, feedback of users is of highest importance
+            
+    You can submit 9 types of feedback:
+
+    `topic` - suggestion for a topic for `k!topic`
+    `8ball` - suggestion for a response for `k8ball`
+    `hug` - submit a hug text or image (Killua only) 
+    `apply` - apply for the team, we are looking for artists, programmer, people looking out for the server etc. Of course being part of the team comes with it's advantages
+    `general` - you just wanna give general feedback to us, no specific or too many categories for the other options
+    `idea` - you have a good idea for a command (like `k!book <booktitle>`, a idea I had today and I wil implement cause it's cool). Please describe it as detailed as possible though
+    `feature`-request - request a feature, kinda like idea but idk. Again, lease describe it as detailed as possible
+    `complain` - complain about something
+    `compliment` -  compliment a feature of Killua
+
+    **This command has a 1 hour cooldown, for bug reporting please use `k!bug`, abuse will lead to blacklisting**
+    [Support server](https://discord.gg/be4nvwq7rZ)''',
+                'color': 0x1400ff
+            })
+
+            await ctx.send(embed=embed)
 
 Cog = SmallCommands
 

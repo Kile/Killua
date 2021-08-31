@@ -245,7 +245,7 @@ class Card1007(Card):
 
         self._has_cards_check(other.rs_cards, " in their restricted slots")
 
-        target_card = random.choice([x[0] for x in other.rs_cards])
+        target_card = random.choice([x[0] for x in other.rs_cards if x[0] != 0])
         author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
 
@@ -268,12 +268,12 @@ class Card1008(Card):
         self._has_cards_check(other.all_cards)
         self._has_other_card_check(author.all_cards)
 
-        target_card = random.choice([x[0] for x in other.all_cards if x[0] != 1008])
+        target_card = random.choice([x[0] for x in other.all_cards if x[0] != 1008 and x[0] != 0])
         await self._attack_defense_check(self.ctx, other, target_card)
 
         author.remove_card(self.id)
         removed_card_other = other.remove_card(target_card)
-        removed_card_author = author.remove_card(random.choice([x[0] for x in author.all_cards]))
+        removed_card_author = author.remove_card(random.choice([x[0] for x in author.all_cards if x[0] != 0]))
         other.add_card(removed_card_author[0], removed_card_author[1]["fake"])
         author.add_card(removed_card_other[0], removed_card_other[1]["fake"])
 
@@ -358,7 +358,7 @@ class Card1018(Card):
                 self._permission_check(self.ctx, user)
                 u = User(user.id)
                 self._has_cards_check(u.all_cards)
-                target = random.choice(u.all_cards)
+                target = random.choice([x for x in u.all_cards if x[0] != 0])
                 await self._attack_defense_check(self.ctx, u, target)
                 r = u.remove_card(target[0], target[1]["fake"])
                 stolen_cards.append(r)
@@ -380,7 +380,7 @@ class Card1020(Card):
     async def exec(self, card_id:int) -> None:
         self._is_valid_card_check(card_id)
 
-        if card_id > 99:
+        if card_id > 99 or card_id < 1:
             raise CheckFailure(f"You can only use \"{self.name}\" on a card with id between 1 and 99!")
 
         author = User(self.ctx.author.id)
@@ -397,6 +397,9 @@ class Card1021(Card):
 
     async def exec(self, member:discord.Member, card_id:int) -> None:
         self._permission_check(self.ctx, member)
+
+        if card_id == 0:
+            raise CheckFailure("You cannot steal card 0")
 
         author = User(self.ctx.author.id)
         other = User(member.id)
@@ -505,7 +508,7 @@ class Card1029(Card):
 
         self._has_cards_check(other.rs_cards, " in their restricted slots")
 
-        target_card = random.choice([x for x in other.rs_cards if not x[0] in INDESTRUCTABLE])
+        target_card = random.choice([x for x in other.rs_cards if not x[0] in INDESTRUCTABLE and x[0] != 0])
         author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
         other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=True, clone=target_card[1]["clone"])
@@ -535,7 +538,7 @@ class Card1032(Card):
         author = User(self.ctx.author.id)
         self._is_full_check(author)
 
-        target = random.choice([x['_id'] for x in items.find({'type': 'normal'}) if x['rank'] != 'SS']) # random card for lottery
+        target = random.choice([x['_id'] for x in items.find({'type': 'normal'}) if x['rank'] != 'SS' and x["_id"] != 0]) # random card for lottery
         author.remove_card(self.id)
         self._is_maxed_check(target)
         author.add_card(target)

@@ -1,20 +1,56 @@
 import discord
 from discord.ext import commands
-from typing import Union, Any
+from typing import Union, Any, List
 import re
+import io
+from PIL import Image, ImageDraw, ImageFilter
 
 from pypxl import PxlClient # My own library :sparkles:
 
+from killua.gif import save_transparent_gif
 from killua.checks import check
 from killua.classes import Category
 from killua.constants import NOKIA_CODE, PXLAPI
 from killua.paginator import Paginator
 
-class Api(commands.Cog):
+class ImageManipulation(commands.Cog):
 
     def __init__(self, client):
         self.client = client
         self.pxl = PxlClient(token=PXLAPI, stop_on_error=False, session=self.client.session)
+
+    def _crop_transparent_circle(self, pil_img, blur_radius=0, offset=0):
+        offset = blur_radius * 2 + offset
+        mask = Image.new("L", pil_img.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((offset, offset, pil_img.size[0] - offset, pil_img.size[1] - offset), fill=255)
+        mask = mask.filter(ImageFilter.GaussianBlur(blur_radius))
+
+        result = pil_img.copy()
+        result.putalpha(mask)
+
+        return result
+
+    def _create_frames(self, image:Image.Image) -> List[Image.Image]:
+        res = []
+        for i in range(17):
+            res.append(image.rotate(i*20-1))
+        return res
+
+    async def _create_spin_gif(self, url:str) -> io.BytesIO:
+        """Tages in a url and returns the io bytes object"""
+        res = await self.client.session.get(url)
+        _bytes = await res.read()
+        image = Image.open(io.BytesIO(_bytes)).convert("RGB")
+
+        new_image = self._crop_transparent_circle(image)
+        image.close()
+        frames = self._create_frames(new_image)
+        new_image.close()
+        buffer = io.BytesIO()
+        save_transparent_gif(frames, durations=1, save_file=buffer) # making sure the gif is transparent. This is necessarry because of a pillow bug and slows this down quite significantly 
+        buffer.seek(0)
+        return buffer
 
     async def _validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
         image = None
@@ -218,7 +254,21 @@ class Api(commands.Cog):
         else:
             return await ctx.send(':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
 
-Cog = Api
+    @check(30) # long check because this is exhausting for the poor computer
+    @commands.command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")
+    async def spin(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+        """Spins an image 'round and 'round and 'round and 'round..."""
+        data = await self._validate_input(ctx, args)
+        if not data:
+            return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`', allowed_mentions=discord.AllowedMentions.none())
+
+        async with ctx.typing():
+            msg = await ctx.send("Processing...")
+            buffer = await self._create_spin_gif(data)
+            await msg.delete()
+            await ctx.send(file=discord.File(fp=buffer, filename="spin.gif"))
+
+Cog = ImageManipulation
 
 def setup(client):
-    client.add_cog(bl(client))
+    client.add_cog(ImageManipulation(client))

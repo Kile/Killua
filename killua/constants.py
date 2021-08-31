@@ -178,7 +178,7 @@ LOOTBOXES = {
         "name": "Standart Box",
         "price": 250,
         "emoji": "<:standart_box:882056516335702067>",
-        "description": "A mass produced box sold everywhere",
+        "description": "A mass produced box sold everywhere.",
         "rewards": {
             "jenny": (10, 30),
             "cards": {
@@ -195,7 +195,7 @@ LOOTBOXES = {
     2: {
         "name": "Big box",
         "price": 1000,
-        "emoji": "<:box_of_legends:877928029647691856>",
+        "emoji": "<:big_box:882373299986898964>",
         "description": "A big box sold to rather wealthier citizens. Some lost all their wealth on this box.",
         "rewards": {
             "jenny": (50, 500),
@@ -213,8 +213,8 @@ LOOTBOXES = {
     3: {
         "name": "Fancy box",
         "price": 1500,
-        "emoji": "<:box_of_legends:877928029647691856>",
-        "description": "A quite rare box found somewhere in the back of somone's basement. It has a strange aura to it",
+        "emoji": "<:fancy_box:882373372321890304>",
+        "description": "A quite rare box found somewhere in the back of somone's basement. It has a strange aura to it.",
         "rewards": {
             "jenny": (66, 66),
             "cards": {
@@ -224,7 +224,7 @@ LOOTBOXES = {
         },
         "rewards_total": 10,
         "cards_total": (2, 6),
-        "probability": 10,
+        "probability": 15,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419251474493/image0.png"
     },
@@ -232,7 +232,7 @@ LOOTBOXES = {
         "name": "Golden box",
         "price": 5000,
         "emoji": "<:golden_box:882181724941979729>",
-        "description": "A box for the rich and priviledged. It made some even richer and ruined others",
+        "description": "A box for the rich and priviledged. It made some even richer and ruined others.",
         "rewards": {
             "jenny": (1000, 2500),
             "cards": {
@@ -242,7 +242,7 @@ LOOTBOXES = {
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
-        "probability": 5,
+        "probability": 10,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420291682374/image3.png"
     },
@@ -260,7 +260,7 @@ LOOTBOXES = {
         },
         "rewards_total": 15,
         "cards_total": (15, 15),
-        "probability": 5,
+        "probability": 10,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420576874536/image4.png"
     },
@@ -268,7 +268,7 @@ LOOTBOXES = {
         "name": "Advanced spell box",
         "price": 7500,
         "emoji": "<:advanced_spell_box:882181860090839110>",
-        "description": "A box only given and sold to experienxed magicians. Its spells are mighty and dangerous",
+        "description": "A box only given and sold to experienced magicians. Its spells are mighty and dangerous.",
         "rewards": {
             "jenny": (250, 500),
             "cards": {
@@ -281,6 +281,60 @@ LOOTBOXES = {
         "probability": 5,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420975358032/image5.png"
+    },
+    7: {
+        "name": "Box of titans",
+        "price": 7500,
+        "emoji": "<:box_of_titans:882367214186008657>",
+        "description": "This ancient box used to be protected by titans and can contain one or more extremely rare SS cards. Yet even with the titans being long gone the risk is high opening this box since a lot of bombs await.",
+        "rewards": {
+            "jenny": (2000, 5000),
+            "cards": {
+                "rarities": ["SS"],
+                "types": ["spell", "normal"]
+            }
+        },
+        "rewards_total": 5,
+        "cards_total": (0, 2),
+        "probability": 2,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836331311134/image1.png"
+    },
+    8: {
+        "name": "Diamond box",
+        "price": 10000,
+        "emoji": "<:box_of_legends:877928029647691856>",
+        "description": "A common possesion of royalty but hard to find elsewhere, this box contains many exclusive rewards and is partly made out of real diamonds.",
+        "rewards": {
+            "jenny": (2000, 3000),
+            "cards": {
+                "rarities": ["B", "A", "S"],
+                "types": ["spell", "normal"]
+            }
+        },
+        "rewards_total": 15,
+        "cards_total": (5, 8),
+        "probability": 5,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836738166794/image2.png"
+    },
+    9: {
+        "name": "Box of legends",
+        "price": 15000,
+        "emoji": "<:box_of_legends:882367420256387142>",
+        "description": "A box so rare that it's existance is nothing but a myth. The most rare items are said to be in it.",
+        "rewards": {
+            "jenny": (3000, 4500),
+            "cards": {
+                "rarities": ["S", "SS"],
+                "types": ["spell", "normal"]
+            }
+        },
+        "rewards_total": 10,
+        "cards_total": (2, 4),
+        "probability": 1,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836012556358/image0.png"
     }
 }
 

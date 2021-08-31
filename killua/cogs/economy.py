@@ -43,7 +43,6 @@ class Economy(commands.Cog):
 
     def _getmember(self, user: Union[discord.Member, discord.User]) -> discord.Embed:
         """ a function to handle getting infos about a user for less messy code """
-        av = user.avatar.url
         joined = (user.created_at).strftime("%b %d %Y %H:%M:%S")
         
         info = User(user.id)
@@ -51,7 +50,6 @@ class Economy(commands.Cog):
         if user.avatar.is_animated() or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]) > 0: # A very simple nitro check that is not too accurate
             flags.append(USER_FLAGS["nitro"])
         badges = [KILLUA_BADGES[x] for x in info.badges]
-        bal = info.jenny
         
         if str(datetime.now()) > str(info.daily_cooldown):
             cooldown = 'Ready to claim!'
@@ -62,8 +60,8 @@ class Economy(commands.Cog):
         embed = discord.Embed.from_dict({
                 'title': f'Information about {user}',
                 'description': f'{user.id}\n{" ".join(flags)}',
-                "fields": [{"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, {"name": "Jenny", "value": str(bal), "inline": False}, {"name": "Account created at", "value": joined, "inline": False}, {"name": "daily cooldown", "value": cooldown or "Never claimed `k!daily` before", "inline": False}],
-                'thumbnail': {'url': str(av)},
+                "fields": [{"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, {"name": "Jenny", "value": str(info.jenny), "inline": False}, {"name": "Account created at", "value": joined, "inline": False}, {"name": "daily cooldown", "value": cooldown or "Never claimed `k!daily` before", "inline": False}],
+                'thumbnail': {'url': str(user.avatar.url)},
                 "image": {"url": user.banner.url if user.banner else None},
                 'color': 0x1400ff
             })
@@ -120,13 +118,15 @@ class Economy(commands.Cog):
     async def profile(self, ctx,user: Union[discord.Member, int]=None):
         """Get infos about a certain discord user with ID or mention"""
         if user is None:
-            user = await self.client.fetch_user(ctx.author.id)
-        else: 
-            if isinstance(user, discord.Member):
-                user = await self.client.fetch_user(user.id)
-            else:
-                user = await self.fetch_user(user)
-                if not user:
+            user = ctx.author
+        elif isinstance(user, discord.Member):
+            user = user
+        else:
+            user = await self.client.get_user(user)
+            if not user:
+                try:
+                    user = await self.client.fetch_user(user)
+                except discord.NotFound:
                     return await ctx.send("Could not find anyone with this name/id")
 
         embed = self._getmember(user)
