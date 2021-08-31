@@ -217,7 +217,7 @@ class LootBox:
         
         user = User(self.ctx.author.id)
         for r in view.claimed:
-            if isinstance(r, Card):
+            if isinstance(r, PartialCard):
                 user.add_card(r.id)
             else:
                 if user.is_entitled_to_double_jenny:

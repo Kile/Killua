@@ -177,7 +177,7 @@ LOOTBOXES = {
     1: {
         "name": "Standart Box",
         "price": 250,
-        "emoji": "<:standard_box:877917415470690375>",
+        "emoji": "<:standart_box:882056516335702067>",
         "description": "A mass produced box sold everywhere",
         "rewards": {
             "jenny": (10, 30),
@@ -188,25 +188,99 @@ LOOTBOXES = {
         },
         "rewards_total": 20,
         "cards_total": (0, 0),
-        "probability": 20,
-        "available": True
+        "probability": 100,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419628986398/image1.png"
     },
     2: {
-        "name": "Box of Legends",
-        "price": 10000,
+        "name": "Big box",
+        "price": 1000,
         "emoji": "<:box_of_legends:877928029647691856>",
-        "description": "A box so rare that nobody has seen one yet, its existence is only a legend",
+        "description": "A big box sold to rather wealthier citizens. Some lost all their wealth on this box.",
         "rewards": {
-            "jenny": (200, 1000),
+            "jenny": (50, 500),
             "cards": {
-                "rarities": ["S", "A"],
-                "types": ["normal", "spell"]
+                "rarities": [],
+                "types": []
+            }
+        },
+        "rewards_total": 15,
+        "cards_total": (0, 0),
+        "probability": 30,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419884826644/image2.png"
+    },
+    3: {
+        "name": "Fancy box",
+        "price": 1500,
+        "emoji": "<:box_of_legends:877928029647691856>",
+        "description": "A quite rare box found somewhere in the back of somone's basement. It has a strange aura to it",
+        "rewards": {
+            "jenny": (66, 66),
+            "cards": {
+                "rarities": ["B", "C"],
+                "types": ["spell"]
             }
         },
         "rewards_total": 10,
-        "cards_total": (2, 3),
-        "probability": 1,
-        "available": True
+        "cards_total": (2, 6),
+        "probability": 10,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419251474493/image0.png"
+    },
+    4: {
+        "name": "Golden box",
+        "price": 5000,
+        "emoji": "<:golden_box:882181724941979729>",
+        "description": "A box for the rich and priviledged. It made some incredibly rich and ruined others",
+        "rewards": {
+            "jenny": (1000, 2500),
+            "cards": {
+                "rarities": [],
+                "types": []
+            }
+        },
+        "rewards_total": 15,
+        "cards_total": (0, 0),
+        "probability": 5,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420291682374/image3.png"
+    },
+    5: {
+        "name": "Mysterious box",
+        "price": 5000,
+        "emoji": "<:mysterious_box:882181975367118859>",
+        "description": "This box is given to young magicians after they complete their training. It a good starter pack on spells.",
+        "rewards": {
+            "jenny": (0, 0),
+            "cards": {
+                "rarities": ["D", "C", "B", "A"],
+                "types": ["spell"]
+            }
+        },
+        "rewards_total": 15,
+        "cards_total": (15, 15),
+        "probability": 5,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420576874536/image4.png"
+    },
+    6: {
+        "name": "Advanced spell box",
+        "price": 7500,
+        "emoji": "<:advanced_spell_box:882181860090839110>",
+        "description": "A box only given and sold to experienxed magicians. Its spells are mighty and dangerous",
+        "rewards": {
+            "jenny": (250, 500),
+            "cards": {
+                "rarities": ["B", "A"],
+                "types": ["spell"]
+            }
+        },
+        "rewards_total": 10,
+        "cards_total": (5, 8),
+        "probability": 5,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420975358032/image5.png"
     }
 }
 

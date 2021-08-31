@@ -11,7 +11,7 @@ class HelpPaginator(Paginator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.view.add_item(Button(label="Menu", style=discord.ButtonStyle.red ,custom_id="1"))
+        self.view.add_item(Button(label="Menu", style=discord.ButtonStyle.blurple, custom_id="1"))
 
     async def start(self):
         view = await self._start()

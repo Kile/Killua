@@ -5,11 +5,31 @@ from datetime import datetime
 from typing import Union, Tuple
 
 from killua.cards import Card
-from killua.classes import Category, User, TodoList, PrintColors, CardNotFound
+from killua.classes import Category, User, TodoList, PrintColors, CardNotFound, Button
 from killua.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, editing
 from killua.checks import check
-from killua.paginator import DefaultEmbed, View
+from killua.paginator import DefaultEmbed, View, Paginator
 from killua.help import Select
+
+class ShopPaginator(Paginator):
+    """A normal paginator with a button that returns to the original shop select menu"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.view.add_item(Button(label="Menu", style=discord.ButtonStyle.blurple, custom_id="1"))
+
+    async def start(self):
+        view = await self._start()
+
+        if view.ignore:
+            return
+        
+        await self.view.message.delete()
+        if self.ctx.command.parent:
+            await self.ctx.invoke(self.ctx.command.parent)
+        else:
+            await self.ctx.invoke(self.ctx.command)
 
 class Shop(commands.Cog):
 
@@ -86,6 +106,21 @@ class Shop(commands.Cog):
         except IndexError:
             print(f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}")
 
+    def _get_view(self, ctx) -> View:
+        view = View(ctx.author.id)
+        view.add_item(Button(label="Menu", style=discord.ButtonStyle.blurple))
+        return view
+
+    async def _shop_menu(self, ctx, msg, view) -> None:
+        await view.wait()
+        await view.disable(msg)
+        if view.value:
+            await msg.delete()
+            if ctx.command.parent:
+                await ctx.invoke(ctx.command.parent) #in case the menu was invoked by a subcommand
+            else:
+                await ctx.invoke(ctx.command) # in case the menu was invoked by the parent
+
     @commands.group(aliases=["store"])
     async def shop(self, ctx):
         if not ctx.invoked_subcommand:
@@ -103,14 +138,15 @@ class Shop(commands.Cog):
             await view.wait()
 
             await view.disable(msg)
-            if not view.value:
+            if view.value is None:
                 return
 
-            await subcommands[int(view.value)].__call__(ctx) # calls a shop subcommand if a shop was specified
+            await msg.delete()
+            await ctx.invoke(subcommands[int(view.value)]) # calls a shop subcommand if a shop was specified
 
     @check()
     @shop.command(name="cards", extras={"category":Category.CARDS}, usage="cards")
-    async def _cards(self, ctx):
+    async def cards_shop(self, ctx):
         """Shows the current cards for sale"""
         
         sh = shop.find_one({'_id': 'daily_offers'})
@@ -129,12 +165,13 @@ class Shop(commands.Cog):
         embed.set_thumbnail(url='https://static.wikia.nocookie.net/hunterxhunter/images/0/08/Spell_Card_Store.png/revision/latest?cb=20130328063032')
         for item in formatted:
             embed.add_field(name=item['name'], value=item['value'], inline=False)
-
-        await ctx.send(embed=embed)
+        view = self._get_view(ctx)
+        msg = await ctx.send(embed=embed, view=view)
+        await self._shop_menu(ctx, msg, view)
 
     @check()
-    @shop.command(extras={"category": Category.TODO}, usage="todo")
-    async def todo(self, ctx):
+    @shop.command(name="todo", extras={"category": Category.TODO}, usage="todo")
+    async def todo_shop(self, ctx):
         """Get some info about what cool stuff you can buy for your todo list with this command"""
         prefix = self.client.command_prefix(self.client, ctx.message)[2]
         embed = discord.Embed.from_dict({
@@ -154,11 +191,13 @@ class Shop(commands.Cog):
 `space` buy 10 more spots for todo's for your list''',
             'color': 0x1400ff
         })
-        await ctx.send(embed=embed)
+        view = self._get_view(ctx)
+        msg = await ctx.send(embed=embed, view=view)
+        await self._shop_menu(ctx, msg, view)
 
     @check()
     @shop.command(name="lootboxes", aliases=["boxes"], extras={"category": Category.ECONOMY}, usage="lootboxes")
-    async def _lootboxes(self, ctx):
+    async def lootboxes_shop(self, ctx):
         """Get the current lootbox shop with this command"""
         prefix = self.client.command_prefix(self.client, ctx.message)[2]
         fields = [{"name": data["emoji"] + " " + data["name"] + " (id: " + str(id) + ")", "value": f"{data['description']}\nPrice: {data['price']}"} for id, data in LOOTBOXES.items() if data["available"]]
@@ -176,11 +215,13 @@ class Shop(commands.Cog):
 
             return embed
 
-        if len(fields) < 10:
+        if len(fields) <= 10:
             embed = make_embed(fields, DefaultEmbed(), 1)
-            return await ctx.send(embed=embed)
+            view = self._get_view(ctx)
+            msg = await ctx.send(embed=embed, view=view)
+            await self._shop_menu(ctx, msg, view)
 
-        await Paginator(ctx, fields, func=make_embed).start()
+        await ShopPaginator(ctx, fields, func=make_embed).start() # currently only 10 boxes exist so this is not necessary
 
 ####################################### Buy commands ################################################
 
@@ -443,7 +484,7 @@ class Shop(commands.Cog):
         return await ctx.send(f'✉️ transferred {item} Jenny to `{other}`!', allowed_mentions=discord.AllowedMentions.none())
 
     @check()
-    @give.command(name="card", extras={"category":Category.ECONOMY}, usage="card <user> <card_id>")
+    @give.command(name="card", extras={"category":Category.CARDS}, usage="card <user> <card_id>")
     async def _card(self, ctx, other:discord.Member, item:int):
         """If you're feeling generous give another user a card"""
 

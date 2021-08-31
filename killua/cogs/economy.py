@@ -7,6 +7,7 @@ from random import randint
 from killua.checks import check
 from killua.paginator import View
 from killua.help import Select
+from killua.cards import Card
 from killua.classes import User, Guild, Category, LootBox
 from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, LOOTBOXES
 
@@ -232,6 +233,7 @@ class Economy(commands.Cog):
     @check()
     @commands.command(extras={"category": Category.ECONOMY}, usage="boxinfo <box_id>")
     async def boxinfo(self, ctx, box:int):
+        """Get infos about any box you desire"""
         if not box in LOOTBOXES.keys():
             return await ctx.send("Invalid box id")
 
@@ -248,7 +250,8 @@ class Economy(commands.Cog):
                 {"name": "Price", "value": data["price"], "inline": False},
                 {"name": "Buyable", "value": "Yes" if data["available"] else "No"},
             ],
-            "color": 0x1400ff
+            "color": 0x1400ff,
+            "image": {"url": data["image"]}
         })
         await ctx.send(embed=embed)
 
