@@ -3,8 +3,9 @@ from discord.ext import commands
 from datetime import datetime
 import math
 import asyncio
+
 from killua.classes import Guild, Category
-from killua.constants import guilds
+from killua.constants import guilds, PatreonBanner
 from killua.checks import check
 from killua.paginator import Paginator
 
@@ -101,8 +102,8 @@ class Tags(commands.Cog):
         if not Guild(ctx.guild.id).is_premium:
             view = discord.ui.View()
             view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, label="Premium", url="https://patreon.com/kilealkuri"))
-            await ctx.send("This command group is currently only a premium feature. To enable your guild to use it, become a Patreon!", view=view)
-            raise commands.CommandNotFound() # I raise this error because it is the only one I ignore in the error handler. Hacky but whatever
+            await ctx.send("This command group is currently only a premium feature. To enable your guild to use it, become a Patreon!", file=PatreonBanner.VALUE, view=view)
+            raise commands.CheckFailure # I raise this error because it is the only one I ignore in the error handler. Hacky but whatever
 
     @tag.command(extras={"category":Category.TAGS}, usage="create <tag_name>")
     async def create(self, ctx, *, tag_name:str):

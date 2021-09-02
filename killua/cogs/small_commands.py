@@ -73,7 +73,7 @@ class SmallCommands(commands.Cog):
     @commands.command(aliases=['uwu', 'owo', 'owofy'], extras={"category":Category.FUN}, usage="uwufy <text>")
     async def uwufy(self, ctx, *, content:str):
         """Uwufy any sentence you want with dis command, have fun >_<"""
-        return await ctx.send(self.build_uwufy(content, stuttering=3, cuteness=3))
+        return await self.client.send_message(ctx, self.build_uwufy(content, stuttering=3, cuteness=3))
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="ping")
@@ -98,7 +98,7 @@ class SmallCommands(commands.Cog):
 
     @check()
     @commands.command(name='8ball', extras={"category":Category.FUN}, usage="8ball <question>")
-    async def ball(self, ctx, *, question:str):
+    async def _ball(self, ctx, *, question:str):
         """Ask Killua anything and he will answer"""
         embed = discord.Embed.from_dict({
             'title': f'8ball has spoken 🎱',
@@ -131,7 +131,7 @@ class SmallCommands(commands.Cog):
             'image': {'url': avatar},
             'color': 0x1400ff
         })
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(aliases=["support"], extras={"category":Category.FUN}, usage="patreon")
@@ -145,7 +145,7 @@ class SmallCommands(commands.Cog):
             'description': PREMIUM_BENEFITS,
             'color': 0x1400ff
         })
-        await ctx.send(embed=embed, view=view)
+        await self.client.send_message(ctx, embed=embed, view=view)
 
     @check()
     @commands.command(aliases=['stats'], extras={"category":Category.FUN}, usage="info")
@@ -160,7 +160,7 @@ class SmallCommands(commands.Cog):
             'color': 0x1400ff,
             'thumbnail': {'url': str(ctx.me.avatar.url)}
         })
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="invite")
@@ -243,7 +243,7 @@ class SmallCommands(commands.Cog):
             return await ctx.send("An unknown error occurred during calculation!")
         if answer["error"]:
             return await ctx.send("The following error occured while calculating:\n`{}`".format(answer["error"]))
-        await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
+        await self.client.send_message(ctx, "Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="usage")

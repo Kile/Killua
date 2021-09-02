@@ -63,7 +63,7 @@ class Trivia:
         """Sends the embed and view and awaits a response"""
         if self.failed:
             return await self.ctx.send(":x: There was an issue with the API. Please try again. If this should happen frequently, please report it")
-        self.msg = await self.ctx.send(embed=self.embed, view=self.view)
+        self.msg = await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view)
         await self.view.wait()
         await self.view.disable(self.msg)
 
@@ -130,7 +130,7 @@ class Rps:
                 'color': 0x1400ff
             })
 
-            await self.ctx.send(embed=embed)
+            await self.ctx.bot.send_message(self.ctx, embed=embed)
     
     async def _timeout(self, players:list, data:List[Tuple[discord.Message, discord.ui.View]]) -> None:
         """A way to handle a timeout of not responding to Killua in dms"""
@@ -173,9 +173,9 @@ class Rps:
                 return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny + self.points}')
             else:
                 return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}')
-        if winlose == 0:
+        elif winlose == 0:
             return await self.ctx.send(f'{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}')
-        if winlose == 1:
+        elif winlose == 1:
             if self.points:
                 p1.remove_jenny(self.points)
                 if player2 != self.ctx.me:
@@ -313,7 +313,7 @@ class CountGame:
         for i in range(25):
             view.add_item(discord.ui.Button(label=str([k for k, v in self.solutions.items() if v-1 == i][0]) if i+1 in list(self.solutions.values()) else " ", disabled=True, style=discord.ButtonStyle.grey))
         if not msg:
-            msg = await self.ctx.send("Press the buttons in the order displayed as soon as the time starts. Good luck!", view=view)
+            msg = await self.ctx.bot.send_message(self.ctx, content="Press the buttons in the order displayed as soon as the time starts. Good luck!", view=view)
         else:
             await msg.edit("One more button to remember. Get ready!", view=view)
             

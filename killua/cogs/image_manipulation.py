@@ -3,7 +3,7 @@ from discord.ext import commands
 from typing import Union, Any, List
 import re
 import io
-from PIL import Image, ImageDraw, ImageFilter, ImageChops
+from PIL import Image, ImageDraw, ImageChops
 
 from pypxl import PxlClient # My own library :sparkles:
 
@@ -102,7 +102,7 @@ class ImageManipulation(commands.Cog):
         r = await function(data, t)
         if r.success:
             f = discord.File(r.convert_to_ioBytes(), filename=f'{ctx.command.name}.{r.file_type}', spoiler=censor)
-            return await self.client.send_message(ctx, file=f)
+            return await self.client.send_message(ctx, file=f, reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
         return await ctx.send(f':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
 
     @check(120) # Big cooldown >_<
@@ -264,7 +264,7 @@ class ImageManipulation(commands.Cog):
             msg = await ctx.send("Processing...")
             buffer = await self._create_spin_gif(data)
             await msg.delete()
-            await ctx.send(file=discord.File(fp=buffer, filename="spin.gif"))
+            await self.client.send_message(ctx, file=discord.File(fp=buffer, filename="spin.gif"), reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 
 Cog = ImageManipulation
 

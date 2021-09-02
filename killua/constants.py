@@ -161,7 +161,7 @@ KILLUA_BADGES = {
     "artist": "<:artist_badge:879391368076734464>",
     "greed_island_badge": "<:greed_island_badge:879391821938180116>",
     "early_supporter": "<:early_supporter_badge:882616073394987048>",
-    "developer": "",
+    "developer": "<:dev_badge:882959565690384404>",
     "owner": "<:badge_killua_owner:788940157599612948>"
 }
 

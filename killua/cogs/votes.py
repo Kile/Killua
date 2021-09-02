@@ -41,7 +41,7 @@ class Vote(commands.Cog):
         
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
         try:
-            await usr.send(text)
+            await self.client.send_message(usr, content=text)
         except discord.HTTPException:
             pass
 

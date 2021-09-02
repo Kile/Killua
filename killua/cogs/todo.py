@@ -219,7 +219,7 @@ class TodoSystem(commands.Cog):
         if todo_list.thumbnail:
             embed.set_thumbnail(url=todo_list.thumbnail)
 
-        return await ctx.send(embed=embed)
+        return await self.client.send_message(ctx, embed=embed)
 
     async def single_todo_info_embed_generator(self, ctx, list_id, task_id):
         """outsourcing big embed production 🛠"""
@@ -256,7 +256,7 @@ class TodoSystem(commands.Cog):
         })
         if todo_list.thumbnail:
             embed.set_thumbnail(url=todo_list.thumbnail)
-        return await ctx.send(embed=embed)
+        return await self.client.send_message(ctx, embed=embed)
 
     async def _set_check(self, ctx:commands.Context) -> Union[None, TodoList]:
         """A generic check before every command that edits a todo list property"""
