@@ -70,13 +70,13 @@ class PartialCard:
     def add_owner(self, user_id:int):
         """Adds an owner to a card entry in my db. Only used in Card().add_card()"""
         self.owners.append(user_id)
-        items.update_one({'_id': self.id}, {'$set': {'owners': self.owners}})
+        items.update_one({'_id': self.id}, {'$push': {'owners': user_id}})
         return
 
     def remove_owner(self, user_id:int):
         """Removes an owner from a card entry in my db. Only used in Card().remove_card()"""
         self.owners.remove(user_id)
-        items.update_one({'_id': self.id}, {'$set': {'owners': self.owners}})
+        items.update_one({'_id': self.id}, {'$pull': {'owners': user_id}})
         return
 
 class _LootBoxButton(discord.ui.Button):
@@ -421,7 +421,7 @@ class Book:
                     if not str(i[0]) in self.card_cache:
                         self.card_cache[str(i[0])] = await self._getcard(i[1])
 
-                    image.paste(self.card_cache[str(i[0])], (card_pos[option][n]))
+                    image.paste(self.card_cache[str(i[0])], (card_pos[option][n]), self.card_cache[str(i[0])].convert("RGBA"))
         return image
 
     async def _numbers(self, image, data, page):
@@ -558,31 +558,32 @@ class User:
     @all_cards.setter
     def all_cards(self, other):
         """The only time I'd realistically call this is to remove all cards"""
-        if not isinstance(other, list) or len(other) == 0:
+        if not isinstance(other, list) or len(other) != 0:
             raise TypeError("Can only set this property to an empty list") # setting this to something else by accident could be fatal
         self.fs_cards = []
         self.rs_cards = []
 
-    @staticmethod
-    def remove_all() -> str:
+    @classmethod
+    def remove_all(cls) -> str:
         """Removes all cards etc from every user. Only used for testing"""
         start = datetime.now()
         user = []
         cards = []
-        for u in [x for x in teams.find()]:
+        for u in teams.find():
             if 'cards' in u:
                 user.append(u['id'])
-            self.cache[u["id"]].all_cards = []
-            self.cache[u["id"]].effects = {}
+            if "id" in u and u["id"] in cls.cache:
+                cls.cache[u["id"]].all_cards = []
+                cls.cache[u["id"]].effects = {}
 
         teams.update_many({'$or': [{'id': x} for x in user]}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': []}})
 
-        for c in [x for x in items.find()]:
-            if len(c['owners']) > 0:
+        for c in items.find():
+            if "owners" in c and len(c['owners']) > 0:
                 cards.append(c['_id'])
         items.update_many({'$or': [{'id': x} for x in cards]}, {'$set': {'owners': []}})
 
-        return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) > 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
+        return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
 
     @classmethod
     def is_registered(cls, user_id:int) -> bool:
@@ -624,6 +625,7 @@ class User:
         self._update_val("badges", badge.lower(), "$pull")
 
     def set_badges(self, badges:List[str]) -> None:
+        """Sets badges to anything"""
         self.badges = badges
         self._update_val("badges", self.badges)
 
@@ -718,6 +720,9 @@ class User:
                 ((data["clone"] == clone) if not clone is None else True) and \
                 ((data["fake"] == fake) if not fake is None else True):
 
+                if not data["fake"]:
+                    PartialCard(id).remove_owner(self.id)
+
                 del cards[counter] # instead of returning the match I delete it because in theory there can be multiple matches and that would break stuff
                 return cards, [id, data]
             counter += 1
@@ -762,7 +767,7 @@ class User:
                 if not match:
                     raise NoMatches
                 self.rs_cards = cards
-                self._update_val("cards.rs", self.fs_cards)
+                self._update_val("cards.rs", self.rs_cards)
                 self._incomplete()
                 return match
 
@@ -773,6 +778,7 @@ class User:
 
         if self.has_rs_card(card_id) is False:
             if card_id < 100:
+
                 self.rs_cards.append(data)
                 if not fake:
                     card.add_owner(self.id)
