@@ -253,7 +253,7 @@ class Cards(commands.Cog):
         if not user.has_any_card(card.id):
             return await ctx.send('You are not in possesion of this card!')
 
-        if card == 0:
+        if card.id == 0:
             return await ctx.send("You cannot discard this card!")
 
         view = ConfirmButton(ctx.author.id, timeout=20)

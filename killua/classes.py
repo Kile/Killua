@@ -68,15 +68,15 @@ class PartialCard:
             self.type = 'normal'
 
     def add_owner(self, user_id:int):
-        """Adds an owner to a card entry in my db. Only used in Card().add_card()"""
+        """Adds an owner to a card entry in my db. Only used in User().add_card()"""
         self.owners.append(user_id)
         items.update_one({'_id': self.id}, {'$push': {'owners': user_id}})
         return
 
     def remove_owner(self, user_id:int):
-        """Removes an owner from a card entry in my db. Only used in Card().remove_card()"""
+        """Removes an owner from a card entry in my db. Only used in User().remove_card()"""
         self.owners.remove(user_id)
-        items.update_one({'_id': self.id}, {'$pull': {'owners': user_id}})
+        items.update_one({'_id': self.id}, {'$set': {'owners': self.owners}})
         return
 
 class _LootBoxButton(discord.ui.Button):
@@ -568,7 +568,6 @@ class User:
         """Removes all cards etc from every user. Only used for testing"""
         start = datetime.now()
         user = []
-        cards = []
         for u in teams.find():
             if 'cards' in u:
                 user.append(u['id'])
@@ -577,11 +576,8 @@ class User:
                 cls.cache[u["id"]].effects = {}
 
         teams.update_many({'$or': [{'id': x} for x in user]}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': []}})
-
-        for c in items.find():
-            if "owners" in c and len(c['owners']) > 0:
-                cards.append(c['_id'])
-        items.update_many({'$or': [{'id': x} for x in cards]}, {'$set': {'owners': []}})
+        cards = [x for x in items.find() if "owners" in x and len(x["owners"]) > 0]
+        items.update_many({'_id': {"$in": [x["_id"] for x in items.find()]}}, {'$set': {'owners': []}})
 
         return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
 
@@ -671,7 +667,7 @@ class User:
     def remove_lootbox(self, box:int) -> None:
         """Removes a lootbox from a user"""
         self.lootboxes.remove(box)
-        self._update_val("lootboxes", box, "$pull")
+        self._update_val("lootboxes", self.lootboxes, "$set")
         
     def _has_card(self, cards:List[list], card_id:int, fake_allowed:bool) -> bool:
         counter = 0
@@ -720,11 +716,11 @@ class User:
                 ((data["clone"] == clone) if not clone is None else True) and \
                 ((data["fake"] == fake) if not fake is None else True):
 
-                if not data["fake"]:
-                    PartialCard(id).remove_owner(self.id)
+                    if not data["fake"]:
+                        PartialCard(id).remove_owner(self.id)
 
-                del cards[counter] # instead of returning the match I delete it because in theory there can be multiple matches and that would break stuff
-                return cards, [id, data]
+                    del cards[counter] # instead of returning the match I delete it because in theory there can be multiple matches and that would break stuff
+                    return cards, [id, data]
             counter += 1
         return None, None
 
@@ -771,17 +767,19 @@ class User:
                 self._incomplete()
                 return match
 
+    def _add_card_owner(self, card:int, fake:bool) -> None:
+        if not fake:
+            PartialCard(card).add_owner(self.id)
+
     def add_card(self, card_id:int, fake:bool=False, clone:bool=False):
         """Adds a card to the the user"""
-        card = PartialCard(card_id)
         data = [card_id, {"fake": fake, "clone": clone}]
 
         if self.has_rs_card(card_id) is False:
             if card_id < 100:
 
                 self.rs_cards.append(data)
-                if not fake:
-                    card.add_owner(self.id)
+                self._add_card_owner(card_id, fake)
                 self._update_val("cards.rs", data, "$push")
                 if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
                     self.add_card(0)
@@ -792,8 +790,7 @@ class User:
             raise CardLimitReached('User reached card limit for free slots')
 
         self.fs_cards.append(data)
-        if not fake:
-            card.add_owner(self.id)
+        self._add_card_owner(card_id, fake)
         self._update_val("cards.fs", data, "$push")
 
     def count_card(self, card_id:int, including_fakes:bool=True) -> int:
@@ -1138,7 +1135,7 @@ class Guild():
             except Exception:
                 guild_ids.remove(guild) # in case something got messed up it removes the guild id before making the db interaction
 
-        guilds.update_many({"id": {"$in": guild_ids}}, {"$pull": {"badges": False}})
+        guilds.update_many({"id": {"$in": guild_ids}}, {"$pull": {"badges": "premium"}})
 
     def _update_val(self, key:str, value:Any, operator:str="$set") -> None:
         """An easier way to update a value"""

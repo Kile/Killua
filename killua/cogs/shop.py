@@ -192,7 +192,7 @@ class Shop(commands.Cog):
             'color': 0x1400ff
         })
         view = self._get_view(ctx)
-        msg = await sellf.client.send_message(ctx, embed=embed, view=view)
+        msg = await self.client.send_message(ctx, embed=embed, view=view)
         await self._shop_menu(ctx, msg, view)
 
     @check()
@@ -218,7 +218,7 @@ class Shop(commands.Cog):
         if len(fields) <= 10:
             embed = make_embed(1, DefaultEmbed(), fields)
             view = self._get_view(ctx)
-            msg = await self.client.send(ctx, embed=embed, view=view)
+            msg = await self.client.send_message(ctx, embed=embed, view=view)
             return await self._shop_menu(ctx, msg, view)
 
         await ShopPaginator(ctx, fields, func=make_embed).start() # currently only 10 boxes exist so this is not necessary
