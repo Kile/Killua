@@ -92,8 +92,12 @@ def get_prefix(bot, message):
 
 def main():
 	session = aiohttp.ClientSession()
-	intents = discord.Intents.all()
-	intents.presences = False
+	intents = discord.Intents(
+		guilds=True,
+		members=True,
+		emojis_and_stickers=True, # this is not needed in the code but I'd lik to have it
+		messages=True
+	)
 	# Create the bot instance.
 	bot = Bot(
 		command_prefix=get_prefix,

@@ -26,7 +26,7 @@ class ImageManipulation(commands.Cog):
         mask = mask.resize(im.size, Image.ANTIALIAS)
         mask = ImageChops.darker(mask, im.split()[-1])
         im.putalpha(mask)
-        
+
         return im.copy()
 
     def _create_frames(self, image:Image.Image) -> List[Image.Image]:
@@ -36,7 +36,7 @@ class ImageManipulation(commands.Cog):
         return res
 
     async def _create_spin_gif(self, url:str) -> io.BytesIO:
-        """Tages in a url and returns the io bytes object"""
+        """Takes in a url and returns the io bytes object"""
         res = await self.client.session.get(url)
         _bytes = await res.read()
         image = Image.open(io.BytesIO(_bytes)).convert("RGB")
