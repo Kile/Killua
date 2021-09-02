@@ -357,7 +357,7 @@ class Shop(commands.Cog):
             await ctx.send('Your description can\'t be over 200 characters!')
             return await self.buy_description(ctx)
         user.remove_jenny(1000)
-        todo_list.set_property('description', description)
+        todo_list.set_property('description', confirmmsg.content)
         return await ctx.send('Congrats! You bought a description for your current todo list')
 
     @commands.group()

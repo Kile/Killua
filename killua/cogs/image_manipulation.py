@@ -3,7 +3,7 @@ from discord.ext import commands
 from typing import Union, Any, List
 import re
 import io
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter, ImageChops
 
 from pypxl import PxlClient # My own library :sparkles:
 
@@ -19,17 +19,15 @@ class ImageManipulation(commands.Cog):
         self.client = client
         self.pxl = PxlClient(token=PXLAPI, stop_on_error=False, session=self.client.session)
 
-    def _crop_transparent_circle(self, pil_img, blur_radius=0, offset=0):
-        offset = blur_radius * 2 + offset
-        mask = Image.new("L", pil_img.size, 0)
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse((offset, offset, pil_img.size[0] - offset, pil_img.size[1] - offset), fill=255)
-        mask = mask.filter(ImageFilter.GaussianBlur(blur_radius))
-
-        result = pil_img.copy()
-        result.putalpha(mask)
-
-        return result
+    def _crop_to_circle(self, im):
+        bigsize = (im.size[0] * 3, im.size[1] * 3)
+        mask = Image.new('L', bigsize, 0)
+        ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
+        mask = mask.resize(im.size, Image.ANTIALIAS)
+        mask = ImageChops.darker(mask, im.split()[-1])
+        im.putalpha(mask)
+        
+        return im.copy()
 
     def _create_frames(self, image:Image.Image) -> List[Image.Image]:
         res = []
@@ -43,7 +41,7 @@ class ImageManipulation(commands.Cog):
         _bytes = await res.read()
         image = Image.open(io.BytesIO(_bytes)).convert("RGB")
 
-        new_image = self._crop_transparent_circle(image)
+        new_image = self._crop_to_circle(image)
         image.close()
         frames = self._create_frames(new_image)
         new_image.close()
@@ -57,7 +55,7 @@ class ImageManipulation(commands.Cog):
         if isinstance(args, discord.Member):
             image = str(args.avatar.url)
 
-        if isinstance(args, discord.Emoji):
+        if isinstance(args, discord.PartialEmoji):
             image = str(args.url)
             
         if isinstance(args, str):
@@ -109,7 +107,7 @@ class ImageManipulation(commands.Cog):
 
     @check(120) # Big cooldown >_<
     @commands.command(aliases=['ej', 'emojimosaic'], extras={"category":Category.FUN}, usage="emojaic <user/url>")
-    async def emojaic(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def emojaic(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Emoji mosaic an image; let emojis recreate an image you gave Killua! Takes in a mention, ID or image url"""
         async def func(data, *args):
             return await self.pxl.emojaic([data], groupSize=6)
@@ -117,7 +115,7 @@ class ImageManipulation(commands.Cog):
 
     @check(5)
     @commands.command(extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
-    async def flag(self, ctx, flag:str, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def flag(self, ctx, flag:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Valid flags: asexual, aromantic, bisexual, pansexual, gay, lesbian, trans, nonbinary, genderfluid, genderqueer, polysexual, austria, belgium, botswana, bulgaria, ivory, estonia, france, gabon, gambia, germany, guinea, hungary, indonesia, ireland, italy, luxembourg, monaco, nigeria, poland, russia, romania, sierraleone, thailand, ukraine, yemen"""
         async def func(data, flag):
             return await self.pxl.flag(flag=flag, images=[data])
@@ -125,7 +123,7 @@ class ImageManipulation(commands.Cog):
 
     @check(5)
     @commands.command(extras={"category":Category.FUN}, usage="glitch <user/url>")
-    async def glitch(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def glitch(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Tranform a users pfp into a glitchy GIF!"""
         async def func(data, *args):
             return await self.pxl.glitch(images=[data], gif=True)
@@ -133,7 +131,7 @@ class ImageManipulation(commands.Cog):
 
     @check(10)
     @commands.command(extras={"category":Category.FUN}, usage="lego <user/url>")
-    async def lego(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def lego(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Legofies an image"""
         async def func(data, *args):
             return await self.pxl.lego(images=[data], scale=True, groupSize=10)
@@ -141,7 +139,7 @@ class ImageManipulation(commands.Cog):
 
     @check(3)
     @commands.command(aliases=['snap'], extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
-    async def snapchat(self, ctx, fil:str, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def snapchat(self, ctx, fil:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Valid filters: dog, dog2, dog3, pig, flowers, random"""
         async def func(data, fil):
             return await self.pxl.snapchat(filter=fil, images=[data])
@@ -149,7 +147,7 @@ class ImageManipulation(commands.Cog):
 
     @check(3)
     @commands.command(aliases=['eye'], extras={"category":Category.FUN}, usage="eyes <eye_type> <user/url>")
-    async def eyes(self, ctx, t:str, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def eyes(self, ctx, t:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Valid eyes: big, black, bloodshot, blue, default, googly, green, horror, illuminati, money, pink, red, small, spinner, spongebob, white, yellow, random"""
         async def func(data, t):
             return await self.pxl.eyes(eyes=t, images=[data])
@@ -157,7 +155,7 @@ class ImageManipulation(commands.Cog):
 
     @check(3)
     @commands.command(aliases=['animal'], extras={"category":Category.FUN}, usage="ganimal <user/url")
-    async def ganimal(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def ganimal(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Turns a face into multiple animal faces"""
         async def func(data, *args):
             return await self.pxl.ganimal(images=[data])
@@ -165,7 +163,7 @@ class ImageManipulation(commands.Cog):
 
     @check(4)
     @commands.command(aliases=['8bit', 'blurr'], extras={"category":Category.FUN}, usage="jpeg <user/url>")
-    async def jpeg(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def jpeg(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Did you ever want to decrease image quality? Then this is the command for you!"""
         async def func(data, *args):
             return await self.pxl.jpeg(images=[data])
@@ -173,7 +171,7 @@ class ImageManipulation(commands.Cog):
 
     @check(4)
     @commands.command(extras={"category":Category.FUN}, usage="ajit <user/url>")
-    async def ajit(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def ajit(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """  Overlays an image of Ajit Pai snacking on some popcorn!"""
         async def func(data, *args):
             return await self.pxl.ajit(images=[data])
@@ -181,7 +179,7 @@ class ImageManipulation(commands.Cog):
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="nokia <user/url>")
-    async def nokia(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def nokia(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Turns a face into multiple animal faces"""
         async def func(data, *args):
             d = "const url = '" + data + ";'" + NOKIA_CODE
@@ -190,7 +188,7 @@ class ImageManipulation(commands.Cog):
 
     @check(4)
     @commands.command(extras={"category":Category.FUN}, usage="flash <user/url>")
-    async def flash(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def flash(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Greates a flashing GIF"""
         async def func(data, *args):
             return await self.pxl.flash(images=[data])
@@ -235,7 +233,7 @@ class ImageManipulation(commands.Cog):
             for i in range(4 if len(results) >= 4 else len(results)):
                 res = results[i-1]
                 embed.add_field(name='** **', value=f'**[__{res["title"]}__]({res["url"]})**\n{res["description"][:100]}...' if len(res["description"]) > 100 else res["description"], inline=False)
-            await ctx.send(embed=embed)
+            return await ctx.send(embed=embed)
         return await ctx.send(':x: '+r.error)
 
     @check(4)
@@ -256,7 +254,7 @@ class ImageManipulation(commands.Cog):
 
     @check(30) # long check because this is exhausting for the poor computer
     @commands.command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")
-    async def spin(self, ctx, args:Union[discord.Member, discord.Emoji, str]=None):
+    async def spin(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Spins an image 'round and 'round and 'round and 'round..."""
         data = await self._validate_input(ctx, args)
         if not data:

@@ -120,7 +120,7 @@ class Economy(commands.Cog):
         if user is None:
             user = ctx.author
         elif isinstance(user, discord.Member):
-            user = user
+            pass
         else:
             user = await self.client.get_user(user)
             if not user:

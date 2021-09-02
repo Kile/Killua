@@ -12,11 +12,11 @@ R = TypeVar(Union[E, Tuple[E, discord.File]])
 T = TypeVar("T")
 
 class Button:
-    FIRST_PAGE = "\U000023ea"
-    BACKWARDS = "\U000025c0"
-    FORWARD = "\U000025b6"
-    LAST_PAGE = "\U000023e9"
-    STOP = "\U000023f9"
+    FIRST_PAGE = "<:left_double_arrow:882751419529175152>"
+    BACKWARDS = "<:left_arrow:882751271457685504>"
+    FORWARD = "<:right_arrow:882751138548551700>"
+    LAST_PAGE = "<:right_double_arrow:882752531124584518>"
+    STOP = "<:stop:882750820867788860>"
 
 class Color:
     BLURPLE = discord.ButtonStyle.blurple

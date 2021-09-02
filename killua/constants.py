@@ -160,16 +160,15 @@ KILLUA_BADGES = {
     "partner": "<:partner_badge:879391663460610078>",
     "artist": "<:artist_badge:879391368076734464>",
     "greed_island_badge": "<:greed_island_badge:879391821938180116>",
-    "early_supporter": "",
+    "early_supporter": "<:early_supporter_badge:882616073394987048>",
     "developer": "",
     "owner": "<:badge_killua_owner:788940157599612948>"
 }
 
 SERVER_BADGES = {
     "premium": "",
-    "early supporter": "",
-    "partner": "<:partner_badge:879391663460610078>",
-    "official": ""
+    "early supporter": "<:early_supporter_badge:882616073394987048>",
+    "partner": "<:partner_badge:879391663460610078>"
 }
 
 
@@ -301,9 +300,27 @@ LOOTBOXES = {
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836331311134/image1.png"
     },
     8: {
+        "name": "Haunted box",
+        "price": 2000,
+        "emoji": "<:haunted_box:882613954227077141>",
+        "description": "This box has trapped monsters inside of it. If you listen closely you can hear them scratching and screming.",
+        "rewards": {
+            "jenny": (200, 300),
+            "cards": {
+                "rarities": ["D", "C", "B", "A"],
+                "types": ["monster"]
+            }
+        },
+        "rewards_total": 15,
+        "cards_total": (5, 8),
+        "probability": 15,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882754729640345670/image0.png"
+    },
+    9: {
         "name": "Diamond box",
         "price": 10000,
-        "emoji": "<:box_of_legends:877928029647691856>",
+        "emoji": "<:diamond_box:882613900254777354>",
         "description": "A common possesion of royalty but hard to find elsewhere, this box contains many exclusive rewards and is partly made out of real diamonds.",
         "rewards": {
             "jenny": (2000, 3000),
@@ -318,7 +335,7 @@ LOOTBOXES = {
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836738166794/image2.png"
     },
-    9: {
+    10: {
         "name": "Box of legends",
         "price": 15000,
         "emoji": "<:box_of_legends:882367420256387142>",

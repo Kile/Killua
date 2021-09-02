@@ -107,11 +107,6 @@ class Events(commands.Cog):
         if ctx.guild and not ctx.channel.permissions_for(ctx.me).send_messages: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
             return
 
-        if isinstance(error, commands.CommandOnCooldown):
-            m, s = divmod(round(ctx.command.get_cooldown_retry_after(ctx)), 60)
-
-            return await ctx.send(f'Wait {m:02d} minutes and {s:02d} seconds before using the command again, thank you for helping to improve killua :3')
-
         if isinstance(error, commands.BotMissingPermissions):
             return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
 
