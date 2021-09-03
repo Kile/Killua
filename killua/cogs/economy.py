@@ -157,6 +157,7 @@ class Economy(commands.Cog):
         """Claim your daily Jenny with this command!"""
         now = datetime.now()
         user = User(ctx.author.id)
+        jenny = user.jenny
         min = 50
         max = 100
         if user.is_premium:
@@ -171,7 +172,7 @@ class Economy(commands.Cog):
         if str(user.daily_cooldown) < str(now):
             user.claim_daily()
             user.add_jenny(daily)
-            await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(user.jenny) + int(daily)}')
+            await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(jenny) + int(daily)}')
         else:
             cd = user.daily_cooldown-datetime.now()
             cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'

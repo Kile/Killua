@@ -59,7 +59,7 @@ class Actions(commands.Cog):
                 return f':x: {image}'
 
         text = random.choice(ACTIONS[endpoint]["text"])
-        text = text.replace("(a)", author if isinstance(author, str) else author.name).replace("(u)", self.generate_users(members, text))
+        text = text.replace("<author>", "**" + (author if isinstance(author, str) else author.name) + "**").replace("<user>",  "**" + self.generate_users(members, text) + "**")
 
         embed = discord.Embed.from_dict({
             "title": text,

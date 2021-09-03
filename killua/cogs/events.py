@@ -130,6 +130,10 @@ class Events(commands.Cog):
         if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.CheckFailure): # I don't care if this happens
             return 
 
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Report bug", url="https://discord.gg/MKyWA5M"))
+        await ctx.send(":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.", view=view)
+
         guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
         command = ctx.command.name if ctx.command else "Error didn't occur during a command"
         print(f'{PrintColors.FAIL}------------------------------------------')

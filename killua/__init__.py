@@ -74,8 +74,8 @@ class Bot(commands.Bot):
 	async def send_message(self, messageable:discord.abc.Messageable, *args, **kwargs) -> discord.Message:
 		"""A helper function sending messages and adding a tip with the probability of 5%"""
 		msg = await messageable.send(*args, **kwargs)
-		if randint(1, 100) < 6: # 5% probability to send a top afterwards
-			await messageable.send(f"**Tip:** {choice(TIPS)}")
+		if randint(1, 100) > 6: # 5% probability to send a top afterwards
+			await messageable.send(f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.user.id == 758031913788375090 else 'kil!')}")
 		return msg
 
 
