@@ -14,6 +14,7 @@ class Bot(commands.Bot):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
+		self.support_server_invite = "https://discord.gg/MKyWA5M"
 		self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
 
 	async def on_ipc_error(self, endpoint, error):

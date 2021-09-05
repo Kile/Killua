@@ -270,6 +270,53 @@ class Cards(commands.Cog):
         user.remove_card(card.id)
         await ctx.send(f'Successfully thrown away card No. `{card.id}`')
 
+    @commands.command(aliases=["read"], extras={"category": Category.CARDS}, usage="cardinfo <card_id>")
+    async def cardinfo(self, ctx, card:int):
+        """Check card info out about any card you own"""
+        try:
+            c = Card(card)
+        except CardNotFound:
+            return await ctx.send("Invalid card")
+
+        author = User(ctx.author.id)
+        if not author.has_any_card(c.id):
+            return await ctx.send("You don't own a copy of this card so you can't view it's infos")
+
+        embed = c._get_analysis_embed(c.id)
+        if c.type == "spell" and c.id not in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
+            card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{card}"][0]
+            usage = f"`{self.client.command_prefix(self.client, ctx.message)[2]}use {card} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`"
+            embed.add_field(name="Usage", value=usage, inline=False)
+
+        await ctx.send(embed=embed)
+
+    @check()
+    @commands.command(name="check", extras={"category": Category.CARDS}, usage="check <card_id>")
+    async def _check(self, ctx, card_id:int):
+        """Lets you see how many copies of the specified card are fakes"""
+        try:
+            Card(card_id)
+        except CardNotFound:
+            return await ctx.send("Invalid card")
+
+        author = User(ctx.author.id)
+
+        if not author.has_any_card(card_id, only_allow_fakes=True):
+            return await ctx.send("You don't any copies of this card which are fake")
+
+        text = ""
+
+        if len([x for x in author.rs_cards if x[1]["fake"] is True and x[0] == card_id]) > 0:
+            text += f"The card in your restricted slots is fake"
+
+        if (fs:= len([x for x in author.fs_cards if x[1]["fake"] is True and x[0] == card_id])) > 0:
+            text += f"\n\n{fs} cop{'ies' if fs > 1 else 'y'} of this card in your free slots {'are' if fs > 1 else 'is'} fake"
+
+        if len(text) == 0:
+            text = "No fake copies of that card!"
+
+        await ctx.send(text)
+
     def _use_check(self, ctx, item:int, args:Optional[Union[discord.Member, int, str]], add_args: Optional[int]) -> None:
         """Makes sure the inputs are valid if they exist"""
         if item in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
@@ -382,26 +429,6 @@ class Cards(commands.Cog):
                 return await ctx.send("Invalid lootbox!")
             user.add_lootbox(int(item))
             return await ctx.send(f"Done! Added lootbox \"{LOOTBOXES[int(item)]['name']}\" to your inventory")
-
-    @commands.command(aliases=["read"], extras={"category": Category.CARDS}, usage="cardinfo <card_id>")
-    async def cardinfo(self, ctx, card:int):
-        """Check card info out about any card you own"""
-        try:
-            c = Card(card)
-        except CardNotFound:
-            return await ctx.send("Invalid card")
-
-        author = User(ctx.author.id)
-        if not author.has_any_card(c.id):
-            return await ctx.send("You don't own a copy of this card so you can't view it's infos")
-
-        embed = c._get_analysis_embed(c.id)
-        if c.type == "spell" and c.id not in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
-            card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{card}"][0]
-            usage = f"`{self.client.command_prefix(self.client, ctx.message)[2]}use {card} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`"
-            embed.add_field(name="Usage", value=usage, inline=False)
-
-        await ctx.send(embed=embed)
 
 Cog = Cards
 

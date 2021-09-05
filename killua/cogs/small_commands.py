@@ -167,7 +167,7 @@ class SmallCommands(commands.Cog):
     async def invite(self, ctx):
         """Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**"""
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Invite", url="https://discord.com/oauth2/authorize?client_id={self.client.user.id}&scope=bot&permissions=268723414"))
+        view.add_item(discord.ui.Button(label="Invite", url=f"https://discord.com/oauth2/authorize?client_id={self.client.user.id}&scope=bot&permissions=268723414"))
         embed = discord.Embed(
             title = 'Invite',
             description = f'Invite the bot to your server by clicking on the button. Thank you a lot for supporting me!',
@@ -267,14 +267,14 @@ class SmallCommands(commands.Cog):
     @check(3600)
     @commands.command(aliases=['fb'], extras={"category":Category.OTHER}, usage="feedback <type> <text>")
     async def feedback(self, ctx, t=None, *, feedback=None):
-        """Submit feedback to Killua with this command! For more information on how do send what, use `k!fb`."""
+        """Submit feedback to Killua with this command! For more information on how do send what, use `fb`."""
         if t:
             if not t.lower() in ['topic', '8ball', 'hug', 'apply', 'general', 'idea', 'feature-request', 'complain', 'compliment']:
                 ctx.command.reset_cooldown(ctx)
-                return ctx.send('Type not found. To see what types of feeback you can submit, use `k!fb`')
+                return await ctx.send(f'Type not found. To see what types of feeback you can submit, use `{self.client.command_prefix(self.client, ctx.message)[2]}fb`')
 
             if feedback is None:
-                return await ctx.send('Please tell us what you have to say about the chosen point. For more info use `k!fb`')
+                return await ctx.send(f'Please tell us what you have to say about the chosen point. For more info use `{self.client.command_prefix(self.client, ctx.message)[2]}fb`')
 
             embed = discord.Embed.from_dict({
                 'title': f'Feedback from guild {ctx.guild.name} (ID: {ctx.guild.id})',
@@ -297,17 +297,17 @@ class SmallCommands(commands.Cog):
             
     You can submit 9 types of feedback:
 
-    `topic` - suggestion for a topic for `k!topic`
-    `8ball` - suggestion for a response for `k8ball`
+    `topic` - suggestion for a topic for `{self.client.command_prefix(self.client, ctx.message)[2]}topic`
+    `8ball` - suggestion for a response for `{self.client.command_prefix(self.client, ctx.message)[2]}8ball`
     `hug` - submit a hug text or image (Killua only) 
     `apply` - apply for the team, we are looking for artists, programmer, people looking out for the server etc. Of course being part of the team comes with it's advantages
     `general` - you just wanna give general feedback to us, no specific or too many categories for the other options
-    `idea` - you have a good idea for a command (like `k!book <booktitle>`, a idea I had today and I wil implement cause it's cool). Please describe it as detailed as possible though
+    `idea` - you have a good idea for a command (like `{self.client.command_prefix(self.client, ctx.message)[2]}novel <booktitle>`, a idea I had today and I wil implement cause it's cool). Please describe it as detailed as possible though
     `feature`-request - request a feature, kinda like idea but idk. Again, lease describe it as detailed as possible
     `complain` - complain about something
     `compliment` -  compliment a feature of Killua
 
-    **This command has a 1 hour cooldown, for bug reporting please use `k!bug`, abuse will lead to blacklisting**
+    **This command has a 1 hour cooldown, abuse will lead to blacklisting**
     [Support server](https://discord.gg/be4nvwq7rZ)''',
                 'color': 0x1400ff
             })

@@ -51,7 +51,7 @@ class Events(commands.Cog):
     async def _set_patreon_banner(self) -> None:
         res = await self.client.session.get(PatreonBanner.URL)
         image_bytes = await res.read()
-        PatreonBanner.VALUE= discord.File(filename="patreon.png", fp=io.BytesIO(image_bytes))
+        PatreonBanner.VALUE= image_bytes
         print(f"{PrintColors.OKGREEN}Successfully loaded patreon banner{PrintColors.ENDC}")
 
     @commands.Cog.listener()
@@ -80,7 +80,7 @@ class Events(commands.Cog):
         if general and general.permissions_for(guild.me).send_messages:
             embed = discord.Embed.from_dict({
                 'title': 'Hello {}!'.format(guild.name),
-                'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `k!info`\n\nTo change the server prefix, use `k!prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `k!help` to see every command\n\nPlease consider leaving feeback with `k!fb` as this helps me improve Killua',
+                'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{self.client.command_prefix(self.client, ctx.message)[2]}info`\n\nTo change the server prefix, use `{self.client.command_prefix(self.client, ctx.message)[2]}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{self.client.command_prefix(self.client, ctx.message)[2]}help` to see every command\n\nPlease consider leaving feeback with `{self.client.command_prefix(self.client, ctx.message)[2]}fb` as this helps me improve Killua',
                 'color': 0x1400ff
             })
             await general.send(embed=embed)
@@ -106,6 +106,9 @@ class Events(commands.Cog):
         if ctx.guild and not ctx.channel.permissions_for(ctx.me).send_messages: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
             return
 
+        if ctx.command:
+            usage = f"`{self.client.command_prefix(self.client, ctx.message)[2]}{(ctx.command.parent.name + ' ') if ctx.command.parent else ''}{ctx.command.usage}`"
+
         if isinstance(error, commands.BotMissingPermissions):
             return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
 
@@ -116,13 +119,13 @@ class Events(commands.Cog):
             return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
 
         if isinstance(error, commands.UserInputError):
-            return await ctx.send(f"Seems like you provided invalid arguments for this command. This is how you use it: `{self.client.command_prefix(self.client, ctx.message)[2]}{ctx.command.usage}`", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"Seems like you provided invalid arguments for this command. This is how you use it: {usage}", allowed_mentions=discord.AllowedMentions.none())
 
         if isinstance(error, commands.NotOwner):
             return await ctx.send("Sorry, but you need to be the bot owner to use this command")
 
         if isinstance(error, commands.BadArgument):
-            return await ctx.send(f"Could not process arguments. Here is the command should be used: {self.client.command_prefix(self.client, ctx.message)[2]}{ctx.command.usage}``", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"Could not process arguments. Here is the command should be used: {usage}", allowed_mentions=discord.AllowedMentions.none())
 
         if isinstance(error, commands.NoPrivateMessage):
             return await ctx.send("This command can only be used inside of a guild")
@@ -131,7 +134,7 @@ class Events(commands.Cog):
             return 
 
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Report bug", url="https://discord.gg/MKyWA5M"))
+        view.add_item(discord.ui.Button(label="Report bug", url=self.client.support_server_invite))
         await ctx.send(":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.", view=view)
 
         guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)

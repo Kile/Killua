@@ -179,7 +179,7 @@ class LootBox:
         view.rewards = l 
         view.saved = False
         view.claimed = []
-
+        print(self.rewards)
         for i in range(24):
             view.add_item(_LootBoxButton(index=i, style=discord.ButtonStyle.grey, rewards=l, label=" "))
         view.add_item(_LootBoxButton(index=24, style=discord.ButtonStyle.blurple, rewards=l, label="Save rewards"))
@@ -361,7 +361,7 @@ class Book:
         if len(data) == 18 and restricted_slots:
             background = await self._numbers(background, data, page)
         background = await self._cards(background, data, 0 if len(data) == 10 else 1)
-        background = await self._setpage(background, page)
+        background = self._setpage(background, page)
         return background
 
     def _get_from_cache(self, types:int) -> Union[Image.Image, None]:
@@ -398,19 +398,18 @@ class Book:
         # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
         return image_card
 
-    async def _setpage(self, image, page):
-        font = await self._getfont(20)
+    def _setpage(self, image, page):
+        font = self._getfont(20)
         draw = ImageDraw.Draw(image)
         draw.text((5, 385), f'{page*2-1}', (0,0,0), font=font)
         draw.text((595, 385), f'{page*2}', (0,0,0), font=font)
         return image
 
-    async def _getfont(self, size) -> ImageFont.ImageFont:
+    def _getfont(self, size) -> ImageFont.ImageFont:
         font = ImageFont.truetype(str(pathlib.Path(__file__).parent) + "/font.ttf", size, encoding="unic") 
         return font
 
     async def _cards(self, image, data, option):
-
         card_pos:list = [
             [(113, 145),(320, 15),(418, 15),(516, 15),(320, 142),(418, 142),(516, 142),(320, 269),(418, 269),(516, 269)],
             [(15,17),(112,17),(210,17),(15,144),(112,144),(210,144),(15,274),(112,274),(210,274),(320,13),(418,13),(516,13),(320,143),(418,143),(516,143),(320,273),(418,273),(516,273)]
@@ -421,7 +420,8 @@ class Book:
                     if not str(i[0]) in self.card_cache:
                         self.card_cache[str(i[0])] = await self._getcard(i[1])
 
-                    image.paste(self.card_cache[str(i[0])], (card_pos[option][n]), self.card_cache[str(i[0])].convert("RGBA"))
+                    card = self.card_cache[str(i[0])]
+                    image.paste(card, (card_pos[option][n]), card.convert("RGBA"))
         return image
 
     async def _numbers(self, image, data, page):
@@ -435,7 +435,7 @@ class Book:
         [(30, 60),(130, 60),(224, 60),(31, 188),(131, 188),(230, 188),(32, 317),(133, 317),(228, 317),(342, 60),(436, 60),(533, 60),(338, 188),(436, 188),(533, 188),(338, 317),(436, 317),(535, 317)] 
         ]
 
-        font = await self._getfont(35)
+        font = self._getfont(35)
         draw = ImageDraw.Draw(image)
         for n, i in enumerate(data):
             if i[1] is None:
@@ -669,27 +669,27 @@ class User:
         self.lootboxes.remove(box)
         self._update_val("lootboxes", self.lootboxes, "$set")
         
-    def _has_card(self, cards:List[list], card_id:int, fake_allowed:bool) -> bool:
+    def _has_card(self, cards:List[list], card_id:int, fake_allowed:bool, only_allow_fakes:bool) -> bool:
         counter = 0
         while counter != len(cards): # I use a while loop because it has c bindings and is thus faster than a for loop which is good for this 
             id, data = cards[counter]
-            if (id == card_id) and (not data["fake"] or fake_allowed):
+            if (id == card_id) and ((only_allow_fakes and data["fake"]) or (not data["fake"] or fake_allowed)):
                 return True
 
             counter += 1
         return False
 
-    def has_rs_card(self, card_id:int, fake_allowed:bool=True) -> bool:
+    def has_rs_card(self, card_id:int, fake_allowed:bool=True, only_allow_fakes:bool=False) -> bool:
         """Checking if the user has a card specified in their restricted slots"""
-        return self._has_card(self.rs_cards, card_id, fake_allowed)
+        return self._has_card(self.rs_cards, card_id, fake_allowed, only_allow_fakes)
 
-    def has_fs_card(self, card_id:int, fake_allowed:bool=True) -> bool:
+    def has_fs_card(self, card_id:int, fake_allowed:bool=True, only_allow_fakes:bool=False) -> bool:
         """Checking if the user has a card specified in their free slots"""
-        return self._has_card(self.fs_cards, card_id, fake_allowed)
+        return self._has_card(self.fs_cards, card_id, fake_allowed, only_allow_fakes)
 
-    def has_any_card(self, card_id:int, fake_allowed:bool=True) -> bool:
+    def has_any_card(self, card_id:int, fake_allowed:bool=True, only_allow_fakes:bool=False) -> bool:
         """Checks if the user has the card"""
-        return self._has_card(self.all_cards, card_id, fake_allowed)
+        return self._has_card(self.all_cards, card_id, fake_allowed, only_allow_fakes)
 
     def remove_jenny(self, amount:int):
         """Removes x Jenny from a user"""

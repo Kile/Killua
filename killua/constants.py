@@ -1,5 +1,7 @@
 # MONGODB CONNECTIONS
 import json
+import io
+import discord
 from pymongo import MongoClient
 with open('config.json', 'r') as config_file:
     config = json.loads(config_file.read())
@@ -133,6 +135,10 @@ ACTIONS = {
 class PatreonBanner: # using a normal var instead of a class did not work
     URL = "https://cdn.discordapp.com/attachments/795448739258040341/882017244484345916/killua-logo-banners-patreon2.png"
     VALUE = None
+
+    @classmethod
+    def file(cls) -> discord.File:
+        return discord.File(filename="patreon.png", fp=io.BytesIO(cls.VALUE))
 
 # EMOTES
 USER_FLAGS = {

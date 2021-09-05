@@ -9,7 +9,7 @@ from .classes import User, Guild
 cooldowndict = {}
 
 def _clean_command_name(command:Union[commands.Command, Type[commands.Command]]) -> str:
-	"""returns the clean command make of a command"""
+	"""returns the clean command name of a command"""
 	if not command.parent:
 		return command.name
 	else:
@@ -74,51 +74,37 @@ def check(time:int=0):
     async def custom_cooldown(ctx, time:int) -> bool:
         global cooldowndict
         now = datetime.today()
-        later = datetime.now()+timedelta(seconds=time)
         try:
             cdwn = cooldowndict[ctx.author.id][ctx.command.name]
-        except KeyError as e:
+        except KeyError as e: # if there is no entry in the cooldowndict yet for either the command or user
             error = e.args[0]
             if error == ctx.author.id:
-                cooldowndict = {ctx.author.id: {ctx.command.name: later}}
+                cooldowndict = {ctx.author.id: {ctx.command.name: now}}
                 return True
             if error == ctx.command.name:
-                cooldowndict[ctx.author.id][ctx.command.name] = later
+                cooldowndict[ctx.author.id][ctx.command.name] = now
                 return True
 
-        cd = cdwn-now 
+        cd = now-cdwn 
+        diff = cd.seconds
+        
+        user = User(ctx.author.id)
+        guild = Guild(ctx.guild.id) if ctx.guild else None
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri", style=discord.ButtonStyle.blurple)) # sadly I cannot color a link button :c
 
-        if str(cdwn) < str(now):
-            cooldowndict[ctx.author.id][ctx.command.name] = later
+        if guild and guild.is_premium:
+            time /= 2
+
+        if user.is_premium:
+            time /= 2
+
+        if diff > time:
+            cooldowndict[ctx.author.id][ctx.command.name] = now
             return True 
-
-        else:
-            user = User(ctx.author.id)
-            guild = Guild(ctx.guild.id) if ctx.guild else None
-            view = discord.ui.View()
-            view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri", style=discord.ButtonStyle.blurple)) # sadly I cannot color a link button :c
-            if cd.seconds < time:
-                t = -1*(6-time-cd.seconds)
-                if guild is None:
-                    pass
-                elif guild.is_premium:
-                    if int(cd.seconds) > time/2:
-                        t = t/2
-                    else:
-                        cooldowndict[ctx.author.id][ctx.command.name] = later
-                        return True
-
-                if user.is_premium:
-                    if int(cd.seconds) > t/2:
-                        await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon',file=PatreonBanner.VALUE, view=view, delete_after=10)
-                        return False
-                    else:
-                        cooldowndict[ctx.author.id][ctx.command.name] = later
-                        return True
                     
-                await ctx.send(f':x: Command on cooldown! Try again after `{t/2}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon',file=PatreonBanner.VALUE, view=view, delete_after=10)
-                return False
-            return True
+        await ctx.send(f':x: Command on cooldown! Try again after `{time-diff}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon',file=PatreonBanner.file(), view=view, delete_after=10)
+        return False
 
     async def settings_check(ctx) -> bool:
         if not ctx.guild:
