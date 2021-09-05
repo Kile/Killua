@@ -99,7 +99,7 @@ class MyHelp(commands.HelpCommand):
         try:
             await asyncio.wait_for(view.wait(), timeout=100)
         except asyncio.TimeoutError:
-            await view.disable(view)
+            await view.disable(msg)
         else:
             #await msg.edit(embed=msg.embeds[0], view=discord.ui.View())
             await msg.delete()

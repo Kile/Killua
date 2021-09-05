@@ -5,7 +5,6 @@ import re
 from killua.checks import check
 from killua.classes import User, Category #lgtm [py/unused-import]
 from killua.cards import Card #lgtm [py/unused-import]
-from killua.cogs.image_manipulation import PxlClient #lgtm [py/unused-import]
 from killua.constants import teams, guilds, blacklist, presence as pr, items, updates, UPDATE_CHANNEL #lgtm [py/unused-import]
 
 class DevStuff(commands.Cog):
