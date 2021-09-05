@@ -8,7 +8,7 @@ from killua.checks import check
 from killua.paginator import View
 from killua.help import Select
 from killua.classes import User, Guild, Category, LootBox
-from killua.constants import USER_FLAGS, KILLUA_BADGES, teams, guilds, LOOTBOXES
+from killua.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, guilds, LOOTBOXES
 
 class Economy(commands.Cog):
 
@@ -81,22 +81,29 @@ class Economy(commands.Cog):
         return data
 
     @check()
+    @commands.guild_only()
     @commands.command(aliases=['server'], extras={"category":Category.ECONOMY}, usage="guild")
     async def guild(self, ctx):
         """Displays infos about the current guild"""
         top = self._lb(ctx, limit=1)
-
-        guild = guilds.find_one({'id': ctx.guild.id})
-        if not guild is None:
-            badges = '\n'.join(guild['badges'])
+        guild = Guild(ctx.guild.id)
+        badges = ' '.join([GUILD_BADGES[b] for b in guild.badges])
 
         embed = discord.Embed.from_dict({
-            'title': f'Information about {ctx.guild.name}',
-            'description': f'{ctx.guild.id}\n\n**Owner**\n{ctx.guild.owner}\n\n**Killua Badges**\n{badges or "No badges"}\n\n**Combined Jenny**\n{top["points"]}\n\n**Richest member**\n{top["top"][0]["name"]} with {top["top"][0]["points"]} jenny\n\n**Server created at**\n{(ctx.guild.created_at).strftime("%b %d %Y %H:%M:%S")}\n\n**Members**\n{ctx.guild.member_count}',
-            'thumbnail': {'url': str(ctx.guild.icon.url)},
-            'color': 0x1400ff
+            "title": f"Information about {ctx.guild.name}",
+            "fields": [
+                {"name": "Owner", "value": str(ctx.guild.owner)},
+                {"name": "Killua Badges", "value": (badges if len(badges) > 0 else "No badges")},
+                {"name": "Combined Jenny", "value": top["points"]},
+                {"name": "Richest Member", "value": f'{top["top"][0]["name"]} with {top["top"][0]["points"]} jenny'},
+                {"name": "Server created at", "value": (ctx.guild.created_at).strftime("%b %d %Y %H:%M:%S")},
+                {"name": "Members", "value": ctx.guild.member_count}
+            ],
+            "description": str(ctx.guild.id),
+            "thumbnail": {"url": str(ctx.guild.icon.url)},
+            "color": 0x1400ff
         })
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(aliases=['lb', 'top'], extras={"category":Category.ECONOMY}, usage="leaderboard")
@@ -111,7 +118,7 @@ class Economy(commands.Cog):
             "color": 0x1400ff,
             "thumbnail": {"url": str(ctx.guild.icon.url)}
         })
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
@@ -130,7 +137,7 @@ class Economy(commands.Cog):
                     return await ctx.send("Could not find anyone with this name/id")
 
         embed = self._getmember(user)
-        return await ctx.send(embed=embed)
+        return await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(aliases=['bal', 'balance', 'points'], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
@@ -157,7 +164,6 @@ class Economy(commands.Cog):
         """Claim your daily Jenny with this command!"""
         now = datetime.now()
         user = User(ctx.author.id)
-        jenny = user.jenny
         min = 50
         max = 100
         if user.is_premium:
@@ -172,7 +178,7 @@ class Economy(commands.Cog):
         if str(user.daily_cooldown) < str(now):
             user.claim_daily()
             user.add_jenny(daily)
-            await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {int(jenny) + int(daily)}')
+            await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {user.jenny}')
         else:
             cd = user.daily_cooldown-datetime.now()
             cooldown = f'{int((cd.seconds/60)/60)} hours, {int(cd.seconds/60)-(int((cd.seconds/60)/60)*60)} minutes and {int(cd.seconds)-(int(cd.seconds/60)*60)} seconds'

@@ -8,7 +8,7 @@ from typing import Union, List, Optional, Tuple, Optional
 
 from killua.checks import check
 from killua.paginator import Paginator
-from killua.classes import User, CardNotFound, Category, CheckFailure, Book, ConfirmButton
+from killua.classes import User, CardNotFound, Category, CheckFailure, Book, ConfirmButton, NoMatches
 from killua.cards import Card
 from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, items, LOOTBOXES
 
@@ -17,7 +17,6 @@ class Cards(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-
 
     def _get_single_reward(self, score:int) -> dict:
             if score == 1:
@@ -242,7 +241,7 @@ class Cards(commands.Cog):
     @check()
     @commands.command(extras={"category":Category.CARDS}, usage="discard <card_id>")
     async def discard(self, ctx, card:int):
-        """Discard a card you want to get rid of with this command"""
+        """Discard a card you want to get rid of with this command. If you want to throw a fake away, make sure it's in the free slots"""
         
         user = User(ctx.author.id)
         try:
@@ -257,7 +256,7 @@ class Cards(commands.Cog):
             return await ctx.send("You cannot discard this card!")
 
         view = ConfirmButton(ctx.author.id, timeout=20)
-        msg = await ctx.send(f"Do you really want to throw this card away? (be aware that this will throw the first card you own with this id away, if you want to get rid of a fake swap it out of your album with `{self.client.command_prefix(self.client, ctx.message)[2]}swap <card_id>`)", view=view, allowed_mentions=discord.AllowedMentions.none())
+        msg = await ctx.send(f"Do you really want to throw this card away? (if you want to throw a fake aware, make sure it's in the free slots (unless it's the only copy you own. You can switch cards between free and restricted slots with `{self.client.command_prefix(self.client, ctx.message)[2]}swap <card_id>`)", view=view, allowed_mentions=discord.AllowedMentions.none())
         await view.wait()
         await view.disable(msg)
 
@@ -267,7 +266,11 @@ class Cards(commands.Cog):
             else:
                 return await ctx.send(f"Successfully canceled!")
 
-        user.remove_card(card.id)
+        try:
+            user.remove_card(card.id, remove_fake=True, restricted_slot=False)
+            # essentially here it first looks for fakes in your free slots and tried to remove them. If it doesn't find any fakes in the free slots, it will remove the first match of the card it finds in free or restricted slots
+        except NoMatches:
+            user.remove_card(card.id)
         await ctx.send(f'Successfully thrown away card No. `{card.id}`')
 
     @commands.command(aliases=["read"], extras={"category": Category.CARDS}, usage="cardinfo <card_id>")
@@ -310,7 +313,7 @@ class Cards(commands.Cog):
             text += f"The card in your restricted slots is fake"
 
         if (fs:= len([x for x in author.fs_cards if x[1]["fake"] is True and x[0] == card_id])) > 0:
-            text += f"\n\n{fs} cop{'ies' if fs > 1 else 'y'} of this card in your free slots {'are' if fs > 1 else 'is'} fake"
+            text += (" and " if len(text) > 0 else "") + f"{fs} cop{'ies' if fs > 1 else 'y'} of this card in your free slots {'are' if fs > 1 else 'is'} fake"
 
         if len(text) == 0:
             text = "No fake copies of that card!"
@@ -391,8 +394,8 @@ class Cards(commands.Cog):
 
         await self._use_core(ctx, item, *args)
 
-    @commands.has_role(874625525287649360)
-    @commands.command(extras={"category":Category.CARDS}, usage="gain <type> <card_id/amount/lootbox>")
+    @commands.is_owner()
+    @commands.command(extras={"category":Category.CARDS}, usage="gain <type> <card_id/amount/lootbox>", hidden=True)
     async def gain(self, ctx, t:str, item:str):
         """An owner restricted command allowing the user to obtain any card or amount of jenny or any lootbox"""
         user = User(ctx.author.id)

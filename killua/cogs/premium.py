@@ -91,11 +91,12 @@ class Premium(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.get_patrons.start()
-        self.invalid = True
+        self.invalid = True # this is only `True` the first time the bot starts because the boosters of teh support server are not cached at that point, so it avoids removing their badge
 
     def _get_boosters(self):
         guild = self.client.get_guild(GUILD)
         if not guild:
+            self.invalid = True
             return []
         return [x.id for x in guild.members if BOOSTER_ROLE in [r.id for r in x.roles]]
 

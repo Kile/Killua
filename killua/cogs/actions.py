@@ -90,7 +90,7 @@ class Actions(commands.Cog):
         if isinstance(embed, str):
             return await ctx.send(embed)
         else:
-            return await ctx.send(embed=embed)
+            return await ctx.bot.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(extras={"category": Category.ACTIONS}, usage="hug <user>")

@@ -83,12 +83,12 @@ Premium guild <:premium_guild_badge:883473807292121149>
 """
 
 # Tips that can be added to any send message send with bot.send_message
-TIPS = ["Did you know you gain doubled jenny **every time** you collect jenny somehow with premium tier 3?", "With premium you can choose an *entire server* whose cooldowns will be halved", "Want to get started collecting cards and need a guild? Use `<prefix>use booklet`!", "Want to get lootboxes for free? You get a free lootbox every 5th time you vote for Killua!", "Get info on lootbox chances and lore by using `<prefix>boxinfo`", "To invite Killua to your own server, use `<prefix>invite`", "Did you know that you can search for book using `<prefix>novel`", "You can translate 20+ languages using the `translate` command!", "Not sure how to use a command? Use `<prefix>help <command>` to get more infos!", "Take a screenshot of any website using the `screenshot` command."]
+TIPS = ["Need something to organise your tasks? Try **todo lists**. For more info, use `<prefix>help`", "If you have no one to play rps against, you can just play against me!", "Did you know you gain doubled jenny **every time** you collect jenny somehow with premium tier 3?", "With premium you can choose an *entire server* whose cooldowns will be halved", "Want to get started collecting cards and need a guide? Use `<prefix>use booklet`!", "Want to get lootboxes for free? You get a free lootbox every 5th time you vote for Killua!", "Get info on lootbox chances and lore by using `<prefix>boxinfo`", "To invite Killua to your own server, use `<prefix>invite`", "Did you know that you can search for book using `<prefix>novel <book_name>`", "You can translate 20+ languages using the `translate` command!", "Not sure how to use a command? Use `<prefix>help <command>` to get more infos!", "Take a screenshot of any website using the `screenshot` command.", "Did you forget if a card you own is a fake? No problem, check it with `<prefix>check`"]
 
 # TOPICS
-TOPICS = ['What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?', 'What motivates you?', 'What is the best thing about school/work?', 'What\'s better, having high expectations or having low expectations?', 'What was the last movie you saw?', 'Have you read anything good recently?', 'What is your favorite day of the year?', 'What kind of music do you like to listen to?', 'What things are you passionate about?', 'What is your favorite childhood memory?', 'If you could acquire any skill, what would you choose?', 'What is the first thing that you think of in the morning?', 'What was the biggest life change you have gone through?', 'What is your favorite song of all time?', 'If you won $1 million playing the lottery, what would you do?', 'How would you know if you were in love?', 'If you could choose to have any useless super power, what would you pick?',
-'Who is your role model?', 'What\'s the best food you have ever eaten?', 'What accomplishment are you most proud of?', 'Would you rather be the most popular kid in school or the smartest kid in school?', 'Do you prefer to cook or order take out?', 'What is your dream job?', 'What\'s your ideal way to celebrate your birthday?', 'What is a short/long term goal of yours?', 'What are your three must have smart phone apps?', 'Would you rather be the smartest moron or dumbest genius?', 'What was the last gift that you received?', 'If you could give one piece of advice to the whole world, what would it be?', 'Describe your perfect day.', 'How would you define success?', 'What is the first thing that you notice when meeting someone new?', 'Do you prefer to take baths or showers?', 'Do you like to sing out loud when no one else is around?']
-ANSWERS = ["Stop asking me >-<", "Only if you're wearing socks", "That's what the milk carton said", "Probably, if it's raining.", 'Yep', 'You are kidding, right?', 'I think you know that better than me', 'I am sorry to break it to you but... no', 'I don\'t think so', 'Yes, no more info needed', 'No! Why would you ask that?', 'Let\'s do it!', 'Did you ask your mom?', 'I seriously don\'t think that is a good idea', 'Could you repeat that?', 'Well... maybe', 'Anything is possible']
+TOPICS = ["What's your least favorite genre of music?", "What's the most beautiful place you've ever been to?", "What's the best name for a pet dragon?", "What's the best name for a pet turtle?", "What's the best name for a pet snake?", "What do you enjoy doing most in your free time?", "Do you think technology will advance or ruin humanity?", 'What\'s your favorite animal?', 'What is your favorite TV show?', 'If you could go anywhere in the world, where would you go?', 'What did you used to do, stopped and wish you hadn\'t?', 'What was the best day in your life?', 'For what person are you the most thankful for?', 'What is and has always been your least favorite subject?', 'What always makes you laugh and/or smile when you think about it?', 'Do you think there are aliens?', 'What is your earliest memory?', 'What\'s your favorite drink?', 'Where do you like going most for vacation?', 'What motivates you?', 'What is the best thing about school/work?', 'What\'s better, having high expectations or having low expectations?', 'What was the last movie you saw?', 'Have you read anything good recently?', 'What is your favorite day of the year?', 'What kind of music do you like to listen to?', 'What things are you passionate about?', 'What is your favorite childhood memory?', 'If you could acquire any skill, what would you choose?', 'What is the first thing that you think of in the morning?', 'What was the biggest life change you have gone through?', 'What is your favorite song of all time?', 'If you won $1 million playing the lottery, what would you do?', 'How would you know if you were in love?', 'If you could choose to have any useless super power, what would you pick?',
+"Do you think at some points there will be robot revolution? (I do ò_ó)", "Who was your first crush on?", "What was something that changed your life?", "What did someone you know do that was so embarrassing that you acted like you didn't know them?", "What was a moment that completely changed your option about something or someone?", "What thing happened to you that you wouldn't believe it if someone told you it had happened to them?", "What's your favorite ice cream flavor?", "If you had to choose another username what would it be?", 'Who is your role model?', 'What\'s the best food you have ever eaten?', 'What accomplishment are you most proud of?', 'Would you rather be the most popular kid in school or the smartest kid in school?', 'Do you prefer to cook or order take out?', 'What is your dream job?', 'What\'s your ideal way to celebrate your birthday?', 'What is a short/long term goal of yours?', 'What are your three must have smart phone apps?', 'Would you rather be the smartest moron or dumbest genius?', 'What was the last gift that you received?', 'If you could give one piece of advice to the whole world, what would it be?', 'Describe your perfect day.', 'How would you define success?', 'What is the first thing that you notice when meeting someone new?', 'Do you prefer to take baths or showers?', 'Do you like to sing out loud when no one else is around?']
+ANSWERS = ["\U000026a0 8ball.exe has stopped responding", "If you try hard enough, maybe", "Stop asking me >-<", "Only if you're wearing socks", "That's what the milk carton said", "Probably, if it's raining.", 'Yep', 'You are kidding, right?', 'I think you know that better than me', 'I am sorry to break it to you but... no', 'I don\'t think so', 'Yes, no more info needed', 'No! Why would you ask that?', 'Let\'s do it!', 'Did you ask your mom?', 'I seriously don\'t think that is a good idea', 'Could you repeat that?', 'Well... maybe', 'Anything is possible']
 
 # ACTION IMAGES
 HUG_IMGS = [f'https://i.pinimg.com/originals/66/9b/67/669b67ae57452f7afbbe5252b6230f85.gif', f'https://i.pinimg.com/originals/70/83/0d/70830dfba718d62e7af95e74955867ac.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/756945463432839168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945308381872168/image0.gif', 'https://cdn.discordapp.com/attachments/756945125568938045/756945151191941251/image0.gif', 'https://pbs.twimg.com/media/Dl4PPE4UUAAsb7c.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSJgTjRyQW3NzmDzlvskIS7GMjlFpyS7yt_SQ&usqp=CAU', 'https://static.zerochan.net/Hunter.x.Hunter.full.1426317.jpg', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQJjVWplBdqrasz8Fh-7nDkxRjnnNBqk0bZlQ&usqp=CAU', 'https://i.pinimg.com/originals/75/2e/0a/752e0a5f813400dfebe322fc8b0ad0ae.jpg', 'https://thumbs.gfycat.com/IllfatedComfortableAplomadofalcon-small.gif', 'https://steamuserimages-a.akamaihd.net/ugc/492403625757327002/9B089509DDCB6D9F8E11446C7F1BC29B9BA57384/', f'https://cdn.discordapp.com/attachments/756945125568938045/758235270524698634/image0.gif', f'https://cdn.discordapp.com/attachments/756945125568938045/758236571974762547/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758236721216749638/image0.jpg', 'https://cdn.discordapp.com/attachments/756945125568938045/758237082484473856/image0.jpg', 
@@ -98,11 +98,11 @@ PAT_IMGS = [f'https://i.pinimg.com/originals/be/75/ff/be75ff9f2ba20efb4dbda09c62
 
 
 # ACTION TEXT
-HUG_TEXTS = ["<user> looked like they needed one of these", f'<author> hugs <user> as strong as they can', f'<author> hugs <user> and makes sure to not let go', f'<author> gives <user> the longest hug they have ever seen', f'<author> cuddles <user>', f'<author> uses <user> as a teddybear', f'<author> hugs <user> until all their worries are gone and 5 minutes longer',f'<author> clones themself and together they hug <user>', f'<author> jumps in <user>\'s arms', f'<author> gives <user> a bearhug', f'<author> finds a lamp with a Jinn and gets a wish. So they wish to hug <user>', f'<author> asks <user> for motivation and gets a hug','<author> looks at the floor, then up, then at the floor again and finnally hugs <user> with passion', '<author> looks deep into <user>\'s eyes and them gives them a hug', '<author> could do their homework but instead they decide to hug <user>', '<user> wanted to go get food but <author> wouldn\'t let go']
-PAT_TEXTS = ["<user>'s head seems very pattable", '<author> was too tired to hug <user> so they gave a pat instead', '<user> took 5 lp damage down so <author> gives them a healing head pat', '<author> tries to catch a spider, slips and instead pats <user>. <author> is also fine with that', '<author> pats <user>', '<author> thinks <user> is a cat and starts to pat them', '<author> looks at <user>\'s fluffy hair and starts to pat them', "<author> didn't get pet so they pat <user> instead"]
-SLAP_TEXTS = ["<user> did some unspeakable things... so <author> slapped them!", '<author> slaps <user>', '<author> stares at <user> for a long time and then slaps them', '<author> has no mercy; they slap <user>', '<author> is unsure how to react so they slap <user>']
-POKE_TEXTS = ["Look at me!", "<author> requires <user>'s attention please!", '<author> pokes <user>', '*Poke* *Poke*, <author> pokes <user>', '<author> starts poking <user>', '<author> pokes <user> with a big smile on their face']
-TICKLE_TEXTS = ["<author> is too nice to slap but <user> still needs revenge, so they tickle them!", '<user> didn\'t let <author> eat cookies, so they get tickled!', '<author> couldn\'t resist their chance to tickle <author>','<author> tickles <user>', '<author> has no mercy; they tickle <user>', '<author> knows there is just one way, so they tickle <user>']
+HUG_TEXTS = ["<author> gives <user> a hug. Their face lights up brighter than a star", "<author> makes <user>'s day by giving them a hug", "<author> hugs <user> so string they can barely breathe", "<author> hugs <user> from behind like a hug-assassine :ninja:", "<user> looked like they needed one of these", f'<author> hugs <user> as strong as they can', f'<author> hugs <user> and makes sure to not let go', f'<author> gives <user> the longest hug they have ever seen', f'<author> cuddles <user>', f'<author> uses <user> as a teddybear', f'<author> hugs <user> until all their worries are gone and 5 minutes longer',f'<author> clones themself and together they hug <user>', f'<author> jumps in <user>\'s arms', f'<author> gives <user> a bearhug', f'<author> finds a lamp with a Jinn and gets a wish. So they wish to hug <user>', f'<author> asks <user> for motivation and gets a hug','<author> looks at the floor, then up, then at the floor again and finally hugs <user> with passion', '<author> looks deep into <user>\'s eyes and them gives them a hug', '<author> could do their homework but instead they decide to hug <user>', '<user> wanted to go get food but <author> wouldn\'t let go']
+PAT_TEXTS = ["<author> pats ‘user’ like a cat", "<user>'s head seems very pattable", '<author> was too tired to hug <user> so they gave a pat instead', '<user> took 5 lp damage down so <author> gives them a healing head pat', '<author> tries to catch a spider, slips and instead pats <user>. <author> is also fine with that', '<author> pats <user>', '<author> thinks <user> is a cat and starts to pat them', '<author> looks at <user>\'s fluffy hair and starts to pat them', "<author> didn't get pet so they pat <user> instead"]
+SLAP_TEXTS = ["<author> noticed <user> staring off into the distance. So they obviously slap them", "<user> did some unspeakable things... so <author> slapped them!", '<author> slaps <user>', '<author> stares at <user> for a long time and then slaps them', '<author> has no mercy; they slap <user>', '<author> is unsure how to react so they slap <user>']
+POKE_TEXTS = ["<author> uses the spell \"poke\" to remove the tiredness 5 effect on <user>", "Look at me!", "<author> requires <user>'s attention please!", '<author> pokes <user>', '*Poke* *Poke*, <author> pokes <user>', '<author> starts poking <user>', '<author> pokes <user> with a big smile on their face']
+TICKLE_TEXTS = ["<author> casts \"tickle\" on <user> which adds the effect laughing 3 to them", "<user> looks sad so <author> tickles them", "<author> is too nice to slap but <user> still needs revenge, so they tickle them!", '<user> didn\'t let <author> eat cookies, so they get tickled!', '<author> couldn\'t resist their chance to tickle <author>','<author> tickles <user>', '<author> has no mercy; they tickle <user>', '<author> knows there is just one way, so they tickle <user>']
 
 # the todo editing cache, needs to be defined here so I can use it across files
 editing = {}
@@ -119,15 +119,15 @@ ACTIONS = {
     },
     "slap": {
         "text": SLAP_TEXTS,
-        "images": "who cares"
+        "images": "not used"
     },
     "poke": {
         "text": POKE_TEXTS,
-        "images": "who cares"
+        "images": "not used"
     },
     "tickle": {
         "text": TICKLE_TEXTS,
-        "images": "who cares"
+        "images": "not used"
     }
 }
 
@@ -171,7 +171,7 @@ KILLUA_BADGES = {
     "owner": "<:badge_killua_owner:788940157599612948>"
 }
 
-SERVER_BADGES = {
+GUILD_BADGES = {
     "premium": "<:premium_guild_badge:883473807292121149>",
     "early supporter": "<:early_supporter_badge:882616073394987048>",
     "partner": "<:partner_badge:879391663460610078>"
@@ -419,16 +419,20 @@ Have fun hunters
 # FOR THE UWU COMMAND
 
 ALIASES = {
-    'hello': ['hyaaaa', 'Haiii'],
-    'bye': ['baiiii', "buibui"],
+    'hello': ['hyaaaa', 'haiii'],
+    'bye': ['baiiii', "bui", "bai"],
     'this': ['dis'],
+    "that": ["dat"],
     'what': ['wat', "waa"],
     'because': ['cuz'],
     'and': ['&', "annnd", "n"],
-    "cry": ["cri"]
+    "cry": ["cri"],
+    "no": ["nu", "noooo"],
+    "why": ["wai"]
 }
 
-UWUS = ['uwu', 'owo', 'ʕ•́ᴥ•̀ʔっ', '≧◠ᴥ◠≦', '>\_<']
+UWUS = ['uwu', 'owo', 'ʕ•́ᴥ•̀ʔっ', '≧◠ᴥ◠≦', '>\_<', "(◕ ˬ ◕✿)", "(・ω ・✿)", "(◕ㅅ◕✿)", " (◠‿◠✿)", " (◠‿◠)", " ̑̑ෆ(⸝⸝⸝◉⸝ ｡ ⸝◉⸝✿⸝⸝)", "(இ\_\_இ✿)", "✧w✧", "ಇ( ꈍᴗꈍ)ಇ", "( ᴜ ω ᴜ )", "ଘ(੭ ˘ ᵕ˘)━☆ﾟ.*･｡ﾟᵕ꒳ᵕ~", "ʕ ꈍᴥꈍʔ", "（´•(ｪ)•｀）", "(=^･ω･^=)", "/ᐠ . ֑ . ᐟ\ﾉ", "චᆽච", "♡(˶╹̆ ▿╹̆˵)و✧♡", "( o͡ ꒳ o͡ )",
+"(´・ω・｀)", "Ꮚ･ω･Ꮚ", "꒰(͏ʻัꈊʻั)꒱", "꒰(͏ˊ•ꈊ•ˋ)꒱", "ʕᴥ·　ʔ", "ʕ º ᴥ ºʔ", "ʕ≧ᴥ≦ʔ", "▼・ᴥ・▼", "૮ ˘ﻌ˘ ა", "₍ᐢ ̥ ̞ ̥ᐢ₎ ♥", "(ᵔᴥᵔ)", "꒰꒡ꆚ꒡꒱"]
 
 # THE KILLUA SUPPORT SERVER AND ITS DATA
 GUILD = 715358111472418908

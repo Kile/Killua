@@ -170,7 +170,7 @@ class Rps:
                 p1.add_jenny(self.points)
                 if player2 != self.ctx.me:
                     p2.remove_jenny(self.points)
-                return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny + self.points}')
+                return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}')
             else:
                 return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}')
         elif winlose == 0:
@@ -180,7 +180,7 @@ class Rps:
                 p1.remove_jenny(self.points)
                 if player2 != self.ctx.me:
                     p2.add_jenny(self.points)
-                return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny - self.points}')
+                return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}')
             else:
                 return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention}')
 
@@ -192,7 +192,7 @@ class Rps:
         if not resp:
             return
 
-        c2 = random.choice(['paper', 'rock', 'scissors'])
+        c2 = random.randint(-1, 1)
         winlose = self._result(resp[0].value, c2)
         await self._eval_outcome(winlose, resp[0].value, c2, self.ctx.author, self.ctx.me)
 
