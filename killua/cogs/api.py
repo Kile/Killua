@@ -12,9 +12,9 @@ class IPCRoutes(commands.Cog):
 
     @ipc.server.route()
     async def top(self, data) -> List[dict]:
-        """Returns a list of the top 100 users by the amount of jenny they have"""
+        """Returns a list of the top 50 users by the amount of jenny they have"""
         members = teams.find({'id': {'$in': [x.id for x in self.client.users]} })
-        top = sorted(members, key=lambda x: x['points'], reverse=True)[:100]
+        top = sorted(members, key=lambda x: x['points'], reverse=True)[:50]
         res = []
         for t in top:
             u = self.client.get_user(t["id"])

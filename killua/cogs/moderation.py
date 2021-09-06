@@ -35,14 +35,14 @@ class Moderation(commands.Cog):
         if isinstance(member, int):
             try:
                 await ctx.guild.ban(discord.Object(id=member))
-                user = await self.client.fetch_user(member)
+                user = self.client.get_user(member) or await self.client.fetch_user(member)
                 return await ctx.send(f':hammer: Banned **{user}** because of: ```\n{reason or "No reason provided"}```Operating moderator: **{ctx.author}**')
-            except Exception as e:
-                return await ctx.send(e)
+            except discord.HTTPException:
+                return await ctx.send("Something went wrong! Did you specify a valid user id?")
 
         r = await self.check_perms(ctx, member)
-        if r:
-            return
+        if r: return
+
         try:
             await member.send(f'You have been banned from {ctx.guild.name} because of: ```\n{reason or "No reason provided"}```by `{ctx.author}`')
         except discord.HTTPException:

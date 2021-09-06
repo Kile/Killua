@@ -90,10 +90,10 @@ class MyHelp(commands.HelpCommand):
         view = View(user_id=ctx.author.id, timeout=None)
         view.add_item(Select([discord.SelectOption(label=k, value=str(i), emoji=v['emoji']['unicode']) for i, (k, v) in enumerate(self.cache.items())], placeholder="Select a command group"))
 
-        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url=ctx.bot.support_server_invite, label="Support server"))
-        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://github.com/kile/killua", label="Source code"))
-        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://killua.dev", label="Website"))
-        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://patreon.com/kilealkuri", label="Premium"))
+        view.add_item(discord.ui.Button(url=ctx.bot.support_server_invite, label="Support server"))
+        view.add_item(discord.ui.Button(url="https://github.com/kile/killua", label="Source code"))
+        view.add_item(discord.ui.Button(url="https://killua.dev", label="Website"))
+        view.add_item(discord.ui.Button(url="https://patreon.com/kilealkuri", label="Premium"))
         msg = await self.send(embed=embed, view=view, reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 
         try:

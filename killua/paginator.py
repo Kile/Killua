@@ -229,7 +229,7 @@ class Paginator:
     async def _start(self) -> View:
         """A seperate method so overwriting `start` can still use the logic of the normal paginator"""
         await  self._get_first_embed()
-        self.view.message = (await self.ctx.send(file=self.file, embed=self.embed, view=self.view)) if self.file else (await self.ctx.send(embed=self.embed, view=self.view))
+        self.view.message = (await self.ctx.bot.send_message(self.ctx, file=self.file, embed=self.embed, view=self.view)) if self.file else (await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view))
         
         await self.view.wait()
 

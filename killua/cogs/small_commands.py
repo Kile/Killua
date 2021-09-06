@@ -56,7 +56,7 @@ class SmallCommands(commands.Cog):
         t = []
         for p, w in enumerate(s):
             if emotes > 0:
-                if (w[-1:] in [',', '.'] and w[-2:] != '..' and randint(6,10) > 7) or p+1 == len(s):
+                if (w[-1:] in [',', '.'] and w[-2:] != '..' and randint(1,10) > 5) or p+1 == len(s):
                     t.append(w[:len(w)-(1 if w[-1:] in [',', '.'] else 0)]+' '+choice(UWUS)+(w[-1:] if p != len(s)-1 else ''))
                     emotes = emotes-1
                     continue
