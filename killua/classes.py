@@ -347,7 +347,7 @@ class Category(Enum):
         }
     }
 
-# pillow logic contributed by by DerUSBStick (Thank you!)
+# pillow logic contributed by DerUSBstick (Thank you!)
 class Book:
 
     background_cache = {}
@@ -380,11 +380,11 @@ class Book:
     async def _getbackground(self, types) -> Image.Image:
         url = ['https://alekeagle.me/XdYUt-P8Xv.png', 'https://alekeagle.me/wp2mKvzvCD.png']
         if (res:= self._get_from_cache(types)):
-            return res.convert("RGB")
+            return res.convert("RGBA")
 
         async with self.session.get(url[types]) as res: 
             image_bytes = await res.read()
-            background = (img:= Image.open(io.BytesIO(image_bytes))).convert('RGB') 
+            background = (img:= Image.open(io.BytesIO(image_bytes))).convert('RGBA') 
 
         self._set_cache(img, types == 0)
         return background
@@ -393,8 +393,8 @@ class Book:
 
         async with self.session.get(url) as res:
             image_bytes = await res.read()
-            image_card = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-            image_card = image_card.resize((80, 110), Image.ANTIALIAS)
+            image_card = Image.open(io.BytesIO(image_bytes)).convert('RGBA')
+            image_card = image_card.resize((84, 115), Image.ANTIALIAS)
         # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
         return image_card
 
@@ -411,8 +411,8 @@ class Book:
 
     async def _cards(self, image, data, option):
         card_pos:list = [
-            [(113, 145),(320, 15),(418, 15),(516, 15),(320, 142),(418, 142),(516, 142),(320, 269),(418, 269),(516, 269)],
-            [(15,17),(112,17),(210,17),(15,144),(112,144),(210,144),(15,274),(112,274),(210,274),(320,13),(418,13),(516,13),(320,143),(418,143),(516,143),(320,273),(418,273),(516,273)]
+            [(111, 143),(318, 15),(416, 15),(513, 15),(318, 142),(416, 142),(514, 142),(318, 269),(416, 269),(514, 269)],
+            [(12,14),(110,14),(207,14),(12,141),(110,143),(208,143),(13,271),(111,272),(209,272), (318, 15),(416, 15),(513, 15),(318, 142),(416, 142),(514, 142),(318, 269),(416, 269),(514, 269)]#(320,13),(418,13),(516,13),(320,143),(418,143),(516,143),(320,273),(418,273),(516,273)]
         ]
         for n, i in enumerate(data): 
             if i:
