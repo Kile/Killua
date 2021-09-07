@@ -8,7 +8,7 @@ from killua.checks import check
 from killua.paginator import View
 from killua.help import Select
 from killua.classes import User, Guild, Category, LootBox
-from killua.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, guilds, LOOTBOXES
+from killua.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, LOOTBOXES
 
 class Economy(commands.Cog):
 
