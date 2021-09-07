@@ -36,7 +36,7 @@ class Events(commands.Cog):
             try:
                 async with self.client.session.get(item["Image"]) as res:
                     image_bytes = await res.read()
-                    image_card = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+                    image_card = Image.open(io.BytesIO(image_bytes)).convert('RGBA')
                     image_card = image_card.resize((80, 110), Image.ANTIALIAS)
 
                 Book.card_cache[str(item["_id"])] = image_card

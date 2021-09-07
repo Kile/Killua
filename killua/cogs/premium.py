@@ -91,11 +91,11 @@ class Premium(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.get_patrons.start()
-        self.invalid = True # this is only `True` the first time the bot starts because the boosters of teh support server are not cached at that point, so it avoids removing their badge
+        self.invalid = True # this is only `True` the first time the bot starts because the boosters of the support server are not cached at that point, so it avoids removing their badge
 
     def _get_boosters(self):
         guild = self.client.get_guild(GUILD)
-        if not guild:
+        if guild is None:
             self.invalid = True
             return []
         return [x.id for x in guild.members if BOOSTER_ROLE in [r.id for r in x.roles]]
@@ -121,7 +121,7 @@ class Premium(commands.Cog):
 
             if d["tier"] is None:
                 Guild.bullk_remove_premium([int(x) for x in premium_guilds.keys()])
-                user.remove_premium_guilds()
+                user.clear_premium_guilds()
             else:
                 badges.append(d["tier"])
 
