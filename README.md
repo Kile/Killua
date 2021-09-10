@@ -70,6 +70,7 @@ You will also need a file named `config.json` having the layout like this:
   "token": "your_bots_token",
   "mongodb": "your_mongodb_connection_details",
   "pxlapi": "your_pxlapi_api_key",
+  "patreon": "patreon_api_key",
   "dbl": {
     "token": "your_dbl_token",
     "password": "your_webhook_password",
