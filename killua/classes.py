@@ -412,7 +412,7 @@ class Book:
     async def _cards(self, image, data, option):
         card_pos:list = [
             [(112, 143),(318, 15),(418, 15),(513, 15),(318, 142),(418, 142),(514, 142),(318, 269),(418, 269),(514, 269)],
-            [(12,14),(112,14),(207,14),(12,141),(112,143),(208,143),(13,271),(112,272),(209,272), (318, 15),(418, 15),(513, 15),(318, 142),(418, 142),(514, 142),(318, 269),(418, 269),(514, 269)]
+            [(12,14),(112,14),(207,14),(12,141),(112,143),(208,143),(13,271),(112,272),(209,272), (318, 15),(417, 15),(513, 15),(318, 142),(418, 142),(514, 142),(318, 269),(418, 269),(514, 269)]
         ]
         for n, i in enumerate(data): 
             if i:
@@ -730,42 +730,33 @@ class User:
             self.remove_card(0)
             self.remove_badge("greed_island_badge")
 
+    def _remove_logic(self, card_type:str, card_id:int, remove_fake:bool, clone:bool, no_exception:bool=False) -> List[int, dict]:
+        """Handles the logic of the remove_card method"""
+        attr = getattr(self, f"{card_type}_cards")
+        cards, match = self._find_match(attr, card_id, remove_fake, clone)
+        if not match:
+            if no_exception:
+                return self._remove_logic("rs", card_id, remove_fake, clone)
+            else:
+                raise NoMatches
+        attr = cards
+        self._update_val(f"cards.{card_type}", attr)
+        self._incomplete()
+        return match
+
     def remove_card(self, card_id:int, remove_fake:bool=None, restricted_slot:bool=None, clone:bool=None) -> List[int, dict]:
         """Removes a card from a user"""
         if self.has_any_card(card_id) is False:
             raise NotInPossesion('This card is not in possesion of the specified user!')
 
         if restricted_slot:
-            cards, match = self._find_match(self.rs_cards, card_id, remove_fake, clone)
-            if not match:
-                raise NoMatches
-            self.rs_cards = cards
-            self._update_val("cards.rs", self.rs_cards)
-            self._incomplete()
-            return match
+            return self._remove_logic("rs", card_id, remove_fake, clone)
 
         elif restricted_slot is False:
-            cards, match = self._find_match(self.fs_cards, card_id, remove_fake, clone)
-            if not match:
-                raise NoMatches
-            self.fs_cards = cards
-            self._update_val("cards.fs", self.fs_cards)
-            return match
+            return self._remove_logic("fs", card_id, remove_fake, clone)
 
         else: # if it wasn't specified it first tries to find it in the free slots, then restricted slots
-            cards, match = self._find_match(self.fs_cards, card_id, remove_fake, clone)
-            if match:
-                self.fs_cards = cards
-                self._update_val("cards.fs", self.fs_cards)
-                return match
-            else:
-                cards, match = self._find_match(self.rs_cards, card_id, remove_fake, clone)
-                if not match:
-                    raise NoMatches
-                self.rs_cards = cards
-                self._update_val("cards.rs", self.rs_cards)
-                self._incomplete()
-                return match
+            return self._remove_logic("fs", card_id, remove_fake, clone, no_exception=True)
 
     def _add_card_owner(self, card:int, fake:bool) -> None:
         if not fake:

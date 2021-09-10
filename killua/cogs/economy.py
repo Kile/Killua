@@ -40,7 +40,6 @@ class Economy(commands.Cog):
 
         return res
          
-
     def _getmember(self, user: Union[discord.Member, discord.User]) -> discord.Embed:
         """ a function to handle getting infos about a user for less messy code """
         joined = (user.created_at).strftime("%b %d %Y %H:%M:%S")

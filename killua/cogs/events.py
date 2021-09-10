@@ -34,10 +34,13 @@ class Events(commands.Cog):
         percentages = [25, 50, 75]
         for p, item in enumerate(cards):
             try:
+                if item["_id"] in Book.card_cache:
+                    continue # in case the event fires multiple times this avoids using unnecessary cpu power
+
                 async with self.client.session.get(item["Image"]) as res:
                     image_bytes = await res.read()
                     image_card = Image.open(io.BytesIO(image_bytes)).convert('RGBA')
-                    image_card = image_card.resize((80, 110), Image.ANTIALIAS)
+                    image_card = image_card.resize((84, 115), Image.ANTIALIAS)
 
                 Book.card_cache[str(item["_id"])] = image_card
                 if len(percentages) >= 1 and (p/len(cards))*100 > (percent:= percentages[0]):
@@ -51,7 +54,7 @@ class Events(commands.Cog):
     async def _set_patreon_banner(self) -> None:
         res = await self.client.session.get(PatreonBanner.URL)
         image_bytes = await res.read()
-        PatreonBanner.VALUE= image_bytes
+        PatreonBanner.VALUE = image_bytes
         print(f"{PrintColors.OKGREEN}Successfully loaded patreon banner{PrintColors.ENDC}")
 
     @commands.Cog.listener()

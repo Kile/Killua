@@ -5,7 +5,7 @@ import re
 import io
 from PIL import Image, ImageDraw, ImageChops
 
-from pypxl import PxlClient # My own library :sparkles:
+from pypxl import PxlClient # My own library ✨
 
 from killua.gif import save_transparent_gif
 from killua.checks import check

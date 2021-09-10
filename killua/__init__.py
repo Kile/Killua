@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, date
 from typing import Union, Callable, List, Tuple, Optional
 
 from .help import MyHelp
-from .classes import Category
+from .classes import Category, Guild
 from .constants import guilds, TOKEN, IPC_TOKEN, presence, TIPS
 
 class Bot(commands.Bot):
@@ -84,11 +84,12 @@ def get_prefix(bot, message):
 	if bot.user.id == 758031913788375090:
 		return commands.when_mentioned_or('kil!', 'kil.')(bot, message)
 	try:
-		y = guilds.find_one({'id': message.guild.id})
-		if y is None:
+		g = Guild(message.guild.id)
+		if g is None:
 			return commands.when_mentioned_or('k!')(bot, message)
-		return commands.when_mentioned_or(y['prefix'])(bot, message)
+		return commands.when_mentioned_or(g.prefix)(bot, message)
 	except Exception:
+		# in case message.guild is `None` or something went wrong getting the prefix the bot still NEEDS to react to mentions and k!
 		return commands.when_mentioned_or('k!')(bot, message)
 
 def main():
@@ -96,7 +97,7 @@ def main():
 	intents = discord.Intents(
 		guilds=True,
 		members=True,
-		emojis_and_stickers=True, # this is not needed in the code but I'd lik to have it
+		emojis_and_stickers=True, # this is not needed in the code but I'd like to have it
 		messages=True
 	)
 	# Create the bot instance.
