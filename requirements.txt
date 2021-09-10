@@ -179,7 +179,7 @@ traitlets==5.0.5
 twine==3.4.1
 typing-extensions==3.7.4.3
 tzlocal==2.1
-urllib3==1.24.3
+urllib3==1.26.5
 wcwidth==0.2.5
 webencodings==0.5.1
 websocket-client==0.57.0
