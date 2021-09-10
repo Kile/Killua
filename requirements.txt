@@ -12,7 +12,7 @@ attrs==20.2.0
 autopep8==1.5.4
 Babel==2.9.1
 beautifulsoup4==4.9.3
-bleach==3.2.1
+bleach==3.3.0
 blinker==1.4
 braceexpand==0.1.6
 bs4==0.0.1
