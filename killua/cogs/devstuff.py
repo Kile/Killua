@@ -2,47 +2,49 @@ from discord.ext import commands
 import discord
 from datetime import datetime, timedelta
 import re
-from killua.checks import check, p
-from killua.cogs.cards import Card, User, Category#lgtm [py/unused-import]
-from killua.cogs.pxlapi import PxlClient #lgtm [py/unused-import]
-from killua.constants import teams, guilds, blacklist, presence as pr, items, updates #lgtm [py/unused-import]
+from killua.checks import check
+from killua.classes import User, Category #lgtm [py/unused-import]
+from killua.cards import Card #lgtm [py/unused-import]
+from killua.constants import teams, guilds, blacklist, presence as pr, items, updates, UPDATE_CHANNEL #lgtm [py/unused-import]
 
 class DevStuff(commands.Cog):
 
     def __init__(self, client):
         self.client = client
 
-    #Eval command, unecessary with the jsk extension but useful for databse stuff
+    #Eval command, unnecessary with the jsk extension but useful for database stuff
     @commands.is_owner()
     @commands.command(aliases=['exec'], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True)
     async def eval(self, ctx, *, code):
-        """Standart eval command, owner restricted ofc"""
+        """Standart eval command, owner restricted"""
         try:
             await ctx.channel.send(f'```py\n{eval(code)}```')
         except Exception as e:
             await ctx.channel.send(str(e))
 
     @commands.is_owner()
-    @commands.command(extras={"category":Category.OTHER}, usage="publish update <version> <text>", hidden=True)
+    @commands.command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
     async def publish_update(self, ctx, version:str, *, update):
         """Allows me to publish Killua updates in a handy formart"""
 
         old = updates.find_one({'_id':'current'})
-        log = updates.find_one({'_id': 'log'})
+        old_version = old["version"] if "version" in old else "No version"
+
+        if version in [*[old_version],*[x["version"] for x in updates.find_one({"_id": "log"})["past_updates"]]]:
+            return await ctx.send("This is an already existing version")
+
         embed = discord.Embed.from_dict({
-            'title': f'Killua Update `{old["version"]}` -> `{version}`',
+            'title': f'Killua Update `{old_version}` -> `{version}`',
             'description': update,
             'color': 0x1400ff,
             'footer': {'text': f'Update by {ctx.author}', 'icon_url': str(ctx.author.avatar.url)},
             'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
         })
-        try:
-            log.append(old)
-        except Exception:
-            log = [old]
-        updates.update_one({'_id': 'current'}, {'$set': {'version': version, 'description': update, 'published_on': datetime.now(), 'published_by': ctx.author.id}})
-        updates.update_one({'_id': 'log'}, {'$set': {'past_updates': log}})
-        channel = self.client.get_channel(757170264294424646)
+
+        data = {'version': version, 'description': update, 'published_on': datetime.now(), 'published_by': ctx.author.id}
+        updates.update_one({'_id': 'current'}, {'$set': data})
+        updates.update_one({'_id': 'log'}, {'$push': {'past_updates': data}})
+        channel = self.client.get_channel(UPDATE_CHANNEL)
         msg = await channel.send(content= '<@&795422783261114398>', embed=embed)
         await ctx.message.delete()
         await msg.publish()
@@ -73,11 +75,11 @@ class DevStuff(commands.Cog):
     async def blacklist(self, ctx, id:int, *,reason=None):
         """Blacklisting bad people like Hisoka. Owner restricted"""
         try:
-            user = await self.client.fetch_user(id)
+            user = self.client.get_user(id) or await self.client.fetch_user(id)
         except Exception as e:
             return await ctx.send(e)
-        # Inserting the bad person into my databse
-        blacklist.insert_one({'id': id, 'reason':reason or "No reason provided", 'date': datetime.now()})
+        # Inserting the bad person into my database
+        blacklist.insert_one({'id': id, 'reason': reason or "No reason provided", 'date': datetime.now()})
         await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
         
     @commands.is_owner()
@@ -86,7 +88,7 @@ class DevStuff(commands.Cog):
         """Whitelists a user. Owner restricted"""
 
         try:
-            user = await self.client.fetch_user(id)
+            user = self.client.get_user(id) or await self.client.fetch_user(id)
         except Exception as e:
             return await ctx.send(e)
 
@@ -109,7 +111,7 @@ class DevStuff(commands.Cog):
         if status == '-rm':
             pr.update_many({}, {'$set': {'text': None, 'activity': None, 'presence': None}})
             await ctx.send('Done! reset Killua\'s presence')
-            return await p(self)
+            return await self.client.update_presence()
 
         activity = re.search(r'as\(.*?\)ae', status)
         if activity:
@@ -124,8 +126,8 @@ class DevStuff(commands.Cog):
                 return await ctx.send('Invalid presence!')
         text = re.search(r'ts\(.*?\)te', status)
         pr.update_many({}, {'$set': {'text': text[0][3:-3], 'presence': presence, 'activity': activity}})
-        await p(self)
-        await ctx.send(f'Succesfully changed Killua\'s status to `{text[0][3:-3]}`! (I hope people like it >-<)')
+        await self.client.update_presence()
+        await ctx.send(f'Successfully changed Killua\'s status to `{text[0][3:-3]}`! (I hope people like it >-<)')
 
 
 

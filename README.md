@@ -56,25 +56,12 @@ First, set up a virtual environment. Do so with `python3 -m venv env; source env
 
 `requirements.txt` contains the libraries you'll need and probably a few more. To install the libraries use `pip3 install -r requirements.txt`
 
+Note: `discord-ext-ipc` will throw an internal error. To get rid of this, you need to go into its source code and delete/comment out every time `bot.dispatch` is called
+
 You will need a mongodb account. Why do I use mongodb and not sql? In my opinion mongo is easier to use and you can manually add and remove data
 
-You will need the following mongodb structure where `#` resembles a database and `-` collections:
-
-```
-#Killua
-  -teams
-  -guilds
+You will have to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` to get the database set up
   
-#general
-  -blacklist
-  -presence
-  -todo
-  -updates
-  -shop
-```
-You will need to insert initial data in shop, presence and updates
-  
-Note: you will have to create a mongodb account [here](https://www.mongodb.com)
   
 You will also need a file named `config.json` having the layout like this:
 

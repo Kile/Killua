@@ -1,38 +1,22 @@
 import discord
 from discord.ext import commands
+
 import time
 from datetime import datetime, timedelta
 from random import randint, choice
 import math
-import typing
-import json
+from typing import Union
 from deep_translator import GoogleTranslator, MyMemoryTranslator
+
 from killua.checks import check
-from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams
+from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS
 from killua.classes import Category
+from killua.paginator import Paginator
 
 class SmallCommands(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-
-    def av(self, user) -> discord.Embed:
-        """ Input:
-            user: the user to get the avatar from
-
-            Returns:
-            embed: an embed with the users avatar
-
-            Purpose: 
-            "outsourcing" a bit of the avatar command
-        """
-        #constructing the avatar embed
-        embed = discord.Embed.from_dict({
-            'title': f'Avatar of {user}',
-            'image': {'url': str(user.avatar.replace(format='png'))},
-            'color': 0x1400ff
-        })
-        return embed
 
     def hardcoded_aliases(self, text:str) -> str:
         l = []
@@ -72,7 +56,7 @@ class SmallCommands(commands.Cog):
         t = []
         for p, w in enumerate(s):
             if emotes > 0:
-                if (w[-1:] in [',', '.'] and w[-2:] != '..' and randint(6,10) > 7) or p+1 == len(s):
+                if (w[-1:] in [',', '.'] and w[-2:] != '..' and randint(1,10) > 5) or p+1 == len(s):
                     t.append(w[:len(w)-(1 if w[-1:] in [',', '.'] else 0)]+' '+choice(UWUS)+(w[-1:] if p != len(s)-1 else ''))
                     emotes = emotes-1
                     continue
@@ -89,7 +73,7 @@ class SmallCommands(commands.Cog):
     @commands.command(aliases=['uwu', 'owo', 'owofy'], extras={"category":Category.FUN}, usage="uwufy <text>")
     async def uwufy(self, ctx, *, content:str):
         """Uwufy any sentence you want with dis command, have fun >_<"""
-        return await ctx.send(self.build_uwufy(content, stuttering=3, cuteness=3))
+        return await self.client.send_message(ctx, self.build_uwufy(content, stuttering=3, cuteness=3))
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="ping")
@@ -103,7 +87,7 @@ class SmallCommands(commands.Cog):
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="topic")
     async def topic(self, ctx):
-        """From a constatnly updating list of topics to talk about one is chosen here"""
+        """From a constantly updating list of topics to talk about one is chosen here"""
         await ctx.send(choice(TOPICS))
 
     @check()
@@ -113,8 +97,8 @@ class SmallCommands(commands.Cog):
         await ctx.send("Hello " + str(ctx.author))
 
     @check()
-    @commands.command(aliases=['8ball'], extras={"category":Category.FUN}, usage="8ball <question>")
-    async def ball(self, ctx, *, question:str):
+    @commands.command(name='8ball', extras={"category":Category.FUN}, usage="8ball <question>")
+    async def _ball(self, ctx, *, question:str):
         """Ask Killua anything and he will answer"""
         embed = discord.Embed.from_dict({
             'title': f'8ball has spoken 🎱',
@@ -122,39 +106,46 @@ class SmallCommands(commands.Cog):
             'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Asked by {ctx.author}'},
             'color': 0x1400ff
         })
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(aliases=['av', 'a'], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
-    async def avatar(self, ctx, user: typing.Union[discord.Member, int]=None):
+    async def avatar(self, ctx, user: Union[discord.Member, int]=None):
         """Shows the avatar of a user"""
         if not user:
-            embed = self.av(ctx.author)
-            return await ctx.send(embed=embed)
+            avatar = str(ctx.author.avatar.url)
             #Showing the avatar of the author if no user is provided
-        if isinstance(user, discord.Member):
-            embed = self.av(user)
-            return await ctx.send(embed=embed)
+        elif isinstance(user, discord.Member):
+            avatar = str(user.avatar.url)
             #If the user args is a mention the bot can just get everything from there
-        try:
-            newuser = await self.client.fetch_user(user)
-            embed = self.av(newuser)
-            return await ctx.send(embed=embed)
-            #If the args is an integer the bot will try to get a user with the integer as ID
-        except discord.NotFound:
-            return await ctx.send('Invalid user')
+        else:
+            try:
+                user = self.get_user(user) or await self.client.fetch_user(user)
+                avatar = str(user.avatar.url)
+                #If the args is an integer the bot will try to get a user with the integer as ID
+            except discord.NotFound:
+                return await ctx.send('Invalid user')
+
+        embed = discord.Embed.from_dict({
+            'title': f'Avatar of {user or ctx.author}',
+            'image': {'url': avatar},
+            'color': 0x1400ff
+        })
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="patreon")
+    @commands.command(aliases=["support"], extras={"category":Category.FUN}, usage="patreon")
     async def patreon(self, ctx):
         """Get infos about my Patreon and feel free to donate for some perks!"""
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri"))
         embed = discord.Embed.from_dict({
             'title': '**Support Killua**',
             'thumbnail':{'url': 'https://cdn.discordapp.com/avatars/758031913788375090/e44c0de4678c544e051be22e74bc502d.png?size=1024'},
-            'description': 'Hey, do you have too much money? I have a solution for that! I now have a Patreon account where you can donate to support me and get special stuff, helping with building Killua. Not that I expect anyone to do this, but I have it set up now. Make sure you are on my server before you become a Patreon so you get the perks!\n\n https://www.patreon.com/KileAlkuri',
+            'description': PREMIUM_BENEFITS,
             'color': 0x1400ff
         })
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed, view=view)
 
     @check()
     @commands.command(aliases=['stats'], extras={"category":Category.FUN}, usage="info")
@@ -169,18 +160,20 @@ class SmallCommands(commands.Cog):
             'color': 0x1400ff,
             'thumbnail': {'url': str(ctx.me.avatar.url)}
         })
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="invite")
     async def invite(self, ctx):
         """Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**"""
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Invite", url=f"https://discord.com/oauth2/authorize?client_id={self.client.user.id}&scope=bot&permissions=268723414"))
         embed = discord.Embed(
             title = 'Invite',
-            description = 'Invite the bot to your server [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414). Thank you a lot for supporting me!',
+            description = f'Invite the bot to your server by clicking on the button. Thank you a lot for supporting me!',
             color = 0x1400ff
         )
-        await ctx.send(embed=embed) 
+        await ctx.send(embed=embed, view=view) 
 
     @check()
     @commands.command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
@@ -203,7 +196,10 @@ class SmallCommands(commands.Cog):
     @commands.command(extras={"category":Category.FUN}, usage="vote")
     async def vote(self, ctx):
         """Gived you the links you need if you want to support Killua by voting, you will get sone Jenny as a reward"""
-        await ctx.send('Thanks for supporting Killua! Vote for him here: https://top.gg/bot/756206646396452975/vote \nAnd here: https://discordbotlist.com/bots/killua/upvote')
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://top.gg/bot/756206646396452975/vote", label="top.gg"))
+        view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://discordbotlist.com/bots/killua/upvote", label="dbl"))
+        await ctx.send('Thanks for supporting Killua! Vote for him by clicking on the buttons!', view=view)
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
@@ -229,12 +225,12 @@ class SmallCommands(commands.Cog):
                 return await ctx.send(error)
             
         embed.description = embed.description + f'```\n{translated}```'
-        await ctx.send(embed=embed)
+        await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="calc <math>")
     async def calc(self, ctx, *,args=None):
-        """Calculates any equasion you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)"""
+        """Calculates any equation you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)"""
         if not args:
             return await ctx.send("Please give me something to evaluate.\n")
         exprs = str(args).split('\n')
@@ -247,17 +243,76 @@ class SmallCommands(commands.Cog):
             return await ctx.send("An unknown error occurred during calculation!")
         if answer["error"]:
             return await ctx.send("The following error occured while calculating:\n`{}`".format(answer["error"]))
-        await ctx.send("Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
+        await self.client.send_message(ctx, "Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="usage")
     async def usage(self, ctx):
         """Shows the commands used the most. Added for fun and out of interest"""
         s = stats.find_one({'_id': 'commands'})['command_usage']
-        top = sorted(s.items(), key=lambda x: x[1], reverse=True)[:20]
-        prettier = '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top)])
-        return await ctx.send("```\n"+prettier+"\n```")
+        top = sorted(s.items(), key=lambda x: x[1], reverse=True)
+        def make_embed(page, embed, pages):
+            embed.title = "Top command usage"
 
+            if len(pages)-page*10+10 > 10:
+                top = pages[page*10-10:-(len(pages)-page*10)]
+            elif len(pages)-page*10+10 <= 10:
+                top = pages[-(len(pages)-page*10+10):]
+
+            embed.description = "```\n" + '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top, page*10-10)]) + "\n```"
+            return embed
+
+        return await Paginator(ctx, top, func=make_embed, max_pages=math.ceil(len(top)/10)).start()
+
+    @check(3600)
+    @commands.command(aliases=['fb'], extras={"category":Category.OTHER}, usage="feedback <type> <text>")
+    async def feedback(self, ctx, t=None, *, feedback=None):
+        """Submit feedback to Killua with this command! For more information on how do send what, use `fb`."""
+        if t:
+            if not t.lower() in ['topic', '8ball', 'hug', 'apply', 'general', 'idea', 'feature-request', 'complain', 'compliment']:
+                ctx.command.reset_cooldown(ctx)
+                return await ctx.send(f'Type not found. To see what types of feeback you can submit, use `{self.client.command_prefix(self.client, ctx.message)[2]}fb`')
+
+            if feedback is None:
+                return await ctx.send(f'Please tell us what you have to say about the chosen point. For more info use `{self.client.command_prefix(self.client, ctx.message)[2]}fb`')
+
+            embed = discord.Embed.from_dict({
+                'title': f'Feedback from guild {ctx.guild.name} (ID: {ctx.guild.id})',
+                'description': f'''Type of feedback: `{t}`  \n\n**Provided feedback:**\n\n{feedback}\n\nFeedback by **{ctx.author}, ID: {ctx.author.id}**''',
+                'color': 0x1400ff
+            })
+            
+            channel = self.client.get_channel(790002080625983558)
+
+            message = await channel.send(embed=embed)
+            await message.add_reaction('\U00002705')
+            await message.add_reaction('\U0000274c')
+
+            await ctx.send(':white_check_mark: thanks for sending your feedback! The feedback will be looked at as soon as possible!')
+        else:
+            ctx.command.reset_cooldown(ctx)
+            embed = discord.Embed.from_dict({
+                'title': f'Sending feedback',
+                'description': f'''Since this bot is in its early stages, feedback of users is of highest importance
+            
+    You can submit 9 types of feedback:
+
+    `topic` - suggestion for a topic for `{self.client.command_prefix(self.client, ctx.message)[2]}topic`
+    `8ball` - suggestion for a response for `{self.client.command_prefix(self.client, ctx.message)[2]}8ball`
+    `hug` - submit a hug text or image (Killua only) 
+    `apply` - apply for the team, we are looking for artists, programmer, people looking out for the server etc. Of course being part of the team comes with it's advantages
+    `general` - you just wanna give general feedback to us, no specific or too many categories for the other options
+    `idea` - you have a good idea for a command (like `{self.client.command_prefix(self.client, ctx.message)[2]}novel <booktitle>`, a idea I had today and I wil implement cause it's cool). Please describe it as detailed as possible though
+    `feature`-request - request a feature, kinda like idea but idk. Again, lease describe it as detailed as possible
+    `complain` - complain about something
+    `compliment` -  compliment a feature of Killua
+
+    **This command has a 1 hour cooldown, abuse will lead to blacklisting**
+    [Support server](https://discord.gg/be4nvwq7rZ)''',
+                'color': 0x1400ff
+            })
+
+            await ctx.send(embed=embed)
 
 Cog = SmallCommands
 

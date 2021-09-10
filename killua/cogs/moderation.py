@@ -35,14 +35,14 @@ class Moderation(commands.Cog):
         if isinstance(member, int):
             try:
                 await ctx.guild.ban(discord.Object(id=member))
-                user = await self.client.fetch_user(member)
+                user = self.client.get_user(member) or await self.client.fetch_user(member)
                 return await ctx.send(f':hammer: Banned **{user}** because of: ```\n{reason or "No reason provided"}```Operating moderator: **{ctx.author}**')
-            except Exception as e:
-                return await ctx.send(e)
+            except discord.HTTPException:
+                return await ctx.send("Something went wrong! Did you specify a valid user id?")
 
         r = await self.check_perms(ctx, member)
-        if r:
-            return
+        if r: return
+
         try:
             await member.send(f'You have been banned from {ctx.guild.name} because of: ```\n{reason or "No reason provided"}```by `{ctx.author}`')
         except discord.HTTPException:
@@ -56,7 +56,7 @@ class Moderation(commands.Cog):
     @commands.command(extras={"category":Category.MODERATION}, usage="unban <user>")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
-    async def unban(self, ctx, *, member:typing.Union[str, int]):
+    async def unban(self, ctx, *, member:typing.Union[int, str]):
         """Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work"""
         banned_users = await ctx.guild.bans()
     
@@ -119,57 +119,46 @@ class Moderation(commands.Cog):
 
         muted = find(lambda r: r.name.lower() == 'muted', ctx.guild.roles)
 
-        if muted > ctx.me.top_role:
-            return await ctx.send('I need to be moved on top of the muted role or higher')
-
         if muted is None:
             return await ctx.send('There is no rule called `muted` so I can\'t mute that user')
+
+        if muted in member.roles:
+            return await ctx.send("This user is already muted!")
+
+        if muted > ctx.me.top_role:
+            return await ctx.send('I need to be moved on top of the muted role or higher')
         
         if timem:
-            string = False
+            if (digit:=timem.isdigit()) or timem.lower() in ["standart", "unlimited", "u", "s"]:
 
-            if timem.isdigit() is True:
-                pass
+                if digit and (int(timem) > 1440 or int(timem) < 0):
+                    return await ctx.send('The most time a user can be muted is a day or unlimited and the least is a minute')
 
-            else:
-                if timem.lower() == 'unlimited' or timem.lower() == 'standart' or timem.lower() == 'u' or timem.lower() == 's':
-                    string = True
-                else:
-                    return await ctx.send('The `time`argument needs to be an integer between 1440 and null or `unlimited`')
-
-            if string is True:
                 await member.add_roles(muted, reason=reason or "No reason provided")
                 try:
-                    await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')
+                    await member.send(f'You have been muted in {ctx.guild.name} for the duration of {timem if digit else "`unlimited`"} minute{"s" if (digit and int(timem) !=1) or not digit else ""} by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')
                 except discord.HTTPException:
                     pass
 
-                return await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
-
-            if int(timem) > 1440 or int(timem) < 0:
-                return await ctx.send('The most time a user can be muted is a day or unlimited')
+                await ctx.send(f':pinching_hand: Muted **{member}** for {timem if digit else "`unlimited`"} minute{"s" if (digit and int(timem) !=1) or not digit else ""}. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
                     
-            await member.add_roles(muted, reason=reason or "No reason") 
-                    
-            try:
-                await member.send(f'You have been muted in {ctx.guild.name} for the duration of `{timem}` minutes by `{ctx.author}`')
-            except discord.HTTPException:
-                pass
-            await ctx.send(f':pinching_hand: Muted **{member}** for  `{timem}` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')
-            await asyncio.sleep(int(timem) * 60)
+                if digit: # in case a time was specified
+                    await asyncio.sleep(int(timem) * 60)
+                    try:
+                        await member.remove_roles(muted, reason='Mute time expired')
+                        await member.send(f'You have been unmuted in {ctx.guild.name}, reason: mute time expired')
+                    except discord.HTTPException:
+                        pass
+                return
+            else:
+                reason = (timem + " " + (reason or ""))
 
-            try:
-                await member.remove_roles(muted, reason='Mute time expired')
-                await member.send(f'You have been unmuted in {ctx.guild.name}, reason: mute time expired')
-            except discord.HTTPException:
-                pass
-        else:
-            await member.add_roles(muted,reason=reason or "No reason")
-            try:
-                await member.send(f'You have been muted in {ctx.guild.name} for the duration of `unlimited` minutes by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
-            except discord.HTTPException:
-                pass
-            await ctx.send(f':pinching_hand: Muted **{member}** for  `unlimited` minutes. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')    
+        await member.add_roles(muted, reason=reason or "No reason")
+        try:
+            await member.send(f'You have been muted in {ctx.guild.name} by `{ctx.author}`. Reason: ```\n{reason or "No reason provided"}```')  
+        except discord.HTTPException:
+            pass
+        await ctx.send(f':pinching_hand: Muted **{member}**. Reason:```\n{reason or "No reason provided"}``` Operating moderator: **{ctx.author}**')    
         
     @check()                  
     @commands.command(extras={"category":Category.MODERATION}, usage="unmute <user> <reason(optional)>")
@@ -182,11 +171,11 @@ class Moderation(commands.Cog):
 
         muted = find(lambda r: r.name.lower() == 'muted', ctx.guild.roles)
 
-        if muted > ctx.me.top_role:
-            return await ctx.send('I need to be moved on top of the muted role or higher')
-
         if muted is None:
             return await ctx.send('There is no rule called `muted` (Case insensitive) so I can\'t unmute that user')
+
+        if muted > ctx.me.top_role:
+            return await ctx.send('I need to be moved on top of the muted role or higher')
 
         if not muted in member.roles:
             return await ctx.send("This user is not currently muted")
@@ -201,18 +190,18 @@ class Moderation(commands.Cog):
     @check()
     @commands.command(extras={"category":Category.MODERATION}, usage="prefix <new_prefix(optional)>")
     async def prefix(self, ctx, pref:str=None):
-        """Change killua's prefix with this command. If you forgot your prefix, mentioning is always a prefix as well"""
+        """Change Killua's prefix with this command. If you forgot your prefix, mentioning is always a prefix as well"""
 
         guild = Guild(ctx.guild.id)
 
         if ctx.author.guild_permissions.administrator and pref:
             guild.change_prefix(pref)
-            return await ctx.send(f'Successfully changed server prefix to `{pref}`!')
+            return await ctx.send(f'Successfully changed server prefix to `{pref}`!', allowed_mentions=discord.AllowedMentions.none())
 
         elif ctx.author.guild_permissions.administrator is False and pref:
             return await ctx.send('You need `administrator` permissions to change the server prefix!')
 
-        await ctx.send(f'The current server prefix is `{guild.prefix}`')
+        await ctx.send(f'The current server prefix is `{guild.prefix}`', allowed_mentions=discord.AllowedMentions.none())
 
 
 Cog = Moderation        
