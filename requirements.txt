@@ -107,7 +107,7 @@ pep517==0.10.0
 pexpect==4.8.0
 pickleshare==0.7.5
 pid==3.0.4
-Pillow==7.0.0
+Pillow==8.3.2
 pkginfo==1.7.0
 plotly==4.14.3
 portpicker==1.2.0
