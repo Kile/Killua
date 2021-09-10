@@ -64,7 +64,7 @@ class Moderation(commands.Cog):
             try:
                 user = discord.Object(id=int(member))
                 await ctx.guild.unban(user)
-                await ctx.send(f':ok_hand: Unbanned **{user}**\nOperating moderator: **{ctx.author}**')
+                await ctx.send(f':ok_hand: Unbanned user with id **{member}**\nOperating moderator: **{ctx.author}**')
             except discord.HTTPException as e:
                 if e.code == 10013:
                     return await ctx.send(f'No user with the user ID {member} found')
@@ -72,7 +72,10 @@ class Moderation(commands.Cog):
                     return await ctx.send('The user is not currently banned')
 
         else:
-            member_name, member_discriminator = member.split("#")
+            data = member.split("#")
+            if len(data) != 2:
+                return await ctx.send("Invalid user specified! (Did you not use the User#0000 format or does the user have a # in their name?)")
+            member_name, member_discriminator = data
     
             loopround = 0
 

@@ -32,7 +32,7 @@ class Cards(commands.Cog):
             else:
                 rarities = ['C', 'D', 'E']
 
-            amount = math.ceil(score*(score*random.randint(5, 15)))
+            amount = math.ceil(score*(score*random.randint(5, 10)))
             card = random.choice([x['_id'] for x in items.find({'type': 'monster', 'rank': {"$in": rarities}})])
             return amount, card
     
@@ -44,7 +44,7 @@ class Cards(commands.Cog):
             rewards.append(self._get_single_reward(1))
             score = 0.5
 
-        for i in range(math.ceil(score*(score*random.randint(5, 20)))):
+        for i in range(math.ceil(score*(score*random.randint(5, 14)))):
             r = self._get_single_reward(score)
             rewards.append(r)
     
@@ -65,7 +65,7 @@ class Cards(commands.Cog):
         for reward in rewards:
             for i in range(reward[0]):
                 if len([*user.fs_cards,*[x for x in rewards if x[1] > 99 and not user.has_rs_card(x[0])]]) >= 40 and (reward[1] > 99 or (not user.has_rs_card(reward[1]) and reward[1] < 100)):
-                    return rewards, True
+                    return rewards, formatted_text, True
                 formatted_rewards.append([reward[1], {"fake": False, "clone": False}])
             card = Card(reward[1])
             formatted_text.append(f"{reward[0]}x **{card.name}**{card.emoji}")
@@ -189,7 +189,10 @@ class Cards(commands.Cog):
                 formatted_rewards, formatted_text, hit_limit = self._format_rewards(rewards, user, score)
                 text = f'You\'ve been hunting for {difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds. You brought back the following items from your hunt: \n\n'
                 if hit_limit:
-                    text += f":warning:Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`*:warning:\n\n"
+                    text += f":warning:Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell` :warning:\n\n"
+
+                if hit_limit and len(user.fs_cards) == 40:
+                    text += f"Could not carry anything from your hunt in your free slots so you gained no cards.."
 
                 embed = discord.Embed.from_dict({
                     'title': 'Hunt returned!',

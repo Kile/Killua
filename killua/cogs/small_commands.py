@@ -120,7 +120,7 @@ class SmallCommands(commands.Cog):
             #If the user args is a mention the bot can just get everything from there
         else:
             try:
-                user = self.get_user(user) or await self.client.fetch_user(user)
+                user = self.client.get_user(user) or await self.client.fetch_user(user)
                 avatar = str(user.avatar.url)
                 #If the args is an integer the bot will try to get a user with the integer as ID
             except discord.NotFound:

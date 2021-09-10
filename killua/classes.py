@@ -803,13 +803,13 @@ class User:
             args = args[0]
 
         for item in args:
-            if item[1]["fake"] is False:
+            for c in range(item[0]):
                 PartialCard(item[0]).add_owner(self.id)
-            if item[0] < 99:
-                if not self.has_rs_card(item[0]):
-                    if not item[0] in [x[0] for x in rs_cards]:
-                        rs_cards.append(item)
-                        continue
+                if item[1] < 99:
+                    if not self.has_rs_card(item[1]):
+                        if not item[0] in [x[0] for x in rs_cards]:
+                            rs_cards.append(item)
+                            continue
             fs_append(item)
 
         self.rs_cards = [*self.rs_cards, *rs_cards]
