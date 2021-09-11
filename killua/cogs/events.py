@@ -100,7 +100,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         #Changing Killua's status
-        await p(self)
+        await self.client.update_presence()
         Guild(guild.id).delete()
         await self._post_guild_count()
 

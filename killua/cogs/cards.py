@@ -44,7 +44,7 @@ class Cards(commands.Cog):
             rewards.append(self._get_single_reward(1))
             score = 0.5
 
-        for i in range(math.ceil(score*(score*random.randint(5, 14)))):
+        for i in range(math.ceil(score*(score*random.randint(5, 10)))):
             r = self._get_single_reward(score)
             rewards.append(r)
     
