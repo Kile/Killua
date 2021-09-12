@@ -27,6 +27,15 @@ PATREON = config["patreon"]
 DBL = config["dbl"]
 PXLAPI = config["pxlapi"]
 
+# these are badges that grant premium benefits without being managed by the patreon class.
+# granted when someone pays for premium another way or gets benefits in some way
+PREMIUM_ALIASES = {
+    "tier_one": "6002629",
+    "tier_two": "6002630",
+    "tier_three": "6002631",
+    "tier_four": "6563669"
+}
+
 PATREON_TIERS = {
     "6002629": {
         "name": "tier_one",
@@ -166,6 +175,7 @@ KILLUA_BADGES = {
     "6002629": "<:tier_one_badge:879390548857880597>",
     "6002630": "<:tier_two_badge:879390669368614982>",
     "6002631": "<:tier_three_badge:879390807315087451>",
+    "6563669": "<:tier_four_badge:879391090665467905>",
     "partner": "<:partner_badge:879391663460610078>",
     "artist": "<:artist_badge:879391368076734464>",
     "greed_island_badge": "<:greed_island_badge:879391821938180116>",

@@ -32,7 +32,7 @@ class Cards(commands.Cog):
             else:
                 rarities = ['C', 'D', 'E']
 
-            amount = math.ceil(score*(score*random.randint(5, 10)))
+            amount = math.ceil(score*(score*random.randint(2, 10)))
             card = random.choice([x['_id'] for x in items.find({'type': 'monster', 'rank': {"$in": rarities}})])
             return amount, card
     
@@ -44,7 +44,7 @@ class Cards(commands.Cog):
             rewards.append(self._get_single_reward(1))
             score = 0.5
 
-        for i in range(math.ceil(score*(score*random.randint(5, 10)))):
+        for i in range(math.ceil(score*(score*random.randint(2, 10)))):
             r = self._get_single_reward(score)
             rewards.append(r)
     

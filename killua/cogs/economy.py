@@ -8,7 +8,7 @@ from killua.checks import check
 from killua.paginator import View
 from killua.help import Select
 from killua.classes import User, Guild, Category, LootBox
-from killua.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, LOOTBOXES
+from killua.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, LOOTBOXES, PREMIUM_ALIASES
 
 class Economy(commands.Cog):
 
@@ -48,7 +48,7 @@ class Economy(commands.Cog):
         flags = [USER_FLAGS[x[0]] for x in user.public_flags if x[1]]
         if user.avatar.is_animated() or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]) > 0: # A very simple nitro check that is not too accurate
             flags.append(USER_FLAGS["nitro"])
-        badges = [KILLUA_BADGES[x] for x in info.badges]
+        badges = [(KILLUA_BADGES[PREMIUM_ALIASES[x]] if x in PREMIUM_ALIASES.keys() else KILLUA_BADGES[x]) for x in info.badges]
         
         if str(datetime.now()) > str(info.daily_cooldown):
             cooldown = 'Ready to claim!'

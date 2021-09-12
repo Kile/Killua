@@ -79,9 +79,11 @@ class Actions(commands.Cog):
         else:
             return await self.action_embed(ctx.command.name, 'Killua', ctx.author.name)
 
-    async def do_action(self, ctx, members:List[discord.Member]=None) -> discord.message:
+    async def do_action(self, ctx, members:List[discord.Member]=None) -> Union[discord.Message, None]:
         if not members:
             embed = await self.no_argument(ctx)
+            if not embed:
+                return
         elif ctx.author == members[0]:
             return await ctx.send("Sorry... you can\'t use this command on yourself")
         else:

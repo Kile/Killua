@@ -13,7 +13,7 @@ import pathlib
 from typing import Union, Tuple, List, Any
 
 from .paginator import View
-from .constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES
+from .constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES
 
 class NotInPossesion(Exception):
     pass
@@ -545,10 +545,14 @@ class User:
 
     @property
     def is_premium(self) -> bool:
+        if len([x for x in self.badges if x in PREMIUM_ALIASES.keys()]) > 0:
+            return True
         return len([x for x in self.badges if x in PATREON_TIERS.keys()]) > 0
 
     @property
     def premium_tier(self) -> Union[str, None]:
+        if len((res := [x for x in self.badges if x in PREMIUM_ALIASES.keys()])) > 0:
+            return PREMIUM_ALIASES[res]
         return [x for x in self.badges if x in PATREON_TIERS.keys()][0] if self.is_premium else None
 
     @property
