@@ -113,10 +113,10 @@ class Events(commands.Cog):
             usage = f"`{self.client.command_prefix(self.client, ctx.message)[2]}{(ctx.command.parent.name + ' ') if ctx.command.parent else ''}{ctx.command.usage}`"
 
         if isinstance(error, commands.BotMissingPermissions):
-            return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
+            return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_permissions)}`)")
 
         if isinstance(error, commands.MissingPermissions):
-            return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_perms)}`)")
+            return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_permissions)}`)")
 
         if isinstance(error, commands.MissingRequiredArgument):
             return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
