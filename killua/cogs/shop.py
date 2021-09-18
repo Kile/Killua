@@ -385,7 +385,7 @@ class Shop(commands.Cog):
 
         if not shop_data['reduced'] is None:
             if shop_items.index(card.id) == shop_data['reduced']['reduced_item']:
-                price = int(PRICES[card.rank] - int(PRICES[card.rank] * shop_data['reduced']['reduced_by']/100))
+                price = int(PRICES[card.rank] - int(PRICES[card.rank] * shop_data['reduced']['reduced_by']))
             else:
                 price = PRICES[card.rank]
         else:

@@ -179,7 +179,6 @@ class LootBox:
         view.rewards = l 
         view.saved = False
         view.claimed = []
-        print(self.rewards)
         for i in range(24):
             view.add_item(_LootBoxButton(index=i, style=discord.ButtonStyle.grey, rewards=l, label=" "))
         view.add_item(_LootBoxButton(index=24, style=discord.ButtonStyle.blurple, rewards=l, label="Save rewards"))

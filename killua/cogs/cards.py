@@ -73,6 +73,7 @@ class Cards(commands.Cog):
         return formatted_rewards, formatted_text, False
 
     @check(3)
+    @commands.bot_has_permissions(attach_files=True, embed_links=True)
     @commands.command(extras={"category":Category.CARDS}, usage="book <page(optional)>")
     async def book(self, ctx, page:int=1):
         """Allows you to take a look at your cards"""
