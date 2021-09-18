@@ -36,7 +36,7 @@ class Vote(commands.Cog):
             user.add_lootbox(reward)
             text = f"Thank you for voting for Killua! This time you get a :sparkles: special :sparkles: reward: the lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}. Open it with `k!open`"
         else:
-            text = f"Thank you for voting for Killua! Here take {reward} Jenny as a sign of my gratitude. {user.votes%5} votes left from a :sparkles: special :sparkles: reward"
+            text = f"Thank you for voting for Killua! Here take {reward} Jenny as a sign of my gratitude. {5-user.votes%5} votes away from a :sparkles: special :sparkles: reward"
             user.add_jenny(reward)
         
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)

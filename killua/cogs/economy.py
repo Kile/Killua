@@ -166,11 +166,11 @@ class Economy(commands.Cog):
         min = 50
         max = 100
         if user.is_premium:
-            min+=50
-            max+=50
+            min*=2
+            max*=2
         if Guild(ctx.guild.id).is_premium:
-            min=+50
-            max=+50
+            min*=2
+            max*=2
         daily = randint(min, max)
         if user.is_entitled_to_double_jenny:
             daily *= 2
