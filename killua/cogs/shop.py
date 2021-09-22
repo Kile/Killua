@@ -4,12 +4,12 @@ from discord.ext import commands, tasks
 from datetime import datetime
 from typing import Union, Tuple
 
-from killua.cards import Card
-from killua.classes import Category, User, TodoList, PrintColors, CardNotFound, Button
-from killua.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, editing
-from killua.checks import check
-from killua.paginator import DefaultEmbed, View, Paginator
-from killua.help import Select
+from killua.static.cards import Card
+from killua.static.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, editing
+from killua.utils.classes import Category, User, TodoList, PrintColors, CardNotFound, Button
+from killua.utils.checks import check
+from killua.utils.paginator import DefaultEmbed, View, Paginator
+from killua.utils.help import Select
 
 class ShopPaginator(Paginator):
     """A normal paginator with a button that returns to the original shop select menu"""

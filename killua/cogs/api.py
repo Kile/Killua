@@ -1,7 +1,8 @@
 import discord
 from discord.ext import ipc, commands
-from killua.classes import User, Guild
-from killua.constants import teams
+
+from killua.utils.classes import User, Guild
+from killua.static.constants import teams
 
 from typing import List
 

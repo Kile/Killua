@@ -7,10 +7,10 @@ import random
 import asyncio
 import math
 
-from killua.paginator import View
-from killua.classes import User, ConfirmButton, Category
-from killua.checks import blcheck, check
-from killua.help import Select
+from killua.utils.paginator import View
+from killua.utils.classes import User, ConfirmButton, Category
+from killua.utils.checks import blcheck, check
+from killua.utils.help import Select
 
 class Trivia:
     """Handles a trivia game"""

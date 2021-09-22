@@ -4,9 +4,9 @@ import random
 import asyncio
 from typing import List, Union
 
-from killua.checks import check
-from killua.constants import ACTIONS
-from killua.classes import Category
+from killua.utils.checks import check
+from killua.utils.classes import Category
+from killua.static.constants import ACTIONS
 
 class Actions(commands.Cog):
 

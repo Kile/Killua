@@ -6,9 +6,9 @@ from datetime import datetime
 from typing import List
 
 from .constants import items, INDESTRUCTABLE, ALLOWED_AMOUNT_MULTIPLE, DEF_SPELLS, VIEW_DEF_SPELLS, FREE_SLOTS
-from .classes import User, SuccessfullDefense, CheckFailure, CardNotFound, Book, Button, ConfirmButton
-from .paginator import View, Paginator
-from .help import Select
+from killua.utils.classes import User, SuccessfullDefense, CheckFailure, CardNotFound, Book, Button, ConfirmButton
+from killua.utils.paginator import View, Paginator
+from killua.utils.help import Select
 
 card_cache = {}
 background_cache = {}

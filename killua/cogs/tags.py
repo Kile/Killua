@@ -4,10 +4,10 @@ from datetime import datetime
 import math
 import asyncio
 
-from killua.classes import Guild, Category
-from killua.constants import guilds, PatreonBanner
-from killua.checks import check
-from killua.paginator import Paginator
+from killua.static.constants import guilds, PatreonBanner
+from killua.utils.classes import Guild, Category
+from killua.utils.checks import check
+from killua.utils.paginator import Paginator
 
 class Tag():
     def __init__(self, guild_id:int, tag_name:str):

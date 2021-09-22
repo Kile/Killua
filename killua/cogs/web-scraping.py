@@ -1,9 +1,10 @@
 import discord
 from discord.ext import commands
-from killua.checks import check
 from bs4 import BeautifulSoup
-from killua.classes import Category
-from killua.paginator import Paginator
+
+from killua.utils.checks import check
+from killua.utils.classes import Category
+from killua.utils.paginator import Paginator
 
 from typing import Any, Callable
 

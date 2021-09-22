@@ -6,11 +6,11 @@ import math
 
 from typing import Union, List, Optional, Tuple, Optional
 
-from killua.checks import check
-from killua.paginator import Paginator
-from killua.classes import User, CardNotFound, Category, CheckFailure, Book, ConfirmButton, NoMatches
-from killua.cards import Card
-from killua.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, items, LOOTBOXES
+from killua.utils.checks import check
+from killua.utils.paginator import Paginator
+from killua.utils.classes import User, CardNotFound, Category, CheckFailure, Book, ConfirmButton, NoMatches
+from killua.static.cards import Card
+from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, items, LOOTBOXES
 
 
 class Cards(commands.Cog):

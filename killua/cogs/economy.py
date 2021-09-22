@@ -4,11 +4,11 @@ from typing import Union, List, Tuple
 from datetime import datetime, timedelta
 from random import randint
 
-from killua.checks import check
-from killua.paginator import View
-from killua.help import Select
-from killua.classes import User, Guild, Category, LootBox
-from killua.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, LOOTBOXES, PREMIUM_ALIASES
+from killua.utils.checks import check
+from killua.utils.paginator import View
+from killua.utils.help import Select
+from killua.utils.classes import User, Guild, Category, LootBox
+from killua.static.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, LOOTBOXES, PREMIUM_ALIASES
 
 class Economy(commands.Cog):
 

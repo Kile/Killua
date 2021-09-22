@@ -13,7 +13,7 @@ import pathlib
 from typing import Union, Tuple, List, Any
 
 from .paginator import View
-from .constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES
+from killua.static.constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES
 
 class NotInPossesion(Exception):
     pass
@@ -196,7 +196,7 @@ class LootBox:
         data = LOOTBOXES[box]
         rew = []
         for i in range((cards:=random.choice(data["cards_total"]))):
-            r = [x["_id"] for x in items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}})]
+            r = [x["_id"] for x in items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}}) if x["_id"] != 0]
             rew.append(PartialCard(random.choice(r)))
 
         for i in range(data["rewards_total"]-cards):
