@@ -1,10 +1,11 @@
 import discord 
 import asyncio
+import typing
 from discord.utils import find
 from discord.ext import commands
-from killua.checks import check
-from killua.classes import Category, Guild
-import typing
+
+from killua.utils.checks import check
+from killua.utils.classes import Category, Guild
 
 class Moderation(commands.Cog):
 

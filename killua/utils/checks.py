@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from typing import Union, Type
 
-from .constants import blacklist, PatreonBanner
+from killua.static.constants import blacklist, PatreonBanner
 from .classes import User, Guild
 
 cooldowndict = {}
@@ -44,7 +44,7 @@ def check(time:int=0):
     """
     
     from datetime import datetime, timedelta
-    from killua.constants import guilds, teams, blacklist, stats
+    from killua.static.constants import guilds, teams, blacklist, stats
 
     def add_usage(command:Union[commands.Command, Type[commands.Command]]) -> None:
         data = stats.find_one({'_id': 'commands'})['command_usage']

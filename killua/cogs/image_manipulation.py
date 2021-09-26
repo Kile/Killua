@@ -7,11 +7,11 @@ from PIL import Image, ImageDraw, ImageChops
 
 from pypxl import PxlClient # My own library ✨
 
-from killua.gif import save_transparent_gif
-from killua.checks import check
-from killua.classes import Category
-from killua.constants import NOKIA_CODE, PXLAPI
-from killua.paginator import Paginator
+from killua.utils.gif import save_transparent_gif
+from killua.utils.checks import check
+from killua.utils.classes import Category
+from killua.utils.paginator import Paginator
+from killua.static.constants import NOKIA_CODE, PXLAPI
 
 class ImageManipulation(commands.Cog):
 

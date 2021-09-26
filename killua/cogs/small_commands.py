@@ -9,10 +9,10 @@ import math
 from typing import Union
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 
-from killua.checks import check
-from killua.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS
-from killua.classes import Category
-from killua.paginator import Paginator
+from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS
+from killua.utils.checks import check
+from killua.utils.classes import Category
+from killua.utils.paginator import Paginator
 
 class SmallCommands(commands.Cog):
 

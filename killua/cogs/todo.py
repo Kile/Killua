@@ -1,15 +1,15 @@
 import discord
 from discord.ext import commands
-from killua.checks import check, blcheck
 import asyncio
 from datetime import datetime
 import re
 import math
 from typing import Union
 
-from killua.classes import TodoList, Todo, User, TodoListNotFound, Category, ConfirmButton, Button
-from killua.constants import todo, editing, REPORT_CHANNEL
-from killua.paginator import Paginator
+from killua.static.constants import todo, editing, REPORT_CHANNEL
+from killua.utils.checks import check, blcheck
+from killua.utils.classes import TodoList, Todo, User, TodoListNotFound, Category, ConfirmButton, Button
+from killua.utils.paginator import Paginator
 
 class TodoSystem(commands.Cog):
 

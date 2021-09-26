@@ -2,8 +2,8 @@ import discord
 from discord.ext import commands
 import topgg
 
-from killua.classes import User
-from killua.constants import DBL, LOOTBOXES
+from killua.utils.classes import User
+from killua.static.constants import DBL, LOOTBOXES
 from killua.cogs.economy import LootBox
 
 class Vote(commands.Cog):

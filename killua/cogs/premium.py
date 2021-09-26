@@ -5,10 +5,9 @@ from typing import List, Union
 from aiohttp import ClientSession
 from datetime import datetime, timedelta
 
-from killua.constants import PATREON_TIERS, teams, GUILD, BOOSTER_ROLE
-from killua.classes import User, Guild, Category, LootBox
-from killua.constants import PATREON, LOOTBOXES
-from killua.checks import check
+from killua.static.constants import PATREON_TIERS, teams, GUILD, BOOSTER_ROLE, PATREON, LOOTBOXES
+from killua.utils.classes import User, Guild, Category, LootBox
+from killua.utils.checks import check
 
 class Patrons:
 

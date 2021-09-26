@@ -6,9 +6,9 @@ from discord.ext import commands, ipc
 from datetime import datetime, timedelta, date
 from typing import Union, Callable, List, Tuple, Optional
 
-from .help import MyHelp
-from .classes import Category, Guild
-from .constants import guilds, TOKEN, IPC_TOKEN, presence, TIPS
+from .utils.help import MyHelp
+from .utils.classes import Category, Guild
+from .static.constants import guilds, TOKEN, IPC_TOKEN, presence, TIPS
 
 class Bot(commands.Bot):
 	def __init__(self, *args, **kwargs):

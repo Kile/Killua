@@ -7,8 +7,8 @@ from discord.utils import find
 from discord.ext import commands, tasks
 from PIL import Image
 
-from killua.classes import Guild, Book, PrintColors
-from killua.constants import DBL, items, PatreonBanner
+from killua.utils.classes import Guild, Book, PrintColors
+from killua.static.constants import DBL, items, PatreonBanner
 
 class Events(commands.Cog):
 
