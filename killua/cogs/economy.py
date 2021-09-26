@@ -121,21 +121,21 @@ class Economy(commands.Cog):
 
     @check()
     @commands.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
-    async def profile(self, ctx,user: Union[discord.Member, int]=None):
+    async def profile(self, ctx, user: Union[discord.Member, int]=None):
         """Get infos about a certain discord user with ID or mention"""
         if user is None:
-            user = ctx.author
+            res = ctx.author
         elif isinstance(user, discord.Member):
             pass
         else:
-            user = await self.client.get_user(user)
-            if not user:
+            res = self.client.get_user(user)
+            if not res:
                 try:
-                    user = await self.client.fetch_user(user)
+                    res = await self.client.fetch_user(user)
                 except discord.NotFound:
                     return await ctx.send("Could not find anyone with this name/id")
 
-        embed = self._getmember(user)
+        embed = self._getmember(res)
         return await self.client.send_message(ctx, embed=embed)
 
     @check()
