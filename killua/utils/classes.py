@@ -405,7 +405,7 @@ class Book:
         return image
 
     def _getfont(self, size) -> ImageFont.ImageFont:
-        font = ImageFont.truetype(str(pathlib.Path(__file__).parent) + "/font.ttf", size, encoding="unic") 
+        font = ImageFont.truetype(str(pathlib.Path(__file__).parent.parent) + "/static/font.ttf", size, encoding="unic") 
         return font
 
     async def _cards(self, image, data, option):
