@@ -81,9 +81,10 @@ class Events(commands.Cog):
 
         general = find(lambda x: x.name == 'general',  guild.text_channels)
         if general and general.permissions_for(guild.me).send_messages:
+            prefix = Guild(guild.id).prefix
             embed = discord.Embed.from_dict({
                 'title': 'Hello {}!'.format(guild.name),
-                'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{self.client.command_prefix(self.client, ctx.message)[2]}info`\n\nTo change the server prefix, use `{self.client.command_prefix(self.client, ctx.message)[2]}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{self.client.command_prefix(self.client, ctx.message)[2]}help` to see every command\n\nPlease consider leaving feeback with `{self.client.command_prefix(self.client, ctx.message)[2]}fb` as this helps me improve Killua',
+                'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{prefix}info`\n\nTo change the server prefix, use `{prefix}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{prefix}help` to see every command\n\nPlease consider leaving feeback with `{prefix}fb` as this helps me improve Killua',
                 'color': 0x1400ff
             })
             await general.send(embed=embed)
