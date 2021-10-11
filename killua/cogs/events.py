@@ -95,7 +95,7 @@ class Events(commands.Cog):
         await self.client.update_presence()
         await self._post_guild_count()
         await self._set_patreon_banner()
-        await self._load_cards_cache()
+        # await self._load_cards_cache()
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):

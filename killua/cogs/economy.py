@@ -105,6 +105,7 @@ class Economy(commands.Cog):
         await self.client.send_message(ctx, embed=embed)
 
     @check()
+    @commands.guild_only()
     @commands.command(aliases=['lb', 'top'], extras={"category":Category.ECONOMY}, usage="leaderboard")
     async def leaderboard(self, ctx):
         """Get a leaderboard of members with the most jenny"""
@@ -168,7 +169,7 @@ class Economy(commands.Cog):
         if user.is_premium:
             min*=2
             max*=2
-        if Guild(ctx.guild.id).is_premium:
+        if ctx.guild and Guild(ctx.guild.id).is_premium:
             min*=2
             max*=2
         daily = randint(min, max)

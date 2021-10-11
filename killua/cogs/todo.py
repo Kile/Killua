@@ -502,7 +502,7 @@ class TodoSystem(commands.Cog):
             return await ctx.send(f'Done! Deactivated your lists auto delete feature when something is marked as `done`')
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="name <new_name>")
+    @todo.command(extras={"category":Category.TODO}, usage="description <new_name>")
     async def description(self, ctx, *, new_desc:str):
         """Change the description of your todo list with this command (Only in editor mode)"""
         res = await self._set_check(ctx)

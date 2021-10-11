@@ -138,7 +138,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, args, func)
 
     @check(3)
-    @commands.command(aliases=['snap'], extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
+    @commands.command(aliases=['snap'], extras={"category":Category.FUN}, usage="snapchat <filter> <user/url>")
     async def snapchat(self, ctx, fil:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Valid filters: dog, dog2, dog3, pig, flowers, random"""
         async def func(data, fil):
@@ -152,14 +152,6 @@ class ImageManipulation(commands.Cog):
         async def func(data, t):
             return await self.pxl.eyes(eyes=t, images=[data])
         await self.handle_command(ctx, args, func, t)
-
-    @check(3)
-    @commands.command(aliases=['animal'], extras={"category":Category.FUN}, usage="ganimal <user/url")
-    async def ganimal(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
-        """Turns a face into multiple animal faces"""
-        async def func(data, *args):
-            return await self.pxl.ganimal(images=[data])
-        await self.handle_command(ctx, args, func)
 
     @check(4)
     @commands.command(aliases=['8bit', 'blurr'], extras={"category":Category.FUN}, usage="jpeg <user/url>")
@@ -180,7 +172,7 @@ class ImageManipulation(commands.Cog):
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="nokia <user/url>")
     async def nokia(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
-        """Turns a face into multiple animal faces"""
+        """Add the image onto a nokia display"""
         async def func(data, *args):
             d = "const url = '" + data + ";'" + NOKIA_CODE
             return await self.pxl.imagescript(version="1.2.0", code=d)
@@ -219,7 +211,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, text, func, validate=False)
 
     @check(2)
-    @commands.command(aliases=['g','search'], extras={"category":Category.FUN}, usage="search <query>")
+    @commands.command(aliases=['g','search'], extras={"category":Category.FUN}, usage="google <query>")
     async def google(self, ctx, *, query:str):
         """Get the best results for a query the web has to offer"""
         
