@@ -18,9 +18,9 @@ class Cards(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    def _get_single_reward(self, score:int) -> dict:
+    def _get_single_reward(self, score:int) -> Tuple[int, int]:
             if score == 1:
-                if random.randint(1,10) < 5:
+                if random.randint(1, 10) < 5:
                     return 1, random.choice([x['_id'] for x in items.find({'type': 'normal', 'rank': { "$in": ['A', 'B', 'C']}})])
                 else:
                     return 1, random.choice([x['_id'] for x in items.find({'type': 'spell', 'rank': {"$in": ['B', 'C']}})])
@@ -32,23 +32,23 @@ class Cards(commands.Cog):
             else:
                 rarities = ['C', 'D', 'E']
 
-            amount = math.ceil(score*(score*random.randint(2, 10)))
+            amount = random.randint(1, math.ceil(score*10))
             card = random.choice([x['_id'] for x in items.find({'type': 'monster', 'rank': {"$in": rarities}})])
             return amount, card
     
     def _construct_rewards(self, score:int) -> List[Tuple[int, int]]:
-        # reward_score will be minutes/10000 which equals a week. Max rewards will get returned once a user has hunted for a week
-        rewards = []
+        # reward_score will be minutes/10080 which equals a week. Max rewards will get returned once a user has hunted for a week
+        rewards: List[Tuple[int, int]] = []
 
         if score >= 1:
             rewards.append(self._get_single_reward(1))
-            score = 0.5
+            score = 0.7
 
-        for i in range(math.ceil(score*(score*random.randint(2, 10)))):
+        for i in range(math.ceil(random.randint(1, math.ceil(score*10))/1.6)):
             r = self._get_single_reward(score)
             rewards.append(r)
     
-        final_rewards = []
+        final_rewards: List[Tuple[int, int]] = []
         for reward in rewards: 
             # This avoid duplicates e.g. 4xPaladins Necklace, 2xPaladins Necklace => 6xPaladins Necklace
             if reward[1] in (l:= [y for x, y in final_rewards]):
@@ -60,12 +60,13 @@ class Cards(commands.Cog):
 
     def _format_rewards(self, rewards:List[Tuple[int, int]], user:User, score:float) -> Tuple[List[list], List[str], bool]:
         """Formats the generated rewards for further use"""
-        formatted_rewards = []
-        formatted_text = []
+        formatted_rewards: List[List[int, Dict[str, bool]]] = []
+        formatted_text: List[str] = []
+
         for reward in rewards:
             for i in range(reward[0]):
                 if len([*user.fs_cards,*[x for x in rewards if x[1] > 99 and not user.has_rs_card(x[0])]]) >= 40 and (reward[1] > 99 or (not user.has_rs_card(reward[1]) and reward[1] < 100)):
-                    return rewards, formatted_text, True
+                    return formatted_rewards, formatted_text, True # if the free slots are full the process stops
                 formatted_rewards.append([reward[1], {"fake": False, "clone": False}])
             card = Card(reward[1])
             formatted_text.append(f"{reward[0]}x **{card.name}**{card.emoji}")
@@ -184,13 +185,13 @@ class Cards(commands.Cog):
                     return await ctx.send('You must be at least hunting for twelve hours!')
 
                 minutes = int(difference.seconds/60+difference.days*24*60)
-                score = minutes/10800 # There are 10080 minutes in a week if I'm not completely wrong
+                score = minutes/10080 # There are 10080 minutes in a week if I'm not completely wrong
                 
                 rewards = self._construct_rewards(score)
                 formatted_rewards, formatted_text, hit_limit = self._format_rewards(rewards, user, score)
                 text = f'You\'ve been hunting for {difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds. You brought back the following items from your hunt: \n\n'
                 if hit_limit:
-                    text += f":warning:Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell` :warning:\n\n"
+                    text += f":warning: Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell` :warning:\n\n"
 
                 if hit_limit and len(user.fs_cards) == 40:
                     text += f"Could not carry anything from your hunt in your free slots so you gained no cards.."
@@ -201,7 +202,7 @@ class Cards(commands.Cog):
                     'color': 0x1400ff
                 })
                 user.remove_effect('hunting')
-                user.add_multi(formatted_rewards)
+                user.add_multi(*formatted_rewards)
                 return await ctx.send(embed=embed)
                 
             elif end.lower() == 'end': 

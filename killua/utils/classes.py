@@ -798,12 +798,9 @@ class User:
 
         def fs_append(item:list):
             if len([*self.fs_cards, *fs_cards]) >= 40:
-                    return fs_cards
+                return fs_cards
             fs_cards.append(item)
             return fs_cards
-
-        if len(args) == 1: # I might just pass all items in a list
-            args = args[0]
 
         for item in args:
             if not item[1]["fake"]:
