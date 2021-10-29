@@ -11,10 +11,6 @@ from pymongo import collection, errors
 from killua.classes import PrintColors
 from typing import Callable
 from killua.constants import (
-    teams,
-    items,
-    guilds,
-
     shop,
     blacklist,
     stats,
@@ -25,11 +21,6 @@ from killua.constants import (
 
 NO_DEFAULT = [teams, guilds, todo, blacklist, items]
 
-def no_default(collection:collection.Collection):
-    """Creates collections that require no default value by setting one and instantly deleting it"""
-    collection.insert_one({"_id": 1})
-    collection.delete_one({"_id": 1})
-
 def _try(func:Callable, args:dict):
     try:
         func(args)
@@ -37,9 +28,6 @@ def _try(func:Callable, args:dict):
         print(f"{PrintColors.FAIL} \"{args['_id']}\" key already exists, skipped...{PrintColors.ENDC}")
 
 def main():
-
-    for coll in NO_DEFAULT:
-        no_default(coll)
     
     _try(shop.insert_one, {"_id": "daily_offers", "offers": [], "log": [], "reduced": None})
     _try(stats.insert_one, {"_id": "commands", "command_usage": {}})

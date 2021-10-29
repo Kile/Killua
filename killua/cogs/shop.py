@@ -67,6 +67,8 @@ class Shop(commands.Cog):
     async def cards_shop_update(self):
         #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
         #the challenge is to create a balanced system with good items rare enough but not too rare
+        if self.client.is_dev:
+            return
         try:
             shop_items:list = []
             number_of_items = randint(3,5) #How many items the shop has

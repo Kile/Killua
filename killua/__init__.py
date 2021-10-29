@@ -1,6 +1,7 @@
 from . import cogs
 import discord
 import aiohttp
+import getopt, sys
 from random import randint, choice
 from discord.ext import commands, ipc
 from datetime import datetime, timedelta, date
@@ -16,6 +17,7 @@ class Bot(commands.Bot):
 
 		self.support_server_invite = "https://discord.gg/MKyWA5M"
 		self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
+		self.is_dev = False
 
 	async def on_ipc_error(self, endpoint, error):
 		print(endpoint, "raised", error)
@@ -79,6 +81,20 @@ class Bot(commands.Bot):
 			await messageable.send(f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.user.id == 758031913788375090 else 'kil!')}")
 		return msg
 
+	def convert_to_timestamp(self, id: int, args: str = "f") -> str:
+		"""Turns a discord snowflake into a discord timestamp string"""
+		return f"<t:{int((id >> 22) / 1000) + 1420070400}:{args}>"
+
+
+def is_dev() -> bool:
+	"""Checks if the bot is run with the --development argument"""
+	raw_arguments = sys.argv[1:]
+
+	arguments, _ = getopt.getopt(raw_arguments, "d", ["development"])
+	for arg, _ in arguments:
+		if arg in ("--development", "-d"):
+			return True
+	return False
 
 def get_prefix(bot, message):
 	if bot.user.id == 758031913788375090:
@@ -111,6 +127,8 @@ def main():
 	bot.session = session
 	# Setup commands.
 	bot.help_command = MyHelp()
+	# Checks if the bot is a dev bot
+	bot.is_dev = is_dev()
 
 	# Setup cogs.
 	for cog in cogs.all_cogs:

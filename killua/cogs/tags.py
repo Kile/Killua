@@ -207,7 +207,7 @@ class Tags(commands.Cog):
         rank = [x[0] for x in s].index(tag_name.lower())+1
         embed = discord.Embed.from_dict({
             'title': f'Information about tag "{tag.name}"',
-            'description': f'**Tag owner:** `{str(owner)}`\n\n**Created on**: `{tag.created_at.strftime("%b %d %Y %H:%M:%S")}`\n\n**Uses:** `{tag.uses}`\n\n**Tag rank:** `{rank}`',
+            'description': f'**Tag owner:** `{str(owner)}`\n\n**Created on**: <t:{int(tag.created_at.timestamp())}>\n\n**Uses:** `{tag.uses}`\n\n**Tag rank:** `{rank}`',
             'color': 0x1400ff,
             'thumbnail': {'url': str(owner.avatar.url)}
         })
