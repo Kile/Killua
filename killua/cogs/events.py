@@ -20,8 +20,6 @@ class Events(commands.Cog):
         self.topggpy = topgg.DBLClient(self.client, self.token)
         self.status.start()
 
-
-
     async def _post_guild_count(self) -> None:
         await self.topggpy.post_guild_count()
 
@@ -77,6 +75,12 @@ class Events(commands.Cog):
     @status.before_loop
     async def before_status(self):
         await self.client.wait_until_ready()
+
+    @tasks.loop(hours=24)
+    async def save_guilds(self):
+        # this is currently not used but the earlier we collect this data, the better becaase I do plan to use it
+        if not self.client.is_dev:
+            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds)}}})
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

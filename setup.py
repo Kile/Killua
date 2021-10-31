@@ -34,6 +34,8 @@ def main():
     _try(presence.insert_one, {"_id": "status", "text": None, "activity": None, "presence": None})
     _try(updates.insert_one, {"_id": "current"})
     _try(updates.insert_one, {"_id": "log", "past_updates": []})
+    _try(stats.insert_one, {"_id": "growth", "growth": []})
+    
     print(f"""
     {PrintColors.OKGREEN} Successfully added all collections {PrintColors.WARNING}
 
