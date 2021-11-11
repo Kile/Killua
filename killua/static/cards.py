@@ -538,7 +538,7 @@ class Card1032(Card):
         author = User(self.ctx.author.id)
         self._is_full_check(author)
 
-        target = random.choice([x['_id'] for x in items.find({'type': 'normal'}) if x['rank'] != 'SS' and x["_id"] != 0]) # random card for lottery
+        target = random.choice([x['_id'] for x in items.find({'type': 'normal', "available": True}) if x['rank'] != 'SS' and x["_id"] != 0]) # random card for lottery
         author.remove_card(self.id)
         self._is_maxed_check(target)
         author.add_card(target)

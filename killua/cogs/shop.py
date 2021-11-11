@@ -76,21 +76,21 @@ class Shop(commands.Cog):
             number_of_items = randint(3,5) #How many items the shop has
             if randint(1,100) > 95:
                 #Add a S/A card to the shop
-                thing = [i['_id'] for i in items.find({'type': 'normal', 'rank': {"$in": ['A', 'S']}})]
+                thing = [i['_id'] for i in items.find({"type": 'normal', "rank": {"$in": ['A', 'S'], "available": True}})]
                 shop_items.append(choice(thing))
             if randint(1,100) > 20: #80% chance for spell
                 if randint(1, 100) > 95: #5% chance for a good spell (they are rare)
-                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': 'A'})]
+                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': 'A', "available": True})]
                     shop_items.append(choice(spells))
                 elif randint(1,10) > 5: #50% chance of getting a medium good card
-                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['B', 'C']}})]
+                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['B', 'C']}, "available": True})]
                     shop_items.append(choice(spells))
                 else: #otherwise getting a fairly normal card
-                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['D', 'E', 'F', 'G']}})]
+                    spells = [s['_id'] for s in items.find({'type': 'spell', 'rank': {"$in": ['D', 'E', 'F', 'G']}, "available": True})]
                     shop_items.append(choice(spells))
 
                 while len(shop_items) != number_of_items: #Filling remaining spots
-                    thing = [t['_id'] for t in items.find({'type': 'normal', 'rank': {"$in": ['D', 'B']}})] 
+                    thing = [t['_id'] for t in items.find({'type': 'normal', 'rank': {"$in": ['D', 'B']}, "available": True})] 
                     #There is just one D item so there is a really high probability of it being in the shop EVERY TIME
                     t = choice(thing)
                     if not t in shop_items:

@@ -16,7 +16,7 @@ from PIL import Image, ImageFont, ImageDraw
 from typing import Union, Tuple, List, Any, Optional
 
 from .paginator import View
-from killua.static.constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES, DEFENSE_SPELLS
+from killua.static.constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES, DEF_SPELLS
 
 class NotInPossesion(Exception):
     pass
@@ -199,7 +199,7 @@ class LootBox:
         data = LOOTBOXES[box]
         rew = []
         for i in range((cards:=random.choice(data["cards_total"]))):
-            r = [x["_id"] for x in items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}}) if x["_id"] != 0]
+            r = [x["_id"] for x in items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}, "available": True}) if x["_id"] != 0]
             rew.append(PartialCard(random.choice(r)))
 
         for i in range(data["rewards_total"]-cards):
@@ -821,7 +821,7 @@ class User:
 
     def has_defense(self) -> bool:
         """Checks if a user holds on to a defense spell card"""
-        for x in DEFENSE_SPELLS:
+        for x in DEF_SPELLS:
             if x in [x[0] for x in self.fs_cards]:
                 if self.has_any_card(x, False):
                     return True

@@ -13,10 +13,8 @@ from typing import Callable
 from killua.utils.classes import PrintColors
 from killua.static.constants import (
     shop,
-    blacklist,
     stats,
     presence,
-    todo,
     updates
 )
 
