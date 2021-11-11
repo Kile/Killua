@@ -10,7 +10,7 @@ from discord.ext import commands, tasks
 from PIL import Image
 
 from killua.utils.classes import Guild, Book, PrintColors
-from killua.static.constants import DBL, items, PatreonBanner
+from killua.static.constants import DBL, items, PatreonBanner, stats
 
 class Events(commands.Cog):
 

@@ -113,7 +113,7 @@ class Card:
     def _permission_check(self, ctx:commands.Context, member:discord.Member) -> None:
         perms = ctx.channel.permissions_for(member)
         if not perms.send_messages or not perms.read_messages:
-            raise InvalidUsage(f'You can only attack a user in a channel they have read and write permissions to which isn\'t the case with {self.Member.display_name}') 
+            raise CheckFailure(f'You can only attack a user in a channel they have read and write permissions to which isn\'t the case with {self.Member.display_name}') 
 
     def _has_cards_check(self, cards:List[list], card_type:str="", is_self:bool=False, uses_up:bool=False) -> None:
         if len(cards) == 0:
@@ -134,7 +134,7 @@ class Card:
     def _is_maxed_check(self, card:int) -> None:
         c = Card(card)
         if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
-            raise CheckFailure(f'The maximum amount of existing cards with id {card_id} is reached!')
+            raise CheckFailure(f'The maximum amount of existing cards with id {card} is reached!')
 
     def _is_full_check(self, user:User) -> None:
         if len(user.fs_cards) >= FREE_SLOTS:
@@ -578,7 +578,7 @@ class Card1036(Card):
         author.add_effect(str(self.id), datetime.now())
 
         if not effect.lower() in ["list", "analysis", "1031", "1038"]:
-            raise CheckFailure(f'Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{self.client.command_prefix(self.client, ctx.message)[2]}use {self.id} <list/analysis> <card_id>`')
+            raise CheckFailure(f'Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{self.client.command_prefix(self.client, self.ctx.message)[2]}use {self.id} <list/analysis> <card_id>`')
 
         if effect.lower() in ["list", "1038"]:
             embed = self._get_list_embed(card_id)

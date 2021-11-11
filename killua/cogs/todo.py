@@ -268,7 +268,7 @@ class TodoSystem(commands.Cog):
             todo_list = TodoList(list_id)
 
             if getattr(todo_list, ctx.command.name) is None:
-                await ctx.send(f'You need to have bought this feature for your current todo list with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy {attr}`', allowed_mentions=discord.AllowedMentions.none())
+                await ctx.send(f'You need to have bought this feature for your current todo list with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy {ctx.command.name}`', allowed_mentions=discord.AllowedMentions.none())
 
             return todo_list
 
@@ -509,8 +509,8 @@ class TodoSystem(commands.Cog):
         if not res:
             return
 
-        if len(new_name) > 200:
-            return await ctx.send("The name cannot be longer than 200 characters!")
+        if len(new_desc) > 200:
+            return await ctx.send("The description cannot be longer than 200 characters!")
         res.set_property("description", new_desc)
         await ctx.send(f'Done! Update your todo list\'s description!')
 

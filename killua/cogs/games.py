@@ -205,7 +205,7 @@ class Rps:
             return await self.ctx.send(f'{self.other.name} needs to open their dms to Killua to play')
 
         if blcheck(self.other.id) is True:
-            return await ctx.send('You can\'t play against someone blacklisted')
+            return await self.ctx.send('You can\'t play against someone blacklisted')
 
         view = ConfirmButton(self.other.id, timeout=80)
         msg = await self.ctx.send(f'{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other}** accept the challange?', view=view)
@@ -267,7 +267,7 @@ class CountButtons(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         """Is called when a button is clicked and determines wether it was correct or not, then passes that on to other functions"""
-        self.view.correct:bool = self.solutions[self.view.stage] == self.index # if the button was correct
+        self.view.correct = self.solutions[self.view.stage] == self.index # if the button was correct
         last: bool = self.view.stage == len(self.solutions) # if this is the last stage
 
         if self.view.correct:
@@ -281,7 +281,7 @@ class CountButtons(discord.ui.Button):
 
 class CountGame:
     """A game where you have to remember numbers and type them in the right order"""
-    def __init__(self, ctx, difficulty: Union["easy", "hard"]):
+    def __init__(self, ctx, difficulty: str):
         self.ctx = ctx
         self.user = User(ctx.author.id)
         self.difficulty = difficulty

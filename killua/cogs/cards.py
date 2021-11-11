@@ -1,10 +1,10 @@
 import discord
-from discord.ext import commands
-import random
-from datetime import datetime, timedelta
 import math
+import random
+from discord.ext import commands
+from datetime import datetime
 
-from typing import Union, List, Optional, Tuple, Optional
+from typing import Union, List, Optional, Tuple, Optional, Dict
 
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator

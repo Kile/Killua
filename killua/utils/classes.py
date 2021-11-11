@@ -2,18 +2,21 @@ from __future__ import annotations
 """
 This file comtains classes that are not specific to one group and are used across several files
 """
-from datetime import datetime, timedelta
-import random
-import discord
-from enum import Enum
-from PIL import Image, ImageFont, ImageDraw
+
 import io
 import aiohttp
 import pathlib
-from typing import Union, Tuple, List, Any
+import random
+import discord
+
+from enum import Enum
+from discord.ext import commands
+from datetime import datetime, timedelta
+from PIL import Image, ImageFont, ImageDraw
+from typing import Union, Tuple, List, Any, Optional
 
 from .paginator import View
-from killua.static.constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES
+from killua.static.constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES, DEFENSE_SPELLS
 
 class NotInPossesion(Exception):
     pass
@@ -81,7 +84,7 @@ class PartialCard:
 
 class _LootBoxButton(discord.ui.Button):
     """A class used for lootbox buttons"""
-    def __init__(self, index:int, rewards:List[Union[Card, int, None]],**kwargs):
+    def __init__(self, index:int, rewards:List[Union[PartialCard, int, None]],**kwargs):
         super().__init__(**kwargs)
         self.index = index
         if self.index != 24:
@@ -161,7 +164,7 @@ class _LootBoxButton(discord.ui.Button):
     
 class LootBox:
     """A class which contains infos about a lootbox and can open one"""
-    def __init__(self, ctx:commands.Context, rewards:List[Union[None, Card, int]]):
+    def __init__(self, ctx:commands.Context, rewards:List[Union[None, PartialCard, int]]):
         self.ctx = ctx
         self.rewards = rewards
 
@@ -191,7 +194,7 @@ class LootBox:
         return random.choices(list(LOOTBOXES.keys()), [x["probability"] for x in LOOTBOXES.values()])[0]
 
     @classmethod
-    def generate_rewards(self, box:int) -> List[Union[Card, int]]:
+    def generate_rewards(self, box:int) -> List[Union[PartialCard, int]]:
         """Generates a list of rewards that can be used to pass to this class"""
         data = LOOTBOXES[box]
         rew = []
@@ -974,7 +977,7 @@ class TodoList():
         if todo_id is None:
             return int(''.join(l))
         else:
-            return self._generate_id()
+            return TodoList._generate_id()
 
     @staticmethod
     def create(owner:int, title:str, status:str, done_delete:bool, custom_id:str=None) -> TodoList:
@@ -1122,7 +1125,7 @@ class Guild():
         """Removes premium from all guilds specified, if possible"""
         for guild in guild_ids:
             try:
-                self.cache[guild].badges.remove("premium")
+                User.cache[guild].badges.remove("premium")
             except Exception:
                 guild_ids.remove(guild) # in case something got messed up it removes the guild id before making the db interaction
 

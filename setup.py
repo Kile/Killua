@@ -7,10 +7,11 @@ put it with the "mongodb" key in `config.json` and run this file with `python3 s
 
 Note: As the console says when running this program, you will need to add data for the "items" collection yourself
 """
-from pymongo import collection, errors
-from killua.classes import PrintColors
+from pymongo import errors
 from typing import Callable
-from killua.constants import (
+
+from killua.utils.classes import PrintColors
+from killua.static.constants import (
     shop,
     blacklist,
     stats,
@@ -18,8 +19,6 @@ from killua.constants import (
     todo,
     updates
 )
-
-NO_DEFAULT = [teams, guilds, todo, blacklist, items]
 
 def _try(func:Callable, args:dict):
     try:
