@@ -17,7 +17,14 @@ class ImageManipulation(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.wtf_meme = None
+        self.wtf_meme_url = 'https://i.redd.it/pvdxasy5z7k41.jpg'
         self.pxl = PxlClient(token=PXLAPI, stop_on_error=False, session=self.client.session)
+
+    async def _get_image_bytes(self, url: str) -> io.BytesIO:
+        res = await self.client.session.get(url)
+        _bytes = await res.read()
+        return io.BytesIO(_bytes)
 
     def _crop_to_circle(self, im):
         bigsize = (im.size[0] * 3, im.size[1] * 3)
@@ -37,9 +44,7 @@ class ImageManipulation(commands.Cog):
 
     async def _create_spin_gif(self, url:str) -> io.BytesIO:
         """Takes in a url and returns the io bytes object"""
-        res = await self.client.session.get(url)
-        _bytes = await res.read()
-        image = Image.open(io.BytesIO(_bytes)).convert("RGB")
+        image = await self._get_image_bytes(url).convert("RGB")
 
         new_image = self._crop_to_circle(image)
         image.close()
@@ -47,6 +52,30 @@ class ImageManipulation(commands.Cog):
         new_image.close()
         buffer = io.BytesIO()
         save_transparent_gif(frames, durations=1, save_file=buffer) # making sure the gif is transparent. This is necessarry because of a pillow bug and slows this down quite significantly 
+        buffer.seek(0)
+        return buffer
+
+    def _put_horizontally(self, im1: Image.Image, im2: Image.Image, reduce_by: int = 5) -> Image.Image:
+        heigth_avatar = int(im2.width * (im1.height/im1.width))
+        height_meme = int((heigth_avatar + im2.height)/reduce_by)
+
+        dst = Image.new("RGB", (im2.width, heigth_avatar + height_meme))
+
+        im1 = im1.resize((im2.width, heigth_avatar))
+        dst.paste(im1, (0, 0))
+        im2 = im2.resize((im2.width, int((heigth_avatar + im2.height)/reduce_by)))
+        dst.paste(im2, (0, heigth_avatar))
+        return dst
+
+    async def create_wtf_meme(self, avatar:str) -> io.BytesIO:
+        if not self.wtf_meme:
+            self.wtf_meme = await self._get_image_bytes(self.wtf_meme_url)
+
+        image = Image.open(self.wtf_meme).copy().convert("RGB")
+        avatar_image = Image.open(await self._get_image_bytes(avatar)).convert("RGB")
+
+        buffer = io.BytesIO()
+        self._put_horizontally(avatar_image, image).save(buffer, "PNG")
         buffer.seek(0)
         return buffer
 
@@ -257,6 +286,17 @@ class ImageManipulation(commands.Cog):
             buffer = await self._create_spin_gif(data)
             await msg.delete()
             await self.client.send_message(ctx, file=discord.File(fp=buffer, filename="spin.gif"), reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
+
+    @check(10)
+    @commands.command(extras= {"category": Category.FUN}, usage= "wtf <user/url>")
+    async def wtf(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
+        """Puts the wtf meme below the image provided"""
+        data = await self._validate_input(ctx, args)
+        if not data:
+            return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`', allowed_mentions=discord.AllowedMentions.none())
+
+        buffer = await self.create_wtf_meme(data)
+        await self.client.send_message(ctx, file=discord.File(fp=buffer, filename="wtf.png"), reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 
 Cog = ImageManipulation
 

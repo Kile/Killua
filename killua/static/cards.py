@@ -28,6 +28,7 @@ class Card:
         self.emoji:str = card['emoji']
         self.rank:str = card['rank']
         self.limit:int = card['limit']
+        self.available:bool = card["available"] if 'available' in card else True
         try:
             self.type:str = card['type']
         except KeyError:
@@ -156,7 +157,8 @@ class Card:
             {"name": "Name", "value": card.name  + " " + card.emoji, "inline": True},
             {"name": "Type", "value": card.type.replace("normal", "item"), "inline": True},
             {"name": "Rank", "value": card.rank, "inline": True},
-            {"name": "Limit", "value": str(card.limit*ALLOWED_AMOUNT_MULTIPLE), "inline": True}
+            {"name": "Limit", "value": str(card.limit*ALLOWED_AMOUNT_MULTIPLE), "inline": True},
+            {"name": "Available", "value": "Yes" if card.available else "No", "inline": True},
         ]
         if card.type == "spell":
             fields.append({"name": "Class", "value": ", ".join(card.cls), "inline": True})
