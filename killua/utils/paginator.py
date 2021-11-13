@@ -51,7 +51,7 @@ class View(discord.ui.View):
 
     async def disable(self, msg:discord.Message) -> Union[discord.Message, None]:
         """"Disables the children inside of the view"""
-        if len([c for c in self.children if not c.disabled]) == 0: # if every child is already disabled, we don't need to edit the message again
+        if not [c for c in self.children if not c.disabled]: # if every child is already disabled, we don't need to edit the message again
             return
 
         for c in self.children:

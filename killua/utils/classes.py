@@ -198,7 +198,17 @@ class LootBox:
         """Generates a list of rewards that can be used to pass to this class"""
         data = LOOTBOXES[box]
         rew = []
+
         for i in range((cards:=random.choice(data["cards_total"]))):
+            skip = False
+            if data["guaranteed"]: # if a card is guaranteed it is added here, it will count as one of the total_cards though
+                for k, v in data["guaranteed"]:
+                    if rew.count(k) < v:
+                        rew.append(PartialCard(items.find_one(k)["_id"]))
+                        skip = True
+                        break  
+
+            if skip: continue
             r = [x["_id"] for x in items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}, "available": True}) if x["_id"] != 0]
             rew.append(PartialCard(random.choice(r)))
 
@@ -547,7 +557,7 @@ class User:
 
     @property
     def is_premium(self) -> bool:
-        if len([x for x in self.badges if x in PREMIUM_ALIASES.keys()]) > 0:
+        if [x for x in self.badges if x in PREMIUM_ALIASES.keys()]:
             return True
         return len([x for x in self.badges if x in PATREON_TIERS.keys()]) > 0
 
