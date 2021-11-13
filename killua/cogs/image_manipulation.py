@@ -56,14 +56,15 @@ class ImageManipulation(commands.Cog):
         return buffer
 
     def _put_horizontally(self, im1: Image.Image, im2: Image.Image, reduce_by: int = 5) -> Image.Image:
+        """Puts im2 below im2 with regards to each others sizes"""
         heigth_avatar = int(im2.width * (im1.height/im1.width))
         height_meme = int((heigth_avatar + im2.height)/reduce_by)
 
-        dst = Image.new("RGB", (im2.width, heigth_avatar + height_meme))
+        dst = Image.new("RGBA", (im2.width, heigth_avatar + height_meme))
 
         im1 = im1.resize((im2.width, heigth_avatar))
         dst.paste(im1, (0, 0))
-        im2 = im2.resize((im2.width, int((heigth_avatar + im2.height)/reduce_by)))
+        im2 = im2.resize((im2.width, height_meme))
         dst.paste(im2, (0, heigth_avatar))
         return dst
 
@@ -71,8 +72,8 @@ class ImageManipulation(commands.Cog):
         if not self.wtf_meme:
             self.wtf_meme = await self._get_image_bytes(self.wtf_meme_url)
 
-        image = Image.open(self.wtf_meme).copy().convert("RGB")
-        avatar_image = Image.open(await self._get_image_bytes(avatar)).convert("RGB")
+        image = Image.open(self.wtf_meme).copy().convert("RGBA")
+        avatar_image = Image.open(await self._get_image_bytes(avatar)).convert("RGBA")
 
         buffer = io.BytesIO()
         self._put_horizontally(avatar_image, image).save(buffer, "PNG")
