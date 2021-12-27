@@ -7,8 +7,7 @@ put it with the "mongodb" key in `config.json` and run this file with `python3 s
 
 Note: As the console says when running this program, you will need to add data for the "items" collection yourself
 """
-from pymongo import errors
-from typing import Callable
+from pymongo import errors, collection
 
 from killua.utils.classes import PrintColors
 from killua.static.constants import (
@@ -18,20 +17,20 @@ from killua.static.constants import (
     updates
 )
 
-def _try(func:Callable, args:dict):
+def _try(coll: collection, args:dict):
     try:
-        func(args)
+        collection.insert_one(args)
     except errors.DuplicateKeyError:
         print(f"{PrintColors.FAIL} \"{args['_id']}\" key already exists, skipped...{PrintColors.ENDC}")
 
 def main():
     
-    _try(shop.insert_one, {"_id": "daily_offers", "offers": [], "log": [], "reduced": None})
-    _try(stats.insert_one, {"_id": "commands", "command_usage": {}})
-    _try(presence.insert_one, {"_id": "status", "text": None, "activity": None, "presence": None})
-    _try(updates.insert_one, {"_id": "current"})
-    _try(updates.insert_one, {"_id": "log", "past_updates": []})
-    _try(stats.insert_one, {"_id": "growth", "growth": []})
+    _try(shop, {"_id": "daily_offers", "offers": [], "log": [], "reduced": None})
+    _try(stats, {"_id": "commands", "command_usage": {}})
+    _try(presence, {"_id": "status", "text": None, "activity": None, "presence": None})
+    _try(updates, {"_id": "current"})
+    _try(updates, {"_id": "log", "past_updates": []})
+    _try(stats, {"_id": "growth", "growth": []})
     
     print(f"""
     {PrintColors.OKGREEN} Successfully added all collections {PrintColors.WARNING}
