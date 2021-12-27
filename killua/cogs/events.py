@@ -1,6 +1,7 @@
 import io
 import sys
 import topgg
+import aiohttp
 import discord
 import traceback
 
@@ -10,17 +11,28 @@ from discord.ext import commands, tasks
 from PIL import Image
 
 from killua.utils.classes import Guild, Book, PrintColors
-from killua.static.constants import DBL, items, PatreonBanner, stats
+from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, items, teams, PatreonBanner, stats
 
 class Events(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.token = DBL['token']
-        self.topggpy = topgg.DBLClient(self.client, self.token)
+        self.topgg_token = TOPGG_TOKEN
+        self.dbl_token = DBL_TOKEN
+        self.topggpy = topgg.DBLClient(self.client, self.topgg_token)
         self.status.start()
 
     async def _post_guild_count(self) -> None:
+        HEADERS = {
+            "Authorization": self.dbl_token
+        }
+
+        data = {
+            "guilds": len(self.client.guilds),
+            "users": len(self.client.users)
+        }
+
+        await aiohttp.post(f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats", headers=HEADERS, data=data)
         await self.topggpy.post_guild_count()
 
     async def _load_cards_cache(self) -> None:
@@ -80,7 +92,7 @@ class Events(commands.Cog):
     async def save_guilds(self):
         # this is currently not used but the earlier we collect this data, the better becaase I do plan to use it
         if not self.client.is_dev:
-            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds)}}})
+            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": teams.count_documents()}}})
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -103,11 +115,11 @@ class Events(commands.Cog):
     async def on_connect(self):
         #Changing Killua's status
         await self.client.update_presence()
+        await self._set_patreon_banner()
         if self.client.is_dev:
             self.print_dev_text()
         else:
             await self._post_guild_count()
-            await self._set_patreon_banner()
             await self._load_cards_cache()
 
     @commands.Cog.listener()

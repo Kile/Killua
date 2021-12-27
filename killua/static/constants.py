@@ -24,8 +24,11 @@ updates = GDB['updates']
 IPC_TOKEN = config["ipc"]
 TOKEN = config["token"]
 PATREON = config["patreon"]
-DBL = config["dbl"]
 PXLAPI = config["pxlapi"]
+PASSWORD = config["password"]
+PORT = config["port"]
+TOPGG_TOKEN = config["topgg_token"]
+DBL_TOKEN = config["dbl_token"]
 
 # these are badges that grant premium benefits without being managed by the patreon class.
 # granted when someone pays for premium another way or gets benefits in some way

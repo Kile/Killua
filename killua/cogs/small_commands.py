@@ -168,7 +168,7 @@ class SmallCommands(commands.Cog):
     async def invite(self, ctx):
         """Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**"""
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Invite", url=f"https://discord.com/oauth2/authorize?client_id={self.client.user.id}&scope=bot&permissions=268723414"))
+        view.add_item(discord.ui.Button(label="Invite", url=f"https://discord.com/oauth2/authorize?client_id={self.client.user.id}&scope=bot&permissions=268723414&applic"))
         embed = discord.Embed(
             title = 'Invite',
             description = f'Invite the bot to your server by clicking on the button. Thank you a lot for supporting me!',
