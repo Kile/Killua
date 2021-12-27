@@ -27,7 +27,6 @@ class Actions(commands.Cog):
         else:
             return await r.text()
 
-    async def get_image(self, ctx, endpoint:str) -> discord.Message: # for endpoints like /wallpaper where you don't want to mention a user
     async def get_image(self, ctx) -> discord.Message: # for endpoints like /blush/gif where you don't want to mention a user
         image = await self.request_action(ctx.command.name)
         if isinstance(image, str):
@@ -58,7 +57,7 @@ class Actions(commands.Cog):
 
     async def action_embed(self, endpoint:str, author, members:List[discord.Member]) -> discord.Embed:
         if endpoint == 'hug':
-            image = {"url": random.choice(ACTIONS[endpoint]["images"])} # This might eventually be deprecated for copyright reasons
+            image = {"link": random.choice(ACTIONS[endpoint]["images"])} # This might eventually be deprecated for copyright reasons
         else:
             image = await self.request_action(endpoint)
             if isinstance(image, str):
