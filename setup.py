@@ -19,7 +19,7 @@ from killua.static.constants import (
 
 def _try(coll: collection, args:dict):
     try:
-        collection.insert_one(args)
+        coll.insert_one(args)
     except errors.DuplicateKeyError:
         print(f"{PrintColors.FAIL} \"{args['_id']}\" key already exists, skipped...{PrintColors.ENDC}")
 

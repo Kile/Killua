@@ -32,7 +32,7 @@ class Events(commands.Cog):
             "users": len(self.client.users)
         }
 
-        await aiohttp.post(f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats", headers=HEADERS, data=data)
+        await self.client.session.post(f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats", headers=HEADERS, data=data)
         await self.topggpy.post_guild_count()
 
     async def _load_cards_cache(self) -> None:

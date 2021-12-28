@@ -1,15 +1,18 @@
 from . import cogs
 import discord
 import aiohttp
-import getopt, sys
+import asyncio
+import getopt, sys, os
 from random import randint, choice
 from discord.ext import commands, ipc
-from datetime import datetime, timedelta, date
-from typing import Union, Callable, List, Tuple, Optional
+from datetime import date
+from typing import Union
+from threading import Thread
 
+from .webhook.api import app
 from .utils.help import MyHelp
 from .utils.classes import Category, Guild
-from .static.constants import guilds, TOKEN, IPC_TOKEN, presence, TIPS
+from .static.constants import TOKEN, IPC_TOKEN, presence, TIPS, PORT
 
 class Bot(commands.Bot):
 	def __init__(self, *args, **kwargs):
@@ -134,7 +137,15 @@ def main():
 	for cog in cogs.all_cogs:
 		bot.add_cog(cog.Cog(bot))
 
-	# Start the bot.
 	bot.load_extension("jishaku")
 	bot.ipc.start()
-	bot.run(TOKEN)
+
+	if bot.is_dev: # runs the api locally if the bot is in dev mode
+		loop = asyncio.get_event_loop()
+		loop.create_task(bot.start(TOKEN))
+		Thread(target=loop.run_forever).start()
+		app.run(host="0.0.0.0", port=PORT)
+		# app.run(port=PORT)
+	else:
+		# Start the bot.
+		bot.run(TOKEN)

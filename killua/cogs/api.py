@@ -1,8 +1,8 @@
 import discord
 from discord.ext import ipc, commands
 
-from killua.utils.classes import User, Guild
-from killua.static.constants import teams
+from killua.utils.classes import User, Guild, LootBox
+from killua.static.constants import teams, LOOTBOXES
 
 from typing import List
 
@@ -10,6 +10,37 @@ class IPCRoutes(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+
+    def _get_reward(self, user:User, weekend:bool) -> int:
+        """A pretty simple algorithm that adjusts the reward for voting"""
+        if user.votes % 5 == 0:
+            return LootBox.get_random_lootbox()
+        if user.votes*2 > 100:
+            reward = int((user.votes*2)/100)*(150 if weekend else 100)
+        else:
+            reward = 100
+        return reward
+
+    async def handle_vote(self, data: dict) -> None:
+        user_id = data["user"] if "user" in data else data["id"]
+
+        user = User(int(user_id))
+        user.add_vote()
+        reward = self._get_reward(user, data["isWeekend"] if hasattr(data, "isWeekend") else False)
+
+        if reward < 100:
+            user.add_lootbox(reward)
+            text = f"Thank you for voting for Killua! This time you get a :sparkles: special :sparkles: reward: the lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}. Open it with `k!open`"
+        else:
+            text = f"Thank you for voting for Killua! Here take {reward} Jenny as a sign of my gratitude. {5-user.votes%5} vote{'s' if 5-user.votes%5 > 1 else ''} away from a :sparkles: special :sparkles: reward"
+            user.add_jenny(reward)
+        
+        usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
+
+        try:
+            await self.client.send_message(usr, content=text)
+        except discord.HTTPException:
+            pass
 
     @ipc.server.route()
     async def top(self, data) -> List[dict]:
@@ -50,6 +81,12 @@ class IPCRoutes(commands.Cog):
         guild = Guild(data.id)
         guild.prefix = data.prefix
         guild.commands = {v for k, v in data.commands.items()}
+
+    @ipc.server.route()
+    async def vote(self, data) -> None:
+        """Registers a vote from either topgg or dbl"""
+        await self.handle_vote(data.data)
+
 
 Cog = IPCRoutes
 

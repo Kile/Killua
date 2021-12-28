@@ -148,7 +148,7 @@ class ImageManipulation(commands.Cog):
     async def flag(self, ctx, flag:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Valid flags: asexual, aromantic, bisexual, pansexual, gay, lesbian, trans, nonbinary, genderfluid, genderqueer, polysexual, austria, belgium, botswana, bulgaria, ivory, estonia, france, gabon, gambia, germany, guinea, hungary, indonesia, ireland, italy, luxembourg, monaco, nigeria, poland, russia, romania, sierraleone, thailand, ukraine, yemen"""
         async def func(data, flag):
-            return await self.pxl.flag(flag=flag, images=[data])
+            return await self.pxl.flag(flag=flag.lower(), images=[data])
         await self.handle_command(ctx, args, func, flag)
 
     @check(5)
@@ -172,7 +172,7 @@ class ImageManipulation(commands.Cog):
     async def snapchat(self, ctx, fil:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Valid filters: dog, dog2, dog3, pig, flowers, random"""
         async def func(data, fil):
-            return await self.pxl.snapchat(filter=fil, images=[data])
+            return await self.pxl.snapchat(filter=fil.lower(), images=[data])
         await self.handle_command(ctx, args, func, fil)
 
     @check(3)
@@ -180,7 +180,7 @@ class ImageManipulation(commands.Cog):
     async def eyes(self, ctx, t:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
         """Valid eyes: big, black, bloodshot, blue, default, googly, green, horror, illuminati, money, pink, red, small, spinner, spongebob, white, yellow, random"""
         async def func(data, t):
-            return await self.pxl.eyes(eyes=t, images=[data])
+            return await self.pxl.eyes(eyes=t.lower(), images=[data])
         await self.handle_command(ctx, args, func, t)
 
     @check(4)
