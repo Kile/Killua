@@ -46,7 +46,7 @@ class Economy(commands.Cog):
         
         info = User(user.id)
         flags = [USER_FLAGS[x[0]] for x in user.public_flags if x[1]]
-        if user.avatar.is_animated() or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]) > 0: # A very simple nitro check that is not too accurate
+        if (user.avatar and user.avatar.is_animated()) or len([x for x in self.client.guilds if user.id in [y.id for y in x.premium_subscribers]]) > 0: # A very simple nitro check that is not too accurate
             flags.append(USER_FLAGS["nitro"])
         badges = [(KILLUA_BADGES[PREMIUM_ALIASES[x]] if x in PREMIUM_ALIASES.keys() else KILLUA_BADGES[x]) for x in info.badges]
         
@@ -59,7 +59,7 @@ class Economy(commands.Cog):
                 'title': f'Information about {user}',
                 'description': f'{user.id}\n{" ".join(flags)}',
                 "fields": [{"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, {"name": "Jenny", "value": str(info.jenny), "inline": False}, {"name": "Account created at", "value": joined, "inline": False}, {"name": "daily cooldown", "value": cooldown or "Never claimed `k!daily` before", "inline": False}],
-                'thumbnail': {'url': str(user.avatar.url)},
+                'thumbnail': {'url': str(user.avatar.url) if user.avatar else None},
                 "image": {"url": user.banner.url if user.banner else None},
                 'color': 0x1400ff
             })

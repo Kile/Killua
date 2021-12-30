@@ -17,7 +17,7 @@ class HelpPaginator(Paginator):
     async def start(self):
         view = await self._start()
 
-        if view.ignore:
+        if view.ignore or view.timed_out:
             return
         
         await self.view.message.delete()
