@@ -46,7 +46,7 @@ Hello and thanks for checking out Killua's source code! I have been working on K
 
 Website: https://killua.dev
 
-Invite Killua to your guild [here](https://cdn.discordapp.com/avatars/756206646396452975/30c2da6b0a777658021cbac239fa5e66.png?size=1024)
+Invite Killua to your guild [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands)
 
 Feel free to add issues or PRs, I would really appreciate it
 

@@ -3,13 +3,14 @@ from discord.ext import commands
 
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from random import randint, choice
 import math
 from typing import Union
+from urllib.parse import quote
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 
-from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS
+from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS, LANGS
 from killua.utils.checks import check
 from killua.utils.classes import Category
 from killua.utils.paginator import Paginator
@@ -114,22 +115,25 @@ class SmallCommands(commands.Cog):
     async def avatar(self, ctx, user: Union[discord.Member, int]=None):
         """Shows the avatar of a user"""
         if not user:
-            avatar = str(ctx.author.avatar.url)
+            avatar = ctx.author.avatar
             #Showing the avatar of the author if no user is provided
         elif isinstance(user, discord.Member):
-            avatar = str(user.avatar.url)
+            avatar = user.avatar
             #If the user args is a mention the bot can just get everything from there
         else:
             try:
                 user = self.client.get_user(user) or await self.client.fetch_user(user)
-                avatar = str(user.avatar.url)
+                avatar = user.avatar
                 #If the args is an integer the bot will try to get a user with the integer as ID
             except discord.NotFound:
                 return await ctx.send('Invalid user')
 
+        if not avatar:
+            return await ctx.send("Specified user has no custom avatar")
+
         embed = discord.Embed.from_dict({
             'title': f'Avatar of {user or ctx.author}',
-            'image': {'url': avatar},
+            'image': {'url': str(avatar.url)},
             'color': 0x1400ff
         })
         await self.client.send_message(ctx, embed=embed)
@@ -168,7 +172,7 @@ class SmallCommands(commands.Cog):
     async def invite(self, ctx):
         """Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**"""
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Invite", url=f"https://discord.com/oauth2/authorize?client_id={self.client.user.id}&scope=bot&permissions=268723414&applic"))
+        view.add_item(discord.ui.Button(label="Invite", url=self.client.invite))
         embed = discord.Embed(
             title = 'Invite',
             description = f'Invite the bot to your server by clicking on the button. Thank you a lot for supporting me!',
@@ -204,28 +208,33 @@ class SmallCommands(commands.Cog):
 
     @check()
     @commands.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
-    async def translate(self, ctx, source:str, target:str, *,args:str):
-        """Translate anything to 20+ languages with this command!"""
+    async def translate(self, ctx, source:str, target:str, *, args:str):
+        """Translate anything to 20+ languages with this command! Powered by my memory translator."""
 
-        embed = discord.Embed.from_dict({ 'title': f'Translation',
-            'description': f'```\n{args}```\n`{source}` -> `{target}`\n',
-            'color': 0x1400ff
-        })
+        if source.lower() in LANGS: source = LANGS[source.lower()]
+        if target.lower() in LANGS: target = LANGS[target.lower()]
 
-        try:
-            translated = MyMemoryTranslator(source=source.lower(), target=target.lower()).translate(text=args)
-            embed.description = embed.description + '\nSucessfully translated by MyMemoryTranslator:'
-        except Exception as ge:
-            error = f'MyMemoryTranslator error: {ge}\n'
-           
-            try:
-                embed.description = embed.description + '\nSucessfully translated by Google Translator:'
-                translated = GoogleTranslator(source=source.lower(), target=target.lower()).translate(text=args)
-            except Exception as me:
-                error = error + f'Google error: {me}\n'
-                return await ctx.send(error)
+        if not (target in LANGS.values()) or not (source in LANGS.values()):
+            return await ctx.send("Invalid language! This is how to use the command: `" + ctx.command.usage + "`")
+
+        if len(source) > 1800:
+            return await ctx.send("Too many characters to translate!")
+
+        text = quote(args, safe="")
+        res = await self.client.session.get("http://api.mymemory.translated.net/get?q=" + text + "&langpair=" + source.lower() + "|" + target.lower())
+
+        if not (res.status == 200):
+            return await ctx.send(":x: " + await res.text())
+
+        translation = await res.json()
             
-        embed.description = embed.description + f'```\n{translated}```'
+        embed = discord.Embed.from_dict({ 
+            'title': f'Translation Successfull',
+            'description': f'```\n{args}```\n`{source}` -> `{target}`\n\n```\n{translation["responseData"]["translatedText"]}```',
+            'color': 0x1400ff,
+            "footer": {"text": "Confidence: " + str(translation["responseData"]["match"] * 100) + "%"}
+        })
+        
         await self.client.send_message(ctx, embed=embed)
 
     @check()

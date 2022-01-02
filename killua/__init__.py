@@ -19,6 +19,7 @@ class Bot(commands.Bot):
 		super().__init__(*args, **kwargs)
 
 		self.support_server_invite = "https://discord.gg/MKyWA5M"
+		self.invite = "https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands"
 		self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
 		self.is_dev = False
 
