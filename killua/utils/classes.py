@@ -201,10 +201,10 @@ class LootBox:
 
         for i in range((cards:=random.choice(data["cards_total"]))):
             skip = False
-            if data["guaranteed"]: # if a card is guaranteed it is added here, it will count as one of the total_cards though
-                for k, v in data["guaranteed"]:
-                    if rew.count(k) < v:
-                        rew.append(PartialCard(items.find_one(k)["_id"]))
+            if data["rewards"]["guaranteed"]: # if a card is guaranteed it is added here, it will count as one of the total_cards though
+                for card, amount in data["rewards"]["guaranteed"].items():
+                    if [r.id for r in rew].count(card) < amount:
+                        rew.append(PartialCard(items.find_one(card)["_id"]))
                         skip = True
                         break  
 

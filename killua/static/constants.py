@@ -209,7 +209,7 @@ LOOTBOXES = {
         },
         "rewards_total": 20,
         "cards_total": (0, 0),
-        "probability": 100,
+        "probability": 1000,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419628986398/image1.png"
     },
@@ -228,7 +228,7 @@ LOOTBOXES = {
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
-        "probability": 30,
+        "probability": 100,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419884826644/image2.png"
     },
@@ -247,7 +247,7 @@ LOOTBOXES = {
         },
         "rewards_total": 10,
         "cards_total": (2, 6),
-        "probability": 15,
+        "probability": 50,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419251474493/image0.png"
     },
@@ -266,7 +266,7 @@ LOOTBOXES = {
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
-        "probability": 10,
+        "probability": 20,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420291682374/image3.png"
     },
@@ -285,7 +285,7 @@ LOOTBOXES = {
         },
         "rewards_total": 15,
         "cards_total": (15, 15),
-        "probability": 10,
+        "probability": 20,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420576874536/image4.png"
     },
@@ -304,7 +304,7 @@ LOOTBOXES = {
         },
         "rewards_total": 10,
         "cards_total": (5, 8),
-        "probability": 5,
+        "probability": 8,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420975358032/image5.png"
     },
@@ -323,7 +323,7 @@ LOOTBOXES = {
         },
         "rewards_total": 5,
         "cards_total": (0, 2),
-        "probability": 2,
+        "probability": 3,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836331311134/image1.png"
     },
@@ -342,7 +342,7 @@ LOOTBOXES = {
         },
         "rewards_total": 15,
         "cards_total": (5, 8),
-        "probability": 15,
+        "probability": 40,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882754729640345670/image0.png"
     },
@@ -352,16 +352,16 @@ LOOTBOXES = {
         "emoji": "<:diamond_box:882613900254777354>",
         "description": "A common possesion of royalty but hard to find elsewhere, this box contains many exclusive rewards and is partly made out of real diamonds.",
         "rewards": {
+            "guaranteed" :{},
             "jenny": (2000, 3000),
             "cards": {
-                "guaranteed" : {},
                 "rarities": ["B", "A", "S"],
                 "types": ["spell", "normal"]
             }
         },
         "rewards_total": 15,
         "cards_total": (5, 8),
-        "probability": 5,
+        "probability": 10,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836738166794/image2.png"
     },
