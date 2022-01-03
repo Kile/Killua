@@ -1,10 +1,10 @@
 import discord
-from discord.ext import commands
-import random
-from datetime import datetime, timedelta
 import math
+import random
+from discord.ext import commands
+from datetime import datetime, timedelta
 
-from typing import Union, List, Optional, Tuple, Optional
+from typing import Union, List, Optional, Tuple, Optional, Dict
 
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
@@ -174,8 +174,8 @@ class Cards(commands.Cog):
             if end.lower() == 'time':
                 if not has_effect:
                     return await ctx.send('You are not on a hunt yet!')
-                difference = datetime.now() - value
-                return await ctx.send(f'You\'ve been hunting for {difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds.')
+                
+                return await ctx.send(f'You\'ve started hunting <t:{int(value.timestamp())}:R>.')
 
             if not end.lower() == 'end':
                 pass
@@ -189,7 +189,7 @@ class Cards(commands.Cog):
                 
                 rewards = self._construct_rewards(score)
                 formatted_rewards, formatted_text, hit_limit = self._format_rewards(rewards, user, score)
-                text = f'You\'ve been hunting for {difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds. You brought back the following items from your hunt: \n\n'
+                text = f'You\'ve started hunting <t:{int(value.timestamp())}:R>. You brought back the following items from your hunt: \n\n'
                 if hit_limit:
                     text += f":warning: Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell` :warning:\n\n"
 

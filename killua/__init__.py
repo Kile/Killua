@@ -1,21 +1,27 @@
 from . import cogs
 import discord
 import aiohttp
+import asyncio
+import getopt, sys, os
 from random import randint, choice
 from discord.ext import commands, ipc
-from datetime import datetime, timedelta, date
-from typing import Union, Callable, List, Tuple, Optional
+from datetime import date
+from typing import Union
+from threading import Thread
 
+from .webhook.api import app
 from .utils.help import MyHelp
 from .utils.classes import Category, Guild
-from .static.constants import guilds, TOKEN, IPC_TOKEN, presence, TIPS
+from .static.constants import TOKEN, IPC_TOKEN, presence, TIPS, PORT
 
 class Bot(commands.Bot):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self.support_server_invite = "https://discord.gg/MKyWA5M"
+		self.invite = "https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands"
 		self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
+		self.is_dev = False
 
 	async def on_ipc_error(self, endpoint, error):
 		print(endpoint, "raised", error)
@@ -79,6 +85,20 @@ class Bot(commands.Bot):
 			await messageable.send(f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.user.id == 758031913788375090 else 'kil!')}")
 		return msg
 
+	def convert_to_timestamp(self, id: int, args: str = "f") -> str:
+		"""Turns a discord snowflake into a discord timestamp string"""
+		return f"<t:{int((id >> 22) / 1000) + 1420070400}:{args}>"
+
+
+def is_dev() -> bool:
+	"""Checks if the bot is run with the --development argument"""
+	raw_arguments = sys.argv[1:]
+
+	arguments, _ = getopt.getopt(raw_arguments, "d", ["development"])
+	for arg, _ in arguments:
+		if arg in ("--development", "-d"):
+			return True
+	return False
 
 def get_prefix(bot, message):
 	if bot.user.id == 758031913788375090:
@@ -111,12 +131,22 @@ def main():
 	bot.session = session
 	# Setup commands.
 	bot.help_command = MyHelp()
+	# Checks if the bot is a dev bot
+	bot.is_dev = is_dev()
 
 	# Setup cogs.
 	for cog in cogs.all_cogs:
 		bot.add_cog(cog.Cog(bot))
 
-	# Start the bot.
 	bot.load_extension("jishaku")
 	bot.ipc.start()
-	bot.run(TOKEN)
+
+	if bot.is_dev: # runs the api locally if the bot is in dev mode
+		loop = asyncio.get_event_loop()
+		loop.create_task(bot.start(TOKEN))
+		Thread(target=loop.run_forever).start()
+		app.run(host="0.0.0.0", port=PORT)
+		# app.run(port=PORT)
+	else:
+		# Start the bot.
+		bot.run(TOKEN)

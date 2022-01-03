@@ -24,8 +24,11 @@ updates = GDB['updates']
 IPC_TOKEN = config["ipc"]
 TOKEN = config["token"]
 PATREON = config["patreon"]
-DBL = config["dbl"]
 PXLAPI = config["pxlapi"]
+PASSWORD = config["password"]
+PORT = config["port"]
+TOPGG_TOKEN = config["topgg_token"]
+DBL_TOKEN = config["dbl_token"]
 
 # these are badges that grant premium benefits without being managed by the patreon class.
 # granted when someone pays for premium another way or gets benefits in some way
@@ -197,11 +200,12 @@ LOOTBOXES = {
         "emoji": "<:standart_box:882056516335702067>",
         "description": "A mass produced box sold everywhere.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (10, 30),
             "cards": {
                 "rarities": [],
                 "types": []
-            }
+            },
         },
         "rewards_total": 20,
         "cards_total": (0, 0),
@@ -215,6 +219,7 @@ LOOTBOXES = {
         "emoji": "<:big_box:882373299986898964>",
         "description": "A big box sold to rather wealthier citizens. Some lost all their wealth on this box.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (50, 500),
             "cards": {
                 "rarities": [],
@@ -233,6 +238,7 @@ LOOTBOXES = {
         "emoji": "<:fancy_box:882373372321890304>",
         "description": "A quite rare box found somewhere in the back of somone's basement. It has a strange aura to it.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (66, 66),
             "cards": {
                 "rarities": ["B", "C"],
@@ -251,6 +257,7 @@ LOOTBOXES = {
         "emoji": "<:golden_box:882181724941979729>",
         "description": "A box for the rich and priviledged. It made some even richer and ruined others.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (1500, 2500),
             "cards": {
                 "rarities": [],
@@ -269,6 +276,7 @@ LOOTBOXES = {
         "emoji": "<:mysterious_box:882181975367118859>",
         "description": "This box is given to young magicians after they complete their training. It a good starter pack on spells.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (0, 0),
             "cards": {
                 "rarities": ["D", "C", "B", "A"],
@@ -287,6 +295,7 @@ LOOTBOXES = {
         "emoji": "<:advanced_spell_box:882181860090839110>",
         "description": "A box only given and sold to experienced magicians. Its spells are mighty and dangerous.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (250, 500),
             "cards": {
                 "rarities": ["B", "A"],
@@ -305,6 +314,7 @@ LOOTBOXES = {
         "emoji": "<:box_of_titans:882367214186008657>",
         "description": "This ancient box used to be protected by titans and can contain one or more extremely rare SS cards. Yet even with the titans being long gone the risk is high opening this box since a lot of bombs await.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (2000, 5000),
             "cards": {
                 "rarities": ["SS"],
@@ -323,6 +333,7 @@ LOOTBOXES = {
         "emoji": "<:haunted_box:882613954227077141>",
         "description": "This box has trapped monsters inside of it. If you listen closely you can hear them scratching and screming.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (200, 300),
             "cards": {
                 "rarities": ["D", "C", "B", "A"],
@@ -343,6 +354,7 @@ LOOTBOXES = {
         "rewards": {
             "jenny": (2000, 3000),
             "cards": {
+                "guaranteed" : {},
                 "rarities": ["B", "A", "S"],
                 "types": ["spell", "normal"]
             }
@@ -359,6 +371,7 @@ LOOTBOXES = {
         "emoji": "<:box_of_legends:882367420256387142>",
         "description": "A box so rare that it's existance is nothing but a myth. The most rare items are said to be in it.",
         "rewards": {
+            "guaranteed" : {},
             "jenny": (3000, 4500),
             "cards": {
                 "rarities": ["S", "SS"],
@@ -451,6 +464,119 @@ GUILD = 715358111472418908
 BOOSTER_ROLE = 769622564648648744
 REPORT_CHANNEL = 796306329756893184
 UPDATE_CHANNEL = 757170264294424646
+
+# For the translate command
+LANGS = {
+    'afrikaans': 'af', 
+    'albanian': 'sq', 
+    'amharic': 'am', 
+    'arabic': 'ar', 
+    'armenian': 'hy', 
+    'azerbaijani': 'az', 
+    'basque': 'eu', 
+    'belarusian': 'be', 
+    'bengali': 'bn', 
+    'bosnian': 'bs', 
+    'bulgarian': 'bg', 
+    'catalan': 'ca', 
+    'cebuano': 'ceb', 
+    'chichewa': 'ny', 
+    'chinese-simplified': 'zh-CN', 
+    'chinese-traditional': 'zh-TW', 
+    'corsican': 'co', 
+    'croatian': 'hr', 
+    'czech': 'cs', 
+    'danish': 'da', 
+    'dutch': 'nl', 
+    'english': 'en', 
+    'esperanto': 'eo', 
+    'estonian': 'et', 
+    'filipino': 'tl', 
+    'finnish': 'fi', 
+    'french': 'fr', 
+    'frisian': 'fy', 
+    'galician': 'gl', 
+    'georgian': 'ka', 
+    'german': 'de', 
+    'greek': 'el', 
+    'gujarati': 'gu', 
+    'haitian creole': 'ht', 
+    'hausa': 'ha', 
+    'hawaiian': 'haw', 
+    'hebrew': 'iw', 
+    'hindi': 'hi', 
+    'hmong': 'hmn', 
+    'hungarian': 'hu', 
+    'icelandic': 'is', 
+    'igbo': 'ig', 
+    'indonesian': 'id', 
+    'irish': 'ga', 
+    'italian': 'it', 
+    'japanese': 'ja', 
+    'javanese': 'jw', 
+    'kannada': 'kn', 
+    'kazakh': 'kk', 
+    'khmer': 'km', 
+    'kinyarwanda': 'rw', 
+    'korean': 'ko', 
+    'kurdish': 'ku', 
+    'kyrgyz': 'ky', 
+    'lao': 'lo', 
+    'latin': 'la', 
+    'latvian': 'lv', 
+    'lithuanian': 'lt', 
+    'luxembourgish': 'lb', 
+    'macedonian': 'mk', 
+    'malagasy': 'mg', 
+    'malay': 'ms', 
+    'malayalam': 'ml', 
+    'maltese': 'mt', 
+    'maori': 'mi', 
+    'marathi': 'mr', 
+    'mongolian': 'mn', 
+    'myanmar': 'my', 
+    'nepali': 'ne', 
+    'norwegian': 'no', 
+    'odia': 'or', 
+    'pashto': 'ps', 
+    'persian': 'fa', 
+    'polish': 'pl', 
+    'portuguese': 'pt', 
+    'punjabi': 'pa', 
+    'romanian': 'ro', 
+    'russian': 'ru', 
+    'samoan': 'sm', 
+    'scots gaelic': 'gd', 
+    'serbian': 'sr', 
+    'sesotho': 'st', 
+    'shona': 'sn', 
+    'sindhi': 'sd', 
+    'sinhala': 'si', 
+    'slovak': 'sk', 
+    'slovenian': 'sl', 
+    'somali': 'so', 
+    'spanish': 'es', 
+    'sundanese': 'su', 
+    'swahili': 'sw', 
+    'swedish': 'sv', 
+    'tajik': 'tg', 
+    'tamil': 'ta', 
+    'tatar': 'tt', 
+    'telugu': 'te', 
+    'thai': 'th', 
+    'turkish': 'tr', 
+    'turkmen': 'tk', 
+    'ukrainian': 'uk', 
+    'urdu': 'ur', 
+    'uyghur': 'ug',
+    'uzbek': 'uz', 
+    'vietnamese': 'vi', 
+    'welsh': 'cy', 
+    'xhosa': 'xh', 
+    'yiddish': 'yi', 
+    'yoruba': 'yo', 
+    'zulu': 'zu'
+}
 
 # FOR THE NOKIA COMMAND FOR /IMAGESCRIPT OF PXLAPI
 

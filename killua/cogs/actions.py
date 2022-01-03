@@ -16,19 +16,24 @@ class Actions(commands.Cog):
 
     async def request_action(self, endpoint:str) -> Union[dict, str]:
 
-        r = await self.session.get(f"https://shiro.gg/api/images/{endpoint}")
+        r = await self.session.get(f"https://purrbot.site/api/img/sfw/{endpoint}/gif")
         if r.status == 200:
-            return await r.json()
+            res = await r.json()
+
+            if res["error"]:
+                return res["message"]
+
+            return res
         else:
             return await r.text()
 
-    async def get_image(self, ctx, endpoint:str) -> discord.Message: # for endpoints like /wallpaper where you don't want to mention a user
-        image = await self.request_action(endpoint)
+    async def get_image(self, ctx) -> discord.Message: # for endpoints like /blush/gif where you don't want to mention a user
+        image = await self.request_action(ctx.command.name)
         if isinstance(image, str):
             return await ctx.send(f':x: {image}')
-        embed = ({
+        embed = discord.Embed.from_dict({
             "title": "",
-            "image": {"url": image},
+            "image": {"url": image["link"]},
             "color": 0x1400ff
         })
         return await ctx.send(embed=embed)
@@ -52,7 +57,7 @@ class Actions(commands.Cog):
 
     async def action_embed(self, endpoint:str, author, members:List[discord.Member]) -> discord.Embed:
         if endpoint == 'hug':
-            image = {"url": random.choice(ACTIONS[endpoint]["images"])} # This might eventually be deprecated for copyright reasons
+            image = {"link": random.choice(ACTIONS[endpoint]["images"])} # This might eventually be deprecated for copyright reasons
         else:
             image = await self.request_action(endpoint)
             if isinstance(image, str):
@@ -63,7 +68,7 @@ class Actions(commands.Cog):
 
         embed = discord.Embed.from_dict({
             "title": text,
-            "image": {"url": image["url"]},
+            "image": {"url": image["link"]},
             "color": 0x1400ff
         })
         return embed
@@ -123,6 +128,36 @@ class Actions(commands.Cog):
     async def slap(self, ctx, members: commands.Greedy[discord.Member]=None):
         """Slap a user with this command"""
         return await self.do_action(ctx, members)
+
+    @check()
+    @commands.command(extras={"category": Category.ACTIONS}, usage="dance")
+    async def dance(self, ctx):
+        """Show off with your dance moves!"""
+        return await self.get_image(ctx)
+
+    @check()
+    @commands.command(extras={"category": Category.ACTIONS}, usage="neko")
+    async def neko(self, ctx):
+        """uwu"""
+        return await self.get_image(ctx)
+
+    @check()
+    @commands.command(extras={"category": Category.ACTIONS}, usage="smile")
+    async def smile(self, ctx):
+        """Show a bright smile with this command"""
+        return await self.get_image(ctx)
+
+    @check()
+    @commands.command(extras={"category": Category.ACTIONS}, usage="blush")
+    async def blush(self, ctx):
+        """O-Oh! T-thank you for t-the compliment... You have beautiful fingernails too!"""
+        return await self.get_image(ctx)
+
+    @check()
+    @commands.command(extras={"category": Category.ACTIONS}, usage="tail")
+    async def tail(self, ctx):
+        """Wag your tail when you're happy!"""
+        return await self.get_image(ctx)
 
 Cog = Actions
 

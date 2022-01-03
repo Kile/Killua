@@ -7,8 +7,8 @@ from inspect import iscoroutinefunction
 
 from typing import List, Union, Type, TypeVar, Coroutine, Tuple, Callable
 
-E = TypeVar(Union[discord.Embed, Type[discord.Embed]])
-R = TypeVar(Union[E, Tuple[E, discord.File]])
+E = TypeVar("E", discord.Embed, Type[discord.Embed])
+R = TypeVar("R", discord.Embed, Type[discord.Embed], Tuple[Union[discord.Embed, Type[discord.Embed]], discord.File])
 T = TypeVar("T")
 
 class ButtonEmoji:
@@ -51,7 +51,7 @@ class View(discord.ui.View):
 
     async def disable(self, msg:discord.Message) -> Union[discord.Message, None]:
         """"Disables the children inside of the view"""
-        if len([c for c in self.children if not c.disabled]) == 0: # if every child is already disabled, we don't need to edit the message again
+        if not [c for c in self.children if not c.disabled]: # if every child is already disabled, we don't need to edit the message again
             return
 
         for c in self.children:
@@ -67,7 +67,7 @@ class Buttons(View):
             timeout:int,
             page:int, 
             max_pages:int,
-            func:Union[Callable[[int, E, T], R], Coroutine[[int, E, T], R], None], 
+            func:Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None], 
             embed:E,
             defer:bool,
             has_file:bool,
@@ -191,7 +191,7 @@ class Paginator:
         timeout:Union[int, float]=200,
         page:int=1, 
         max_pages:Union[int, None]=None,
-        func:Union[Callable[[int, E, T], R], Coroutine[[int, E, T], R], None]=None, 
+        func:Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None]=None, 
         embed:E=None,
         defer:bool=False, # In case a pageturn can exceed 3 seconds this has to be set to True
         has_file:bool=False,

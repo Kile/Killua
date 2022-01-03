@@ -43,8 +43,8 @@ def check(time:int=0):
     A check that checks for blacklists, dashboard configuration and cooldown in that order
     """
     
-    from datetime import datetime, timedelta
-    from killua.static.constants import guilds, teams, blacklist, stats
+    from datetime import datetime
+    from killua.static.constants import blacklist, stats
 
     def add_usage(command:Union[commands.Command, Type[commands.Command]]) -> None:
         data = stats.find_one({'_id': 'commands'})['command_usage']
@@ -73,7 +73,7 @@ def check(time:int=0):
     
     async def custom_cooldown(ctx, time:int) -> bool:
         global cooldowndict
-        now = datetime.today()
+        now = datetime.now()
         try:
             cdwn = cooldowndict[ctx.author.id][ctx.command.name]
         except KeyError as e: # if there is no entry in the cooldowndict yet for either the command or user
@@ -103,7 +103,7 @@ def check(time:int=0):
             cooldowndict[ctx.author.id][ctx.command.name] = now
             return True 
                     
-        await ctx.send(f':x: Command on cooldown! Try again after `{time-diff}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon',file=PatreonBanner.file(), view=view, delete_after=10)
+        await ctx.send(f':x: Command on cooldown! Try again  after `{time-diff}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon',file=PatreonBanner.file(), view=view, delete_after=10)
         return False
 
     async def settings_check(ctx) -> bool:

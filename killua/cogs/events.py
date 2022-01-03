@@ -1,6 +1,7 @@
 import io
-import topgg
+import sys
 import discord
+import traceback
 
 from datetime import datetime
 from discord.utils import find
@@ -8,21 +9,22 @@ from discord.ext import commands, tasks
 from PIL import Image
 
 from killua.utils.classes import Guild, Book, PrintColors
-from killua.static.constants import DBL, items, PatreonBanner
+from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, items, teams, PatreonBanner, stats
 
 class Events(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.token = DBL['token']
-        self.topggpy = topgg.DBLClient(self.client, self.token)
         self.status.start()
 
-
-
     async def _post_guild_count(self) -> None:
-        if self.client.user.id != 758031913788375090: # Not posting guild count with dev bot
-            await self.topggpy.post_guild_count()
+        data = {
+            "guilds": len(self.client.guilds),
+            "users": len(self.client.users)
+        }
+
+        await self.client.session.post(f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats", headers={"Authorization": DBL_TOKEN}, data=data)
+        await self.client.session.post(f"https://top.gg/api/bots/756206646396452975/stats", headers={"Authorization": TOPGG_TOKEN}, data={"server_count": len(self.client.guilds)})
 
     async def _load_cards_cache(self) -> None:
         cards = [x for x in items.find()]
@@ -57,6 +59,9 @@ class Events(commands.Cog):
         PatreonBanner.VALUE = image_bytes
         print(f"{PrintColors.OKGREEN}Successfully loaded patreon banner{PrintColors.ENDC}")
 
+    def print_dev_text(self) -> None:
+        print(f"{PrintColors.OKGREEN}Running bot in dev enviroment...{PrintColors.ENDC}")
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{PrintColors.HEADER}{PrintColors.OKGREEN}------")
@@ -67,11 +72,18 @@ class Events(commands.Cog):
     @tasks.loop(hours=12)
     async def status(self):
         await self.client.update_presence()
-        await self._post_guild_count()
+        if not self.client.is_dev:
+            await self._post_guild_count()
 
     @status.before_loop
     async def before_status(self):
         await self.client.wait_until_ready()
+
+    @tasks.loop(hours=24)
+    async def save_guilds(self):
+        # this is currently not used but the earlier we collect this data, the better becaase I do plan to use it
+        if not self.client.is_dev:
+            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": teams.count_documents()}}})
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -94,9 +106,12 @@ class Events(commands.Cog):
     async def on_connect(self):
         #Changing Killua's status
         await self.client.update_presence()
-        await self._post_guild_count()
         await self._set_patreon_banner()
-        await self._load_cards_cache()
+        if self.client.is_dev:
+            self.print_dev_text()
+        else:
+            await self._post_guild_count()
+            await self._load_cards_cache()
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
@@ -107,6 +122,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+
         if ctx.guild and not ctx.channel.permissions_for(ctx.me).send_messages: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
             return
 
@@ -141,11 +157,17 @@ class Events(commands.Cog):
         view.add_item(discord.ui.Button(label="Report bug", url=self.client.support_server_invite))
         await ctx.send(":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.", view=view)
 
-        guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
-        command = ctx.command.name if ctx.command else "Error didn't occur during a command"
-        print(f'{PrintColors.FAIL}------------------------------------------')
-        print(f'An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
-        print(f'------------------------------------------{PrintColors.ENDC}')
+        if self.client.is_dev: # prints the full traceback in dev enviroment
+            print(PrintColors.FAIL + "Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+            return print(PrintColors.ENDC)
+        
+        else:
+            guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
+            command = ctx.command.name if ctx.command else "Error didn't occur during a command"
+            print(f'{PrintColors.FAIL}------------------------------------------')
+            print(f'An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
+            print(f'------------------------------------------{PrintColors.ENDC}')
 
 Cog = Events
 

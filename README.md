@@ -46,7 +46,7 @@ Hello and thanks for checking out Killua's source code! I have been working on K
 
 Website: https://killua.dev
 
-Invite Killua to your guild [here](https://cdn.discordapp.com/avatars/756206646396452975/30c2da6b0a777658021cbac239fa5e66.png?size=1024)
+Invite Killua to your guild [here](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands)
 
 Feel free to add issues or PRs, I would really appreciate it
 
@@ -60,7 +60,7 @@ Note: `discord-ext-ipc` will throw an internal error. To get rid of this, you ne
 
 You will need a mongodb account. Why do I use mongodb and not sql? In my opinion mongo is easier to use and you can manually add and remove data
 
-You will have to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` to get the database set up
+You will have to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up
   
   
 You will also need a file named `config.json` having the layout like this:
@@ -79,6 +79,8 @@ You will also need a file named `config.json` having the layout like this:
   "ipc": "some_ipc_token"
 }
 ```
+
+You can finally run the bot in development or production enviornment in a menu by running `./run.sh`
 
 If you don't like me using one of your images for the hug or pat command, please contact me on discord `Kile#0606` or on `killua.bot.help@gmail.com`
 
