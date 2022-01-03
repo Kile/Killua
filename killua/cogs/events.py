@@ -1,7 +1,5 @@
 import io
 import sys
-import topgg
-import aiohttp
 import discord
 import traceback
 
@@ -17,23 +15,16 @@ class Events(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.topgg_token = TOPGG_TOKEN
-        self.dbl_token = DBL_TOKEN
-        self.topggpy = topgg.DBLClient(self.client, self.topgg_token)
         self.status.start()
 
     async def _post_guild_count(self) -> None:
-        HEADERS = {
-            "Authorization": self.dbl_token
-        }
-
         data = {
             "guilds": len(self.client.guilds),
             "users": len(self.client.users)
         }
 
-        await self.client.session.post(f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats", headers=HEADERS, data=data)
-        await self.topggpy.post_guild_count()
+        await self.client.session.post(f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats", headers={"Authorization": DBL_TOKEN}, data=data)
+        await self.client.session.post(f"https://top.gg/api/bots/756206646396452975/stats", headers={"Authorization": TOPGG_TOKEN}, data={"server_count": len(self.client.guilds)})
 
     async def _load_cards_cache(self) -> None:
         cards = [x for x in items.find()]

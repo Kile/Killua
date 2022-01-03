@@ -174,7 +174,7 @@ class Cards(commands.Cog):
             if end.lower() == 'time':
                 if not has_effect:
                     return await ctx.send('You are not on a hunt yet!')
-                difference = datetime.now() - value
+                
                 return await ctx.send(f'You\'ve started hunting <t:{int(value.timestamp())}:R>.')
 
             if not end.lower() == 'end':

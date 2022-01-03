@@ -8,7 +8,6 @@ from random import randint, choice
 import math
 from typing import Union
 from urllib.parse import quote
-from deep_translator import GoogleTranslator, MyMemoryTranslator
 
 from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS, LANGS
 from killua.utils.checks import check
