@@ -44,7 +44,7 @@ class ImageManipulation(commands.Cog):
 
     async def _create_spin_gif(self, url:str) -> io.BytesIO:
         """Takes in a url and returns the io bytes object"""
-        image = await self._get_image_bytes(url).convert("RGB")
+        image = Image.open(await self._get_image_bytes(url)).convert("RGB")
 
         new_image = self._crop_to_circle(image)
         image.close()
