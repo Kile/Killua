@@ -67,16 +67,16 @@ You will also need a file named `config.json` having the layout like this:
 
 ```json
 {
-  "token": "your_bots_token",
-  "mongodb": "your_mongodb_connection_details",
-  "pxlapi": "your_pxlapi_api_key",
-  "patreon": "patreon_api_key",
-  "dbl": {
-    "token": "your_dbl_token",
-    "password": "your_webhook_password",
-    "port": "your_open_port"
-  },
-  "ipc": "some_ipc_token"
+    "token": "NzU4MDMxOTEzNzg4Mzc1MDkw.X2pCOw.CMJ7ezIPEu54l6m7SqnyT1t2_VQ",
+    
+    "mongodb": "your-mongodb-token",
+    "pxlapi": "pxlapi-token",
+    "patreon": "patreon-api-token",
+    "dbl_token": "dbl-token",
+    "topgg_token": "topgg-token",
+    "password": "vote-pages-password",
+    "port": 8000,
+    "ipc": "ipc-token"
 }
 ```
 
