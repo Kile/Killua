@@ -67,7 +67,7 @@ You will also need a file named `config.json` having the layout like this:
 
 ```json
 {
-    "token": "NzU4MDMxOTEzNzg4Mzc1MDkw.X2pCOw.CMJ7ezIPEu54l6m7SqnyT1t2_VQ",
+    "token": "token",
     
     "mongodb": "your-mongodb-token",
     "pxlapi": "pxlapi-token",
