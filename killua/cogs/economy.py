@@ -218,7 +218,7 @@ class Economy(commands.Cog):
         await ctx.send("Timed out!")
 
     @check()
-    @commands.command(aliases=["lootboxes"], extras={"category": Category.ECONOMY}, usage="inventory")
+    @commands.command(aliases=["lootboxes", "inv"], extras={"category": Category.ECONOMY}, usage="inventory")
     async def inventory(self, ctx):
         """Displays the owned lootboxes"""
         if len((user:=User(ctx.author.id)).lootboxes) == 0:

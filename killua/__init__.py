@@ -81,8 +81,8 @@ class Bot(commands.Bot):
 	async def send_message(self, messageable:discord.abc.Messageable, *args, **kwargs) -> discord.Message:
 		"""A helper function sending messages and adding a tip with the probability of 5%"""
 		msg = await messageable.send(*args, **kwargs)
-		if randint(1, 100) < 6: # 5% probability to send a top afterwards
-			await messageable.send(f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.user.id == 758031913788375090 else 'kil!')}")
+		if randint(1, 100) < 6: # 5% probability to send a tip afterwards
+			await messageable.send(f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.is_dev else 'kil!')}")
 		return msg
 
 	def convert_to_timestamp(self, id: int, args: str = "f") -> str:
@@ -101,7 +101,7 @@ def is_dev() -> bool:
 	return False
 
 def get_prefix(bot, message):
-	if bot.user.id == 758031913788375090:
+	if bot.is_dev:
 		return commands.when_mentioned_or('kil!', 'kil.')(bot, message)
 	try:
 		g = Guild(message.guild.id)
@@ -146,7 +146,6 @@ def main():
 		loop.create_task(bot.start(TOKEN))
 		Thread(target=loop.run_forever).start()
 		app.run(host="0.0.0.0", port=PORT)
-		# app.run(port=PORT)
 	else:
 		# Start the bot.
 		bot.run(TOKEN)
