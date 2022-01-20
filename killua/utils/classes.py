@@ -569,7 +569,8 @@ class User:
 
     @property
     def is_entitled_to_double_jenny(self) -> bool:
-        return self.is_premium and self.premium_tier in list(PATREON_TIERS.keys())[2:]
+        return True
+        # return self.is_premium and self.premium_tier in list(PATREON_TIERS.keys())[2:]
 
     @all_cards.setter
     def all_cards(self, other):
@@ -582,7 +583,7 @@ class User:
     @classmethod
     def remove_all(cls) -> str:
         """Removes all cards etc from every user. Only used for testing"""
-        start = datetime.now()
+        start = datetime.utcnow()
         user = []
         for u in teams.find():
             if 'cards' in u:
@@ -595,7 +596,7 @@ class User:
         cards = [x for x in items.find() if "owners" in x and len(x["owners"]) > 0]
         items.update_many({'_id': {"$in": [x["_id"] for x in items.find()]}}, {'$set': {'owners': []}})
 
-        return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
+        return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.utcnow() - start).seconds} second{'s' if (datetime.utcnow() - start).seconds > 1 else ''}"
 
     @classmethod
     def is_registered(cls, user_id:int) -> bool:
@@ -653,7 +654,7 @@ class User:
 
     def add_premium_guild(self, guild_id:int) -> None:
         """Adds a guild to a users premium guilds"""
-        self.premium_guilds[str(guild_id)] = datetime.now()
+        self.premium_guilds[str(guild_id)] = datetime.utcnow()
         self._update_val("premium_guilds", self.premium_guilds)
 
     def remove_premium_guild(self, guild_id:int) -> None:
@@ -663,12 +664,12 @@ class User:
 
     def claim_weekly(self) -> None:
         """Sets the weekly cooldown new"""
-        self.weekly_cooldown = datetime.now() +  timedelta(days=7)
+        self.weekly_cooldown = datetime.utcnow() +  timedelta(days=7)
         self._update_val("weekly_cooldown", self.weekly_cooldown)
 
     def claim_daily(self) -> None:
         """Sets the daily cooldown new"""
-        self.daily_cooldown = datetime.now() +  timedelta(days=1)
+        self.daily_cooldown = datetime.utcnow() +  timedelta(days=1)
         self._update_val("cooldowndaily", self.daily_cooldown) 
 
     def has_lootbox(self, box:int) -> bool:
@@ -993,7 +994,7 @@ class TodoList():
     def create(owner:int, title:str, status:str, done_delete:bool, custom_id:str=None) -> TodoList:
         """Creates a todo list and returns a TodoList class"""
         list_id = TodoList._generate_id()
-        todo.insert_one({'_id': list_id, 'name': title, 'owner': owner, 'custom_id': custom_id, 'status': status, 'delete_done': done_delete, 'viewer': [], 'editor': [], 'todos': [{'todo': 'add todos', 'marked': None, 'added_by': 756206646396452975, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"), 'views':0, 'assigned_to': [], 'mark_log': []}], 'marks': [], 'created_at': (datetime.now()).strftime("%b %d %Y %H:%M:%S"), 'spots': 10, 'views': 0 })
+        todo.insert_one({'_id': list_id, 'name': title, 'owner': owner, 'custom_id': custom_id, 'status': status, 'delete_done': done_delete, 'viewer': [], 'editor': [], 'todos': [{'todo': 'add todos', 'marked': None, 'added_by': 756206646396452975, 'added_on': (datetime.utcnow()).strftime("%b %d %Y %H:%M:%S"), 'views':0, 'assigned_to': [], 'mark_log': []}], 'marks': [], 'created_at': (datetime.utcnow()).strftime("%b %d %Y %H:%M:%S"), 'spots': 10, 'views': 0 })
         return TodoList(list_id)
 
     def delete(self) -> None:

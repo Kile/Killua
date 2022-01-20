@@ -180,7 +180,7 @@ class Cards(commands.Cog):
             if not end.lower() == 'end':
                 pass
             elif has_effect is True:
-                difference = datetime.now() - value
+                difference = datetime.utcnow() - value
                 if int(difference.seconds/60/60+difference.days*24*60*60) < 12: # I don't think timedelta has an hours or minutes property :c
                     return await ctx.send('You must be at least hunting for twelve hours!')
 
@@ -210,7 +210,7 @@ class Cards(commands.Cog):
 
         if has_effect:
             return await ctx.send(f'You are already on a hunt! Get the results with `{self.client.command_prefix(self.client, ctx.message)[2]}hunt end`', allowed_mentions=discord.AllowedMentions.none())
-        user.add_effect('hunting', datetime.now())
+        user.add_effect('hunting', datetime.utcnow())
         await ctx.send('You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get')
 
     @check(120)

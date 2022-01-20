@@ -67,7 +67,7 @@ class Events(commands.Cog):
         print(f"{PrintColors.HEADER}{PrintColors.OKGREEN}------")
         print('Logged in as: ' + self.client.user.name + f" (ID: {self.client.user.id})")
         print(f"------{PrintColors.ENDC}")
-        self.client.startup_datetime = datetime.now()
+        self.client.startup_datetime = datetime.utcnow()
 
     @tasks.loop(hours=12)
     async def status(self):
@@ -83,7 +83,7 @@ class Events(commands.Cog):
     async def save_guilds(self):
         # this is currently not used but the earlier we collect this data, the better becaase I do plan to use it
         if not self.client.is_dev:
-            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": teams.count_documents()}}})
+            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.utcnow() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": teams.count_documents()}}})
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

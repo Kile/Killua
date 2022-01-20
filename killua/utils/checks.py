@@ -73,7 +73,7 @@ def check(time:int=0):
     
     async def custom_cooldown(ctx, time:int) -> bool:
         global cooldowndict
-        now = datetime.now()
+        now = datetime.utcnow()
         try:
             cdwn = cooldowndict[ctx.author.id][ctx.command.name]
         except KeyError as e: # if there is no entry in the cooldowndict yet for either the command or user

@@ -142,7 +142,7 @@ class Tags(commands.Cog):
             await msg.delete()
             if len(msg.content) > 2000:
                 return await ctx.send('Too many characters!')
-            tags.append([tag_name.lower(), {'name': tag_name, 'created_at': datetime.now(), 'owner': ctx.author.id, 'content': msg.content, 'uses': 0}])
+            tags.append([tag_name.lower(), {'name': tag_name, 'created_at': datetime.utcnow(), 'owner': ctx.author.id, 'content': msg.content, 'uses': 0}])
             guilds.update_one({'id': ctx.guild.id}, {'$set': {'tags': tags}})
             return await ctx.send(f'Successfully created tag `{tag_name}`')
 

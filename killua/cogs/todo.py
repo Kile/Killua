@@ -565,7 +565,7 @@ class TodoSystem(commands.Cog):
             mark_log = {
                 'author': ctx.author.id,
                 'change': 'REMOVED MARK',
-                'date': (datetime.now()).strftime("%b %d %Y %H:%M:%S")
+                'date': (datetime.utcnow()).strftime("%b %d %Y %H:%M:%S")
             }
             todos[todo_number-1]['mark_log'].append(mark_log)
             todo_list.set_property("todos", todos)
@@ -575,7 +575,7 @@ class TodoSystem(commands.Cog):
             mark_log = {
                 'author': ctx.author.id,
                 'change': marked_as,
-                'date': (datetime.now()).strftime("%b %d %Y %H:%M:%S")
+                'date': (datetime.utcnow()).strftime("%b %d %Y %H:%M:%S")
             }
             todos[todo_number-1]['mark_log'].append(mark_log)
             todo_list.set_property("todos", todos)
@@ -599,7 +599,7 @@ class TodoSystem(commands.Cog):
             return await ctx.send(f'You don\'t have enough spots for that! Buy spots with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy space`. You can currently only have up to {todo_list.spots} spots in this list', allowed_mentions=discord.AllowedMentions.none())
 
         todos = todo_list.todos
-        todos.append({'todo': task, 'marked': None, 'added_by': ctx.author.id, 'added_on': (datetime.now()).strftime("%b %d %Y %H:%M:%S"),'views': 0, 'assigned_to': [], 'mark_log': []})
+        todos.append({'todo': task, 'marked': None, 'added_by': ctx.author.id, 'added_on': (datetime.utcnow()).strftime("%b %d %Y %H:%M:%S"),'views': 0, 'assigned_to': [], 'mark_log': []})
         
         todo_list.set_property("todos", todos)
         return await ctx.send(f'Great! Added {task} to your todo list!', allowed_mentions=discord.AllowedMentions.none())

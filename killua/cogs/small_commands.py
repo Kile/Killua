@@ -155,7 +155,7 @@ class SmallCommands(commands.Cog):
     @commands.command(aliases=['stats'], extras={"category":Category.FUN}, usage="info")
     async def info(self, ctx):
         """Gives you some infos and stats about Killua"""
-        now = datetime.now()
+        now = datetime.utcnow()
         diff = now - self.client.startup_datetime
         t = f'{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds'
         embed = discord.Embed.from_dict({

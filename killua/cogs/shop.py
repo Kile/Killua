@@ -101,11 +101,11 @@ class Shop(commands.Cog):
                     reduced_item = randint(0, len(shop_items)-1)
                     reduced_by = randint(15, 40)
                     print(f'{PrintColors.OKBLUE}Updated shop with following cards: ' + ', '.join([str(x) for x in shop_items])+f', reduced item number {shop_items[reduced_item]} by {reduced_by}%{PrintColors.ENDC}')
-                    log.append({'time': datetime.now(), 'items': shop_items, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}})
+                    log.append({'time': datetime.utcnow(), 'items': shop_items, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}})
                     shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': {'reduced_item': reduced_item, 'reduced_by': reduced_by}}})
                 else:
                     print(f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}")
-                    log.append({'time': datetime.now(), 'items': shop_items, 'redued': None})
+                    log.append({'time': datetime.utcnow(), 'items': shop_items, 'redued': None})
                     shop.update_many({'_id': 'daily_offers'}, {'$set': {'offers': shop_items, 'log': log, 'reduced': None}})
         except IndexError:
             print(f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}")

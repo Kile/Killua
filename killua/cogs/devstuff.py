@@ -42,7 +42,7 @@ class DevStuff(commands.Cog):
             'image': {'url': 'https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png'}
         })
 
-        data = {'version': version, 'description': update, 'published_on': datetime.now(), 'published_by': ctx.author.id}
+        data = {'version': version, 'description': update, 'published_on': datetime.utcnow(), 'published_by': ctx.author.id}
         updates.update_one({'_id': 'current'}, {'$set': data})
         updates.update_one({'_id': 'log'}, {'$push': {'past_updates': data}})
         channel = self.client.get_channel(UPDATE_CHANNEL)
@@ -80,7 +80,7 @@ class DevStuff(commands.Cog):
         except Exception as e:
             return await ctx.send(e)
         # Inserting the bad person into my database
-        blacklist.insert_one({'id': id, 'reason': reason or "No reason provided", 'date': datetime.now()})
+        blacklist.insert_one({'id': id, 'reason': reason or "No reason provided", 'date': datetime.utcnow()})
         await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
         
     @commands.is_owner()

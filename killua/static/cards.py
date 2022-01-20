@@ -560,7 +560,7 @@ class Card1035(Card):
             raise CheckFailure('You need to choose a page between 1 and 6')
         self._has_effect_check(author, f"page_protection_{page}")
         author.remove_card(self.id)
-        author.add_effect(f'page_protection_{page}', datetime.now()) # The value doesn't matter here
+        author.add_effect(f'page_protection_{page}', datetime.utcnow()) # The value doesn't matter here
         await self.ctx.send(f'Success! Page {page} is now permanently protected')
 
 class Card1036(Card):
@@ -577,7 +577,7 @@ class Card1036(Card):
 
         if author.has_fs_card(self.id) and not str(self.id) in author.effects:
             author.remove_card(self.id)
-        author.add_effect(str(self.id), datetime.now())
+        author.add_effect(str(self.id), datetime.utcnow())
 
         if not effect.lower() in ["list", "analysis", "1031", "1038"]:
             raise CheckFailure(f'Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{self.client.command_prefix(self.client, self.ctx.message)[2]}use {self.id} <list/analysis> <card_id>`')

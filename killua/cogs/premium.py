@@ -162,7 +162,7 @@ class Premium(commands.Cog):
             if not str(guild.id) in ((user:= User(ctx.author.id)).premium_guilds.keys()):
                 return await ctx.send("You are not the one who added the premium status to this server, so you can't remove it")
 
-            if not (diff:= (datetime.now()-user.premium_guilds[str(ctx.guild.id)]).days) > 7:
+            if not (diff:= (datetime.utcnow()-user.premium_guilds[str(ctx.guild.id)]).days) > 7:
                 return await ctx.send(f"You need to wait {7-int(diff)} more days before you can remove this servers premium status!")
 
             guild.remove_premium()
@@ -181,10 +181,9 @@ class Premium(commands.Cog):
             view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri", style=discord.ButtonStyle.grey))
             return await ctx.send("You need to be a premium subscriber to use this command!", view=view)
 
-        if user.weekly_cooldown and user.weekly_cooldown > datetime.now():
-            difference = user.weekly_cooldown - datetime.now()
-            cooldown = f'{difference.days} days, {int((difference.seconds/60)/60)} hours, {int(difference.seconds/60)-(int((difference.seconds/60)/60)*60)} minutes and {int(difference.seconds)-(int(difference.seconds/60)*60)} seconds'
-            return await ctx.send(f"You can claim your weekly lootbox the next time in {cooldown}")
+        if user.weekly_cooldown and user.weekly_cooldown > datetime.utcnow():
+            cooldown = f"<t:{int(user.weekly_cooldown.timestamp())}:R>"
+            return await ctx.send(f"You can claim your weekly lootbox the next time {cooldown}")
 
         lootbox = LootBox.get_random_lootbox()
         user.claim_weekly()

@@ -50,7 +50,7 @@ class Economy(commands.Cog):
             flags.append(USER_FLAGS["nitro"])
         badges = [(KILLUA_BADGES[PREMIUM_ALIASES[x]] if x in PREMIUM_ALIASES.keys() else KILLUA_BADGES[x]) for x in info.badges]
         
-        if str(datetime.now()) > str(info.daily_cooldown):
+        if str(datetime.utcnow()) > str(info.daily_cooldown):
             cooldown = 'Ready to claim!'
         else:
             cooldown = f"<t:{int(info.daily_cooldown.timestamp())}:R>"
@@ -161,7 +161,7 @@ class Economy(commands.Cog):
     @commands.command(extras={"category":Category.ECONOMY}, usage="daily")
     async def daily(self, ctx):
         """Claim your daily Jenny with this command!"""
-        now = datetime.now()
+        now = datetime.utcnow()
         user = User(ctx.author.id)
         min = 50
         max = 100
