@@ -22,6 +22,4 @@ do
     esac
 done
 
-tput reset
-
 echo "Process terminated"

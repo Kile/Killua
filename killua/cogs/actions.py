@@ -159,6 +159,12 @@ class Actions(commands.Cog):
         """Wag your tail when you're happy!"""
         return await self.get_image(ctx)
 
+    @check()
+    @commands.command(extras={"category": Category.ACTIONS}, usage="cuddle")
+    async def cuddle(self, ctx, members: commands.Greedy[discord.Member]=None):
+        """Snuggle up to a user and cuddle them with this command"""
+        return await self.do_action(ctx, members)
+
 Cog = Actions
 
 def setup(client):

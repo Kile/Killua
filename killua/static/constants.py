@@ -118,6 +118,7 @@ PAT_TEXTS = ["<author> reaches over to pat <user> lovingly", "<user> is too far 
 SLAP_TEXTS = ["<author> hits <user> hard enough to send them flying", "Uh oh! <user> gets slapped by <author> because they said something <author> did not like", "<author> noticed <user> staring off into the distance. So they obviously slap them", "<user> did some unspeakable things... so <author> slapped them!", '<author> slaps <user>', '<author> stares at <user> for a long time and then slaps them', '<author> has no mercy; they slap <user>', '<author> is unsure how to react so they slap <user>']
 POKE_TEXTS = ["<user> is needed here", "<author> needs something from <user>", "<author> launches a poke attack at <user>", "<author> pokes <user> with so much force that their clothes nearly rip apart", "<author> uses the spell \"poke\" to remove the tiredness 5 effect on <user>", "Look at me!", "<author> requires <user>'s attention please!", '<author> pokes <user>', '*Poke* *Poke*, <author> pokes <user>', '<author> starts poking <user>', '<author> pokes <user> with a big smile on their face']
 TICKLE_TEXTS = ["<author> is just wiggling their fingers, nothing going on here~", "<user> looks like they need a good laugh so they are tickled by <author>", "<author> has heard <user> likes to be tickled... so they tickle them", "<author> casts \"tickle\" on <user> which adds the effect laughing 3 to them", "<user> looks sad so <author> tickles them", "<author> is too nice to slap but <user> still needs revenge, so they tickle them!", '<user> didn\'t let <author> eat cookies, so they get tickled!', '<author> couldn\'t resist their chance to tickle <author>','<author> tickles <user>', '<author> has no mercy; they tickle <user>', '<author> knows there is just one way, so they tickle <user>']
+CUDDLE_TEXTS = ["<author> snuggles up to <user> and cuddles them", "<author> cuddles <user> aggressively", "<author> cannot resist <user>'s face, so they cuddle them", "<author> uses cuddle-attack on <user>. It is very effective", "<author> can't stop thinking about it... so they cuddle <user>"]
 
 # the todo editing cache, needs to be defined here so I can use it across files
 editing = {}
@@ -142,6 +143,10 @@ ACTIONS = {
     },
     "tickle": {
         "text": TICKLE_TEXTS,
+        "images": "not used"
+    },
+    "cuddle": {
+        "text": CUDDLE_TEXTS,
         "images": "not used"
     }
 }
