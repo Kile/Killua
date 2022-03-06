@@ -258,22 +258,6 @@ class ImageManipulation(commands.Cog):
             return await self.client.send_message(ctx, embed=embed)
         return await ctx.send(':x: '+r.error)
 
-    @check(4)
-    @commands.command(aliases=['image'], extras={"category":Category.FUN}, usage="img <query>")
-    async def img(self, ctx, *,query:str):
-        """Search for any image you want"""
-        
-        r = await self.pxl.image_search(query=query)
-        if r.success:
-            def make_embed(page, embed, pages):
-                embed.title = "Results for query " + query
-                embed.set_image(url=pages[page-1])
-                return embed
-
-            return await Paginator(ctx, r.data, func=make_embed).start()
-        else:
-            return await ctx.send(':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
-
     @check(30) # long check because this is exhausting for the poor computer
     @commands.command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")
     async def spin(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):

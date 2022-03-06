@@ -1,6 +1,11 @@
+from email import header
+import re
 import discord
 from discord.ext import commands
 from bs4 import BeautifulSoup
+from html import escape
+from json import loads
+from typing import Union
 
 from killua.utils.checks import check
 from killua.utils.classes import Category
@@ -12,6 +17,16 @@ class WebScraping(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.headers = {
+            'dnt': '1',
+            'accept-encoding': 'gzip, deflate, sdch',
+            'x-requested-with': 'XMLHttpRequest',
+            'accept-language': 'en-GB,en-US;q=0.8,en;q=0.6,ms;q=0.4',
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+            'accept': 'application/json, text/javascript, */*; q=0.01',
+            'referer': 'https://duckduckgo.com/',
+            'authority': 'duckduckgo.com',
+        }
 
     def _try_else(self, x:Any, f:Callable[[Any], str], e:str=None) -> str:
         """Returns a book info it it exists, else "-" or e if provided"""
@@ -113,7 +128,49 @@ class WebScraping(commands.Cog):
 
         await Paginator(ctx, p, max_pages=self.getBookCount(p), func=make_embed, defer=True).start()
 
-    
+    async def _get_token(self, query) -> Union[str, None]:
+        """
+        Gets a new token to be used in the image search
+        """
+        try:
+            res = await self.client.session.get(f"https://duckduckgo.com/?q={escape(query)}")
+
+            if not res.status == 200:
+                return
+
+            token = re.search(r"vqd='(.*?)'", str(BeautifulSoup(await res.text(), "html.parser"))).group(1)
+            return token
+        except Exception as e:
+            return None
+
+    @check(4)
+    @commands.command(aliases=["image", "i"], extras={"category":Category.FUN}, usage="img <query>")
+    async def img(self, ctx, *,query:str):
+        """Search for any image you want"""
+
+        token = await self._get_token(query)
+
+        if not token:
+            return await ctx.send("Something went wrong... If this keeps happening please contact the developer")
+
+        base = "https://duckduckgo.com/i.js?l=wt-wt&o=json&q={}&vqd={}&f=,,,&p=1"
+        url = base.format(escape(query), token)
+
+        response = await self.client.session.get(url, headers=self.headers)
+        match = re.search(r'"results":\[{(.*?)}]', str(await response.text()))
+        if not match:
+            return await ctx.send("There were no images found matching your query")
+        results = loads("[{" + match.group(1) + "}]")
+        # An increadibly hacky way to get the list of results because the response is not in the correct format
+        # and just weird
+        links = [r["image"] for r in results if r["image"]]
+
+        def make_embed(page, embed, pages):
+            embed.title = "Results for query " + query
+            embed.set_image(url=pages[page-1])
+            return embed
+
+        return await Paginator(ctx, links, func=make_embed).start()
 
 Cog = WebScraping
 
