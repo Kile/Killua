@@ -8,7 +8,7 @@ from json import loads
 from typing import Union
 
 from killua.utils.checks import check
-from killua.utils.classes import Category
+from killua.static.enums import Category
 from killua.utils.paginator import Paginator
 
 from typing import Any, Callable

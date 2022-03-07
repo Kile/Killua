@@ -8,7 +8,8 @@ from discord.utils import find
 from discord.ext import commands, tasks
 from PIL import Image
 
-from killua.utils.classes import Guild, Book, PrintColors
+from killua.utils.classes import Guild, Book
+from killua.static.enums import PrintColors
 from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, items, teams, PatreonBanner, stats
 
 class Events(commands.Cog):

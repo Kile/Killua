@@ -9,8 +9,7 @@ from pypxl import PxlClient # My own library ✨
 
 from killua.utils.gif import save_transparent_gif
 from killua.utils.checks import check
-from killua.utils.classes import Category
-from killua.utils.paginator import Paginator
+from killua.static.enums import Category
 from killua.static.constants import NOKIA_CODE, PXLAPI
 
 class ImageManipulation(commands.Cog):

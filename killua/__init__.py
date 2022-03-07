@@ -2,7 +2,7 @@ from . import cogs
 import discord
 import aiohttp
 import asyncio
-import getopt, sys, os
+import getopt, sys
 from random import randint, choice
 from discord.ext import commands, ipc
 from datetime import date
@@ -11,7 +11,8 @@ from threading import Thread
 
 from .webhook.api import app
 from .utils.help import MyHelp
-from .utils.classes import Category, Guild
+from .utils.classes import Guild
+from .static.enums import Category
 from .static.constants import TOKEN, IPC_TOKEN, presence, TIPS, PORT
 
 class Bot(commands.Bot):

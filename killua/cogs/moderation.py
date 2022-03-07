@@ -5,7 +5,8 @@ from discord.utils import find
 from discord.ext import commands
 
 from killua.utils.checks import check
-from killua.utils.classes import Category, Guild
+from killua.utils.classes import Guild
+from killua.static.enums import Category
 
 class Moderation(commands.Cog):
 

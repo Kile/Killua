@@ -8,9 +8,31 @@ import asyncio
 import math
 
 from killua.utils.paginator import View
-from killua.utils.classes import User, ConfirmButton, Category
+from killua.utils.classes import User
+from killua.utils.interactions import ConfirmButton
+from killua.static.enums import Category
 from killua.utils.checks import blcheck, check
-from killua.utils.help import Select
+from killua.utils.interactions import Select
+
+
+class RpsSelect(discord.ui.Select):
+    """Creates a select menu to confirm an rps choice"""
+    def __init__(self, options, **kwargs):
+        super().__init__( 
+            min_values=1, 
+            max_values=1, 
+            options=options,
+            **kwargs
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        self.view.value = int(interaction.data["values"][0])
+        for opt in self.options:
+            if opt.value == str(self.view.value):
+                opt.default = True
+        self.disabled = True
+        await interaction.response.edit_message(view=self.view)
+        self.view.stop()
 
 class Trivia:
     """Handles a trivia game"""
@@ -135,7 +157,7 @@ class Rps:
     async def _timeout(self, players:list, data:List[Tuple[discord.Message, discord.ui.View]]) -> None:
         """A way to handle a timeout of not responding to Killua in dms"""
         for x in players:
-            if x.id in [v.user.id for m, v in data]:
+            if x.id in [v.user.id for _, v in data]:
                 await x.send('Sadly the other player has not responded in time')
             else:
                 await x.send('Too late, time to respond is up!')
@@ -144,13 +166,13 @@ class Rps:
         data = []
         for u in users:
             view = View(user_id=u.id, timeout=None)
-            select = Select(options=self._get_options())
+            select = RpsSelect(options=self._get_options())
             view.add_item(select)
             view.user = u
             msg = await u.send("You chose to play Rock Paper Scissors, what\'s your choice Hunter?", view=view)
             data.append((msg, view))
 
-        done, pending = await asyncio.wait([v.wait() for m, v in data], return_when=asyncio.ALL_COMPLETED, timeout=100)
+        done, pending = await asyncio.wait([v.wait() for _, v in data], return_when=asyncio.ALL_COMPLETED, timeout=100)
 
         for m, v in data:
             await v.disable(m)

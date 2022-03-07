@@ -8,7 +8,9 @@ from typing import Union, List, Optional, Tuple, Optional, Dict
 
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
-from killua.utils.classes import User, CardNotFound, Category, CheckFailure, Book, ConfirmButton, NoMatches
+from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches
+from killua.static.enums import Category
+from killua.utils.interactions import ConfirmButton
 from killua.static.cards import Card
 from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, items, LOOTBOXES
 

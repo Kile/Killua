@@ -5,7 +5,8 @@ import math
 import asyncio
 
 from killua.static.constants import guilds, PatreonBanner
-from killua.utils.classes import Guild, Category
+from killua.static.enums import Category
+from killua.utils.classes import Guild
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 
