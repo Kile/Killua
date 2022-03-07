@@ -1,0 +1,54 @@
+{
+    "en": {
+        "y": "yes",
+        "n": "no",
+        "s": "save",
+        "and": "and",
+        "more": "and {} more",
+
+
+        "action_errors": {
+            "1": "Sorry... you can't use this command on yourself",
+            "2": "{} has disabled this action"
+        },
+        "hug": {
+            "help": "Hug a user with this command",
+            "texts": ["{0} makes {1} blush by hugging them", "{0} gives {1} a hug. Their face lights up brighter than a star", "{0} makes {1}'s day by giving them a hug", "{0} hugs {1} so strong they can barely breathe", "{0} hugs {1} from behind like a hug-assassine :ninja:", "{1} looked like they needed one of these", "{0} hugs {1} as strong as they can", "{0} hugs {1} and makes sure to not let go", "{0} gives {1} the longest hug they have ever seen", "{0} cuddles {1}", "{0} uses {1} as a teddybear", "{0} hugs {1} until all their worries are gone and 5 minutes longer", "{0} clones themself and together they hug {1}", "{0} jumps in {1}'s arms", "{0} gives {1} a bearhug", "{0} finds a lamp with a Jinn and gets a wish. So they wish to hug {1}", "{0} asks {1} for motivation and gets a hug", "{0} looks at the floor, then up, then at the floor again and finally hugs {1} with passion", "{0} looks deep into {1}'s eyes and them gives them a hug", "{0} could do their homework but instead they decide to hug {1}", "{1} wanted to go get food but {0} wouldn't let go"]
+        },
+        "pat": {
+            "help": "Pat a user with this command",
+            "texts": ["{0} reaches over to pat {1} lovingly", "{1} is too far about to hug, so {0} pats them", "{0} wants to show appreciation, so they pat {1}", "{0} pats {1} like a cat", "{1}'s head seems very pattable", "{0} was too tired to hug {1} so they gave a pat instead", "{1} took 5 lp damage down so {0} gives them a healing head pat", "{0} tries to catch a spider, slips and instead pats {1}. {0} is also fine with that", "{0} pats {1}", "{0} thinks {1} is a cat and starts to pat them", "{0} looks at {1}'s fluffy hair and starts to pat them", "{0} didn't get pet so they pat {1} instead"]
+        },
+        "poke": {
+            "help": "Poke a user with this command",
+            "texts": ["{1} is needed here", "{0} needs something from {1}", "{0} launches a poke attack at {1}", "{0} pokes {1} with so much force that their clothes nearly rip apart", "{0} uses the spell \"poke\" to remove the tiredness 5 effect on {1}", "Look at me!", "{0} requires {1}'s attention please!", "{0} pokes {1}", "*Poke* *Poke*, {0} pokes {1}", "{0} starts poking {1}", "{0} pokes {1} with a big smile on their face"]
+        },
+        "tickle": {
+            "help": "Tickle a user wi- ha- hahaha- stop- haha",
+            "texts": ["{0} is just wiggling their fingers, nothing going on here~", "{1} looks like they need a good laugh so they are tickled by {0}", "{0} has heard {1} likes to be tickled... so they tickle them", "{0} casts \"tickle\" on {1} which adds the effect laughing 3 to them", "{1} looks sad so {0} tickles them", "{0} is too nice to slap but {1} still needs revenge, so they tickle them!", "{1} didn't let {0} eat cookies, so they get tickled!", "{0} couldn't resist their chance to tickle {0}", "{0} tickles {1}", "{0} has no mercy; they tickle {1}", "{0} knows there is just one way, so they tickle {1}"]
+        },
+        "slap": {
+            "help": "Slap a user with this command",
+            "texts": ["{0} hits {1} hard enough to send them flying", "Uh oh! {1} gets slapped by {0} because they said something {0} did not like", "{0} noticed {1} staring off into the distance. So they obviously slap them", "{1} did some unspeakable things... so {0} slapped them!", "{0} slaps {1}", "{0} stares at {1} for a long time and then slaps them", "{0} has no mercy; they slap {1}", "{0} is unsure how to react so they slap {1}"]
+        },
+        "cuddle": {
+            "help": "Cuddle a user with this command",
+            "texts": ["{0} snuggles up to {1} and cuddles them", "{0} cuddles {1} aggressively", "{0} cannot resist {1}'s face, so they cuddle them", "{0} uses cuddle-attack on {1}. It is very effective", "{0} can't stop thinking about it... so they cuddle {1}"]
+        },
+        "dance": {
+            "help": "Show off with your dance moves!"
+        },
+        "neko": {
+            "help": "uwu"
+        },
+        "smile": {
+            "help": "Show a bright smile with this command"
+        },
+        "blush": {
+            "help": "O-Oh! T-thank you for t-the compliment... You have beautiful fingernails too!"
+        },
+        "tail": {
+            "help": "Wag your tail when you're happy!"
+        }
+    }
+}
