@@ -5,8 +5,23 @@ import asyncio
 from typing import List, Union
 
 from killua.utils.checks import check
-from killua.utils.classes import Category
+from killua.utils.classes import Category, User, Button
+from killua.utils.paginator import View
 from killua.static.constants import ACTIONS
+
+class Select(discord.ui.Select):
+    """Creates a select menu to change action settings"""
+    def __init__(self, options, **kwargs):
+        super().__init__(
+            options=options,
+            **kwargs
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        self.view.values = interaction.data["values"]
+        for opt in self.options:
+            if opt.value in self.view.values:
+                opt.default = True
 
 class Actions(commands.Cog):
 
@@ -55,7 +70,7 @@ class Actions(commands.Cog):
                     memberlist = memberlist + f', {member.display_name}'
         return memberlist
 
-    async def action_embed(self, endpoint:str, author, members:List[discord.Member]) -> discord.Embed:
+    async def action_embed(self, endpoint:str, author, members:List[discord.Member], disabled:int) -> discord.Embed:
         if endpoint == 'hug':
             image = {"link": random.choice(ACTIONS[endpoint]["images"])} # This might eventually be deprecated for copyright reasons
         else:
@@ -71,6 +86,9 @@ class Actions(commands.Cog):
             "image": {"url": image["link"]},
             "color": 0x1400ff
         })
+
+        if disabled > 0:
+            embed.set_footer(text=f"{disabled} user{'s' if disabled > 1 else ''} disabled being targetted with this action")
         return embed
 
     async def no_argument(self, ctx) -> Union[None, discord.Embed]:
@@ -92,7 +110,16 @@ class Actions(commands.Cog):
         elif ctx.author == members[0]:
             return await ctx.send("Sorry... you can\'t use this command on yourself")
         else:
-            embed = await self.action_embed(ctx.command.name, ctx.author, members)
+            if len(members) == 1 and not User(members[0].id).action_settings[ctx.command.name]:
+                return await ctx.send(f"**{members[0].display_name}** has disabled this action", allowed_mentions=discord.AllowedMentions.none())
+
+            disabled = 0
+            for member in members:
+                if not User(member.id).action_settings[ctx.command.name]:
+                    disabled+=1
+                    members.remove(member)
+
+            embed = await self.action_embed(ctx.command.name, ctx.author, members, disabled)
 
         if isinstance(embed, str):
             return await ctx.send(embed)
@@ -164,6 +191,63 @@ class Actions(commands.Cog):
     async def cuddle(self, ctx, members: commands.Greedy[discord.Member]=None):
         """Snuggle up to a user and cuddle them with this command"""
         return await self.do_action(ctx, members)
+
+    @check()
+    @commands.command(extras={"category": Category.ACTIONS}, usage="settings")
+    async def settings(self, ctx):
+        """Change the settings that control who can use what action on you"""
+
+        embed = discord.Embed.from_dict({
+            "title": "Settings",
+            "description": "By unticking a box users will no longer able to use that action on you",
+            "color": 0x1400ff
+        })
+
+        user = User(ctx.author.id)
+        current = user.action_settings
+
+        for action in ACTIONS.keys():
+            if action in current:
+                embed.add_field(name=action, value="✅" if current[action] else "❌", inline=False)
+            else:
+                embed.add_field(name=action, value="✅", inline=False)
+                current[action] = True
+        
+        options = [discord.SelectOption(label=k, value=k, default=v) for k, v in current.items()]
+        select = Select(options, min_values=0, max_values=len(current))
+        button = Button(label="Save", style=discord.ButtonStyle.green, emoji="\U0001f4be")
+        view = View(user_id=ctx.author.id, timeout=100)
+
+        view.add_item(select)
+        view.add_item(button)
+
+        msg = await ctx.send(embed=embed, view=view)
+
+        await view.wait()
+        await view.disable(msg)
+
+        if view.timed_out:
+            return
+
+        for val in view.values:
+            current[val] = True
+
+        embed = discord.Embed.from_dict({
+            "title": "Settings",
+            "description": "By unticking a box users will no longer able to use that action on you",
+            "color": 0x1400ff
+        })
+
+        for action in ACTIONS.keys():
+            if action in view.values:
+                current[action] = True
+                embed.add_field(name=action, value="✅", inline=False)
+            else:
+                current[action] = False
+                embed.add_field(name=action, value="❌", inline=False)
+
+        user.set_action_settings(current)
+        await msg.edit(embed=embed)
 
 Cog = Actions
 

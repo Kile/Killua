@@ -548,6 +548,7 @@ class User:
         self.premium_guilds:dict = user["premium_guilds"] if "premium_guilds" in user else {}
         self.lootboxes:list = user["lootboxes"] if "lootboxes" in user else []
         self.weekly_cooldown = user["weekly_cooldown"] if "weekly_cooldown" in user else None
+        self.action_settings:dict = user["action_settings"] if "action_settings" in user else {}
 
         self.cache[self.id] = self
 
@@ -615,7 +616,7 @@ class User:
         if cards:
             teams.update_one({'id': user_id}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0}})  
         else:
-            teams.insert_one({'id': user_id, 'points': 0, 'badges': [], 'cooldowndaily': '','cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0}) 
+            teams.insert_one({'id': user_id, 'points': 0, 'badges': [], 'cooldowndaily': '','cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}}) 
 
     def _update_val(self, key:str, value:Any, operator:str="$set") -> None:
         """An easier way to update a value"""
@@ -684,6 +685,11 @@ class User:
         """Removes a lootbox from a user"""
         self.lootboxes.remove(box)
         self._update_val("lootboxes", self.lootboxes, "$set")
+
+    def set_action_settings(self, settings: dict) -> None:
+        """Sets the action settings for a user"""
+        self.action_settings = settings
+        self._update_val("action_settings", settings)
         
     def _has_card(self, cards:List[list], card_id:int, fake_allowed:bool, only_allow_fakes:bool) -> bool:
         counter = 0

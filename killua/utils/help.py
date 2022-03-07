@@ -37,8 +37,8 @@ class Select(discord.ui.Select):
     """Creates a select menu to view the command groups"""
     def __init__(self, options, **kwargs):
         super().__init__( 
-            min_values=1, 
-            max_values=1, 
+            min_values=kwargs.pop("min_values") or 1, 
+            max_values=kwargs.pop("max_values") or 1, 
             options=options,
             **kwargs
         )
