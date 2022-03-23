@@ -2,10 +2,26 @@
     "en": {
         "y": "yes",
         "n": "no",
+        "o": "or",
         "s": "save",
         "and": "and",
         "more": "and {} more",
+        "time": "Timed out!",
+        "cancel": "Successfully canceled!",
+        "no_reason": "No reason provided",
+        "join": "Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{0}info`\n\nTo change the server prefix, use `{0}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{0}help` to see every command\n\nPlease consider leaving feeback with `{0}fb` as this helps me improve Killua",
 
+        "errors":  {
+            "1": "I don't have the required permissions to use this command! (`{}`)",
+            "2": "You don't have the required permissions to use this command! (`{}`)",
+            "3": "Seems like you missed a required argument for this command: `{}`",
+            "4": "Seems like you provided invalid arguments for this command. This is how you use it: {}",
+            "5": "Sorry, but you need to be the bot owner to use this command",
+            "6": "Could not process arguments. Here is the command should be used: {}",
+            "7": "This command can only be used inside of a guild",
+            "8": "Report bug",
+            "9": ":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server."
+        },
 
         "action_errors": {
             "1": "Sorry... you can't use this command on yourself",
@@ -49,6 +65,627 @@
         },
         "tail": {
             "help": "Wag your tail when you're happy!"
+        },
+
+        "vote": {
+            "help": "",
+            "reward":  {
+                "1": "Thank you for voting for Killua! This time you get a :sparkles: special :sparkles: reward: the lootbox {0} {1}. Open it with `k!open`",
+                "2": "Thank you for voting for Killua! Here take {0} Jenny as a sign of my gratitude. {1} vote{2} away from a :sparkles: special :sparkles: reward"
+            }
+        },
+
+        "book": {
+            "help": "Allows you to take a look at your cards",
+            "responses": {
+                "1": "You don't have any cards yet!",
+                "2": "Please choose a page number between 1 and {}"
+            }
+        },
+
+        "sell": {
+            "help": "Sell any amount of cards you own",
+            "responses": {
+                "1": "You don't have any cards yet!",
+                "2": "A card with the id `{0}` does not exist",
+                "3": "Seems you don't own enough copies of this card. You own {0} cop{1} of this card",
+                "4": "You cannot sell this card!",
+                "5": "You will receive {0} Jenny for selling {1}, do you want to proceed?",
+                "6": "Timed out!",
+                "7": "Successfully canceled!",
+                "8": "Seems like you don't own enough non-fake copies of this card you try to sell",
+                "9": "Successfully sold {0} cop{1} of card number {2} for {3} Jenny!"
+            }
+        },
+
+        "swap": {
+            "help": "Allows you to swap cards from your free slots with the restricted slots and the other way around",
+            "responses": {
+                "1": "You don't have any cards yet!",
+                "2": "Please use a valid card number!",
+                "3": "You cannot swap out card No. 0!",
+                "4": "You don't own a fake and real copy of card `{}` you can swap out!",
+                "5": "Successfully swapped out card No. {}"
+            }
+        },
+
+        "hunt": {
+            "help": "Go on a hunt! The longer you are on the hunt, the better the rewards!",
+            "args": {
+                "time": "time",
+                "end": "end"
+            },
+            "responses": {
+                "1": "You are not on a hunt yet!",
+                "2": "You've started hunting <t:{}:R>.",
+                "3": "You must be at least hunting for twelve hours!",
+                "4": "You've started hunting <t:{}:R>. You brought back the following items from your hunt: \n\n",
+                "5": ":warning: Your free slot limit has been reached! Sell some cards with `{}sell` :warning:\n\n",
+                "6": "Could not carry anything from your hunt in your free slots so you gained no cards...",
+                "7": "Hunt returned!",
+                "8": "You aren't on a hunt yet! Start one with `{}hunt`",
+                "9": "You are already on a hunt! Get the results with `{}hunt end`",
+                "10": "You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get"
+            }
+        },
+
+        "meet": {
+            "help": "Meet a user who has recently send a message in this channel to enable certain spell card effects",
+            "responses": {
+                "1": "You can't interact with bots with this command",
+                "2": "The user you tried to approach has not send a message in this channel recently",
+                "3": "You already have `{0}` in the list of users you met, {1}",
+                "4": "Done {0}! Successfully added `{1}` to the list of people you've met"
+            }
+        },
+
+        "discard": {
+            "help": "Discard a card you want to get rid of with this command. If you want to throw a fake away, make sure it's in the free slots",
+            "responses": {
+                "1": "This card does not exist!",
+                "2": "You are not in possesion of this card!",
+                "3": "You cannot discard this card!",
+                "4": "Do you really want to throw this card away? (if you want to throw a fake aware, make sure it's in the free slots (unless it's the only copy you own. You can switch cards between free and restricted slots with `{}swap <card_id>`)",
+                "5": "Timed out!",
+                "6": "Successfully canceled!",
+                "7": "Successfully thrown away card No. `{}`"
+            }
+        },
+
+        "cardinfo": {
+            "help": "Check card info out about any card you own",
+            "responses": {
+                "1": "Invalid card",
+                "2": "You don't own a copy of this card so you can't view it's infos",
+                "3": "Usage"
+            }
+        },
+
+        "check": {
+            "help": "Lets you see how many copies of the specified card are fakes",
+            "responses": {
+                "1": "Invalid card",
+                "2": "You don't any copies of this card which are fake",
+                "3": "The card in your restricted slots is fake",
+                "4": "{0} cop{1} of this card in your free slots {2} fake",
+                "5": "No fake copies of that card!"
+            }
+        },
+        "use": {
+            "help": "Use spell cards you own with this command! Focus on offense or defense, team up with your friends or steal their cards in their sleep!",
+            "args": {
+                "1": "booklet",
+                "2": "list",
+                "3": "analysis"
+            },
+            "responses": {
+                "1": "Either use a spell card with this command or the booklet",
+                "2": "Introduction booklet",
+                "3": [
+                    "📖::📖::📖\n\n\nA beginners guide of the greed island card system\n\n\n📖::📖::📖",
+                    "If you are not familiar with how this works in the anime: \n\nThe main goal of the game is to obtain all 100 cards in the book. How hard it is to obtain a card is determined by it's **rank**. You can find it on the top right of the card. Next to it to the right is a number. This number times {} is the maximum amount of those cards to exist globally. If that limit is exceeded you can't obtain any more cards unless someone looses one of their copies which means one \nother person can obtain the card again",
+                    "On the top left, you can see the card number. \nTypically, spell cards have a number one thousand and ... and item cards have a number less than 100. Cards with a number below 100 count towards your goal of collecting all 100 **restricted slot** cards.\nWhen you obtain a card which has an id below 100 but you already have one in your restricted slots, or the card id is above 100, the card comes into your **free slots**. You can have a maximum of {} cards in your free slots",
+                    "I have mentioned before that there are **spell cards**. You can use them to steal cards from other users, gamble and a lot more. To use a spell card, use `use <card> <arguments>`. Some spell cards only work in a **short range**. In discord terms that means that the target must have send a message recently in the channel the command is used in. You can also use permament spell cards to protect yourself from others or tranform cards into fakes.",
+                    "A word about **fakes**. Fakes can be created with the spell card 1020 and look like real cards in the book but are not. The main usecase I see them as is bait. You can't sell fakes, you can't use them and they don't count towards the 100 card goal. \nIf you want to swap out a fake in your album with a real card in your free slots or the other way around, use `swap <card_id>`. If you want to get rid of a fake, make sure it's in your free slots and discard it with `discard <card_id>`",
+                    "You have reached the end of the introduction!\n\nNow it's time for you to explore the world of cards, steal, collect, form alliances and so on. \n\nDo you want to add a card to the game you have a good idea for? That is possible, if you can make the card design with image we will be happy to have a look at your idea!\n\nHave fun hunters\n- The Gamemaster"
+                ],
+                "4": "Invalid arguments provided! Usage: `{}`",
+                "5": "You can only use this card in response to an attack!",
+                "6": "You can only use spell cards!",
+                "7": "Invalid card id",
+                "8": "You are not in possesion of this card!",
+                "9": "You can't use spell cards on yourself",
+                "10": "You can't use spell cards on bots",
+                "11": "You can't use an integer less than 1",
+                "12": "You can't use an integer less than 1",
+                "13": "No response from the attacked user, the attack goes through!",
+                "14": "You decided not to use a defense spell, the attack goes through!",
+                "15": "<@{}> successfully defended against your attack",
+                "16": "The user has protected the page this card is in against spells!",
+                "17": "The user had remaining protection from card 1026 thus your attack failed",
+                "18": "You can only attack a user in a channel they have read and write permissions to which isn't the case with {}",
+                "19": "You do not have cards{}!",
+                "20": "This user does not have any cards{}!",
+                "21": " This information uses up card {}.",
+                "22": "The specified user doesn't have this card",
+                "23": "You haven't met this user yet! Use `{}meet <@someone>` if they send a message in a channel to be able to use this card on them",
+                "24": "You don't have any cards other than card {}!",
+                "25": "The maximum amount of existing cards with id {} is reached!",
+                "26": "You don't have any space in your free slots left!",
+                "27": "Specified card is invalid!",
+                "28": "You already have this effect in place!",
+                "29": "Info about card {}",
+                "30": [
+                    "Name", "Type", "Rank", "Limit", "Available", "Class", "Range"
+                ],
+                "31": ["**Total copies in circulation**:", "**Total owners**:"],
+                "32": " in their free slots",
+                "33": " in their restricted slots",
+                "34": "Successfully stole card number `{0}` from `{1}`!",
+                "35": "Successfully swapped cards! Gave {member} the card `{0}` and took card number `{1}` from them!",
+                "36": "Seems like you don't own this card You already need to own a (non-fake) copy of the card you want to duplicate",
+                "37": "Successfully added another copy of {} to your book!",
+                "38": "Successfully added another copy of card No. {0} to your book! This card is {1}a fake!",
+                "39": "Success! Stole the card{0} {1} from {2} user{3}!",
+                "40": "All targetted users were able to defend themselves!",
+                "41": "You can only use \"{}\" on a card with id between 1 and 99!",
+                "42": "Created a fake of card No. {card_id}! Make sure to remember that it's a fake, fakes don't count towards completion of the album",
+                "43": "You cannot steal card 0",
+                "44": "Stole card number {} successfully!",
+                "45": "This user does not have any cards you could target with this spell!",
+                "46": "Successfully removed all cloned and fake cards from `{0}`. Cards removed in total: {1}",
+                "47": "You don't have another copy of this card to renew the effect",
+                "48": "You still have {} protections left. Do you really want to use this card now and overwrite the current protection?",
+                "49": "Done, you will be automatically protected from the next 10 attacks! You need to keep the card in your inventory until all 10 defenses are used up",
+                "50": "Success, you destroyed card No. {}!",
+                "51": "Successfully added card No. {} to your inventory",
+                "52": "You need to choose a page between 1 and 6",
+                "53": "Success! Page {} is now permanently protected",
+                "54": "You need to have used the card {} once to use this command",
+                "55": "Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{0}use {1} <list/analysis> <card_id>`",
+                "56": "Redacted card!"
+            }
+        },
+        "update": {
+            "help": "Allows you to view current and past updates",
+            "responses": {
+                "1": "Invalid version",
+                "2": "Info about version `{}`",
+                "3": "Published on {}"
+            }
+        },
+        "guild": {
+            "help": "Displays infos about the current guild",
+            "responses": {
+                "1": "Information about {}",
+                "2": [
+                    "Owner", "Killua Badges", "Combined Jenny", "Richest Member", "Server created at", "Members"
+                ],
+                "3": "{0} with {1} jenny"
+            }
+        },
+        "leaderboard": {
+            "help": "Get a leaderboard of members with the most jenny",
+            "responses": {
+                "1": "Nobody here has any jenny! Be the first to claim some with `{}daily`!",
+                "2": "Top users on guild {}",
+                "3": "{0} with {1} jenny"
+            }
+        },
+
+        "profile": {
+            "help": "Get infos about a certain discord user with ID or mention",
+            "responses": {
+                "1": "Could not find anyone with this name/id",
+                "2": "Ready to claim!",
+                "3": "Information about {}",
+                "4": ["Killua Badges", "Jenny", "Account created at", "Daily cooldown"],
+                "5": "No badges",
+                "6": "Never claimed `daily` before"
+            }
+        },
+
+        "jenny": {
+            "help": "Gives you a users balance",
+            "responses": {
+                "1": "User not found",
+                "2": "{0}'s balance is {1} jenny"
+            }
+        },
+
+        "daily": {
+            "help": "Claim your daily jenny with this command",
+            "responses": {
+                "1": "You claimed your {0} daily Jenny and hold now on to {1}",
+                "2": "You can claim your daily Jenny the next time {}"
+            }
+        },
+
+        "open": {
+            "help": "Open a lootbox with an interactive UI",
+            "responses": {
+                "1": "Sadly you don't have any lootboxes!",
+                "2": "Choose a lootbox to open!"
+            }
+        },
+
+        "inventory": {
+            "help": "Displays the owned lootboxes",
+            "responses": {
+                "1": "Lootbox inventory",
+                "2": "Open a lootbox with `{}open`"
+            }
+        },
+
+        "boxinfo": {
+            "help": "Get infos about any box you desire",
+            "responses": {
+                "1": "total rewards\n{0} cards\n{1}-{2} jenny per field",
+                "2": "card rarities: {0}\ncard types: {1}",
+                "3": "Infos about lootbox {0} {1}",
+                "4": ["Contains", "Price", "Buyable"]
+            }
+        },
+
+        "count": {
+            "help": "See how many numbers you can remember with this count game!",
+            "args": {
+                "easy": "easy",
+                "hard": "hard"
+            },
+            "responses": {
+                "1": "invalid difficulty",
+                "2": "Press the buttons in the order displayed as soon as the time starts. Good luck!",
+                "3": "One more button to remember. Get ready!",
+                "4": "Can you remember?",
+                "5": "Too slow!",
+                "6": "Wrong choice!",
+                "7": "{0} But well done, you made it to level {1} which brings you a reward of {2} Jenny!",
+                "8": "Well done, you completed the game! Your reward is {0} Jenny. Keep up the great work!"
+            }
+        },
+
+        "rps": {
+            "help": "Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun.",
+            "responses": {
+                "1": "Baka! You can't play against yourself",
+                "2": "Beep-boop, if you wanna play against a bot, play against me!",
+                "3": "You can only play using 1-100 Jenny",
+                "4": "You do not have enough Jenny for that. Your current balance is `{}`",
+                "5": "Your opponent does not have enough Jenny for that. Their current balance is `{}`",
+                "6": ["rock", "paper", "scissors"],
+                "7": "{0} against {1}: **Rock... Paper... Scissors!**",
+                "8": "Sadly the other player has not responded in time",
+                "9": "Too late, time to respond is up!",
+                "10": "You chose to play Rock Paper Scissors, what's your choice Hunter?",
+                "11": "You need to open your dm to Killua to play {0}",
+                "12": "{} needs to open their dms to Killua to play",
+                "13": "You can't play against someone blacklisted",
+                "14": "{0} challenged {1} to a game of Rock Paper Scissors! Will **{2}** accept the challange?",
+                "15": "Sadly no response...",
+                "16": "{} doesn't want to play... maybe they do after a hug?",
+                "lost": "lost against",
+                "won": "won against",
+                "winning": "winning {0} Jenny which adds to a total of {1}",
+                "losing": "losing {0} Jenny which leaves them a total of {1}"
+            }
+        },
+
+        "emojaic": {
+            "help": "Emoji mosaic an image; let emojis recreate an image you gave Killua! Takes in a mention, ID or image url"
+        },
+
+        "flag": {
+            "help": "Valid flags: asexual, aromantic, bisexual, pansexual, gay, lesbian, trans, nonbinary, genderfluid, genderqueer, polysexual, austria, belgium, botswana, bulgaria, ivory, estonia, france, gabon, gambia, germany, guinea, hungary, indonesia, ireland, italy, luxembourg, monaco, nigeria, poland, russia, romania, sierraleone, thailand, ukraine, yemen"
+        },
+
+        "glitch": {
+            "help": "Tranform a users pfp into a glitchy GIF!"
+        },
+
+        "lego": {
+            "help": "Legofies an image"
+        },
+
+        "snapchat": {
+            "help": "Valid filters: dog, dog2, dog3, pig, flowers, random"
+        },
+
+        "eyes": {
+            "help": "Valid eyes: big, black, bloodshot, blue, default, googly, green, horror, illuminati, money, pink, red, small, spinner, spongebob, white, yellow, random"
+        },
+
+        "jpeg": {
+            "help": "Did you ever want to decrease image quality? Then this is the command for you!"
+        },
+
+        "ajit": {
+            "help": "Overlays an image of Ajit Pai snacking on some popcorn!"
+        },
+
+        "nokia": {
+            "help": "Add the image onto a nokia display"
+        },
+
+        "flash": {
+            "help": "Creates a flashing GIF"
+        },
+
+        "thonkify": {
+            "help": "Turn text into thonks!"
+        },
+
+        "screenshot": {
+            "help": "Screenshot the specified webste!"
+        },
+
+        "sonic": {
+            "help": "Let sonic say anything you want"
+        },
+
+        "google": {
+            "help": "Get the best results for a query the web has to offer",
+            "responses": {
+                "1": "Results for query {}"
+            }
+        },
+
+        "spin": {
+            "help": "Spins an image 'round and 'round and 'round and 'round...",
+            "responses": {
+                "1": "Invalid arguments passed. For help with the command, use `{0}help {1}`",
+                "2": "Processing..."
+            }
+        },
+
+        "wtf": {
+            "help": "Puts the wtf meme below the image provided",
+            "responses": {
+                "1": "Invalid arguments passed. For help with the command, use `{0}help {1}`"
+            }
+        },
+
+        "mod_errors": {
+            "h": "Hey!",
+            "self": "You can't {} yourself!",
+            "higher": "You can't {} someone with a higher role than you",
+            "self_higher": "My role needs to be moved higher up to grant me permission to {} this person"
+        },
+
+        "ban": {
+            "help": "What you would expect of a ban command, bans a user and deletes all their messages of the last 24 hours, optional reason",
+            "responses": {
+                "1": ":hammer: Banned **{0}** because of: ```\n{1}```Operating moderator: **{2}**",
+                "2": "Something went wrong! Did you specify a valid user id?",
+                "3": "You have been banned from {0} because of: ```\n{1}```by `{2}`",
+                "4": ":hammer: Banned **{0}** because of: ```\n{1}```Operating moderator: **{2}**"
+            }
+        },
+
+        "unban": {
+            "help": "Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work",
+            "responses": {
+                "1": ":ok_hand: Unbanned user with id **{0}**\nOperating moderator: **{1}**",
+                "2": "No user with the user ID {0} found",
+                "3": "The user is not currently banned",
+                "4": "Invalid user specified! (Did you not use the User#0000 format or does the user have a # in their name?)"
+            }
+        },
+
+        "kick": {
+            "help": "What you would expect of a kick command, kicks a user, optional reason",
+            "responses": {
+                "1": "You have been kicked from {0} because of: ```\n{1}```by `{2}`",
+                "2": ":hammer: Kicked **{0}** because of: ```\n{1}```Operating moderator: **{2}**"
+            }
+        },
+
+        "mute": {
+            "help": "Mutes a user for the specified duration or unlimited. Requirements: You need to have a role named `muted` (Case insensitve) set up already (Deny this role permission to send messages in every channel)",
+            "args": {
+                "u": "unlimited",
+                "s": "standart"
+            },
+            "responses": {
+                "1": "There is no rule called `muted` so I can't mute that user",
+                "2": "This user is already muted!",
+                "3": "I need to be moved on top of the muted role or higher",
+                "4": "he most time a user can be muted is a day or unlimited and the least is a minute",
+                "5": "You have been muted in {0} for the duration of {1} minute{2} by `{3}`. Reason: ```\n{3}```",
+                "6": ":pinching_hand: Muted **{0}** for {1} minute{2}. Reason:```\n{3}``` Operating moderator: **{4}**",
+                "7": "You have been unmuted in {}, reason: mute time expired'",
+                "8": "You have been muted in {0} by `{1}`. Reason: ```\n{2}```'",
+                "9": ":pinching_hand: Muted **{0}**. Reason:```\n{1}``` Operating moderator: **{2}**"
+            }
+        },
+
+        "unmute": {
+            "help": "Unmutes a user if they have a `muted` (case insensitve) role",
+            "responses": {
+                "1": "There is no rule called `muted` (Case insensitive) so I can't unmute that user",
+                "2": "I need to be moved on top of the muted role or higher",
+                "3": "This user is not currently muted",
+                "4": "You have been unmuted in {0} by `{1}`. Reason: ```\n{2}```",
+                "5": ":lips: Unmuted **{0}** Reason:```\n{1}``` Operating moderator: **{2}**"
+            }
+        },
+
+        "prefix": {
+            "help": "Change Killua's prefix with this command. If you forgot your prefix, mentioning is always a prefix as well",
+            "responses": {
+                "1": "Successfully changed server prefix to `{}`!",
+                "2": "You need `administrator` permissions to change the server prefix!",
+                "3": "The current server prefix is `{}`"
+            }
+        },
+
+        "premium": {
+            "help": "Add or remove the premium status of a guild with this command",
+            "args": {
+                "add": "add",
+                "rmv": "remove"
+            },
+            "responses": {
+                "1": "Sadly you aren't a premium subscriber so you can't have premium guilds! Become a premium subscriber here: https://www.patreon.com/KileAlkuri",
+                "2": "You first need to remove premium perks from one of your other servers to give this server premium status",
+                "3": "This guild already has the premium status!",
+                "4": "Success! This guild is now a premium guild",
+                "5": "This guild is not a premium guild, so you can't remove it's premium status! Looking for premium? Visit https://www.patreon.com/KileAlkuri",
+                "6": "You are not the one who added the premium status to this server, so you can't remove it",
+                "7": "You need to wait {0} more days before you can remove this servers premium status!",
+                "8": "uccessfully removed this servers premium status!",
+                "9": "You either need to use `remove` or `add` as an argument for this command"
+            }
+        },
+
+        "lootbox": {
+            "help": "Claim your weekly lootbox with this command. Premium only",
+            "responses": {
+                "1": "Get premium",
+                "2": "You need to be a premium subscriber to use this command!",
+                "3": "You can claim your weekly lootbox the next time {}",
+                "4": "Successfully claimed lootbox: {}"
+            }
+        },
+
+        "shop": {
+            "responses": {
+                "1": "Shop menu",
+                "2": "Select the shop you want to visit"
+            }
+        },
+
+        "cards_shop": {
+            "help": "Shows the current cards for sale",
+            "responses": {
+                "1": "Current Card shop",
+                "2": "**{0} is reduced by {1}%**"
+            }
+        },
+
+        "todo_shop": {
+            "help": "Get some info about what cool stuff you can buy for your todo list with this command",
+            "responses": {
+                "title": "**The todo shop**",
+                "description": "You can buy the following items with `{0}buy todo <item>` while you are in the edit menu for the todo list you want to buy the item for\n\n**Cost**: 1000 Jenny\n`color` change the color of the embed which displays your todo list!\n\n **Cost**: 1000 Jenny\n`thumbnail` add a neat thumbnail to your todo list (small image on the top right)\n\n**Cost**: 1000 Jenny\n`description` add a description to your todo list (recommended for public lists with custom id)\n\n**Cost**: number of current spots * 50\n`space` buy 10 more spots for todo's for your list"
+            }
+        },
+
+        "lootboxes_shop": {
+            "help": "Get the current lootbox shop with this command",
+            "responses": {
+                "1": "Price",
+                "2": "Current lootbox shop",
+                "3": "To get infos about what a lootbox contains, use `{0}boxinfo <box_id>`\nTo buy a box, use `{0}buy lootbox <box_id>`"
+            }
+        },
+
+        "buy": {
+            "responses": {
+                "1": "You need to provide a valid subcommand! Subcommands are: `card`, `lootbox` and `todo`"
+            }
+        },
+
+        "buy_card": {
+            "help": "Buy a card from the shop with this command",
+            "responses": {
+                "1": "This card is not for sale at the moment! Find what cards are in the shop with `{0}shop`",
+                "2": "Unfortunately the global maximal limit of this card is reached! Someone needs to sell their card for you to buy one or trade/give it to you",
+                "3": "Looks like your free slots are filled! Get rid of some with `{0}sell`",
+                "4": "I'm afraid you don't have enough Jenny to buy this card. Your balance is {0} while the card costs {1} Jenny",
+                "5": "Free slots card limit reached (`{0}`)! Get rid of one card in your free slots to add more cards with `{1}sell <card>`",
+                "6": "Successfully bought card number `{0}` {1} for {2} Jenny. Check it out in your inventory with `{3}book`!"
+            }
+        },
+
+        "buy_lootbox": {
+            "help": "Buy a lootbox with this command",
+            "responses": {
+                "1": "This lootbox is not for sale!",
+                "2": "You don't have enough jenny to buy this box (You have: {0}, cost: {1})",
+                "3": "Successfully bought lootbox {0} {1}!"
+            }
+        },
+
+        "buy__todo": {
+            "help": "Buy cool stuff for your todo list with this command! (Only in editor mode)",
+            "args": {
+                "color": "color",
+                "thumbnail": "thumbnail",
+                "space": "space",
+                "desc": "description"
+            },
+            "responses": {
+                "1": "You have to be in the editor mode to use this command! Use `{0}todo edit <todo_list_id>`",
+                "2": "You need to provide a valid thing you want to buy (color, thumbnail, space)",
+                "3": "You don't have enough Jenny to buy a color for your todo list. You need 1000 Jenny",
+                "4": "You already have bought a color for this list! Update it with `{0}todo color <color>`",
+                "5": "Please provide a color you want your todo list to have, you can always change it later",
+                "6": "You need to provide a valid color! (Default color is 1400ff f.e.)",
+                "7": "Successfully bought the color {0} for your list! You can change it with `{1}todo color <color>`",
+                "8": "You don't have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny",
+                "9": "You already have bought a thumbnail for this list! Update it with `{}todo thumbnail <url>`",
+                "10": "Please provide a thumbnail you want your todo list to have, you can always change it later",
+                "11": "You didn't provide a valid url with an image! Please make sure your url is valid",
+                "12": "Successfully bought the thumbmail `{0}",
+                "13": "You didn't provide a valid url with an image! Please make sure you your url is valid",
+                "14": "You don't have enough Jenny to buy more space for your todo list. You need {0} Jenny",
+                "15": "You can't buy more than 100 spots",
+                "16": "Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {0} \nCost: {1} points",
+                "17": "Alright, see you later then :3",
+                "18": "Congrats! You just bought 10 more todo spots for the current todo list!",
+                "19": "You don't have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny",
+                "20": "What should the description of your todo list be? (max 200 characters)",
+                "21": "Your description can't be over 200 characters!",
+                "22": "Congrats! You bought a description for your current todo list"
+            }
+        },
+
+        "uwufy": {
+            "help": "Uwufy any sentence you want with dis command, have fun >_<"
+        },
+
+        "ping": {
+            "help": "Standart of seeing if the bot is working",
+            "responses": {
+                "1": "Pong!",
+                "2": "Pong in `{}` ms"
+            }
+        },
+
+        "topic": {
+            "help": "From a constantly updating list of topics to talk about one is chosen here",
+            "topics": ["What's your least favorite genre of music?", "What's the most beautiful place you've ever been to?", "What's the best name for a pet dragon?", "What's the best name for a pet turtle?", "What's the best name for a pet snake?", "What do you enjoy doing most in your free time?", "Do you think technology will advance or ruin humanity?", "What's your favorite animal?", "What is your favorite TV show?", "If you could go anywhere in the world, where would you go?", "What did you used to do, stopped and wish you hadn't?", "What was the best day in your life?", "For what person are you the most thankful for?", "What is and has always been your least favorite subject?", "What always makes you laugh and/or smile when you think about it?", "Do you think there are aliens?", "What is your earliest memory?", "What's your favorite drink?", "Where do you like going most for vacation?", "What motivates you?", "What is the best thing about school/work?", "What's better, having high expectations or having low expectations?", "What was the last movie you saw?", "Have you read anything good recently?", "What is your favorite day of the year?", "What kind of music do you like to listen to?", "What things are you passionate about?", "What is your favorite childhood memory?", "If you could acquire any skill, what would you choose?", "What is the first thing that you think of in the morning?", "What was the biggest life change you have gone through?", "What is your favorite song of all time?", "If you won $1 million playing the lottery, what would you do?", "How would you know if you were in love?", "If you could choose to have any useless super power, what would you pick?",
+                "What sport do you wish you were really good at?", "What’s the strangest dream you’ve had recently?", "What’s the best thing you’ve ever bought off Amazon?", "What is something people are always surprised to learn about you?", "What song do you wish you could put on right now?", "What do you think has been the best movie of the year so far?", "What do you think is the best show on Netflix right now?", "Do you think at some points there will be robot revolution? (I do ò_ó)", "Who was your first crush on?", "What was something that changed your life?", "What did someone you know do that was so embarrassing that you acted like you didn't know them?", "What was a moment that completely changed your option about something or someone?", "What thing happened to you that you wouldn't believe it if someone told you it had happened to them?", "What's your favorite ice cream flavor?", "If you had to choose another username what would it be?", "Who is your role model?', 'What's the best food you have ever eaten?", "What accomplishment are you most proud of?", "Would you rather be the most popular kid in school or the smartest kid in school?", "Do you prefer to cook or order take out?", "What is your dream job?", "What's your ideal way to celebrate your birthday?", "What is a short/long term goal of yours?", "What are your three must have smart phone apps?", "Would you rather be the smartest moron or dumbest genius?", "What was the last gift that you received?", "If you could give one piece of advice to the whole world, what would it be?", "Describe your perfect day.", "How would you define success?", "What is the first thing that you notice when meeting someone new?", 
+                "Who is the most important person in your life right now?", "What’s the nicest thing anyone has ever done for you?", "What’s the biggest risk you’ve ever taken?", "What are the top three things on your bucket list?", "What did you want to be when you were a kid?", "What did you want to be when you were a kid?", "How did you spend your last birthday?", "What’s the best holiday?", "Do you prefer to take baths or showers?", "Do you like to sing out loud when no one else is around?", "What is the worst piece of advice you’ve ever gotten?", "When was the last time you laughed so hard you cried?", "Is a hot dog a sandwich?", "What’s your go-to joke?", "Which celebrity would play you in a movie about your life?", "Tell me about the worst pickup line you’ve ever gotten.", "How would you describe your best friend?", "What qualities do you admire about your parents?", "What’s the one thing that people always misunderstand about you?", "When have you felt your biggest adrenaline rush?", "What’s something you hope will never change?", "What’s your best memory so far this year?", "If your life had a theme song, what would it be?", "Do you believe we would be better off if we didn’t have social media?", "What is one quality about yourself that you are most proud of?", "What’s something that always makes you smile?", "Where would you go if you had to pack your stuff and relocate to another country tomorrow?", "Which website do you visit the most?", "What’s the weirdest fact you’ve ever heard?", "What’s the last lie you told?", "What bridges are you glad that you burned?", "What’s the meanest thing you’ve ever said to someone else?", "Who are you most jealous of?",
+                "What’s one movie you’re embarrassed to admit you enjoy?", "What’s the cheapest gift you’ve ever gotten for someone else?", "What’s your most embarrassing late night purchase?", "What is your greatest fear in a relationship?", "Have you ever regifted a present?", "Name one thing you’d change about every person in this chat.", "What’s one useless skill you’d love to learn anyway?", "How many people have you kissed?", "What’s something you would die if your mom found out about?", " Who was your first love?", "Who in this chat would you want to swap lives with for a week?", "Who’s the most surprising person to ever slide into your DMs?", "What is something you’ve failed at recently?", "What word do you hate the most?", "If you could hire someone to do one thing for you, what would it be?", "What’s the best lie you’ve ever told anyone?", "What do you think happens when you die?", "Who’s the last person who called you?", "What’s one thing about your partner that you find least attractive?", "When was the last time you were really angry? Why?", "Would you ever get plastic surgery?", "Who was the last person you said, “I love you” to?", "What’s the most bogus rumor you’ve ever heard about yourself?", "Do you think cheating can ever be justified? How?", "What’s your best pickup line?", "What’s the dumbest thing you’ve ever lied about?", "What’s the biggest secret you’ve kept from your parents?", "What’s something that takes up way too much of your time?", "What’s your favorite thing to do when bored?", "If you had to pick three words to describe yourself, what would they be?", "What do you seek for in a romantic partner?", "What’s the most useless invention you’ve ever heard of?",
+                "What was the best thing about how your parents raised you?", "If you could have a fictional superhero for a best friend, who would it be?", "What does your name mean?", "Tell me about your childhood best friend.", "What is the thing you wish you would have known 10 years ago?", "What Netflix show or movie are you marathon-watching?", " What projects are you working on right now that bring you joy?", "What is one thing you should never say at a wedding?", "What do you think are the best traits for a person to have?", "What is something you wish you could do everyday?", "If someone gave you an envelope with your death date inside of it, would you open it?", "What scares you most about your future?", "What three things do you want to be remembered for?", "How would your best friend describe you?", "What is a significant event that has changed you?", "What are three fun facts about yourself?", "Who do you count on the most for help?", "What did you think was the most challenging part of being a kid?", "Have you ever really kept a New Year’s resolution?", "How long can you go without checking your phone?"]
+        },
+
+        "hi": {
+            "help": "This is just here because it was Killua's first command and I can't take that from him",
+            "responses": {
+                "1": "Hello {0}"
+            }
+        },
+
+        "8ball": {
+            "help": "Ask Killua anything and he will answer",
+            "responses": {
+                "title": "8ball has spoken 🎱",
+                "answers": ["What would jesus do?", "My sources say no but my heart says yes", "U000026a0 8ball.exe has stopped responding", "If you try hard enough, maybe", "Stop asking me >-<", "Only if you're wearing socks", "That's what the milk carton said", "Probably, if it's raining.", "Yep", "You are kidding, right?", "I think you know that better than me", "I am sorry to break it to you but... no", "I don't think so", "Yes, no more info needed", "No! Why would you ask that?", "Let's do it!", "Did you ask your mom?", "I seriously don't think that is a good idea", "Could you repeat that?", "Well... maybe", "Anything is possible"],
+                "desc": "You asked:\n```\n{0}\n```\nMy answer is:\n```\n{1}```",
+                "by": "Asked by {0}"
+            }
+        },
+
+        "avatar": {
+            "help": "Shows the avatar of a user",
+            "responses": {
+                "1": "Invalid user",
+                "2": "Specified user has no custom avatar",
+                "3": "Avatar of {0}"
+            }
         }
     }
 }

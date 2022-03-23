@@ -181,7 +181,7 @@ class Economy(commands.Cog):
             await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {user.jenny}')
         else:
             cooldown = f"<t:{int(user.daily_cooldown.timestamp())}:R>"
-            await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
+            await ctx.send(f'You can claim your daily Jenny the next time {cooldown}')
 
     @check()
     @commands.command(extras={"category": Category.ECONOMY}, usage="open")

@@ -178,7 +178,7 @@ class Cards(commands.Cog):
         """Go on a hunt! The longer you are on the hunt, the better the rewards!"""
         
         user = User(ctx.author.id)
-        has_effect, value = user.has_effect('hunting')
+        has_effect, value = user.has_effect("hunting")
 
         if end:
 
@@ -205,7 +205,7 @@ class Cards(commands.Cog):
                     text += f":warning: Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell` :warning:\n\n"
 
                 if hit_limit and len(user.fs_cards) == 40:
-                    text += f"Could not carry anything from your hunt in your free slots so you gained no cards.."
+                    text += f"Could not carry anything from your hunt in your free slots so you gained no cards..."
 
                 embed = discord.Embed.from_dict({
                     'title': 'Hunt returned!',

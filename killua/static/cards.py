@@ -182,7 +182,7 @@ class Card:
             if not o in real_owners:
                 real_owners.append(o)
         embed = discord.Embed.from_dict({
-            'title': f'Infos about card {card.name}',
+            'title': f'Info about card {card.name}',
             'description': f'**Total copies in circulation**: {len(card.owners)}\n\n**Total owners**: {len(real_owners)}',
             'image': {'url': card.image_url},
             'color': 0x1400ff
