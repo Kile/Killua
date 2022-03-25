@@ -9,7 +9,6 @@ import pathlib
 import random
 import discord
 
-from enum import Enum
 from discord.ext import commands
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw
@@ -40,17 +39,6 @@ class CheckFailure(Exception):
 
 class SuccessfullDefense(CheckFailure):
     pass
-
-class PrintColors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
 class PartialCard:
     """A class preventing a circular import by providing the bare minimum of methods and properties. Only used in this file"""
@@ -235,129 +223,6 @@ class LootBox:
                 if user.is_entitled_to_double_jenny:
                     r *= 2
                 user.add_jenny(r)
-
-class Button(discord.ui.Button):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    async def callback(self, interaction: discord.Interaction):
-        self.view.value = self.custom_id
-        self.view.stop()
-
-class ConfirmButton(discord.ui.View):
-    """A button that is used to confirm a certain action or deny it"""
-    def __init__(self, user_id:int, **kwargs):
-        super().__init__(**kwargs)
-        self.user_id = user_id
-        self.timed_out = False # helps subclasses using Button to have set this to False
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if not (val := interaction.user.id == self.user_id):
-            await interaction.response.defer()
-        return val
-
-    async def disable(self, msg:discord.Message) -> discord.Message:
-        if len([c for c in self.children if not c.disabled]) == 0: # if every child is already disabled, we don't need to edit the message again
-            return
-
-        for child in self.children:
-            child.disabled = True
-
-        await msg.edit(view=self)
-
-    async def on_timeout(self):
-        self.value = False
-        self.timed_out = True
-    
-    @discord.ui.button(label="confirm", style=discord.ButtonStyle.green)
-    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
-        self.value = True
-        self.timed_out = False
-        self.stop()
-
-    @discord.ui.button(label="cancel", style=discord.ButtonStyle.red)
-    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
-        self.value = False
-        self.timed_out = False
-        self.stop()
-
-class Category(Enum):
-
-    ACTIONS = {
-        "name": "actions",
-        "description": "Commands that can be used to interact with other users, such as hugging them",
-        "emoji": {
-            "unicode": "\U0001f465",
-            "normal": ":busts_in_silhouette:"
-        }
-    }
-    CARDS = {
-        "name": "cards",
-        "description": "The greed island card system with monster, spell and item cards",
-        "emoji": {
-            "unicode": "<:card_number_46:811776158966218802>",
-            "normal": "<:card_number_46:811776158966218802>"
-        }
-    }
-    ECONOMY = {
-        "name": "economy",
-        "description": "Killua's economy with the currency Jenny",
-        "emoji": {
-            "unicode": "\U0001f3c6",
-            "normal": ":trophy:"
-        } 
-    }
-    MODERATION = {
-        "name": "moderation",
-        "description": "Moderation commands",
-        "emoji": {
-            "unicode": "\U0001f6e0",
-            "normal": ":tools:"
-        }
-    }
-    TODO = {
-        "name": "todo",
-        "description": "Todo lists on discord to help you be organised",
-        "emoji": {
-            "unicode": "\U0001f4dc",
-            "normal": ":scroll:"
-        }
-    }
-    FUN = {
-        "name": "fun",
-        "description": "Commands to play around with with friends to pass the time",
-        "emoji": {
-            "unicode": "\U0001f921",
-            "normal": ":clown:"
-        }
-    }
-    OTHER = {
-        "name": "other",
-        "description": "Commands that fit none of the other categories",
-        "emoji": {
-            "unicode": "<:killua_wink:769919176110112778>",
-            "normal": "<:killua_wink:769919176110112778>"
-        }
-    }
-
-    GAMES = {
-        "name": "games",
-        "description": "Games you can play with friends or alone",
-        "emoji": {
-            "unicode": "\U0001f3ae",
-            "normal": ":video_game:"
-        }
-    }
-
-    TAGS = {
-        "name": "tags",
-        "description": "Tags if you want to save some text. `[PREMIUM ONLY]`",
-        "emoji": {
-            "unicode": "\U0001f5c4",
-            "normal": ":file_cabinet:"
-        }
-    }
 
 # pillow logic contributed by DerUSBstick (Thank you!)
 class Book:
@@ -548,6 +413,7 @@ class User:
         self.premium_guilds:dict = user["premium_guilds"] if "premium_guilds" in user else {}
         self.lootboxes:list = user["lootboxes"] if "lootboxes" in user else []
         self.weekly_cooldown = user["weekly_cooldown"] if "weekly_cooldown" in user else None
+        self.action_settings:dict = user["action_settings"] if "action_settings" in user else {}
 
         self.cache[self.id] = self
 
@@ -615,7 +481,7 @@ class User:
         if cards:
             teams.update_one({'id': user_id}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0}})  
         else:
-            teams.insert_one({'id': user_id, 'points': 0, 'badges': [], 'cooldowndaily': '','cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0}) 
+            teams.insert_one({'id': user_id, 'points': 0, 'badges': [], 'cooldowndaily': '','cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}}) 
 
     def _update_val(self, key:str, value:Any, operator:str="$set") -> None:
         """An easier way to update a value"""
@@ -684,6 +550,11 @@ class User:
         """Removes a lootbox from a user"""
         self.lootboxes.remove(box)
         self._update_val("lootboxes", self.lootboxes, "$set")
+
+    def set_action_settings(self, settings: dict) -> None:
+        """Sets the action settings for a user"""
+        self.action_settings = settings
+        self._update_val("action_settings", settings)
         
     def _has_card(self, cards:List[list], card_id:int, fake_allowed:bool, only_allow_fakes:bool) -> bool:
         counter = 0

@@ -5,9 +5,10 @@ from datetime import datetime, timedelta
 from random import randint
 
 from killua.utils.checks import check
-from killua.utils.paginator import View
-from killua.utils.help import Select
-from killua.utils.classes import User, Guild, Category, LootBox
+from killua.utils.interactions import View
+from killua.utils.interactions import Select
+from killua.utils.classes import User, Guild, LootBox
+from killua.static.enums import Category
 from killua.static.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, LOOTBOXES, PREMIUM_ALIASES
 
 class Economy(commands.Cog):

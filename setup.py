@@ -9,7 +9,7 @@ Note: As the console says when running this program, you will need to add data f
 """
 from pymongo import errors, collection
 
-from killua.utils.classes import PrintColors
+from killua.static.enums import PrintColors
 from killua.static.constants import (
     shop,
     stats,

@@ -3,8 +3,9 @@ import datetime
 import asyncio
 from discord.ext import commands
 
-from .classes import Category, Button
-from .paginator import Paginator, View, DefaultEmbed
+from killua.static.enums import Category
+from .paginator import Paginator, DefaultEmbed
+from .interactions import Select, View, Button
 
 class HelpPaginator(Paginator):
     """A normal paginator with a button that returns to the original help command"""
@@ -31,24 +32,6 @@ class HelpEmbed(discord.Embed):
         self.color = 0x1400ff
         self.set_thumbnail(url=av)
         self.timestamp = datetime.datetime.utcnow()
-
-
-class Select(discord.ui.Select):
-    """Creates a select menu to view the command groups"""
-    def __init__(self, options, **kwargs):
-        super().__init__( 
-            min_values=1, 
-            max_values=1, 
-            options=options,
-            **kwargs
-        )
-
-    async def callback(self, interaction: discord.Interaction):
-        self.view.value = int(interaction.data["values"][0])
-        for opt in self.options:
-            if opt.value == str(self.view.value):
-                opt.default = True
-        self.view.stop()
 
 class MyHelp(commands.HelpCommand):
     def __init__(self):

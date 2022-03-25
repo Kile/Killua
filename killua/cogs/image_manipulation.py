@@ -9,8 +9,7 @@ from pypxl import PxlClient # My own library ✨
 
 from killua.utils.gif import save_transparent_gif
 from killua.utils.checks import check
-from killua.utils.classes import Category
-from killua.utils.paginator import Paginator
+from killua.static.enums import Category
 from killua.static.constants import NOKIA_CODE, PXLAPI
 
 class ImageManipulation(commands.Cog):
@@ -257,22 +256,6 @@ class ImageManipulation(commands.Cog):
                 embed.add_field(name='** **', value=f'**[__{res["title"]}__]({res["url"]})**\n{res["description"][:100]}...' if len(res["description"]) > 100 else res["description"], inline=False)
             return await self.client.send_message(ctx, embed=embed)
         return await ctx.send(':x: '+r.error)
-
-    @check(4)
-    @commands.command(aliases=['image'], extras={"category":Category.FUN}, usage="img <query>")
-    async def img(self, ctx, *,query:str):
-        """Search for any image you want"""
-        
-        r = await self.pxl.image_search(query=query)
-        if r.success:
-            def make_embed(page, embed, pages):
-                embed.title = "Results for query " + query
-                embed.set_image(url=pages[page-1])
-                return embed
-
-            return await Paginator(ctx, r.data, func=make_embed).start()
-        else:
-            return await ctx.send(':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
 
     @check(30) # long check because this is exhausting for the poor computer
     @commands.command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")

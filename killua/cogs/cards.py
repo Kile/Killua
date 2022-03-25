@@ -8,7 +8,9 @@ from typing import Union, List, Optional, Tuple, Optional, Dict
 
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
-from killua.utils.classes import User, CardNotFound, Category, CheckFailure, Book, ConfirmButton, NoMatches
+from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches
+from killua.static.enums import Category
+from killua.utils.interactions import ConfirmButton
 from killua.static.cards import Card
 from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, items, LOOTBOXES
 
@@ -17,23 +19,32 @@ class Cards(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.reward_cache = {
+            "item": [x['_id'] for x in items.find({'type': 'normal', 'rank': { "$in": ['A', 'B', 'C']}})],
+            "spell": [x['_id'] for x in items.find({'type': 'spell', 'rank': { "$in": ['B', 'C']}})],
+            "monster": {
+                "E": [x['_id'] for x in items.find({'type': 'monster', 'rank': {"$in": ['E', 'G', 'H']}})],
+                "D": [x['_id'] for x in items.find({'type': 'monster', 'rank': {"$in": ['D', 'E', 'F']}})],
+                "C": [x['_id'] for x in items.find({'type': 'monster', 'rank': {"$in": ['C', 'D', 'E']}})]
+            }
+        }
 
     def _get_single_reward(self, score:int) -> Tuple[int, int]:
             if score == 1:
                 if random.randint(1, 10) < 5:
-                    return 1, random.choice([x['_id'] for x in items.find({'type': 'normal', 'rank': { "$in": ['A', 'B', 'C']}})])
+                    return 1, random.choice(self.reward_cache["item"])
                 else:
-                    return 1, random.choice([x['_id'] for x in items.find({'type': 'spell', 'rank': {"$in": ['B', 'C']}})])
+                    return 1, random.choice(self.reward_cache["spell"])
 
             if score < 3000/10000:
-                rarities = ['E', 'G', 'H']
+                rarities = "E"
             elif score < 7000/10000:
-                rarities = ['D', 'E', 'F']
+                rarities = "D"
             else:
-                rarities = ['C', 'D', 'E']
+                rarities = "C"
 
             amount = random.randint(1, math.ceil(score*10))
-            card = random.choice([x['_id'] for x in items.find({'type': 'monster', 'rank': {"$in": rarities}})])
+            card = random.choice(self.reward_cache["monster"][rarities])
             return amount, card
     
     def _construct_rewards(self, score:int) -> List[Tuple[int, int]]:
@@ -44,14 +55,14 @@ class Cards(commands.Cog):
             rewards.append(self._get_single_reward(1))
             score = 0.7
 
-        for i in range(math.ceil(random.randint(1, math.ceil(score*10))/1.6)):
+        for _ in range(math.ceil(random.randint(1, math.ceil(score*10))/1.6)):
             r = self._get_single_reward(score)
             rewards.append(r)
     
         final_rewards: List[Tuple[int, int]] = []
         for reward in rewards: 
             # This avoid duplicates e.g. 4xPaladins Necklace, 2xPaladins Necklace => 6xPaladins Necklace
-            if reward[1] in (l:= [y for x, y in final_rewards]):
+            if reward[1] in (l:= [y for _, y in final_rewards]):
                 index = l.index(reward[1])
                 final_rewards[index] = (final_rewards[index][0]+reward[0], final_rewards[index][1])
             else:
@@ -64,7 +75,7 @@ class Cards(commands.Cog):
         formatted_text: List[str] = []
 
         for reward in rewards:
-            for i in range(reward[0]):
+            for _ in range(reward[0]):
                 if len([*user.fs_cards,*[x for x in rewards if x[1] > 99 and not user.has_rs_card(x[0])]]) >= 40 and (reward[1] > 99 or (not user.has_rs_card(reward[1]) and reward[1] < 100)):
                     return formatted_rewards, formatted_text, True # if the free slots are full the process stops
                 formatted_rewards.append([reward[1], {"fake": False, "clone": False}])

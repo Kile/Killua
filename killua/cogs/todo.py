@@ -8,7 +8,9 @@ from typing import Union
 
 from killua.static.constants import todo, editing, REPORT_CHANNEL
 from killua.utils.checks import check, blcheck
-from killua.utils.classes import TodoList, Todo, User, TodoListNotFound, Category, ConfirmButton, Button
+from killua.utils.classes import TodoList, Todo, User, TodoListNotFound
+from killua.static.enums import Category 
+from killua.utils.interactions import ConfirmButton, Button
 from killua.utils.paginator import Paginator
 
 class TodoSystem(commands.Cog):

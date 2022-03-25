@@ -3,10 +3,11 @@ from discord.ext import commands, tasks
 
 from typing import List, Union
 from aiohttp import ClientSession
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from killua.static.constants import PATREON_TIERS, teams, GUILD, BOOSTER_ROLE, PATREON, LOOTBOXES
-from killua.utils.classes import User, Guild, Category, LootBox
+from killua.utils.classes import User, Guild, LootBox
+from killua.static.enums import Category
 from killua.utils.checks import check
 
 class Patrons:

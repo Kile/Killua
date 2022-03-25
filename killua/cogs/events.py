@@ -8,7 +8,8 @@ from discord.utils import find
 from discord.ext import commands, tasks
 from PIL import Image
 
-from killua.utils.classes import Guild, Book, PrintColors
+from killua.utils.classes import Guild, Book
+from killua.static.enums import PrintColors
 from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, items, teams, PatreonBanner, stats
 
 class Events(commands.Cog):
@@ -123,7 +124,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
 
-        if ctx.channel.permissions_for(ctx.me).send_messages: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
+        if ctx.channel.permissions_for(ctx.me).send_messages and not self.client.is_dev: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
             return
 
         if ctx.command:

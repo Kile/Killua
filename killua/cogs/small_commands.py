@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS, LANGS
 from killua.utils.checks import check
-from killua.utils.classes import Category
+from killua.static.enums import Category
 from killua.utils.paginator import Paginator
 
 class SmallCommands(commands.Cog):
