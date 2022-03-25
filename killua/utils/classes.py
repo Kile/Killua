@@ -9,7 +9,6 @@ import pathlib
 import random
 import discord
 
-from enum import Enum
 from discord.ext import commands
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw

@@ -82,7 +82,7 @@ class Actions(commands.Cog):
                     memberlist = memberlist + f', {member.display_name}'
         return memberlist
 
-    async def action_embed(self, endpoint:str, author, members:List[discord.Member], disabled:int) -> discord.Embed:
+    async def action_embed(self, endpoint:str, author, members:List[discord.Member], disabled:int = 0) -> discord.Embed:
         if endpoint == 'hug':
             image = {"link": random.choice(ACTIONS[endpoint]["images"])} # This might eventually be deprecated for copyright reasons
         else:
