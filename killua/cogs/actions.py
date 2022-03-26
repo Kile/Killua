@@ -122,12 +122,14 @@ class Actions(commands.Cog):
         elif ctx.author == members[0]:
             return await ctx.send("Sorry... you can\'t use this command on yourself")
         else:
-            if len(members) == 1 and not User(members[0].id).action_settings[ctx.command.name]:
+            first = User(members[0].id)
+            if len(members) == 1 and (ctx.command.name in first.action_settings) and not first.action_settings[ctx.command.name]:
                 return await ctx.send(f"**{members[0].display_name}** has disabled this action", allowed_mentions=discord.AllowedMentions.none())
 
             disabled = 0
             for member in members:
-                if not User(member.id).action_settings[ctx.command.name]:
+                m = User(member.id)
+                if m.action_settings and not m.action_settings[ctx.command.name]:
                     disabled+=1
                     members.remove(member)
 
