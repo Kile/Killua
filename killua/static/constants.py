@@ -157,7 +157,7 @@ class PatreonBanner: # using a normal var instead of a class did not work
     VALUE = None
 
     @classmethod
-    def file(cls) -> discord.File:# needs to be called eahc time else the bytesio object would be closed
+    def file(cls) -> discord.File:# needs to be called each time else the bytesio object would be closed
         return discord.File(filename="patreon.png", fp=io.BytesIO(cls.VALUE))
 
 # EMOTES
@@ -469,6 +469,8 @@ GUILD = 715358111472418908
 BOOSTER_ROLE = 769622564648648744
 REPORT_CHANNEL = 796306329756893184
 UPDATE_CHANNEL = 757170264294424646
+
+GUILD_OBJECT = discord.Object(id=GUILD)
 
 # For the translate command
 LANGS = {

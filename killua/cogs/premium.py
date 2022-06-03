@@ -90,8 +90,10 @@ class Premium(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.get_patrons.start()
         self.invalid = True # this is only `True` the first time the bot starts because the boosters of the support server are not cached at that point, so it avoids removing their badge
+
+    async def cog_load(self):
+        self.get_patrons.start()
 
     def _get_boosters(self):
         guild = self.client.get_guild(GUILD)
@@ -195,5 +197,5 @@ class Premium(commands.Cog):
 
 Cog = Premium
 
-def setup(client):
-    client.add_cog(Premium(client))
+async def setup(client):
+    await client.add_cog(Premium(client))

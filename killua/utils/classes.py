@@ -649,7 +649,7 @@ class User:
         if not fake:
             PartialCard(card).add_owner(self.id)
 
-    def add_card(self, card_id:int, fake:bool=False, clone:bool=False):
+    def add_card(self, card_id: int, fake: bool = False, clone: bool = False):
         """Adds a card to the the user"""
         data = [card_id, {"fake": fake, "clone": clone}]
 
@@ -708,7 +708,18 @@ class User:
                     return True
         return False
 
-    def swap(self, card_id:int) -> Union[bool, None]: 
+    def can_swap(self, card_id: int) -> bool:
+        """Checks if `swap` would return `False` without performing the actual swap"""
+        if (True in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id]):
+            return True
+
+        elif (True in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id]):
+            return True
+
+        else:
+            return False # Returned if the requirements haven't been met
+
+    def swap(self, card_id: int) -> Union[bool, None]: 
         """Swaps a card from the free slots with one from the restricted slots. Usecase: swapping fake and real card"""
 
         if (True in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id]):
@@ -985,7 +996,7 @@ class Guild():
         self.id:int = guild_id
         self.badges:list = g['badges']
         self.prefix:str = g['prefix']
-        self.commands:dict = {v for k, v in g["commands"].items()} if "commands" in g else {}
+        self.commands:dict = {v for _, v in g["commands"].items()} if "commands" in g else {}
         
         if 'tags' in g:
             self.tags = g['tags']

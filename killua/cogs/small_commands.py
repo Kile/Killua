@@ -325,5 +325,5 @@ class SmallCommands(commands.Cog):
 
 Cog = SmallCommands
 
-def setup(client):
-    client.add_cog(SmallCommands(client))
+async def setup(client):
+    await client.add_cog(SmallCommands(client))

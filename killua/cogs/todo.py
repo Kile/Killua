@@ -833,5 +833,5 @@ class TodoSystem(commands.Cog):
   
 Cog = TodoSystem
         
-def setup(client):
-    client.add_cog(TodoSystem(client))
+async def setup(client):
+    await client.add_cog(TodoSystem(client))

@@ -3,7 +3,7 @@ import random
 import discord
 from discord.ext import commands
 from datetime import datetime
-from typing import List
+from typing import List, Union
 
 from .constants import items, INDESTRUCTABLE, ALLOWED_AMOUNT_MULTIPLE, DEF_SPELLS, VIEW_DEF_SPELLS, FREE_SLOTS
 from killua.utils.classes import User, SuccessfullDefense, CheckFailure, CardNotFound, Book
@@ -15,8 +15,20 @@ background_cache = {}
 
 class Card:
     """This class makes it easier to access card information"""
-    def __init__(self, card_id:int):
-        card = items.find_one({'_id': card_id})
+
+    def _find_card(self, name_or_id: str) -> Union[dict, None]:
+        if name_or_id.isdigit():
+            return items.find_one({'_id': int(name_or_id)})
+        else:
+            # This could be solved much easier but this allows the user to 
+            # have case insensitivity when looking for a card
+            all_cards = [(c["name"], c["_id"]) for c in items.find({})]
+            for c in all_cards:
+                if c[0].lower() == name_or_id.lower():
+                    return items.find_one({'_id': c[1]})
+
+    def __init__(self, name_or_id: str):
+        card = self._find_card(name_or_id)
         if card is None:
             raise CardNotFound
         
@@ -35,7 +47,7 @@ class Card:
             items.update_one({'_id': self.id}, {'$set':{'type': 'normal'}})
             self.type = 'normal'
 
-        if card_id > 1000 and not card_id == 1217: # If the card is a spell card it has two additional properties
+        if self.id > 1000 and not self.id == 1217: # If the card is a spell card it has two additional properties
             self.range:str = card['range']
             self.cls:list = card['class']
 
@@ -207,7 +219,7 @@ class Card1001(Card):
 
         self._has_cards_check(other.fs_cards, " in their free slots", uses_up=True)
 
-        async def make_embed(page, embed, pages):
+        async def make_embed(page, *_):
             return await Book(self.ctx.bot.session).create(member, page, True)
 
         await Paginator(self.ctx, max_pages=math.ceil(len(other.fs_cards)/18), func=make_embed, has_file=True).start() 

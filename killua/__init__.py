@@ -7,12 +7,12 @@ from random import randint, choice
 from discord.ext import commands, ipc
 from datetime import date
 from typing import Union
-from threading import Thread
 
 from .webhook.api import app
 from .utils.help import MyHelp
 from .utils.classes import Guild
 from .static.enums import Category
+from .utils.interactions import Modal
 from .static.constants import TOKEN, IPC_TOKEN, presence, TIPS, PORT
 
 class Bot(commands.Bot):
@@ -23,6 +23,15 @@ class Bot(commands.Bot):
 		self.invite = "https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands"
 		self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
 		self.is_dev = False
+
+	async def setup_hook(self):
+		await self.load_extension("jishaku")
+		await self.ipc.start()
+		await self.tree.sync()
+
+	async def close(self):
+		await super().close()
+		await self.session.close()
 
 	async def on_ipc_error(self, endpoint, error):
 		print(endpoint, "raised", error)
@@ -49,29 +58,84 @@ class Bot(commands.Bot):
 
 		return res
 
+	async def find_user(self, ctx: commands.Context, user: str) -> Union[discord.Member, discord.User, None]:
+		"""Attempts to create a member or user object from the passed string"""
+		try:
+			res = await commands.MemberConverter().convert(ctx, user)
+		except commands.MemberNotFound:
+			if not user.isdigit():
+				return
+
+			res = self.client.get_user(int(user))
+			if not res:
+				try:
+					res = await self.client.fetch_user(int(user))
+				except discord.NotFound:
+					return
+		return res
+
+	async def get_text_response(
+		self, 
+		ctx: commands.Context, 
+		text: str, 
+		timeout: int = None, 
+		timeout_message: str = None, 
+		*args, 
+		**kwargs
+	) -> Union[str, None]:
+		"""Gets a reponse from either a textinput UI or by waiting for a response"""
+
+		if ctx.interaction:
+			modal = Modal(ctx.author.id, title="Anser the question(s) and click submit", timeout=timeout)
+			textinput = discord.ui.TextInput(label=text, *args, **kwargs)
+			modal.add_item(textinput)
+
+			await ctx.interaction.response.send_modal(modal)
+
+			await modal.wait()
+			if modal.timed_out:
+				if timeout_message:
+					await ctx.send(timeout_message, delete_after=5)
+				return
+
+			return textinput.value
+
+		else:
+			def check(m):
+				return m.author.id == ctx.author.id
+
+			msg = await ctx.send(text)
+			try:
+				confirmmsg = await self.wait_for('message', check=check, timeout=timeout)
+			except asyncio.TimeoutError:
+				if timeout_message:
+					await ctx.send(timeout_message, delete_after=5)
+				res = None
+			else:
+				res = confirmmsg.content
+
+			await msg.delete()
+			try:
+				await confirmmsg.delete()
+			except commands.Forbidden:
+				pass
+
+			return res
+
+
 	async def update_presence(self):
 		status = presence.find_one({})
 		if status['text']:
 			if not status['activity']:
 				status['activity'] = 'playing'
-			if status['activity'] == 'playing':
-				s = discord.Activity(name=status['text'], type=discord.ActivityType.playing)
-			if status['activity'] == 'watching':
-				s = discord.Activity(name=status['text'], type=discord.ActivityType.watching)
-			if status['activity'] == 'listening':
-				s = discord.Activity(name=status['text'], type=discord.ActivityType.listening)
-			if status['activity'] == 'competing':
-				s = discord.Activity(name=status['text'], type=discord.ActivityType.competing)
 
+			s = discord.Activity(name=status['text'], type=getattr(discord.ActivityType, status['activity']))
 				
 			if not status['presence']:
 				status['presence'] = 'online'
-			if status['presence'] == 'online':
-				return await self.change_presence(status=discord.Status.online, activity=s)
-			if status['presence'] == 'dnd':
-				return await self.change_presence(status=discord.Status.dnd, activity=s)
-			if status['presence'] == 'idle':
-				return await self.change_presence(status=discord.Status.idle, activity=s)
+
+			return await self.change_presence(activity=s, status=getattr(discord.Status, status['presence']))
+
 		a = date.today()
 		#The day Killua was born!!
 		b = date(2020,9,17)
@@ -113,13 +177,14 @@ def get_prefix(bot, message):
 		# in case message.guild is `None` or something went wrong getting the prefix the bot still NEEDS to react to mentions and k!
 		return commands.when_mentioned_or('k!')(bot, message)
 
-def main():
+async def main():
 	session = aiohttp.ClientSession()
 	intents = discord.Intents(
 		guilds=True,
 		members=True,
 		emojis_and_stickers=True, # this is not needed in the code but I'd like to have it
-		messages=True
+		messages=True,
+		message_content=True
 	)
 	# Create the bot instance.
 	bot = Bot(
@@ -137,16 +202,13 @@ def main():
 
 	# Setup cogs.
 	for cog in cogs.all_cogs:
-		bot.add_cog(cog.Cog(bot))
-
-	bot.load_extension("jishaku")
-	bot.ipc.start()
+		await bot.add_cog(cog.Cog(bot))
 
 	if bot.is_dev: # runs the api locally if the bot is in dev mode
-		loop = asyncio.get_event_loop()
-		loop.create_task(bot.start(TOKEN))
-		Thread(target=loop.run_forever).start()
-		app.run(host="0.0.0.0", port=PORT)
+		# loop = asyncio.get_event_loop()
+		await asyncio.wait([bot.start(TOKEN), app.run_task(host="0.0.0.0", port=PORT)], return_when=asyncio.FIRST_COMPLETED)
+		# loop.run_forever()
+		# Thread(target=loop.run_forever).start()
 	else:
-		# Start the bot.
-		bot.run(TOKEN)
+		# Start the bot.		
+		await bot.start(TOKEN)

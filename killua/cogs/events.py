@@ -2,6 +2,7 @@ import io
 import sys
 import discord
 import traceback
+import asyncio
 
 from datetime import datetime
 from discord.utils import find
@@ -16,7 +17,7 @@ class Events(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.status.start()
+        self.client.startup_datetime = datetime.utcnow()
 
     async def _post_guild_count(self) -> None:
         data = {
@@ -63,12 +64,22 @@ class Events(commands.Cog):
     def print_dev_text(self) -> None:
         print(f"{PrintColors.OKGREEN}Running bot in dev enviroment...{PrintColors.ENDC}")
 
+    async def cog_load(self):
+        self.status.start()
+
+        #Changing Killua's status
+        await self._set_patreon_banner()
+        if self.client.is_dev:
+            self.print_dev_text()
+        else:
+            await self._post_guild_count()
+            await self._load_cards_cache()
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{PrintColors.HEADER}{PrintColors.OKGREEN}------")
         print('Logged in as: ' + self.client.user.name + f" (ID: {self.client.user.id})")
         print(f"------{PrintColors.ENDC}")
-        self.client.startup_datetime = datetime.utcnow()
 
     @tasks.loop(hours=12)
     async def status(self):
@@ -104,17 +115,6 @@ class Events(commands.Cog):
         await self._post_guild_count()
 
     @commands.Cog.listener()
-    async def on_connect(self):
-        #Changing Killua's status
-        await self.client.update_presence()
-        await self._set_patreon_banner()
-        if self.client.is_dev:
-            self.print_dev_text()
-        else:
-            await self._post_guild_count()
-            await self._load_cards_cache()
-
-    @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         #Changing Killua's status
         await self.client.update_presence()
@@ -122,7 +122,7 @@ class Events(commands.Cog):
         await self._post_guild_count()
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: commands.Context, error):
 
         if ctx.channel.permissions_for(ctx.me).send_messages and not self.client.is_dev: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
             return
@@ -172,5 +172,5 @@ class Events(commands.Cog):
 
 Cog = Events
 
-def setup(client):
-    client.add_cog(Events(client))
+async def setup(client):
+    await client.add_cog(Events(client))

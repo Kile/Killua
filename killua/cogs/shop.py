@@ -64,17 +64,13 @@ class Shop(commands.Cog):
         return {'name':f'**Number {item["_id"]}: {item["name"]}** |{item["emoji"]}|', 'value': f'**Description:** {item["description"]}\n**Price:** {PRICES[item["rank"]]} Jenny\n**Type:** {item["type"].replace("normal", "item")}\n**Rarity:** {item["rank"]}'}
 
 
-    @commands.Cog.listener()
-    async def on_connect(self):
-        #if not self.client.user.id == 758031913788375090:
+    async def cog_load(self):
         self.cards_shop_update.start()
     
     @tasks.loop(hours=6)
     async def cards_shop_update(self):
         #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
         #the challenge is to create a balanced system with good items rare enough but not too rare
-        if self.client.is_dev:
-            return
         try:
             shop_items:list = []
             number_of_items = randint(3,5) #How many items the shop has
@@ -129,10 +125,13 @@ class Shop(commands.Cog):
             else:
                 await ctx.invoke(ctx.command) # in case the menu was invoked by the parent
 
-    @commands.group(aliases=["store"])
+    @commands.hybrid_group(aliases=["store"])
     async def shop(self, ctx):
         if not ctx.invoked_subcommand:
-            subcommands = [c for c in ctx.command.commands]
+            if ctx.command.parent:
+                subcommands = [c for c in ctx.command.parent.commands]
+            else:
+                subcommands = [c for c in ctx.command.commands]
 
             view = View(ctx.author.id)
             view.add_item(Select(options=[discord.SelectOption(label=f"{c.name} shop", value=str(i)) for i, c in enumerate(subcommands)]))
@@ -368,7 +367,7 @@ class Shop(commands.Cog):
         todo_list.set_property('description', confirmmsg.content)
         return await ctx.send('Congrats! You bought a description for your current todo list')
 
-    @commands.group()
+    @commands.hybrid_group()
     async def buy(self, ctx):
         # have a shop for everything, you also need a buy for everything 
         if not ctx.invoked_subcommand:
@@ -536,5 +535,5 @@ class Shop(commands.Cog):
 
 Cog = Shop
 
-def setup(client):
-    client.add_cog(Shop(client))
+async def setup(client):
+    await client.add_cog(Shop(client))

@@ -14,6 +14,30 @@ from killua.static.enums import Category
 from killua.utils.checks import blcheck, check
 from killua.utils.interactions import Select
 
+class PlayAgainButton(discord.ui.Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.label = "Play Again"
+        self.__clicked = None
+
+    async def callback(self, interaction: discord.Interaction):
+
+        if not self.__clicked:
+            self.label = "[1/2] Play Again"
+            self.__clicked = interaction.user
+            await interaction.response.edit_message(view=self.view)
+
+        else:
+            if self.__clicked == interaction.user:
+                self.label = "Play Again"
+                self.__clicked = None
+                await interaction.response.edit_message(view=self.view)
+            else:
+                self.label = "[2/2] Play Again"
+                self.view.value = True
+                await interaction.response.edit_message(view=self.view)
+                self.view.stop()
+
 
 class RpsSelect(discord.ui.Select):
     """Creates a select menu to confirm an rps choice"""
@@ -183,7 +207,7 @@ class Rps:
 
         return [v for m, v in data]
 
-    async def _eval_outcome(self, winlose:int, choice1, choice2, player1:discord.Member, player2:discord.Member) -> discord.Message:
+    async def _eval_outcome(self, winlose:int, choice1, choice2, player1:discord.Member, player2:discord.Member, view: View) -> discord.Message:
         """Evaluates the outcome, informs the players and handles the points """
         p1 = User(player1.id)
         p2 = User(player2.id)
@@ -192,19 +216,26 @@ class Rps:
                 p1.add_jenny(self.points)
                 if player2 != self.ctx.me:
                     p2.remove_jenny(self.points)
-                return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}')
+                return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}', view=view)
             else:
-                return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}')
+                return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}', view=view)
         elif winlose == 0:
-            return await self.ctx.send(f'{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}')
+            return await self.ctx.send(f'{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}', view=view)
         elif winlose == 1:
             if self.points:
                 p1.remove_jenny(self.points)
                 if player2 != self.ctx.me:
                     p2.add_jenny(self.points)
-                return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}')
+                return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}', view=view)
             else:
-                return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention}')
+                return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention}', view=view)
+
+    def _play_again_view(self, players: List[discord.Member]) -> View:
+        """Creates a button that, if clicked by both players, automatically launches another game"""
+        view = View(user_id=[x.id for x in players])
+        button = PlayAgainButton()
+        view.add_item(button)
+        return view
 
     async def singleplayer(self) -> Union[None, discord.Message]:
         """Handles the case of the user playing against the bot"""
@@ -218,34 +249,43 @@ class Rps:
         winlose = self._result(resp[0].value, c2)
         await self._eval_outcome(winlose, resp[0].value, c2, self.ctx.author, self.ctx.me)
 
-    async def multiplayer(self) -> Union[None, discord.Message]:
-        """Handles the case of the user playing against anself.other user"""
+    async def multiplayer(self, replay: bool = False) -> Union[None, discord.Message]:
+        """Handles the case of the user playing against self.other user"""
+        if not replay:
+            if await self._dmcheck(self.ctx.author) is False:
+                return await self.ctx.send(f'You need to open your dm to Killua to play {self.ctx.author.mention}')
+            if await self._dmcheck(self.other) is False:
+                return await self.ctx.send(f'{self.other.name} needs to open their dms to Killua to play')
 
-        if await self._dmcheck(self.ctx.author) is False:
-            return await self.ctx.send(f'You need to open your dm to Killua to play {self.ctx.author.mention}')
-        if await self._dmcheck(self.other) is False:
-            return await self.ctx.send(f'{self.other.name} needs to open their dms to Killua to play')
+            if blcheck(self.other.id) is True:
+                return await self.ctx.send('You can\'t play against someone blacklisted')
 
-        if blcheck(self.other.id) is True:
-            return await self.ctx.send('You can\'t play against someone blacklisted')
+            view = ConfirmButton(self.other.id, timeout=80)
+            msg = await self.ctx.send(f'{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other}** accept the challange?', view=view)
+            await view.wait()
+            await view.disable(msg)
 
-        view = ConfirmButton(self.other.id, timeout=80)
-        msg = await self.ctx.send(f'{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other}** accept the challange?', view=view)
-        await view.wait()
-        await view.disable(msg)
-
-        if not view.value:
-            if view.timed_out:
-                return await self.ctx.send(f'Sadly no response...')
-            else:
-                return await self.ctx.send(f"{self.other.display_name} doesn't want to play... maybe they do after a hug?")
+            if not view.value:
+                if view.timed_out:
+                    return await self.ctx.send(f'Sadly no response...')
+                else:
+                    return await self.ctx.send(f"{self.other.display_name} doesn't want to play... maybe they do after a hug?")
 
         await self._send_rps_embed()
         res = await self._wait_for_response([self.ctx.author, self.other])
         if not res:
             return
         winlose = self._result(res[0].value, res[1].value)
-        await self._eval_outcome(winlose, res[0].value, res[1].value, res[0].user, res[1].user)
+
+        view = self._play_again_view([self.ctx.author, self.other])
+        msg = await self._eval_outcome(winlose, res[0].value, res[1].value, res[0].user, res[1].user, view)
+        await view.wait()
+        await view.disable(msg) 
+        if not view.value or view.timed_out:
+            pass
+        else:
+            await self.multiplayer(replay=True)
+
 
     async def start(self) -> None:
         """The function starting the game"""
@@ -436,5 +476,5 @@ class Games(commands.Cog):
 
 Cog = Games
 
-def setup(client):
-    client.add_cog(Games(client))
+async def setup(client):
+    await client.add_cog(Games(client))

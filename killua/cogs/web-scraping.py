@@ -173,5 +173,5 @@ class WebScraping(commands.Cog):
 
 Cog = WebScraping
 
-def setup(client):
-  client.add_cog(WebScraping(client))
+async def setup(client):
+  await client.add_cog(WebScraping(client))

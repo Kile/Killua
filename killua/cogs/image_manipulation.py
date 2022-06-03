@@ -284,5 +284,5 @@ class ImageManipulation(commands.Cog):
 
 Cog = ImageManipulation
 
-def setup(client):
-    client.add_cog(ImageManipulation(client))
+async def setup(client):
+    await client.add_cog(ImageManipulation(client))

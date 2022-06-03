@@ -108,7 +108,7 @@ class Buttons(View):
     async def _edit_message(self, interaction: discord.Interaction) -> None:
         """Gets the new embed and edits the message"""
         self._disable_on_end()
-        self.message = interaction.message
+        self.message = interaction.message if hasattr(interaction, "message") else None
         if self.has_file:
             return await self._handle_file(interaction)
         if self.defer:
@@ -120,28 +120,28 @@ class Buttons(View):
             await interaction.response.edit_message(embed=self.embed, view=self)
 
     @discord.ui.button(emoji=ButtonEmoji.FIRST_PAGE, style=Color.BLURPLE, disabled=True)
-    async def first_page(self, button: discord.ui.button, interaction: discord.Interaction):
+    async def first_page(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = 1
         await self._edit_message(interaction)
 
     @discord.ui.button(emoji=ButtonEmoji.BACKWARDS, style=Color.BLURPLE)
-    async def backwards(self, button: discord.ui.button, interaction: discord.Interaction):
+    async def backwards(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.page - 1 if self.page > 1 else self.max_pages
         await self._edit_message(interaction)
 
     @discord.ui.button(emoji=ButtonEmoji.STOP, style=Color.RED)
-    async def delete(self, button: discord.ui.button, interaction: discord.Interaction):
+    async def delete(self, interaction: discord.Interaction, _: discord.ui.button):
         await interaction.message.delete()
         self.ignore = True
         self.stop()
 
     @discord.ui.button(emoji=ButtonEmoji.FORWARD, style=Color.BLURPLE)
-    async def forward(self, button: discord.ui.button, interaction: discord.Interaction):
+    async def forward(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.page + 1 if not self.page >= self.max_pages else 1
         await self._edit_message(interaction)
 
     @discord.ui.button(emoji=ButtonEmoji.LAST_PAGE, style=Color.BLURPLE)
-    async def last_page(self, button: discord.ui.button, interaction: discord.Interaction):
+    async def last_page(self,interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.max_pages
         await self._edit_message(interaction)
 

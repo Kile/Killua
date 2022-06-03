@@ -140,68 +140,73 @@ class Actions(commands.Cog):
         else:
             return await ctx.bot.send_message(ctx, embed=embed)
 
+    @commands.hybrid_group()
+    async def action(self, _: commands.Context) -> None:
+        """A collection of commands to express feeling through images and gifs"""
+        ... 
+
     @check()
-    @commands.command(extras={"category": Category.ACTIONS}, usage="hug <user>")
+    @action.command(extras={"category": Category.ACTIONS}, usage="hug <user>")
     async def hug(self, ctx, members: commands.Greedy[discord.Member]=None):
         """Hug a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command(extras={"category":Category.ACTIONS}, usage="pat <user>")
+    @action.command(extras={"category":Category.ACTIONS}, usage="pat <user>")
     async def pat(self, ctx, members: commands.Greedy[discord.Member]=None):
         """Pat a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command(extras={"category":Category.ACTIONS}, usage="poke <user>")
+    @action.command(extras={"category":Category.ACTIONS}, usage="poke <user>")
     async def poke(self, ctx, members: commands.Greedy[discord.Member]=None):
         """Poke a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command(extras={"category":Category.ACTIONS}, usage="tickle <usage>")
+    @action.command(extras={"category":Category.ACTIONS}, usage="tickle <usage>")
     async def tickle(self, ctx, members: commands.Greedy[discord.Member]=None):
         """Tickle a user wi- ha- hahaha- stop- haha"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command(extras={"category":Category.ACTIONS}, usage="slap <user>")
+    @action.command(extras={"category":Category.ACTIONS}, usage="slap <user>")
     async def slap(self, ctx, members: commands.Greedy[discord.Member]=None):
         """Slap a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.command(extras={"category": Category.ACTIONS}, usage="dance")
+    @action.command(extras={"category": Category.ACTIONS}, usage="dance")
     async def dance(self, ctx):
         """Show off with your dance moves!"""
         return await self.get_image(ctx)
 
     @check()
-    @commands.command(extras={"category": Category.ACTIONS}, usage="neko")
+    @action.command(extras={"category": Category.ACTIONS}, usage="neko")
     async def neko(self, ctx):
         """uwu"""
         return await self.get_image(ctx)
 
     @check()
-    @commands.command(extras={"category": Category.ACTIONS}, usage="smile")
+    @action.command(extras={"category": Category.ACTIONS}, usage="smile")
     async def smile(self, ctx):
         """Show a bright smile with this command"""
         return await self.get_image(ctx)
 
     @check()
-    @commands.command(extras={"category": Category.ACTIONS}, usage="blush")
+    @action.command(extras={"category": Category.ACTIONS}, usage="blush")
     async def blush(self, ctx):
         """O-Oh! T-thank you for t-the compliment... You have beautiful fingernails too!"""
         return await self.get_image(ctx)
 
     @check()
-    @commands.command(extras={"category": Category.ACTIONS}, usage="tail")
+    @action.command(extras={"category": Category.ACTIONS}, usage="tail")
     async def tail(self, ctx):
         """Wag your tail when you're happy!"""
         return await self.get_image(ctx)
 
     @check()
-    @commands.command(extras={"category": Category.ACTIONS}, usage="cuddle")
+    @action.command(extras={"category": Category.ACTIONS}, usage="cuddle")
     async def cuddle(self, ctx, members: commands.Greedy[discord.Member]=None):
         """Snuggle up to a user and cuddle them with this command"""
         return await self.do_action(ctx, members)
@@ -219,7 +224,7 @@ class Actions(commands.Cog):
         return view
 
     @check()
-    @commands.command(extras={"category": Category.ACTIONS}, usage="settings")
+    @action.command(extras={"category": Category.ACTIONS}, usage="settings")
     async def settings(self, ctx):
         """Change the settings that control who can use what action on you"""
 
@@ -278,5 +283,5 @@ class Actions(commands.Cog):
 
 Cog = Actions
 
-def setup(client):
-    client.add_cog(Actions(client))
+async def setup(client):
+    await client.add_cog(Actions(client))

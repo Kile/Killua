@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 
 class PrintColors:
     HEADER = '\033[95m'
@@ -87,3 +87,25 @@ class Category(Enum):
             "normal": ":file_cabinet:"
         }
     }
+
+# the values are not important as only Enum.name is used
+class Activities(Enum):
+    playing = auto()
+    watching = auto()
+    listening = auto()
+    competing = auto()
+
+class Presences(Enum):
+    dnd = auto()
+    idle = auto()
+    online = auto()
+
+class HuntOptions(Enum):
+    end = auto()
+    time = auto()
+    start = auto()
+
+class Items(Enum):
+    jenny = auto()
+    card = auto()
+    lootbox = auto()

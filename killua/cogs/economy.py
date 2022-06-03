@@ -16,15 +16,15 @@ class Economy(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    async def _get_user(self, user_id:int) -> Union[discord.User, None]:
+    async def _get_user(self, user_id: int) -> Union[discord.User, None]:
         u = self.client.get_user(user_id)
         if not u:
             u = await self.client.fetch_user(user_id)
         return u
 
-    def _fieldify_lootboxes(self, lootboxes:List[int]):
+    def _fieldify_lootboxes(self, lootboxes: List[int]):
         """Creates a list of fields from the lootboxes in the passed list"""
-        lbs:List[Tuple[int, int]] = []
+        lbs: List[Tuple[int, int]] = []
         res: List[dict] = []
 
         for lb in lootboxes:
@@ -66,7 +66,7 @@ class Economy(commands.Cog):
             })
         return embed
 
-    def _lb(self, ctx, limit=10):
+    def _lb(self, ctx: commands.Context, limit=10):
         """Creates a list of the top members regarding jenny in a server"""
         members = teams.find({'id': {'$in': [x.id for x in ctx.guild.members]} })
         top = sorted(members, key=lambda x: x['points'], reverse=True)
@@ -79,10 +79,15 @@ class Economy(commands.Cog):
         }
         return data
 
+    @commands.hybrid_group()
+    async def economy(self, _: commands.Context):
+        """Killua's commands resolving around jenny, lootboxes and the general economy"""
+        ...
+
     @check()
     @commands.guild_only()
-    @commands.command(aliases=['server'], extras={"category":Category.ECONOMY}, usage="guild")
-    async def guild(self, ctx):
+    @economy.command(aliases=['server'], extras={"category":Category.ECONOMY}, usage="guild")
+    async def guild(self, ctx: commands.Context):
         """Displays infos about the current guild"""
         top = self._lb(ctx, limit=1)
         guild = Guild(ctx.guild.id)
@@ -106,8 +111,8 @@ class Economy(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @commands.command(aliases=['lb', 'top'], extras={"category":Category.ECONOMY}, usage="leaderboard")
-    async def leaderboard(self, ctx):
+    @economy.command(aliases=['lb', 'top'], extras={"category":Category.ECONOMY}, usage="leaderboard")
+    async def leaderboard(self, ctx: commands.Context):
         """Get a leaderboard of members with the most jenny"""
         top = self._lb(ctx)
         if len(top) == 0:
@@ -121,46 +126,39 @@ class Economy(commands.Cog):
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @commands.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
-    async def profile(self, ctx, user: Union[discord.Member, int]=None):
+    @economy.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
+    async def profile(self, ctx, user: str = None):
         """Get infos about a certain discord user with ID or mention"""
         if user is None:
             res = ctx.author
-        elif isinstance(user, discord.Member):
-            res = user
         else:
-            res = self.client.get_user(user)
+            res = await self.client.find_user(ctx, user)
+
             if not res:
-                try:
-                    res = await self.client.fetch_user(user)
-                except discord.NotFound:
-                    return await ctx.send("Could not find anyone with this name/id")
+                return await ctx.send(f"Could not find user `{user}`", allowed_mentions=discord.AllowedMentions.none())
 
         embed = self._getmember(res)
         return await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @commands.command(aliases=['bal', 'balance', 'points'], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
-    async def jenny(self, ctx, user: Union[discord.User, int]=None):
+    @economy.command(aliases=['bal', 'balance', 'points'], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
+    async def jenny(self, ctx: commands.Context, user: str = None):
         """Gives you a users balance"""
         
-        if not user:
-            user_id = ctx.author.id
-        if isinstance(user, discord.User):
-            user_id = user.id
-        elif user:
-            user_id = user
-        try:
-            self.client.get_user(user_id) or await self.client.fetch_user(user_id)
-            real_user = User(user_id)
-        except discord.NotFound:
-            return await ctx.send('User not found')
+        if user is None:
+            res = ctx.author
+        else:
+            res = await self.client.find_user(ctx, user)
 
-        return await ctx.send(f'{user or ctx.author}\'s balance is {real_user.jenny} Jenny')
+            if not res:
+                return await ctx.send('User not found')
+
+        balance = User(res.id).jenny
+        return await ctx.send(f'{user}\'s balance is {balance} Jenny')
         
     @check()
-    @commands.command(extras={"category":Category.ECONOMY}, usage="daily")
-    async def daily(self, ctx):
+    @economy.command(extras={"category":Category.ECONOMY}, usage="daily")
+    async def daily(self, ctx: commands.Context):
         """Claim your daily Jenny with this command!"""
         now = datetime.utcnow()
         user = User(ctx.author.id)
@@ -184,8 +182,8 @@ class Economy(commands.Cog):
             await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
 
     @check()
-    @commands.command(extras={"category": Category.ECONOMY}, usage="open")
-    async def open(self, ctx):
+    @economy.command(extras={"category": Category.ECONOMY}, usage="open")
+    async def open(self, ctx: commands.Context):
         """Open a lootbox with an interactive UI"""
         if len((user:=User(ctx.author.id)).lootboxes) == 0:
             return await ctx.send("Sadly you don't have any lootboxes!")
@@ -219,8 +217,8 @@ class Economy(commands.Cog):
         await ctx.send("Timed out!")
 
     @check()
-    @commands.command(aliases=["lootboxes", "inv"], extras={"category": Category.ECONOMY}, usage="inventory")
-    async def inventory(self, ctx):
+    @economy.command(aliases=["lootboxes", "inv"], extras={"category": Category.ECONOMY}, usage="inventory")
+    async def inventory(self, ctx: commands.Context):
         """Displays the owned lootboxes"""
         if len((user:=User(ctx.author.id)).lootboxes) == 0:
             return await ctx.send("Sadly you don't have any lootboxes!")
@@ -236,8 +234,8 @@ class Economy(commands.Cog):
         await ctx.send(embed=embed)
 
     @check()
-    @commands.command(extras={"category": Category.ECONOMY}, usage="boxinfo <box_id>")
-    async def boxinfo(self, ctx, box:int):
+    @economy.command(extras={"category": Category.ECONOMY}, usage="boxinfo <box_id>")
+    async def boxinfo(self, ctx: commands.Context, box: int):
         """Get infos about any box you desire"""
         if not box in LOOTBOXES.keys():
             return await ctx.send("Invalid box id")
@@ -263,6 +261,6 @@ class Economy(commands.Cog):
 
 Cog = Economy
 
-def setup(client):
-  client.add_cog(Economy(client))
+async def setup(client):
+  await client.add_cog(Economy(client))
 

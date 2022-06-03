@@ -98,8 +98,8 @@ class Tags(commands.Cog):
 
     @commands.guild_only()
     @check()
-    @commands.group(hidden=True, extras={"category":Category.TAGS})
-    async def tag(self, ctx):
+    @commands.hybrid_group(hidden=True, extras={"category":Category.TAGS})
+    async def tag(self, ctx: commands.Context):
         if not Guild(ctx.guild.id).is_premium:
             view = discord.ui.View()
             view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, label="Premium", url="https://patreon.com/kilealkuri"))
@@ -108,7 +108,7 @@ class Tags(commands.Cog):
 
     @tag.command(extras={"category":Category.TAGS}, usage="create <tag_name>")
     async def create(self, ctx, *, tag_name:str):
-        """Create a tag with this command! After first using the command it will ask you for the content of the tag"""
+        """Create a tag with this command"""
         guild = guilds.find_one({'id': ctx.guild.id})
         member = Member(ctx.author.id, ctx.guild.id)
         if not Tag(ctx.guild.id, tag_name).found is False:
@@ -129,27 +129,19 @@ class Tags(commands.Cog):
         if len(tag_name) > 30:
             return await ctx.send('The tag title has too many characters!')
         
-        ms = await ctx.send('What should the description of the tag be?')
+        content = await self.client.get_text_response(ctx, "What should the description of the tag be?", timeout=600, min_length=1, max_length=2000)
 
-        def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-        try:
-            msg = await self.client.wait_for('message', check=check, timeout=120)
-        except asyncio.TimeoutError:
-            await ms.delete()
-            return await ctx.send('Too late, aborting...', delete_after=5)
-        else:
-            await ms.delete()
-            await msg.delete()
-            if len(msg.content) > 2000:
-                return await ctx.send('Too many characters!')
-            tags.append([tag_name.lower(), {'name': tag_name, 'created_at': datetime.utcnow(), 'owner': ctx.author.id, 'content': msg.content, 'uses': 0}])
-            guilds.update_one({'id': ctx.guild.id}, {'$set': {'tags': tags}})
-            return await ctx.send(f'Successfully created tag `{tag_name}`')
+        if len(content) > 2000:
+            return await ctx.send('Too many characters!')
+
+        tags.append([tag_name.lower(), {'name': tag_name, 'created_at': datetime.utcnow(), 'owner': ctx.author.id, 'content': content, 'uses': 0}])
+        guilds.update_one({'id': ctx.guild.id}, {'$set': {'tags': tags}})
+
+        return await ctx.send(f'Successfully created tag `{tag_name}`')
 
     @tag.command(extras={"category":Category.TAGS}, usage="delete <tag_name>")
     async def delete(self, ctx, *, tag_name:str):
-        """Delete a tag you own with this command or any tag if you have manage build permissions"""
+        """Delete a tag you own with this command or any tag if you have manage guild permissions"""
         tag = Tag(ctx.guild.id, tag_name)
 
         if tag is None:
@@ -163,7 +155,7 @@ class Tags(commands.Cog):
 
     @tag.command(extras={"category":Category.TAGS}, usage="edit <tag_name>")
     async def edit(self, ctx, *, tag_name:str):
-        """Chose wrong tag description? Edit a tag's description with this command (only if you own it)"""
+        """Chose wrong tag description? Edit a tag's description with this command"""
         tag = Tag(ctx.guild.id, tag_name)
 
         if tag.found is False:
@@ -172,20 +164,13 @@ class Tags(commands.Cog):
         if not ctx.author.id == tag.owner:
             return await ctx.send('You need to be tag owner to edit this tag!')
 
-        ms = await ctx.send('What would you like the new description to be?')
+        content = await self.client.get_text_response(ctx, "What would you like the new description to be?", timeout=600, min_length=1, max_length=2000)
 
-        def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-        try:
-            msg = await self.client.wait_for('message', check=check, timeout=120)
-        except asyncio.TimeoutError:
-            await ms.delete()
-            return await ctx.send('Too late, aborting...', delete_after=5)
-        else:
-            await ms.delete()
-            await msg.delete()
-            tag.update(msg.content)
-            return await ctx.send(f'Successfully updated tag `{tag.name}`')
+        if len(content) > 2000:
+            return await ctx.send('Too many characters!')
+
+        tag.update(content)
+        return await ctx.send(f'Successfully updated tag `{tag.name}`')
 
     @tag.command(extras={"category":Category.TAGS}, usage="get <tag_name>")
     async def get(self, ctx, *, tag_name:str):
@@ -214,8 +199,8 @@ class Tags(commands.Cog):
         })
         await ctx.send(embed=embed)
     
-    @tag.command(aliases=['list'], extras={"category":Category.TAGS}, usage="list")
-    async def l(self, ctx, p:int=1):
+    @tag.command(aliases=['l'], extras={"category":Category.TAGS}, usage="list")
+    async def list(self, ctx, p:int=1):
         """Get a list of tags on the current server sorted by uses"""
         guild = guilds.find_one({'id': ctx.guild.id})
         if not 'tags' in guild:
@@ -260,5 +245,5 @@ class Tags(commands.Cog):
 
 Cog = Tags
 
-def setup(client):
-    client.add_cog(Tags(client))
+async def setup(client):
+    await client.add_cog(Tags(client))

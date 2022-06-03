@@ -1,23 +1,49 @@
 from discord.ext import commands
 import discord
-from datetime import datetime, timedelta
-import re
+from typing import List
+from datetime import datetime
 
 from killua.utils.checks import check
-from killua.utils.classes import User #lgtm [py/unused-import]
-from killua.static.enums import Category
+from killua.utils.classes import User, Guild #lgtm [py/unused-import]
+from killua.static.enums import Category, Activities, Presences
 from killua.static.cards import Card #lgtm [py/unused-import]
-from killua.static.constants import teams, guilds, blacklist, presence as pr, items, updates, UPDATE_CHANNEL #lgtm [py/unused-import]
+from killua.static.constants import teams, guilds, blacklist, presence as pr, items, updates, UPDATE_CHANNEL, GUILD_OBJECT #lgtm [py/unused-import]
 
 class DevStuff(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.version_cache = []
+
+    async def version_autocomplete(
+        self,
+        _: discord.Interaction,
+        current: str,
+    ) -> List[discord.app_commands.Choice[str]]:
+
+        if self.version_cache is None:
+            current = updates.find_one({'_id':'current'})
+            all_versions = [x["version"] for x in updates.find_one({"_id": "log"})["past_updates"]]
+
+            if "version" in current:
+                all_versions.append(current["version"])
+
+            self.version_cache = all_versions
+
+        return [
+            discord.app_commands.Choice(name=v, value=v)
+            for v in self.version_cache if current.lower() in v.lower()
+        ]
+
+    @commands.hybrid_group()
+    async def dev(self, _: commands.Context):
+        """A collection of commands regarding the development side of Killua"""
+        ...
 
     #Eval command, unnecessary with the jsk extension but useful for database stuff
     @commands.is_owner()
-    @commands.command(aliases=['exec'], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True)
-    async def eval(self, ctx, *, code):
+    @commands.command(aliases=['exec'], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True, with_app_command=False)
+    async def eval(self, ctx: commands.Context, *, code):
         """Standart eval command, owner restricted"""
         try:
             await ctx.channel.send(f'```py\n{eval(code)}```')
@@ -25,8 +51,17 @@ class DevStuff(commands.Cog):
             await ctx.channel.send(str(e))
 
     @commands.is_owner()
-    @commands.command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
-    async def publish_update(self, ctx, version:str, *, update):
+    @commands.command(extras={"category":Category.OTHER}, usage="say <text>", hidden=True, with_app_command=False)
+    async def say(self, ctx: commands.Context, *, content):
+        """Let's Killua say what is specified with this command. Possible abuse leads to this being restricted"""
+
+        await ctx.message.delete()
+        await ctx.send(content, reference=ctx.message.reference)
+
+    @commands.is_owner()
+    @dev.command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
+    @discord.app_commands.guilds(GUILD_OBJECT)
+    async def publish_update(self, ctx: commands.Context, version: str, *, update):
         """Allows me to publish Killua updates in a handy formart"""
 
         old = updates.find_one({'_id':'current'})
@@ -46,14 +81,20 @@ class DevStuff(commands.Cog):
         data = {'version': version, 'description': update, 'published_on': datetime.utcnow(), 'published_by': ctx.author.id}
         updates.update_one({'_id': 'current'}, {'$set': data})
         updates.update_one({'_id': 'log'}, {'$push': {'past_updates': data}})
+        self.version_cache.append(version)
+
+        await ctx.send("Published new update " + f"`{old_version}` -> `{version}`", ephemeral=True)
+        if self.client.is_dev: # We do not want to accidentally publish a message when testing
+            return
         channel = self.client.get_channel(UPDATE_CHANNEL)
         msg = await channel.send(content= '<@&795422783261114398>', embed=embed)
         await ctx.message.delete()
         await msg.publish()
 
     @check()
-    @commands.command(extras={"category":Category.OTHER}, usage="update <version(optional)>")
-    async def update(self, ctx, version:str=None):
+    @dev.command(extras={"category":Category.OTHER}, usage="update <version(optional)>")
+    @discord.app_commands.autocomplete(version=version_autocomplete)
+    async def update(self, ctx: commands.Context, version:str=None):
         """Allows you to view current and past updates"""
         if version is None:
             data = updates.find_one({'_id': 'current'})
@@ -73,8 +114,9 @@ class DevStuff(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.is_owner() 
-    @commands.command(extras={"category":Category.OTHER}, usage="blacklist <user_id>", hidden=True)
-    async def blacklist(self, ctx, id:int, *,reason=None):
+    @dev.command(extras={"category":Category.OTHER}, usage="blacklist <user_id>", hidden=True)
+    @discord.app_commands.guilds(GUILD_OBJECT)
+    async def blacklist(self, ctx: commands.Context, id: int, *,reason = None):
         """Blacklisting bad people like Hisoka. Owner restricted"""
         try:
             user = self.client.get_user(id) or await self.client.fetch_user(id)
@@ -85,8 +127,9 @@ class DevStuff(commands.Cog):
         await ctx.send(f'Blacklisted user `{user}` for reason: {reason}')
         
     @commands.is_owner()
-    @commands.command(extras={"category":Category.OTHER}, usage="whitelist <user_id>", hidden=True)
-    async def whitelist(self, ctx, id:int):
+    @dev.command(extras={"category":Category.OTHER}, usage="whitelist <user_id>", hidden=True)
+    @discord.app_commands.guilds(GUILD_OBJECT)
+    async def whitelist(self, ctx: commands.Context, id: int):
         """Whitelists a user. Owner restricted"""
 
         try:
@@ -96,44 +139,25 @@ class DevStuff(commands.Cog):
 
         blacklist.delete_one({'id': id})
         await ctx.send(f'Successfully whitelisted `{user}`')
-    
-    @commands.is_owner()
-    @commands.command(extras={"category":Category.OTHER}, usage="say <text>", hidden=True)
-    async def say(self, ctx, *, content):
-        """Let's Killua say what is specified with this command. Possible abuse leads to this being restricted"""
-
-        await ctx.message.delete()
-        await ctx.send(content, reference=ctx.message.reference)
 
     @commands.is_owner()
-    @commands.command(aliases=['st', 'pr', 'status'], extras={"category":Category.OTHER}, usage="pr <text>", hidden=True)
-    async def presence(self, ctx, *, status):
+    @dev.command(aliases=['st', 'pr', 'status'], extras={"category":Category.OTHER}, usage="pr <text>", hidden=True)
+    @discord.app_commands.guilds(GUILD_OBJECT)
+    async def presence(self, ctx: commands.Context, text: str, activity: Activities = None, presence: Presences = None):
         """Changes the presence of Killua. Owner restricted"""
 
-        if status == '-rm':
+        if text == '-rm':
             pr.update_many({}, {'$set': {'text': None, 'activity': None, 'presence': None}})
-            await ctx.send('Done! reset Killua\'s presence')
+            await ctx.send('Done! reset Killua\'s presence', ephemeral=True)
             return await self.client.update_presence()
 
-        activity = re.search(r'as\(.*?\)ae', status)
-        if activity:
-            activity = activity[0].lower()[3:-3]
-            if not activity in ['playing', 'listening', 'watching', 'competing']:
-
-                return await ctx.send('Invalid activity!')
-        presence = re.search(r'ps\(.*?\)pe', status)
-        if presence:
-            presence = presence[0].lower()[3:-3]
-            if not presence in ['dnd', 'idle', 'online']:
-                return await ctx.send('Invalid presence!')
-        text = re.search(r'ts\(.*?\)te', status)
-        pr.update_many({}, {'$set': {'text': text[0][3:-3], 'presence': presence, 'activity': activity}})
+        pr.update_many({}, {'$set': {'text': text, 'presence': presence.name if presence else None, 'activity': activity.name if activity else None}})
         await self.client.update_presence()
-        await ctx.send(f'Successfully changed Killua\'s status to `{text[0][3:-3]}`! (I hope people like it >-<)')
+        await ctx.send(f'Successfully changed Killua\'s status to `{text}`! (I hope people like it >-<)', ephemeral=True)
 
 
 
 Cog = DevStuff
 
-def setup(client):
-    client.add_cog(DevStuff(client))
+async def setup(client):
+    await client.add_cog(DevStuff(client))
