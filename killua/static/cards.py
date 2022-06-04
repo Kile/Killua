@@ -10,27 +10,48 @@ from killua.utils.classes import User, SuccessfullDefense, CheckFailure, CardNot
 from killua.utils.paginator import Paginator
 from killua.utils.interactions import Select, View, Button, ConfirmButton
 
-card_cache = {}
 background_cache = {}
 
 class Card:
     """This class makes it easier to access card information"""
+    cache = {}
+    cached_raw = []
 
-    def _find_card(self, name_or_id: str) -> Union[dict, None]:
-        if name_or_id.isdigit():
-            return items.find_one({'_id': int(name_or_id)})
+    @classmethod 
+    def __get_cache(cls, card_id: int):
+        """Returns a cached object"""
+        return cls.cache[card_id] if card_id in cls.cache else None
+
+    def __new__(cls, name_or_id: Union[int, str], *args, **kwargs):
+        card_id = cls._find_card(name_or_id)
+        existing = cls.__get_cache(card_id)
+        if existing:
+            return existing
+        return super().__new__(cls)
+
+    @classmethod
+    def _find_card(self, name_or_id: Union[int, str]) -> Union[int, None]:
+        if isinstance(name_or_id, int) or name_or_id.isdigit():
+            return int(name_or_id)
         else:
             # This could be solved much easier but this allows the user to 
             # have case insensitivity when looking for a card
-            all_cards = [(c["name"], c["_id"]) for c in items.find({})]
-            for c in all_cards:
+            if not self.cached_raw:
+                self.cached_raw = [(c["name"], c["_id"]) for c in items.find({})]
+            for c in self.cached_raw:
                 if c[0].lower() == name_or_id.lower():
-                    return items.find_one({'_id': c[1]})
+                    return c[1]
 
     def __init__(self, name_or_id: str):
-        card = self._find_card(name_or_id)
-        if card is None:
+        card_id = self._find_card(name_or_id)
+        
+        if card_id in self.cache:
+            return 
+
+        if card_id is None:
             raise CardNotFound
+
+        card = items.find_one({'_id': card_id})
         
         self.id:int = card['_id']
         self.name:str = card['name']
@@ -50,6 +71,8 @@ class Card:
         if self.id > 1000 and not self.id == 1217: # If the card is a spell card it has two additional properties
             self.range:str = card['range']
             self.cls:list = card['class']
+
+        self.cache[self.id] = self
 
     def add_owner(self, user_id:int):
         """Adds an owner to a card entry in my db. Only used in Card().add_card()"""

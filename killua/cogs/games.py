@@ -10,7 +10,7 @@ import math
 from killua.utils.paginator import View
 from killua.utils.classes import User
 from killua.utils.interactions import ConfirmButton
-from killua.static.enums import Category
+from killua.static.enums import Category, TriviaDifficulties, CountDifficulties
 from killua.utils.checks import blcheck, check
 from killua.utils.interactions import Select
 
@@ -343,7 +343,7 @@ class CountButtons(discord.ui.Button):
 
 class CountGame:
     """A game where you have to remember numbers and type them in the right order"""
-    def __init__(self, ctx, difficulty: str):
+    def __init__(self, ctx: commands.Context, difficulty: str):
         self.ctx = ctx
         self.user = User(ctx.author.id)
         self.difficulty = difficulty
@@ -368,7 +368,7 @@ class CountGame:
             res[len(res)+1 if keep_used else i+1] = self._assign_until_unique(list(res.values()))
         self.solutions = res
 
-    async def _send_solutions(self, msg:discord.Message=None) -> discord.Message:
+    async def _send_solutions(self, msg: discord.Message = None) -> discord.Message:
         """Sends the solutions before hiding them"""
         view = View(self.ctx.author.id)
         view.stage = 1
@@ -377,7 +377,7 @@ class CountGame:
         if not msg:
             msg = await self.ctx.bot.send_message(self.ctx, content="Press the buttons in the order displayed as soon as the time starts. Good luck!", view=view)
         else:
-            await msg.edit("One more button to remember. Get ready!", view=view)
+            await msg.edit(content="One more button to remember. Get ready!", view=view)
             
         await asyncio.sleep(3 if self.level == 1 else (self.level*2*(0.5 if self.difficulty == "easy" else 1)))
         return msg
@@ -422,18 +422,21 @@ class Games(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @commands.hybrid_group()
+    async def games(self, _: commands.Context):
+        """A collection of games for Killua"""
+        ...
+
     @check(500)
-    @commands.command(extras={"category": Category.GAMES}, usage="count <easy/hard>")
-    async def count(self, ctx, difficulty:str="easy"):
+    @games.command(extras={"category": Category.GAMES}, usage="count <easy/hard>")
+    async def count(self, ctx: commands.Context, difficulty: CountDifficulties = CountDifficulties.easy):
         """See how many numbers you can remember with this count game!"""
-        if not difficulty.lower() in  ["easy", "hard"]:
-            return await ctx.send("Invalid difficulty")
-        game = CountGame(ctx, difficulty.lower())
+        game = CountGame(ctx, difficulty.name)
         await game.start()
 
     @check(30)
-    @commands.command(extras={"category":Category.GAMES}, usage="rps <user> <points(optional)>")
-    async def rps(self, ctx, member: discord.Member, points: int=None):
+    @games.command(extras={"category":Category.GAMES}, usage="rps <user> <points(optional)>")
+    async def rps(self, ctx: commands.Context, member: discord.Member, points: int = None):
         """Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun."""
         
         if member.id == ctx.author.id:
@@ -463,13 +466,10 @@ class Games(commands.Cog):
         await game.start()
 
     @check(20)
-    @commands.command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
-    async def trivia(self, ctx, difficulty:str="easy"):
+    @games.command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
+    async def trivia(self, ctx: commands.Context, difficulty: TriviaDifficulties = TriviaDifficulties.easy):
         """Play trivial and earn some jenny if you're right!"""
-        if not difficulty.lower() in ["easy", "medium", "hard"]:
-            return await ctx.send("Invalid difficulty! Please either choose one of the following: `easy`, `medium`, `hard`")
-
-        game = Trivia(ctx, difficulty, self.client.session)
+        game = Trivia(ctx, difficulty.name, self.client.session)
         await game.create()
         await game.send()
         await game.send_result()

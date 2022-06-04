@@ -38,7 +38,20 @@ def blcheck(userid:int): # It is necessary to define it twice as I might have to
     else:
         return True
 
-def check(time:int=0):
+def premium_guild_only():
+
+    async def predicate(ctx: commands.Context) -> bool:
+
+        if not Guild(ctx.guild.id).is_premium:
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, label="Premium", url="https://patreon.com/kilealkuri"))
+            await ctx.send("This command group is currently only a premium feature. To enable your guild to use it, become a Patreon!", file=PatreonBanner.file(), view=view)
+            return False
+        return True
+
+    return commands.check(predicate)
+
+def check(time: int = 0):
     """
     A check that checks for blacklists, dashboard configuration and cooldown in that order
     """
@@ -52,7 +65,7 @@ def check(time:int=0):
         data[command] = data[command]+1 if command in data else 1
         stats.update_one({'_id': 'commands'}, {'$set': {'command_usage': data}})
 
-    def blcheck(userid:int) -> bool:
+    def blcheck(userid: int) -> bool:
         """
         Input:
             userid (int): The id of the user who should be checked
@@ -71,7 +84,7 @@ def check(time:int=0):
         else:
             return True
     
-    async def custom_cooldown(ctx, time:int) -> bool:
+    async def custom_cooldown(ctx: commands.Context, time:int) -> bool:
         global cooldowndict
         now = datetime.utcnow()
         try:
@@ -106,7 +119,7 @@ def check(time:int=0):
         await ctx.send(f':x: Command on cooldown! Try again  after `{time-diff}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon',file=PatreonBanner.file(), view=view, delete_after=10)
         return False
 
-    async def settings_check(ctx) -> bool:
+    async def settings_check(ctx: commands.Context) -> bool:
         if not ctx.guild:
             return True
 
@@ -154,7 +167,7 @@ def check(time:int=0):
 
         return True
 
-    async def predicate(ctx):
+    async def predicate(ctx: commands.Context) -> bool:
         if blcheck(ctx.author.id):
             return False
 

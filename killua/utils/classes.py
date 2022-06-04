@@ -1,4 +1,5 @@
 from __future__ import annotations
+from ast import NotIn
 """
 This file comtains classes that are not specific to one group and are used across several files
 """
@@ -631,7 +632,7 @@ class User:
         self._incomplete()
         return match
 
-    def remove_card(self, card_id:int, remove_fake:bool=None, restricted_slot:bool=None, clone:bool=None) -> List[int, dict]:
+    def remove_card(self, card_id: int, remove_fake: bool = None, restricted_slot: bool = None, clone: bool = None) -> List[int, dict]:
         """Removes a card from a user"""
         if self.has_any_card(card_id) is False:
             raise NotInPossesion('This card is not in possesion of the specified user!')
@@ -644,6 +645,25 @@ class User:
 
         else: # if it wasn't specified it first tries to find it in the free slots, then restricted slots
             return self._remove_logic("fs", card_id, remove_fake, clone, no_exception=True)
+
+    def bulk_remove(self, cards: List[List[int, dict]], fs_slots: bool = True, raise_if_failed: bool = False) -> None:
+        """Removes a list of cards from a user"""
+        if fs_slots:
+            for c in cards:
+                try:
+                    self.fs_cards.remove(c)
+                except Exception:
+                    if raise_if_failed:
+                        raise NotInPossesion('This card is not in possesion of the specified user!')
+            self._update_val("cards.fs", self.fs_cards)
+        else:
+            for c in cards:
+                try:
+                    self.rs_cards.remove(c)
+                except Exception:
+                    if raise_if_failed:
+                        raise NotInPossesion('This card is not in possesion of the specified user!')
+            self._update_val("cards.rs", self.rs_cards)
 
     def _add_card_owner(self, card:int, fake:bool) -> None:
         if not fake:

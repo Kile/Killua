@@ -400,6 +400,7 @@ VIEW_DEF_SPELLS = [1025]
 INDESTRUCTABLE = [1026, 0]
 
 PRICES:dict = {
+    'SS': 20000,
     'S': 10000,
     'A': 5000,
     'B': 3000,

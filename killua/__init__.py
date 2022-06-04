@@ -66,10 +66,10 @@ class Bot(commands.Bot):
 			if not user.isdigit():
 				return
 
-			res = self.client.get_user(int(user))
+			res = self.get_user(int(user))
 			if not res:
 				try:
-					res = await self.client.fetch_user(int(user))
+					res = await self.fetch_user(int(user))
 				except discord.NotFound:
 					return
 		return res

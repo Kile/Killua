@@ -9,6 +9,7 @@ class View(discord.ui.View):
         self.user_id = user_id
         self.value = None
         self.timed_out = False
+        self.interaction = None
 
     async def on_timeout(self) -> None:
         self.timed_out = True
@@ -20,6 +21,7 @@ class View(discord.ui.View):
         else:
             if not (val := (interaction.user.id in self.user_id)):
                 await interaction.response.defer()
+        self.interaction = interaction # So we can respond to it anywhere
         return val
 
     async def disable(self, msg:discord.Message) -> Union[discord.Message, None]:
@@ -30,7 +32,10 @@ class View(discord.ui.View):
         for c in self.children:
             c.disabled = True
 
-        await msg.edit(view=self)
+        if not self.interaction.response.is_done():
+            await self.interaction.response.edit_message(view=self)
+        else:
+            await msg.edit(view=self)
 
 class Modal(discord.ui.Modal):
     """A modal for various usages"""

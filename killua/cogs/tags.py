@@ -2,12 +2,11 @@ import discord
 from discord.ext import commands
 from datetime import datetime
 import math
-import asyncio
 
 from killua.static.constants import guilds, PatreonBanner
 from killua.static.enums import Category
 from killua.utils.classes import Guild
-from killua.utils.checks import check
+from killua.utils.checks import check, premium_guild_only
 from killua.utils.paginator import Paginator
 
 class Tag():
@@ -96,16 +95,14 @@ class Tags(commands.Cog):
             })
         return embed
 
-    @commands.guild_only()
-    @check()
     @commands.hybrid_group(hidden=True, extras={"category":Category.TAGS})
     async def tag(self, ctx: commands.Context):
-        if not Guild(ctx.guild.id).is_premium:
-            view = discord.ui.View()
-            view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, label="Premium", url="https://patreon.com/kilealkuri"))
-            await ctx.send("This command group is currently only a premium feature. To enable your guild to use it, become a Patreon!", file=PatreonBanner.file(), view=view)
-            raise commands.CheckFailure # I raise this error because it is the only one I ignore in the error handler. Hacky but whatever
+        """Tag commands. Only usable in premium guilds."""
+        ...
 
+    @check()
+    @commands.guild_only()
+    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="create <tag_name>")
     async def create(self, ctx, *, tag_name:str):
         """Create a tag with this command"""
@@ -139,6 +136,9 @@ class Tags(commands.Cog):
 
         return await ctx.send(f'Successfully created tag `{tag_name}`')
 
+    @check()
+    @commands.guild_only()
+    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="delete <tag_name>")
     async def delete(self, ctx, *, tag_name:str):
         """Delete a tag you own with this command or any tag if you have manage guild permissions"""
@@ -153,6 +153,9 @@ class Tags(commands.Cog):
         tag.delete()
         await ctx.send(f'Successfully deleted tag `{tag.name}`')
 
+    @check()
+    @commands.guild_only()
+    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="edit <tag_name>")
     async def edit(self, ctx, *, tag_name:str):
         """Chose wrong tag description? Edit a tag's description with this command"""
@@ -172,6 +175,9 @@ class Tags(commands.Cog):
         tag.update(content)
         return await ctx.send(f'Successfully updated tag `{tag.name}`')
 
+    @check()
+    @commands.guild_only()
+    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="get <tag_name>")
     async def get(self, ctx, *, tag_name:str):
         """Get the content of any tag"""
@@ -181,6 +187,9 @@ class Tags(commands.Cog):
         tag.add_use()
         return await ctx.send(tag.content, allowed_mentions=discord.AllowedMentions.none(), reference=ctx.message.reference or ctx.message)
     
+    @check()
+    @commands.guild_only()
+    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="info <tag_name>")
     async def info(self, ctx, *, tag_name:str):
         """Get information about any tag"""
@@ -199,8 +208,11 @@ class Tags(commands.Cog):
         })
         await ctx.send(embed=embed)
     
+    @check()
+    @commands.guild_only()
+    @premium_guild_only()
     @tag.command(aliases=['l'], extras={"category":Category.TAGS}, usage="list")
-    async def list(self, ctx, p:int=1):
+    async def list(self, ctx, page: int = 1):
         """Get a list of tags on the current server sorted by uses"""
         guild = guilds.find_one({'id': ctx.guild.id})
         if not 'tags' in guild:
@@ -217,13 +229,16 @@ class Tags(commands.Cog):
         tags = [f'Tag `{n}` with `{u}` uses' for n, u in s]
 
         if len(guild['tags']) <= 10:
-            return await ctx.send(embed=self._build_embed(ctx, tags, p))
+            return await ctx.send(embed=self._build_embed(ctx, tags, page))
 
-        def make_embed(page, embed, pages):
+        def make_embed(page, *_):
             return self._build_embed(ctx, tags, page)
     
         await Paginator(ctx, tags, func=make_embed, max_pages=math.ceil(len(tags)/10)).start()
 
+    @check()
+    @commands.guild_only()
+    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="user <user>")
     async def user(self, ctx, user:discord.Member, amount:int=None):
         """Get the tags a user own sorted by uses"""

@@ -109,3 +109,17 @@ class Items(Enum):
     jenny = auto()
     card = auto()
     lootbox = auto()
+
+class SellOptions(Enum):
+    all = auto()
+    spells = auto()
+    monsters = auto()
+
+class TriviaDifficulties(Enum):
+    easy = auto()
+    medium = auto()
+    hard = auto()
+
+class CountDifficulties(Enum):
+    easy = auto()
+    hard = auto()

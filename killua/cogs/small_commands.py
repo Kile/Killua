@@ -9,7 +9,7 @@ import math
 from typing import Union
 from urllib.parse import quote
 
-from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, PREMIUM_BENEFITS, LANGS
+from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, LANGS
 from killua.utils.checks import check
 from killua.static.enums import Category
 from killua.utils.paginator import Paginator
@@ -136,20 +136,6 @@ class SmallCommands(commands.Cog):
             'color': 0x1400ff
         })
         await self.client.send_message(ctx, embed=embed)
-
-    @check()
-    @commands.command(aliases=["support"], extras={"category":Category.FUN}, usage="patreon")
-    async def patreon(self, ctx):
-        """Get infos about my Patreon and feel free to donate for some perks!"""
-        view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri"))
-        embed = discord.Embed.from_dict({
-            'title': '**Support Killua**',
-            'thumbnail':{'url': 'https://cdn.discordapp.com/avatars/758031913788375090/e44c0de4678c544e051be22e74bc502d.png?size=1024'},
-            'description': PREMIUM_BENEFITS,
-            'color': 0x1400ff
-        })
-        await self.client.send_message(ctx, embed=embed, view=view)
 
     @check()
     @commands.command(aliases=['stats'], extras={"category":Category.FUN}, usage="info")

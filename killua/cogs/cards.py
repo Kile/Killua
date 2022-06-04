@@ -9,7 +9,7 @@ from typing import Union, List, Optional, Tuple, Optional, Dict
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches
-from killua.static.enums import Category, HuntOptions, Items
+from killua.static.enums import Category, HuntOptions, Items, SellOptions
 from killua.utils.interactions import ConfirmButton
 from killua.static.cards import Card
 from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, items, LOOTBOXES
@@ -89,24 +89,31 @@ class Cards(commands.Cog):
                 final_rewards.append(reward)
         return final_rewards
 
-    def _format_rewards(self, rewards:List[Tuple[int, int]], user:User, score:float) -> Tuple[List[list], List[str], bool]:
+    def _format_rewards(self, rewards:List[Tuple[int, int]], user:User) -> Tuple[List[list], List[str], bool]:
         """Formats the generated rewards for further use"""
         formatted_rewards: List[List[int, Dict[str, bool]]] = []
         formatted_text: List[str] = []
 
-        for reward in rewards:
-            for _ in range(reward[0]):
+        maxed = False
+        for pos, reward in enumerate(rewards):
+            for i in range(reward[0]):
                 if len([*user.fs_cards,*[x for x in rewards if x[1] > 99 and not user.has_rs_card(x[0])]]) >= 40 and (reward[1] > 99 or (not user.has_rs_card(reward[1]) and reward[1] < 100)):
-                    return formatted_rewards, formatted_text, True # if the free slots are full the process stops
-                formatted_rewards.append([reward[1], {"fake": False, "clone": False}])
+                    # return formatted_rewards, formatted_text, True # if the free slots are full the process stops
+                    maxed = (pos, i) # Returning the exact position where the cards are too much
+                else:
+                    formatted_rewards.append([reward[1], {"fake": False, "clone": False}])
             card = Card(reward[1])
-            formatted_text.append(f"{reward[0]}x **{card.name}**{card.emoji}")
+            if maxed:
+                if not maxed[1] == 0: # If there isn't 0 of that card that will be added
+                    formatted_text.append(f"{maxed[1]}x **{card.name}**{card.emoji}")
+            else:
+                formatted_text.append(f"{reward[0]}x **{card.name}**{card.emoji}")
 
-        return formatted_rewards, formatted_text, False
+        return formatted_rewards, formatted_text, maxed
 
     @commands.hybrid_group()
     async def cards(self, _: commands.Context):
-        """Commands minimicing the greed island arc of hxh"""
+        """Commands mimicing the greed island arc of hxh"""
         ...
 
     @check(3)
@@ -130,10 +137,48 @@ class Cards(commands.Cog):
     @check(2)
     @cards.command(extras={"category":Category.CARDS}, usage="sell <card_id> <amount(optional)>")
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
-    async def sell(self, ctx, card: str, amount=1):
+    async def sell(self, ctx, card: str = None, type: SellOptions = None, amount: int = 1):
         """Sell any amount of cards you own"""
-        
+
         user = User(ctx.author.id)
+
+        if type: # always prefers if a type argument was given. However if both a type argument and card argument was given,
+            # both will be attempted to be executed.
+            if type.name == "all":
+                to_be_sold = [x for x in user.fs_cards if not x[1]["clone"] and not x[1]["fake"]]
+            elif type.name == "spells":
+                to_be_sold = [x for x in user.fs_cards if Card(x[0]).type == "spell" and not x[1]["clone"] and not x[1]["fake"]]
+            elif type.name == "monsters":
+                to_be_sold = [x for x in user.fs_cards if Card(x[0]).type == "monster"and not x[1]["clone"] and not x[1]["fake"]]
+
+            to_be_gained = 0
+
+            for c, _ in to_be_sold:
+                j = int(PRICES[Card(c).rank]/10)
+                if user.is_entitled_to_double_jenny:
+                    j *= 2
+                to_be_gained += j
+
+            view = ConfirmButton(ctx.author.id, timeout=80)
+            msg = await ctx.send(f"You will receive {to_be_gained} Jenny for selling all {type.name if not type.name == 'all' else 'free slots'} cards, do you want to proceed?", view=view)
+            await view.wait()
+            await view.disable(msg)
+
+            if not view.value:
+                if view.timed_out:
+                    return await ctx.send(f'Timed out!')
+                else:
+                    await ctx.send(f"Successfully canceled!")
+            else:
+                if to_be_gained == 0:
+                    await ctx.send(f"You don\'t have any {type.name if not type.name == 'all' else 'free slots'} cards to sell!")
+                else:
+                    user.bulk_remove(to_be_sold)
+                    user.add_jenny(to_be_gained)
+                    await ctx.send(f"You sold all your {type.name if not type.name == 'all' else 'free slots'} cards for {to_be_gained} Jenny!")
+        if not card:
+            return
+
         if amount < 1:
             amount = 1
         if len(user.all_cards) == 0:
@@ -251,13 +296,22 @@ class Cards(commands.Cog):
             score = minutes/10080 # There are 10080 minutes in a week if I'm not completely wrong
                 
             rewards = self._construct_rewards(score)
-            formatted_rewards, formatted_text, hit_limit = self._format_rewards(rewards, user, score)
-            text = f'You\'ve started hunting <t:{int(value.timestamp())}:R>. You brought back the following items from your hunt: \n\n'
-            if hit_limit:
-                text += f":warning: Your free slot limit has been reached! Sell some cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell` :warning:\n\n"
+            formatted_rewards, formatted_text, hit_limit = self._format_rewards(rewards, user)
 
-            if hit_limit and len(user.fs_cards) == 40:
-                text += f"Could not carry anything from your hunt in your free slots so you gained no cards.."
+            jenny = 0
+            if hit_limit:
+                c, n = hit_limit
+                for pos, card in enumerate(rewards):
+                    if pos == c:
+                        jenny += PRICES[Card(card[1]).rank] * (card[0]-n)
+                    elif pos >= c:
+                        jenny += PRICES[Card(card[1]).rank] * card[0]
+
+
+            text = f'You\'ve started hunting <t:{int(value.timestamp())}:R>. You brought back the following items from your hunt: \n\n'
+
+            if hit_limit:
+                text += f":warning: Your free slot limit has been reached! Make sure you free it up before hunting again. The excess cards have been automatically sold bringing you `{jenny}` Jenny\n\n"
 
             embed = discord.Embed.from_dict({
                 'title': 'Hunt returned!',
@@ -266,6 +320,7 @@ class Cards(commands.Cog):
             })
             user.remove_effect('hunting')
             user.add_multi(*formatted_rewards)
+            user.add_jenny(jenny)
             return await ctx.send(embed=embed)
             
         elif option == "end" and not has_effect: 

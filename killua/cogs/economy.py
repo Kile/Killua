@@ -145,7 +145,7 @@ class Economy(commands.Cog):
     async def jenny(self, ctx: commands.Context, user: str = None):
         """Gives you a users balance"""
         
-        if user is None:
+        if not user:
             res = ctx.author
         else:
             res = await self.client.find_user(ctx, user)
@@ -154,7 +154,7 @@ class Economy(commands.Cog):
                 return await ctx.send('User not found')
 
         balance = User(res.id).jenny
-        return await ctx.send(f'{user}\'s balance is {balance} Jenny')
+        return await ctx.send(f'{res}\'s balance is {balance} Jenny')
         
     @check()
     @economy.command(extras={"category":Category.ECONOMY}, usage="daily")
