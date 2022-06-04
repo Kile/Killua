@@ -123,3 +123,21 @@ class TriviaDifficulties(Enum):
 class CountDifficulties(Enum):
     easy = auto()
     hard = auto()
+
+class TodoStatus(Enum):
+    public = auto()
+    private = auto()
+
+class TodoDeleteWhenDone(Enum):
+    yes = auto()
+    no = auto()
+
+class TodoPermissions(Enum):
+    viewer = auto()
+    editor = auto()
+
+class TodoAddons(Enum):
+    thumbnail = auto()
+    space = auto()
+    color = auto()
+    description = auto()

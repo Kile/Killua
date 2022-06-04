@@ -103,10 +103,12 @@ class ConfirmButton(discord.ui.View):
         super().__init__(**kwargs)
         self.user_id = user_id
         self.timed_out = False # helps subclasses using Button to have set this to False
+        self.interaction = None
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if not (val := interaction.user.id == self.user_id):
             await interaction.response.defer()
+        self.interaction = interaction
         return val
 
     async def disable(self, msg:discord.Message) -> discord.Message:
@@ -116,7 +118,10 @@ class ConfirmButton(discord.ui.View):
         for child in self.children:
             child.disabled = True
 
-        await msg.edit(view=self)
+        if self.interaction and not self.interaction.response.is_done():
+            await self.interaction.response.edit_message(view=self)
+        else:
+            await msg.edit(view=self)
 
     async def on_timeout(self):
         self.value = False

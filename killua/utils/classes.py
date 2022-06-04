@@ -820,15 +820,15 @@ class TodoList():
     custom_id_cache = {}
 
     @classmethod 
-    def __get_cache(cls, list_id:int):
+    def __get_cache(cls, list_id: Union[int, str]):
         """Returns a cached object"""
-        if isinstance(list_id, str):
+        if isinstance(list_id, str) and not list_id.isdigit():
             if not list_id in cls.custom_id_cache:
                 return None
             list_id = cls.custom_id_cache[list_id]
-        return cls.cache[list_id] if list_id in cls.cache else None
+        return cls.cache[int(list_id)] if list_id in cls.cache else None
 
-    def __new__(cls, list_id:Union[int, str], *args, **kwargs):
+    def __new__(cls, list_id: Union[int, str], *args, **kwargs):
         existing = cls.__get_cache(list_id)
         if existing is not None: # why not just `if existing:` python does not call this when I do this which is dumb so I have to do it this way
             return existing
@@ -839,7 +839,7 @@ class TodoList():
         if (list_id in self.cache) or (list_id in self.custom_id_cache):
             return
 
-        td_list = todo.find_one({'_id' if isinstance(list_id, int) else 'custom_id': list_id if isinstance(list_id, int) else list_id.lower()})
+        td_list = todo.find_one({'_id' if (isinstance(list_id, int) or list_id.isdigit()) else 'custom_id': int(list_id) if (isinstance(list_id, int) or list_id.isdigit()) else list_id.lower()})
 
         if not td_list:
             raise TodoListNotFound
@@ -856,6 +856,7 @@ class TodoList():
         self.spots:int = td_list['spots']
         self.views:int = td_list['views']
         self.todos:list = td_list['todos']
+        self._bought:list = []
         self.thumbnail:str = td_list['thumbnail'] if 'thumbnail' in td_list else None
         self.color:int = td_list['color'] if 'color' in td_list else None
         self.description:str = td_list['description'] if 'description' in td_list else None
@@ -973,11 +974,20 @@ class TodoList():
         self.todos = []
         self._update_val("todos", [])
 
+    def enable_addon(self, addon: str) -> None:
+        """Adds an attribute to the bought list to be able to be used"""
+        if not addon.lower() in self._bought:
+            self._bought.append(addon.lower())
+
+    def has_addon(self, addon: str) -> bool:
+        """Checks if a todo list can be customized with the gived attribute"""
+        return addon.lower() in self._bought
+
 class Todo(TodoList):
 
-    def __new__(cls, position:int, list_id:int):
+    def __new__(cls, position: Union[int, str], list_id: Union[int, str]):
         cls = super().__new__(cls, list_id)
-        task = cls.todos[position-1]
+        task = cls.todos[int(position)-1]
 
         cls.todo:str = task['todo']
         cls.marked:str = task['marked']

@@ -4,12 +4,12 @@ import asyncio
 from random import randint, choice
 from discord.ext import commands, tasks
 from datetime import datetime
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 from killua.static.cards import Card
 from killua.static.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, editing
 from killua.utils.classes import User, TodoList, CardNotFound, CardLimitReached
-from killua.static.enums import Category, PrintColors
+from killua.static.enums import Category, PrintColors, TodoAddons
 from killua.utils.interactions import Button, ConfirmButton
 
 
@@ -126,7 +126,7 @@ class Shop(commands.Cog):
                 await ctx.invoke(ctx.command) # in case the menu was invoked by the parent
 
     @commands.hybrid_group(aliases=["store"])
-    async def shop(self, ctx):
+    async def shop(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
             if ctx.command.parent:
                 subcommands = [c for c in ctx.command.parent.commands]
@@ -153,7 +153,7 @@ class Shop(commands.Cog):
 
     @check()
     @shop.command(name="cards", extras={"category":Category.CARDS}, usage="cards")
-    async def cards_shop(self, ctx):
+    async def cards_shop(self, ctx: commands.Context):
         """Shows the current cards for sale"""
         
         sh = shop.find_one({'_id': 'daily_offers'})
@@ -178,7 +178,7 @@ class Shop(commands.Cog):
 
     @check()
     @shop.command(name="todo", extras={"category": Category.TODO}, usage="todo")
-    async def todo_shop(self, ctx):
+    async def todo_shop(self, ctx: commands.Context):
         """Get some info about what cool stuff you can buy for your todo list with this command"""
         prefix = self.client.command_prefix(self.client, ctx.message)[2]
         embed = discord.Embed.from_dict({
@@ -204,7 +204,7 @@ class Shop(commands.Cog):
 
     @check()
     @shop.command(name="lootboxes", aliases=["boxes"], extras={"category": Category.ECONOMY}, usage="lootboxes")
-    async def lootboxes_shop(self, ctx):
+    async def lootboxes_shop(self, ctx: commands.Context):
         """Get the current lootbox shop with this command"""
         prefix = self.client.command_prefix(self.client, ctx.message)[2]
         fields = [{"name": data["emoji"] + " " + data["name"] + " (id: " + str(id) + ")", "value": f"{data['description']}\nPrice: {data['price']}"} for id, data in LOOTBOXES.items() if data["available"]]
@@ -232,141 +232,6 @@ class Shop(commands.Cog):
 
 ####################################### Buy commands ################################################
 
-    async def _wait_for_response(self, step, check) -> Union[discord.Message, None]:
-        """Waits for a response and returns the response message"""
-        try:
-            confirmmsg = await self.client.wait_for('message', check=check, timeout=60)
-        except asyncio.TimeoutError:
-            await step.delete()
-            await step.channel.send('Too late...', delete_after=5)
-            return None
-        else:
-            await step.delete()
-            try:
-                await confirmmsg.delete()
-            except discord.HTTPException:
-                pass
-            return confirmmsg
-
-    async def buy_color(self, ctx):
-        """outsourcing todo buy in smaller functions. Will be rewritten once discord adds text input interaction"""
-        list_id = editing[ctx.author.id]
-        todo_list = TodoList(list_id)
-        user = User(ctx.author.id)
-        if user.jenny < 1000:
-            return await ctx.send('You don\'t have enough Jenny to buy a color for your todo list. You need 1000 Jenny')
-        
-        if todo_list.color:
-            return await ctx.send(f'You already have bought a color for this list! Update it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo color <color>`', allowed_mentions=discord.AllowedMentions.none())
-
-        step = await ctx.send('Please provide a color you want your todo list to have, you can always change it later')
-        def check(m):
-            return m.author.id == ctx.author.id
-
-        confirmmsg = await self._wait_for_response(step, check)
-        if not confirmmsg:
-            return
-        c = f'0x{confirmmsg.content}'
-        try:
-            if not int(c, 16) <= 16777215:
-                await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
-                return await self.buy_color(ctx)
-        except Exception:
-            await ctx.send('You need to provide a valid color! (Default color is 1400ff f.e.)')
-            return await self.buy_color(ctx)
-
-        user.remove_jenny(1000)
-        todo_list.set_property('color', int(c, 16))
-        return await ctx.send(f'Successfully bought the color {confirmmsg.content} for your list! You can change it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo color <color>`', allowed_mentions=discord.AllowedMentions.none())
-
-
-    async def buy_thumbnail(self, ctx):
-        """outsourcing todo buy in smaller functions. Will be rewritten once discord adds text input interaction"""
-        list_id = editing[ctx.author.id]
-        todo_list = TodoList(list_id)
-        user = User(ctx.author.id)
-        if user.jenny < 1000:
-            return await ctx.send('You don\'t have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny')
-
-        if todo_list.thumbnail:
-            return await ctx.send(f'You already have bought a thumbnail for this list! Update it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo thumbnail <url>`', allowed_mentions=discord.AllowedMentions.none())
-
-        step = await ctx.send('Please provide a thumbnail you want your todo list to have, you can always change it later')
-        def check(m):
-            return m.author.id == ctx.author.id
-
-        confirmmsg = await self._wait_for_response(step, check)
-        if not confirmmsg:
-            return
-
-        url = re.search(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))', confirmmsg.content)
-
-        if url:
-            image = re.search(r'png|jpg|gif|svg', confirmmsg.content)
-        else:
-            await ctx.send('You didn\'t provide a valid url with an image! Please make sure your url is valid')
-            return await self.buy_thumbnail(ctx)
-                
-        if image:
-            user.remove_jenny(1000)
-            todo_list.set_property('thumbnail', confirmmsg.content)
-            return await ctx.send(f'Successfully bought the thumbmail `{confirmmsg.content}` for your list! You can change it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo thumbnail <url>`', allowed_mentions=discord.AllowedMentions.none())
-        else:
-            await ctx.send('You didn\'t provide a valid url with an image! Please make sure you your url is valid')
-            return await self.buy_thumbnail(ctx)
-
-    async def buy_space(self, ctx):
-        # This is the best thing to buy for your todo list
-        """outsourcing todo buy in smaller functions"""
-        list_id = editing[ctx.author.id]
-        todo_list = TodoList(list_id)
-        user = User(ctx.author.id)
-
-        if user.jenny < (todo_list.spots * 100 * 0.5):
-            return await ctx.send(f'You don\'t have enough Jenny to buy more space for your todo list. You need {todo_list["spots"]*100} Jenny')
-
-        if todo_list.spots >= 100:
-            return await ctx.send('You can\'t buy more than 100 spots')
-
-        view = ConfirmButton(ctx.author.id, timeout=10)
-        msg = await ctx.send(f'Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points', view=view)
-        await view.wait()
-        await view.disable(msg)
-
-        if not view.value:
-            if view.timed_out:
-                return await ctx.send(f'Timed out')
-            else:
-                return await ctx.send(f"Alright, see you later then :3")
-
-        user.remove_jenny(int(100*todo_list.spots*0.5))
-        todo_list.add_spots(10)
-        return await ctx.send('Congrats! You just bought 10 more todo spots for the current todo list!')
-
-    async def buy_description(self, ctx):
-        #Hi! You found a random comment! Now you have to vote for Killua :3 (Also thanks for checking out my code)
-        """outsourcing todo buy in smaller functions"""
-        list_id = editing[ctx.author.id]
-        todo_list = TodoList(list_id)
-        user = User(ctx.author.id)
-        if user.jenny < 1000:
-            return await ctx.send('You don\'t have enough Jenny to buy a thumbnail for your todo list. You need 1000 Jenny')
-        
-        step = await ctx.send(f'What should the description of your todo list be? (max 200 characters)')
-        def check(m):
-            return m.author.id == ctx.author.id
-        
-        confirmmsg = await self._wait_for_response(step, check)
-        if not confirmmsg:
-            return
-
-        if len(confirmmsg.content) > 200:
-            await ctx.send('Your description can\'t be over 200 characters!')
-            return await self.buy_description(ctx)
-        user.remove_jenny(1000)
-        todo_list.set_property('description', confirmmsg.content)
-        return await ctx.send('Congrats! You bought a description for your current todo list')
-
     @commands.hybrid_group()
     async def buy(self, ctx):
         # have a shop for everything, you also need a buy for everything 
@@ -375,7 +240,7 @@ class Shop(commands.Cog):
 
     @check(2)
     @buy.command(extras={"category": Category.CARDS}, usage="card <card_id>")
-    async def card(self, ctx, item:int):
+    async def card(self, ctx: commands.Context, item: int):
         """Buy a card from the shop with this command"""
         
         shop_data = shop.find_one({'_id': 'daily_offers'})
@@ -419,7 +284,7 @@ class Shop(commands.Cog):
 
     @check(2)
     @buy.command(aliases=["box"], extras={"category": Category.ECONOMY}, usage="lootbox <item>")
-    async def lootbox(self, ctx, box:int):
+    async def lootbox(self, ctx: commands.Context, box:int):
         """Buy a lootbox with this command"""
         if not box in LOOTBOXES or not LOOTBOXES[box]["available"]:
             return await ctx.send("This lootbox is not for sale!")
@@ -436,34 +301,53 @@ class Shop(commands.Cog):
 
     @check(2)
     @buy.command(name="todo",extras={"category": Category.TODO}, usage="todo <item>")
-    async def _todo(self, ctx, what:str):
+    async def _todo(self, ctx: commands.Context, what: TodoAddons):
         """Buy cool stuff for your todo list with this command! (Only in editor mode)"""
         try:
-            editing[ctx.author.id]
+            todo_list = TodoList(editing[ctx.author.id])
         except KeyError:
             return await ctx.send(f'You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`', allowed_mentions=discord.AllowedMentions.none())
-        
-        if not what.lower() in ['color', 'thumbnail', 'space', 'description']:
-            return await ctx.send('You need to provide a valid thing you want to buy (color, thumbnail, space)')
 
-        if what.lower() == 'color':
-            return await self.buy_color(ctx)
-        elif what.lower() == 'thumbnail':
-            return await self.buy_thumbnail(ctx)
-        elif what.lower() == 'space':
-            return await self.buy_space(ctx)
-        elif what.lower() == 'description':
-            return await self.buy_description(ctx)
+        user = User(ctx.author.id)
+
+        if what.name == "space":
+            if user.jenny < (todo_list.spots * 100 * 0.5):
+                return await ctx.send(f'You don\'t have enough Jenny to buy more space for your todo list. You need {todo_list["spots"]*100} Jenny')
+
+            if todo_list.spots >= 100:
+                return await ctx.send('You can\'t buy more than 100 spots')
+
+            view = ConfirmButton(ctx.author.id, timeout=10)
+            msg = await ctx.send(f'Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points', view=view)
+            await view.wait()
+            await view.disable(msg)
+
+            if not view.value:
+                if view.timed_out:
+                    return await ctx.send(f'Timed out')
+                else:
+                    return await ctx.send(f"Alright, see you later then :3")
+
+            user.remove_jenny(int(100*todo_list.spots*0.5))
+            todo_list.add_spots(10)
+            return await ctx.send('Congrats! You just bought 10 more todo spots for the current todo list!')
+
+        else:
+            if user.jenny < 1000:
+                return await ctx.send(f"You don\'t have enough Jenny to buy this item. You need 1000 Jenny while you currently have {user.jenny}")
+            user.remove_jenny(1000)
+            todo_list.enable_addon(what.name)
+            return await ctx.send(f"Successfully bought {what.name} for 1000 Jenny! Customize it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo update {what.name}`")
 
 
 ########################## Give commands ###################################
 
-    @commands.group()
-    async def give(self, ctx):
+    @commands.hybrid_group()
+    async def give(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
             return await ctx.send("You need to provide a valid subcommand! Subcommands are: `card`, `lootbox` and `jenny`")
 
-    async def _validate(self, ctx:commands.Context, other:discord.Member) -> Union[discord.Message, Tuple[User, User]]:
+    async def _validate(self, ctx: commands.Context, other: discord.Member) -> Union[discord.Message, Tuple[User, User]]:
         """Validates if someone is a bot or the author and returns a tuple of users if correct, else a message"""
         if other == ctx.author:
             return await ctx.send('You can\'t give yourself anything!')
@@ -474,7 +358,7 @@ class Shop(commands.Cog):
 
     @check()
     @give.command(extras={"category":Category.ECONOMY}, usage="jenny <user> <amount>")
-    async def jenny(self, ctx, other:discord.Member, item:int):
+    async def jenny(self, ctx: commands.Context, other: discord.Member, item: int):
         """If you're feeling generous give another user jenny"""
         
         if isinstance((val:=await self._validate(ctx, other)), discord.Message):
@@ -490,9 +374,29 @@ class Shop(commands.Cog):
         user.remove_jenny(item)
         return await ctx.send(f'✉️ transferred {item} Jenny to `{other}`!', allowed_mentions=discord.AllowedMentions.none())
 
+    async def all_cards_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> List[discord.app_commands.Choice[str]]:
+        """Autocomplete for all cards"""
+        if not self.cardname_cache:
+            for card in items.find({}):
+                self.cardname_cache[card["_id"]] = card["name"], card["type"]
+
+        name_cards = [(x[0], self.cardname_cache[x[0]][0]) for x in User(interaction.user.id).all_cards if self.cardname_cache[x[0]][0].lower().startswith(current.lower())]
+        id_cards = [(x[0], self.cardname_cache[x[0]][0]) for x in User(interaction.user.id).all_cards if str(x[0]).startswith(current)]
+        name_cards = list(dict.fromkeys(name_cards)) 
+        id_cards = list(dict.fromkeys(id_cards)) # removing all duplicates from the list
+
+        if current == "": # No ids AND names if the user hasn't typed anything yet
+            return [discord.app_commands.Choice(name=x[1], value=str(x[0])) for x in name_cards]
+        return [*[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_cards], *[discord.app_commands.Choice(name=str(i), value=str(i)) for i, _ in id_cards]]
+
     @check()
     @give.command(name="card", extras={"category":Category.CARDS}, usage="card <user> <card_id>")
-    async def _card(self, ctx, other:discord.Member, item:int):
+    @discord.app_commands.autocomplete(item=all_cards_autocomplete)
+    async def _card(self, ctx: commands.Context, other: discord.Member, item: str):
         """If you're feeling generous give another user a card"""
 
         if isinstance((val:=await self._validate(ctx, other)), discord.Message):
@@ -501,7 +405,7 @@ class Shop(commands.Cog):
             user, o = val
 
         try:
-            Card(item)
+            item = Card(item).id
         except CardNotFound:
             return await ctx.send('Invalid card number')
         if user.has_any_card(item, False) is False:
@@ -515,7 +419,7 @@ class Shop(commands.Cog):
 
     @check()
     @give.command(name="lootbox", aliases=["box"], extras={"category":Category.ECONOMY}, usage="lootbox <user> <box_id>")
-    async def _lootbox(self, ctx, other:discord.Member, item:int):
+    async def _lootbox(self, ctx: commands.Context, other:discord.Member, item:int):
         """If you're feeling generous give another user a lootbox, maybe they have luck"""
 
         if isinstance((val:=await self._validate(ctx, other)), discord.Message):
