@@ -70,131 +70,137 @@ class SmallCommands(commands.Cog):
         cuteified_text= self.cuteify(stuttered_text, cuteness)
         return cuteified_text
 
+    @commands.hybrid_group()
+    async def miscillaneous(self, _: commands.Context):
+        """A collection of miscillaneous commands."""
+        ...
+
     @check()
-    @commands.command(aliases=['uwu', 'owo', 'owofy'], extras={"category":Category.FUN}, usage="uwufy <text>")
-    async def uwufy(self, ctx, *, content:str):
+    @miscillaneous.command(aliases=["uwu", "owo", "owofy"], extras={"category":Category.FUN}, usage="uwufy <text>")
+    @discord.app_commands.describe(content="The text to uwufy")
+    async def uwufy(self, ctx: commands.Context, *, content: str):
         """Uwufy any sentence you want with dis command, have fun >_<"""
         return await self.client.send_message(ctx, self.build_uwufy(content, stuttering=3, cuteness=3))
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="ping")
-    async def ping(self, ctx):
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="ping")
+    async def ping(self, ctx: commands.Context):
         """Standart of seeing if the bot is working"""
         start = time.time()
-        msg = await ctx.send('Pong!')
+        msg = await ctx.send("Pong!")
         end = time.time()
-        await msg.edit(content = str('Pong in `' + str(1000 * (end - start))) + '` ms')
+        await msg.edit(content = str("Pong in `" + str(1000 * (end - start))) + "` ms")
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="topic")
-    async def topic(self, ctx):
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="topic")
+    async def topic(self, ctx: commands.Context):
         """From a constantly updating list of topics to talk about one is chosen here"""
         await ctx.send(choice(TOPICS))
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="hi")
-    async def hi(self, ctx):
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="hi")
+    async def hi(self, ctx: commands.Context):
         """This is just here because it was Killua's first command and I can't take that from him"""
         await ctx.send("Hello " + str(ctx.author))
 
     @check()
-    @commands.command(name='8ball', extras={"category":Category.FUN}, usage="8ball <question>")
-    async def _ball(self, ctx, *, question:str):
+    @miscillaneous.command(name="8ball", extras={"category":Category.FUN}, usage="8ball <question>")
+    @discord.app_commands.describe(question="The question to ask the magic 8 ball")
+    async def _ball(self, ctx: commands.Context, *, question: str):
         """Ask Killua anything and he will answer"""
         embed = discord.Embed.from_dict({
-            'title': f'8ball has spoken 🎱',
-            'description': f'You asked:\n```\n{question}\n```\nMy answer is:\n```\n{choice(ANSWERS)}```',
-            'footer': {'icon_url': str(ctx.author.avatar.url), 'text': f'Asked by {ctx.author}'},
-            'color': 0x1400ff
+            "title": f"8ball has spoken 🎱",
+            "description": f"You asked:\n```\n{question}\n```\nMy answer is:\n```\n{choice(ANSWERS)}```",
+            "footer": {"icon_url": str(ctx.author.avatar.url), "text": f"Asked by {ctx.author}"},
+            "color": 0x1400ff
         })
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @commands.command(aliases=['av', 'a'], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
-    async def avatar(self, ctx, user: Union[discord.Member, int]=None):
+    @miscillaneous.command(aliases=["av", "a"], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
+    @discord.app_commands.describe(user="The user to show the avatar of")
+    async def avatar(self, ctx: commands.Context, user: str = None):
         """Shows the avatar of a user"""
-        if not user:
-            avatar = ctx.author.avatar
-            #Showing the avatar of the author if no user is provided
-        elif isinstance(user, discord.Member):
-            avatar = user.avatar
-            #If the user args is a mention the bot can just get everything from there
+        if user:
+            user = self.client.find_user(ctx, user)
+            if not user:
+                return await ctx.send("User not found")
         else:
-            try:
-                user = self.client.get_user(user) or await self.client.fetch_user(user)
-                avatar = user.avatar
-                #If the args is an integer the bot will try to get a user with the integer as ID
-            except discord.NotFound:
-                return await ctx.send('Invalid user')
+            user = ctx.author
 
-        if not avatar:
-            return await ctx.send("Specified user has no custom avatar")
+        if not user.avatar:
+            return await ctx.send("User has no avatar")
 
         embed = discord.Embed.from_dict({
-            'title': f'Avatar of {user or ctx.author}',
-            'image': {'url': str(avatar.url)},
-            'color': 0x1400ff
+            "title": f"Avatar of {user}",
+            "image": {"url": str(user.avatar.url)},
+            "color": 0x1400ff
         })
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @commands.command(aliases=['stats'], extras={"category":Category.FUN}, usage="info")
-    async def info(self, ctx):
+    @miscillaneous.command(aliases=["stats"], extras={"category":Category.FUN}, usage="info")
+    async def info(self, ctx: commands.Context):
         """Gives you some infos and stats about Killua"""
-        now = datetime.utcnow()
+        now = datetime.now()
         diff = now - self.client.startup_datetime
-        t = f'{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds'
+        t = f"{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds"
         embed = discord.Embed.from_dict({
-            'title': f'Infos about {ctx.me.name}',
-            'description': f'This is Killua, a bot designed to be a fun multipurpose bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua\'s status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n**__Bot stats__**\n__Bot uptime:__ `{t}`\n__Bot users:__ `{len(self.client.users)}`\n__Bot guilds:__ `{len(self.client.guilds)}`\n__Registered users:__ `{teams.count_documents({})}`\n__Bot commands:__ `{len(self.client.commands)}`\n__Owner id:__ `606162661184372736`\n__Latency:__ `{int(self.client.latency*100)}` ms',
-            'color': 0x1400ff,
-            'thumbnail': {'url': str(ctx.me.avatar.url)}
+            "title": f"Infos about {ctx.me.name}",
+            "description": f"This is Killua, a bot designed to be a fun multipurpose bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua's status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n**__Bot stats__**\n__Bot uptime:__ `{t}`\n__Bot users:__ `{len(self.client.users)}`\n__Bot guilds:__ `{len(self.client.guilds)}`\n__Registered users:__ `{teams.count_documents({})}`\n__Bot commands:__ `{len(self.client.commands)}`\n__Owner id:__ `606162661184372736`\n__Latency:__ `{int(self.client.latency*100)}` ms",
+            "color": 0x1400ff,
+            "thumbnail": {"url": str(ctx.me.avatar.url)}
         })
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="invite")
-    async def invite(self, ctx):
-        """Allows you to invite Killua to any guild you have at least `manage server` permissions. **Do it**"""
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="invite")
+    async def invite(self, ctx: commands.Context):
+        """Allows you to invite Killua to any guild you have at least `manage server` permissions."""
         view = discord.ui.View()
         view.add_item(discord.ui.Button(label="Invite", url=self.client.invite))
         embed = discord.Embed(
-            title = 'Invite',
-            description = f'Invite the bot to your server by clicking on the button. Thank you a lot for supporting me!',
+            title = "Invite",
+            description = f"Invite the bot to your server by clicking on the button. Thank you a lot for supporting me!",
             color = 0x1400ff
         )
         await ctx.send(embed=embed, view=view) 
 
     @check()
-    @commands.command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
-    async def permissions(self, ctx):
-        """Displays the permissions Killua has and has not, useful for checking if Killua has the permissions he needs"""
-        permissions = '\n'.join([f"{v} {n}" for n, v in ctx.me.guild_permissions])
-        prettier = permissions.replace('_', ' ').replace('True', '<:CheckMark:771754620673982484>').replace('False', '<:x_:771754157623214080>')
+    @miscillaneous.command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
+    async def permissions(self, ctx: commands.Context):
+        """Displays the permissions Killua has and has not in the current channel"""
+        permissions = "\n".join([f"{v} {n}" for n, v in ctx.me.guild_permissions])
+        prettier = permissions.replace("_", " ").replace("True", "<:CheckMark:771754620673982484>").replace("False", "<:x_:771754157623214080>")
         embed = discord.Embed.from_dict({
-            'title': 'Bot permissions',
-            'description': prettier,
-            'color': 0x1400ff,
-            'thumbnail': {'url': str(ctx.me.avatar.url)}
+            "title": "Bot permissions",
+            "description": prettier,
+            "color": 0x1400ff,
+            "thumbnail": {"url": str(ctx.me.avatar.url)}
         })
         try:
             await ctx.send(embed=embed)
         except discord.Forbidden: # If embed permission is denied
-            await ctx.send('__Bot permissions__\n\n'+prettier)
+            await ctx.send("__Bot permissions__\n\n"+prettier)
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="vote")
-    async def vote(self, ctx):
-        """Gived you the links you need if you want to support Killua by voting, you will get sone Jenny as a reward"""
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="vote")
+    async def vote(self, ctx: commands.Context):
+        """Gives you the links you need if you want vote for Killua, you will get sone Jenny as a reward"""
         view = discord.ui.View()
         view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://top.gg/bot/756206646396452975/vote", label="top.gg"))
         view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://discordbotlist.com/bots/killua/upvote", label="dbl"))
-        await ctx.send('Thanks for supporting Killua! Vote for him by clicking on the buttons!', view=view)
+        await ctx.send("Thanks for supporting Killua! Vote for him by clicking on the buttons!", view=view)
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
-    async def translate(self, ctx, source:str, target:str, *, args:str):
-        """Translate anything to 20+ languages with this command! Powered by my memory translator."""
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
+    @discord.app_commands.describe(
+        source="The language you want to translate from",
+        target="The language you want to translate to",
+        text="The text you want to translate"
+    )
+    async def translate(self, ctx: commands.Context, source: str, target: str, *, text: str):
+        """Translate anything to 20+ languages with this command!"""
 
         if source.lower() in LANGS: source = LANGS[source.lower()]
         if target.lower() in LANGS: target = LANGS[target.lower()]
@@ -214,24 +220,25 @@ class SmallCommands(commands.Cog):
         translation = await res.json()
             
         embed = discord.Embed.from_dict({ 
-            'title': f'Translation Successfull',
-            'description': f'```\n{args}```\n`{source}` -> `{target}`\n\n```\n{translation["responseData"]["translatedText"]}```',
-            'color': 0x1400ff,
+            "title": f"Translation Successfull",
+            "description": f"```\n{args}```\n`{source}` -> `{target}`\n\n```\n{translation['responseData']['translatedText']}```",
+            "color": 0x1400ff,
             "footer": {"text": "Confidence: " + str(translation["responseData"]["match"] * 100) + "%"}
         })
         
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="calc <math>")
-    async def calc(self, ctx, *,args=None):
-        """Calculates any equation you give it. For how to tell it to use a square root or more complicated functions clock [here](https://mathjs.org/docs/reference/functions.html)"""
-        if not args:
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="calc <math>")
+    @discord.app_commands.describe(expression="The expression to calculate")
+    async def calc(self, ctx: commands.Context, *, expression: str = None):
+        """Calculates any equation you give it. Syntax: https://mathjs.org/docs/reference/functions.html"""
+        if not expression:
             return await ctx.send("Please give me something to evaluate.\n")
-        exprs = str(args).split('\n')
+        exprs = str(expression).split("\n")
         request = {"expr": exprs, "precision": 14}
 
-        r = await self.client.session.post('http://api.mathjs.org/v4/', data=json.dumps(request))
+        r = await self.client.session.post("http://api.mathjs.org/v4/", data=json.dumps(request))
         answer = await r.json()
 
         if "error" not in answer or "result" not in answer:
@@ -241,10 +248,10 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, "Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="usage")
-    async def usage(self, ctx):
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="usage")
+    async def usage(self, ctx: commands.Context):
         """Shows the commands used the most. Added for fun and out of interest"""
-        s = stats.find_one({'_id': 'commands'})['command_usage']
+        s = stats.find_one({"_id": "commands"})["command_usage"]
         top = sorted(s.items(), key=lambda x: x[1], reverse=True)
         def make_embed(page, embed, pages):
             embed.title = "Top command usage"
@@ -254,60 +261,10 @@ class SmallCommands(commands.Cog):
             elif len(pages)-page*10+10 <= 10:
                 top = pages[-(len(pages)-page*10+10):]
 
-            embed.description = "```\n" + '\n'.join(['#'+str(n+1)+' k!'+k+' with '+str(v)+' uses' for n, (k, v) in enumerate(top, page*10-10)]) + "\n```"
+            embed.description = "```\n" + "\n".join(["#"+str(n+1)+" k!"+k+" with "+str(v)+" uses" for n, (k, v) in enumerate(top, page*10-10)]) + "\n```"
             return embed
 
         return await Paginator(ctx, top, func=make_embed, max_pages=math.ceil(len(top)/10)).start()
-
-    @check(3600)
-    @commands.command(aliases=['fb'], extras={"category":Category.OTHER}, usage="feedback <type> <text>")
-    async def feedback(self, ctx, t=None, *, feedback=None):
-        """Submit feedback to Killua with this command! For more information on how do send what, use `fb`."""
-        if t:
-            if not t.lower() in ['topic', '8ball', 'hug', 'apply', 'general', 'idea', 'feature-request', 'complain', 'compliment']:
-                ctx.command.reset_cooldown(ctx)
-                return await ctx.send(f'Type not found. To see what types of feeback you can submit, use `{self.client.command_prefix(self.client, ctx.message)[2]}fb`')
-
-            if feedback is None:
-                return await ctx.send(f'Please tell us what you have to say about the chosen point. For more info use `{self.client.command_prefix(self.client, ctx.message)[2]}fb`')
-
-            embed = discord.Embed.from_dict({
-                'title': f'Feedback from guild {ctx.guild.name} (ID: {ctx.guild.id})',
-                'description': f'''Type of feedback: `{t}`  \n\n**Provided feedback:**\n\n{feedback}\n\nFeedback by **{ctx.author}, ID: {ctx.author.id}**''',
-                'color': 0x1400ff
-            })
-            
-            channel = self.client.get_channel(790002080625983558)
-
-            message = await channel.send(embed=embed)
-            await message.add_reaction('\U00002705')
-            await message.add_reaction('\U0000274c')
-
-            await ctx.send(':white_check_mark: thanks for sending your feedback! The feedback will be looked at as soon as possible!')
-        else:
-            ctx.command.reset_cooldown(ctx)
-            embed = discord.Embed.from_dict({
-                'title': f'Sending feedback',
-                'description': f'''Since this bot is in its early stages, feedback of users is of highest importance
-            
-    You can submit 9 types of feedback:
-
-    `topic` - suggestion for a topic for `{self.client.command_prefix(self.client, ctx.message)[2]}topic`
-    `8ball` - suggestion for a response for `{self.client.command_prefix(self.client, ctx.message)[2]}8ball`
-    `hug` - submit a hug text or image (Killua only) 
-    `apply` - apply for the team, we are looking for artists, programmer, people looking out for the server etc. Of course being part of the team comes with it's advantages
-    `general` - you just wanna give general feedback to us, no specific or too many categories for the other options
-    `idea` - you have a good idea for a command (like `{self.client.command_prefix(self.client, ctx.message)[2]}novel <booktitle>`, a idea I had today and I wil implement cause it's cool). Please describe it as detailed as possible though
-    `feature`-request - request a feature, kinda like idea but idk. Again, lease describe it as detailed as possible
-    `complain` - complain about something
-    `compliment` -  compliment a feature of Killua
-
-    **This command has a 1 hour cooldown, abuse will lead to blacklisting**
-    [Support server](https://discord.gg/be4nvwq7rZ)''',
-                'color': 0x1400ff
-            })
-
-            await ctx.send(embed=embed)
 
 Cog = SmallCommands
 

@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
 
-from typing import Union, List, Tuple
-from aiohttp import ClientSession
 import random
 import asyncio
 import math
+from aiohttp import ClientSession
+from urllib.parse import unquote
+from typing import Union, List, Tuple
 
 from killua.utils.paginator import View
 from killua.utils.classes import User
@@ -61,7 +62,7 @@ class RpsSelect(discord.ui.Select):
 class Trivia:
     """Handles a trivia game"""
 
-    def __init__(self, ctx:commands.Context, difficulty:str, session: ClientSession):
+    def __init__(self, ctx: commands.Context, difficulty: str, session: ClientSession):
         self.url = f"https://opentdb.com/api.php?amount=1&difficulty={difficulty}&type=multiple"
         self.difficulty = difficulty.lower()
         self.session = session
@@ -82,7 +83,7 @@ class Trivia:
 
     def _create_embed(self) -> discord.Embed:
         """Creates the trivia embed"""
-        question = self.data['question'].replace('&quot;', '"').replace("&#039;", "'")
+        question = unquote(self.data["question"])
         self.embed = discord.Embed.from_dict({
             "title": f"Trivia of category {self.data['category']}",
             "description": f"**difficulty:** {self.data['difficulty']}\n\n**Question:**\n{question}",
@@ -140,7 +141,7 @@ class Trivia:
 
 class Rps:
     """A class handling someone playing rps alone or with someone else"""
-    def __init__(self, ctx:commands.Context, points:int=None, other:discord.Member=None):
+    def __init__(self, ctx: commands.Context, points: int = None, other: discord.Member = None):
         self.ctx = ctx
         self.points = points
         self.other = other
@@ -150,10 +151,10 @@ class Rps:
             1: ":scissors:"
         }
 
-    async def _dmcheck(self, user:discord.User) -> bool:
+    async def _dmcheck(self, user: discord.User) -> bool:
         """Checks if a users dms are open by sending them an empty message and either recieving an error for can't send an empty message or not allowed"""
         try:
-            await user.send('')
+            await user.send("")
         except Exception as e:
             if isinstance(e, discord.Forbidden):
                 return False
@@ -162,38 +163,39 @@ class Rps:
             return True
 
     def _get_options(self) -> List[discord.SelectOption]:
-        """Returns a new instance of the option list so it doesn't get mixed up when editing"""
+        """Returns a new instance of the option list so itdoesn't get mixed up when editing"""
         return [discord.SelectOption(label="rock", value="-1", emoji="\U0001f5ff"), discord.SelectOption(label="paper", value="0", emoji="\U0001f4c4"), discord.SelectOption(label="scissors", value="1", emoji="\U00002702")]
 
-    def _result(self, p:int, q:int) -> int:
-        """Evaluates who won, by doing very smart math"""
+    def _result(self, p: int, q: int) -> int:
+        """Evaluates who won, by doing very smart math. -1 means player p won, 0 means it was a tie, 1 means player q won"""
         return int(math.sin(math.pi/12*(q-p)*((q-p)**2+5)))
 
     async def _send_rps_embed(self) -> discord.Message:
-            embed = discord.Embed.from_dict({
-                'title': f'{self.ctx.author.display_name} against {self.other.display_name or self.ctx.me.display_name}: **Rock... Paper... Scissors!**',
-                'image': {'url': 'https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587'},
-                'color': 0x1400ff
-            })
+        """Sends a confirming embed"""
+        embed = discord.Embed.from_dict({
+            "title": f"{self.ctx.author.display_name} against {self.other.display_name or self.ctx.me.display_name}: **Rock... Paper... Scissors!**",
+            "image": {"url": "https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587"},
+            "color": 0x1400ff
+        })
 
-            await self.ctx.bot.send_message(self.ctx, embed=embed)
+        await self.ctx.bot.send_message(self.ctx, embed=embed)
     
-    async def _timeout(self, players:list, data:List[Tuple[discord.Message, discord.ui.View]]) -> None:
+    async def _timeout(self, players: list, data: List[Tuple[discord.Message, discord.ui.View]]) -> None:
         """A way to handle a timeout of not responding to Killua in dms"""
         for x in players:
             if x.id in [v.user.id for _, v in data]:
-                await x.send('Sadly the other player has not responded in time')
+                await x.send("Sadly the other player has not responded in time")
             else:
-                await x.send('Too late, time to respond is up!')
+                await x.send("Too late, time to respond is up!")
 
-    async def _wait_for_response(self, users:List[discord.Member]) -> Union[None, List[View]]:
+    async def _wait_for_response(self, users: List[discord.Member]) -> Union[None, List[View]]:
         data = []
         for u in users:
             view = View(user_id=u.id, timeout=None)
             select = RpsSelect(options=self._get_options())
             view.add_item(select)
             view.user = u
-            msg = await u.send("You chose to play Rock Paper Scissors, what\'s your choice Hunter?", view=view)
+            msg = await u.send("You chose to play Rock Paper Scissors, what's your choice Hunter?", view=view)
             data.append((msg, view))
 
         done, pending = await asyncio.wait([v.wait() for _, v in data], return_when=asyncio.ALL_COMPLETED, timeout=100)
@@ -205,9 +207,9 @@ class Rps:
             # Handles the case that one or both players don't respond to the dm in time
             return await self._timeout(users, data)
 
-        return [v for m, v in data]
+        return [v for _, v in data]
 
-    async def _eval_outcome(self, winlose:int, choice1, choice2, player1:discord.Member, player2:discord.Member, view: View) -> discord.Message:
+    async def _eval_outcome(self, winlose: int, choice1: int, choice2: int, player1:discord.Member, player2: discord.Member, view: View) -> discord.Message:
         """Evaluates the outcome, informs the players and handles the points """
         p1 = User(player1.id)
         p2 = User(player2.id)
@@ -216,19 +218,19 @@ class Rps:
                 p1.add_jenny(self.points)
                 if player2 != self.ctx.me:
                     p2.remove_jenny(self.points)
-                return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}', view=view)
+                return await self.ctx.send(f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}", view=view)
             else:
-                return await self.ctx.send(f'{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}', view=view)
+                return await self.ctx.send(f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}", view=view)
         elif winlose == 0:
-            return await self.ctx.send(f'{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}', view=view)
+            return await self.ctx.send(f"{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}", view=view)
         elif winlose == 1:
             if self.points:
                 p1.remove_jenny(self.points)
                 if player2 != self.ctx.me:
                     p2.add_jenny(self.points)
-                return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}', view=view)
+                return await self.ctx.send(f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}", view=view)
             else:
-                return await self.ctx.send(f'{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention}', view=view)
+                return await self.ctx.send(f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention}", view=view)
 
     def _play_again_view(self, players: List[discord.Member]) -> View:
         """Creates a button that, if clicked by both players, automatically launches another game"""
@@ -253,21 +255,21 @@ class Rps:
         """Handles the case of the user playing against self.other user"""
         if not replay:
             if await self._dmcheck(self.ctx.author) is False:
-                return await self.ctx.send(f'You need to open your dm to Killua to play {self.ctx.author.mention}')
+                return await self.ctx.send(f"You need to open your dm to Killua to play {self.ctx.author.mention}")
             if await self._dmcheck(self.other) is False:
-                return await self.ctx.send(f'{self.other.name} needs to open their dms to Killua to play')
+                return await self.ctx.send(f"{self.other.name} needs to open their dms to Killua to play")
 
             if blcheck(self.other.id) is True:
-                return await self.ctx.send('You can\'t play against someone blacklisted')
+                return await self.ctx.send("You can't play against someone blacklisted")
 
             view = ConfirmButton(self.other.id, timeout=80)
-            msg = await self.ctx.send(f'{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other}** accept the challange?', view=view)
+            msg = await self.ctx.send(f"{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other}** accept the challange?", view=view)
             await view.wait()
             await view.disable(msg)
 
             if not view.value:
                 if view.timed_out:
-                    return await self.ctx.send(f'Sadly no response...')
+                    return await self.ctx.send(f"Sadly no response...")
                 else:
                     return await self.ctx.send(f"{self.other.display_name} doesn't want to play... maybe they do after a hug?")
 
@@ -296,13 +298,13 @@ class Rps:
 
 class CountButtons(discord.ui.Button):
     """The code for every button used in the game"""
-    def __init__(self, solutions: dict, index:int, correct:bool=None, **kwargs):
+    def __init__(self, solutions: dict, index: int, correct: bool = None, **kwargs):
         self.index = index # the position the button is on. Starts with 1
         self.solutions = solutions # The solutions in the format {number: correct_button_index}
         self.correct = correct # If the button is correct
         super().__init__(style=discord.ButtonStyle.grey if correct is None else (discord.ButtonStyle.green if correct else discord.ButtonStyle.red), **kwargs)
 
-    def _create_view(self, correct:bool) -> View:
+    def _create_view(self, correct: bool) -> View:
         """Creates a new view after the callback depending on if the result was correct or not"""
         for c in self.view.children:
             if correct:
@@ -318,7 +320,7 @@ class CountButtons(discord.ui.Button):
             
         return self.view
 
-    async def _respond(self, correct:bool, last:bool, view:View, interaction:discord.Interaction) -> discord.Message:
+    async def _respond(self, correct: bool, last: bool, view: View, interaction: discord.Interaction) -> discord.Message:
         """Responds with the new view"""
         if correct and last:
             return await interaction.response.edit_message(content="Congrats, you move on to the next level!", view=view)
@@ -353,7 +355,7 @@ class CountGame:
         """Creates a jenny reward based on the level and difficulty"""
         return ((2 if self.user.is_entitled_to_double_jenny else 1) * int(random.randint(20, 30) * self.level * (0.5 if self.difficulty == "easy" else 1))) if self.level > 1 else 0
 
-    def _assign_until_unique(self, already_assigned:List[int]) -> int:
+    def _assign_until_unique(self, already_assigned: List[int]) -> int:
         """Picks one random free spot to put the next number in"""
         r = random.randint(1, 25)
         if r in already_assigned:
@@ -361,7 +363,7 @@ class CountGame:
         else:
             return r
 
-    def _create_solutions(self, keep_used:bool) -> None:
+    def _create_solutions(self, keep_used: bool) -> None:
         """Creates the solution dictionary"""
         res:dict = (self.solutions if hasattr(self, "solutions") else {}) if keep_used else {} 
         for i in range(1 if keep_used else self.level):
@@ -382,7 +384,7 @@ class CountGame:
         await asyncio.sleep(3 if self.level == 1 else (self.level*2*(0.5 if self.difficulty == "easy" else 1)))
         return msg
 
-    async def _handle_game(self, msg:discord.Message) -> discord.Message:
+    async def _handle_game(self, msg: discord.Message) -> discord.Message:
         """The core of the game, creates the buttons and waits until the buttons return a result and handles it"""
         view = View(self.ctx.author.id, timeout=self.level*10*(0.5 if self.difficulty == "easy" else 1))
         view.stage = 1
@@ -429,6 +431,7 @@ class Games(commands.Cog):
 
     @check(500)
     @games.command(extras={"category": Category.GAMES}, usage="count <easy/hard>")
+    @discord.app_commands.describe(difficulty="The difficulty to play in")
     async def count(self, ctx: commands.Context, difficulty: CountDifficulties = CountDifficulties.easy):
         """See how many numbers you can remember with this count game!"""
         game = CountGame(ctx, difficulty.name)
@@ -436,16 +439,20 @@ class Games(commands.Cog):
 
     @check(30)
     @games.command(extras={"category":Category.GAMES}, usage="rps <user> <points(optional)>")
+    @discord.app_commands.describe(
+        member="The person to challenge",
+        points="The points to play for"
+    )
     async def rps(self, ctx: commands.Context, member: discord.Member, points: int = None):
         """Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun."""
         
         if member.id == ctx.author.id:
-            return await ctx.send('Baka! You can\'t play against yourself')
+            return await ctx.send("Baka! You can't play against yourself")
         
         if not member.bot:
             opponent = User(member.id)
         elif member.bot and member != ctx.me:
-            return await ctx.send('Beep-boop, if you wanna play against a bot, play against me!')
+            return await ctx.send("Beep-boop, if you wanna play against a bot, play against me!")
         
         p2 = opponent.jenny if member != ctx.me else False
 
@@ -455,20 +462,21 @@ class Games(commands.Cog):
     
         if points:
             if points <= 0 or points > 100:
-                return await ctx.send(f'You can only play using 1-100 Jenny')
+                return await ctx.send(f"You can only play using 1-100 Jenny")
 
             if p1 < points:
-                return await ctx.send(f'You do not have enough Jenny for that. Your current balance is `{p1}`')
+                return await ctx.send(f"You do not have enough Jenny for that. Your current balance is `{p1}`")
             if not p2 is False and p2 < points:
-                return await ctx.send(f'Your opponent does not have enough Jenny for that. Their current balance is `{p2}`')
+                return await ctx.send(f"Your opponent does not have enough Jenny for that. Their current balance is `{p2}`")
     
         game = Rps(ctx, points, member)
         await game.start()
 
     @check(20)
     @games.command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
+    @discord.app_commands.describe(difficulty="The difficulty of the question")
     async def trivia(self, ctx: commands.Context, difficulty: TriviaDifficulties = TriviaDifficulties.easy):
-        """Play trivial and earn some jenny if you're right!"""
+        """Play trivial and earn some jenny if you"re right!"""
         game = Trivia(ctx, difficulty.name, self.client.session)
         await game.create()
         await game.send()

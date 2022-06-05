@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import Union, Any, List
+from typing import Union, Any, List, Coroutine, Optional
 import re
 import io
 from PIL import Image, ImageDraw, ImageChops
@@ -9,7 +9,7 @@ from pypxl import PxlClient # My own library ✨
 
 from killua.utils.gif import save_transparent_gif
 from killua.utils.checks import check
-from killua.static.enums import Category
+from killua.static.enums import Category, SnapOptions, EyesOptions #, FlagOptions
 from killua.static.constants import NOKIA_CODE, PXLAPI
 
 class ImageManipulation(commands.Cog):
@@ -17,17 +17,19 @@ class ImageManipulation(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.wtf_meme = None
-        self.wtf_meme_url = 'https://i.redd.it/pvdxasy5z7k41.jpg'
+        self.wtf_meme_url = "https://i.redd.it/pvdxasy5z7k41.jpg"
         self.pxl = PxlClient(token=PXLAPI, stop_on_error=False, session=self.client.session)
 
     async def _get_image_bytes(self, url: str) -> io.BytesIO:
+        """Gets the bytes from the image behind the url"""
         res = await self.client.session.get(url)
         _bytes = await res.read()
         return io.BytesIO(_bytes)
 
     def _crop_to_circle(self, im):
+        """Crops the given image to a circle"""
         bigsize = (im.size[0] * 3, im.size[1] * 3)
-        mask = Image.new('L', bigsize, 0)
+        mask = Image.new("L", bigsize, 0)
         ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
         mask = mask.resize(im.size, Image.ANTIALIAS)
         mask = ImageChops.darker(mask, im.split()[-1])
@@ -35,14 +37,15 @@ class ImageManipulation(commands.Cog):
 
         return im.copy()
 
-    def _create_frames(self, image:Image.Image) -> List[Image.Image]:
+    def _create_frames(self, image: Image.Image) -> List[Image.Image]:
+        """Creates the frames for the spin, sligtly rotating each frame"""
         res = []
         for i in range(17):
             res.append(image.rotate(i*20-1))
         return res
 
     async def _create_spin_gif(self, url:str) -> io.BytesIO:
-        """Takes in a url and returns the io bytes object"""
+        """Takes in a url and returns io bytes of a spinning GIF"""
         image = Image.open(await self._get_image_bytes(url)).convert("RGB")
 
         new_image = self._crop_to_circle(image)
@@ -67,218 +70,256 @@ class ImageManipulation(commands.Cog):
         dst.paste(im2, (0, heigth_avatar))
         return dst
 
-    async def create_wtf_meme(self, avatar:str) -> io.BytesIO:
+    async def create_wtf_meme(self, url: str) -> io.BytesIO:
+        """Puts a "excuse me what the frick" below the image provided"""
         if not self.wtf_meme:
             self.wtf_meme = await self._get_image_bytes(self.wtf_meme_url)
 
         image = Image.open(self.wtf_meme).copy().convert("RGBA")
-        avatar_image = Image.open(await self._get_image_bytes(avatar)).convert("RGBA")
+        url_image = Image.open(await self._get_image_bytes(url)).convert("RGBA")
 
         buffer = io.BytesIO()
-        self._put_horizontally(avatar_image, image).save(buffer, "PNG")
+        self._put_horizontally(url_image, image).save(buffer, "PNG")
         buffer.seek(0)
         return buffer
 
-    async def _validate_input(self, ctx, args): # a useful check that looks for what url to pass pxlapi
-        image = None
-        if isinstance(args, discord.Member):
-            image = str(args.avatar.url)
+    async def _validate_input(self, ctx: commands.Context, target: Optional[str]) -> str: # a useful check that looks for what url to pass pxlapi
+        """Finds an image url to use from a command"""
+        if target:
+            try:
+                m = await commands.MemberConverter().convert(ctx, target)
+                return str(m.avatar.url)
+            except commands.MemberNotFound:
+                pass
 
-        if isinstance(args, discord.PartialEmoji):
-            image = str(args.url)
-            
-        if isinstance(args, str):
-            if args.isdigit():
-                try:
-                    user = await self.client.fetch_user(int(args))
-                    image = str(user.avatar.url)
-                except discord.NotFound:
-                    return None
-            else:
-                url = re.search(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))", args)
-                if not url:
-                    return None 
-                else:
-                    image = args
-
-        if not image:
-            if len(ctx.message.attachments) > 0:
-                return ctx.message.attachments[0].url
+            try:
+                e = await commands.EmojiConverter().convert(ctx, target)
+                return str(e.url)
+            except commands.EmojiNotFound:
+                pass
                 
-            async for message in ctx.channel.history(limit=5):
-                if len(message.attachments) > 0:
-                    image = message.attachments[0].url
-                    break
-                elif len(message.embeds) > 0:
-                    embed = message.embeds[0]
-                    if embed.image:
-                        image = embed.image.url
-                        break
-                    if embed.thumbnail:
-                        image = embed.thumbnail.url
-                        break
-        if not image:
-            image = str(ctx.author.avatar.url)  
-        return image
+            if target.isdigit():
+                try:
+                    user = await self.client.fetch_user(int(target))
+                    return str(user.avatar.url)
+                except discord.NotFound:
+                    pass
+            else:
+                url = re.search(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))", target) 
+                # Makes sure the url is valid.
+                # This check is not perfect but it works for most cases and if it"s a false positive itdoesn't matter too much
+                if not url:
+                    pass
+                else:
+                    return url.group(0)
 
-    async def handle_command(self, ctx, args, function, t:Any=None, censor:bool=False, validate:bool=True):
+        if len(ctx.message.attachments) > 0:
+            return ctx.message.attachments[0].url
+                
+        async for message in ctx.channel.history(limit=5):
+            if len(message.attachments) > 0:
+                return message.attachments[0].url
+            elif len(message.embeds) > 0:
+                embed = message.embeds[0]
+                if embed.image:
+                    return embed.image.url
+                if embed.thumbnail:
+                    return embed.thumbnail.url
+
+        return str(ctx.author.avatar.url) # if all else fails, return the author"s avatar
+
+    async def handle_command(
+        self, 
+        ctx: commands.Context, 
+        target: Union[discord.Member, discord.Emoji, str], 
+        function: Coroutine, 
+        t: Any = None, 
+        censor: bool = False, 
+        validate: bool = True
+        ) -> discord.Message:
+        """Handles the command and returns the message"""
         if validate:
-            data = await self._validate_input(ctx, args)
+            data = await self._validate_input(ctx, target)
             if not data:
-                return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`', allowed_mentions=discord.AllowedMentions.none())
+                return await ctx.send(f"Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
         else:
-            data = args
+            data = target
+
+        await ctx.channel.typing()
+        await ctx.send(f"Processing...", ephemeral=True)
         r = await function(data, t)
         if r.success:
-            f = discord.File(r.convert_to_ioBytes(), filename=f'{ctx.command.name}.{r.file_type}', spoiler=censor)
+            f = discord.File(r.convert_to_ioBytes(), filename=f"{ctx.command.name}.{r.file_type}", spoiler=censor)
             return await self.client.send_message(ctx, file=f, reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
-        return await ctx.send(f':x: '+r.error, allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.send(f":x: "+r.error, allowed_mentions=discord.AllowedMentions.none())
+
+    async def flag_autocomplete(
+        self, 
+        _: commands.Context,
+        current: str
+    ) -> List[discord.app_commands.Choice[str]]:
+        """Returns a list of flags that match the current string since there are too many flags for it to use the options feature"""
+        return [discord.app_commands.Choice(name=i, value=i) for i in self.pxl.flags if i.startswith(current)][:25]
+
+    @commands.hybrid_group()
+    async def image(self, _: commands.Context):
+        """
+        Image related commands
+        """
+        ...
 
     @check(120) # Big cooldown >_<
-    @commands.command(aliases=['ej', 'emojimosaic'], extras={"category":Category.FUN}, usage="emojaic <user/url>")
-    async def emojaic(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
-        """Emoji mosaic an image; let emojis recreate an image you gave Killua! Takes in a mention, ID or image url"""
-        async def func(data, *args):
+    @image.command(aliases=["ej", "emojimosaic"], extras={"category":Category.FUN}, usage="emojaic <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def emojaic(self, ctx: commands.Context, target: str = None):
+        """Emoji mosaic an image; let emojis recreate an image you gave Killua!"""
+        async def func(data, *_):
             return await self.pxl.emojaic([data], groupSize=6)
-        await self.handle_command(ctx, args, func)
+        await self.handle_command(ctx, target, func)
 
     @check(5)
-    @commands.command(extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
-    async def flag(self, ctx, flag:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
-        """Valid flags: asexual, aromantic, bisexual, pansexual, gay, lesbian, trans, nonbinary, genderfluid, genderqueer, polysexual, austria, belgium, botswana, bulgaria, ivory, estonia, france, gabon, gambia, germany, guinea, hungary, indonesia, ireland, italy, luxembourg, monaco, nigeria, poland, russia, romania, sierraleone, thailand, ukraine, yemen"""
+    @image.command(extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
+    @discord.app_commands.describe(
+        flag="The flag to overlay the image with",
+        target="A user, url or emoji to take the image from"
+    )
+    @discord.app_commands.autocomplete(flag=flag_autocomplete) #has to be done as autocomplete and not options because there are more than 25 flags
+    async def flag(self, ctx: commands.Context, flag: str, target: str = None):
+        """Overlay an image with a flag"""
         async def func(data, flag):
-            return await self.pxl.flag(flag=flag.lower(), images=[data])
-        await self.handle_command(ctx, args, func, flag)
+            return await self.pxl.flag(flag=flag, images=[data])
+        await self.handle_command(ctx, target, func, flag)
 
     @check(5)
-    @commands.command(extras={"category":Category.FUN}, usage="glitch <user/url>")
-    async def glitch(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
+    @image.command(extras={"category":Category.FUN}, usage="glitch <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def glitch(self, ctx: commands.Context, target: str = None):
         """Tranform a users pfp into a glitchy GIF!"""
-        async def func(data, *args):
+        async def func(data, *_):
             return await self.pxl.glitch(images=[data], gif=True)
-        await self.handle_command(ctx, args, func)
+        await self.handle_command(ctx, target, func)
 
     @check(10)
-    @commands.command(extras={"category":Category.FUN}, usage="lego <user/url>")
-    async def lego(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
+    @image.command(extras={"category":Category.FUN}, usage="lego <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def lego(self, ctx: commands.Context, target: str = None):
         """Legofies an image"""
-        async def func(data, *args):
+        async def func(data, *_):
             return await self.pxl.lego(images=[data], scale=True, groupSize=10)
-        await self.handle_command(ctx, args, func)
+        await self.handle_command(ctx, target, func)
 
     @check(3)
-    @commands.command(aliases=['snap'], extras={"category":Category.FUN}, usage="snapchat <filter> <user/url>")
-    async def snapchat(self, ctx, fil:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
-        """Valid filters: dog, dog2, dog3, pig, flowers, random"""
-        async def func(data, fil):
-            return await self.pxl.snapchat(filter=fil.lower(), images=[data])
-        await self.handle_command(ctx, args, func, fil)
+    @image.command(aliases=["snap"], extras={"category":Category.FUN}, usage="snapchat <filter> <user/url>")
+    @discord.app_commands.describe(
+        filter="The snap filter to apply to the image",
+        target="A user, url or emoji to take the image from"
+    )
+    async def snapchat(self, ctx: commands.Context, filter: SnapOptions, target: str = None):
+        """Put a snapchat filter on an image with a face"""
+        async def func(data, filter):
+            return await self.pxl.snapchat(filter=filter, images=[data])
+        await self.handle_command(ctx, target, func, filter.name)
 
     @check(3)
-    @commands.command(aliases=['eye'], extras={"category":Category.FUN}, usage="eyes <eye_type> <user/url>")
-    async def eyes(self, ctx, t:str, args:Union[discord.Member, discord.PartialEmoji, str]=None):
-        """Valid eyes: big, black, bloodshot, blue, default, googly, green, horror, illuminati, money, pink, red, small, spinner, spongebob, white, yellow, random"""
-        async def func(data, t):
-            return await self.pxl.eyes(eyes=t.lower(), images=[data])
-        await self.handle_command(ctx, args, func, t)
+    @image.command(aliases=["eye"], extras={"category":Category.FUN}, usage="eyes <eye_type> <user/url>")
+    @discord.app_commands.describe(
+        type="The type of eyes to put on the image",
+        target="A user, url or emoji to take the image from"
+    )
+    async def eyes(self, ctx: commands.Context, type: EyesOptions, target: str = None):
+        """Put some crazy eyes on a person"""
+        async def func(data, type):
+            return await self.pxl.eyes(eyes=type, images=[data])
+        await self.handle_command(ctx, target, func, type.name)
 
     @check(4)
-    @commands.command(aliases=['8bit', 'blurr'], extras={"category":Category.FUN}, usage="jpeg <user/url>")
-    async def jpeg(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
+    @image.command(aliases=["8bit", "blurr"], extras={"category":Category.FUN}, usage="jpeg <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def jpeg(self, ctx: commands.Context, target: str = None):
         """Did you ever want to decrease image quality? Then this is the command for you!"""
-        async def func(data, *args):
+        async def func(data, *_):
             return await self.pxl.jpeg(images=[data])
-        await self.handle_command(ctx, args, func)
+        await self.handle_command(ctx, target, func)
 
     @check(4)
-    @commands.command(extras={"category":Category.FUN}, usage="ajit <user/url>")
-    async def ajit(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
+    @image.command(extras={"category":Category.FUN}, usage="ajit <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def ajit(self, ctx: commands.Context, target: str = None):
         """  Overlays an image of Ajit Pai snacking on some popcorn!"""
-        async def func(data, *args):
+        async def func(data, *_):
             return await self.pxl.ajit(images=[data])
-        await self.handle_command(ctx, args, func)
+        await self.handle_command(ctx, target, func)
 
     @check()
-    @commands.command(extras={"category":Category.FUN}, usage="nokia <user/url>")
-    async def nokia(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
+    @image.command(extras={"category":Category.FUN}, usage="nokia <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def nokia(self, ctx: commands.Context, target: str = None):
         """Add the image onto a nokia display"""
-        async def func(data, *args):
-            d = "const url = '" + data + ";'" + NOKIA_CODE
+        async def func(data, *_):
+            d = "const url = "" + data + ";"" + NOKIA_CODE
             return await self.pxl.imagescript(version="1.2.0", code=d)
-        await self.handle_command(ctx, args, func)
+        await self.handle_command(ctx, target, func)
 
     @check(4)
-    @commands.command(extras={"category":Category.FUN}, usage="flash <user/url>")
-    async def flash(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
-        """Greates a flashing GIF"""
-        async def func(data, *args):
+    @image.command(extras={"category":Category.FUN}, usage="flash <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def flash(self, ctx: commands.Context, target: str = None):
+        """Greates a flashing GIF. WARNING FOR PEOPLE WITH EPILEPSY!"""
+        async def func(data, *_):
             return await self.pxl.flash(images=[data])
-        await self.handle_command(ctx, args, func, censor=True)
+        await self.handle_command(ctx, target, func, censor=True)
 
     @check(3)
-    @commands.command(extras={"category":Category.FUN}, usage="thonkify <text>")
-    async def thonkify(self, ctx, *, text:str):
+    @image.command(extras={"category":Category.FUN}, usage="thonkify <text>")
+    @discord.app_commands.describe(text="The text to thonkify")
+    async def thonkify(self, ctx: commands.Context, *, text: str):
         """Turn text into thonks!"""
-        async def func(data, *args):
+        async def func(data, *_):
             return await self.pxl.thonkify(text=data)
         await self.handle_command(ctx, text, func, validate=False)
 
     @check(5)
-    @commands.command(aliases=['screen'], extras={"category":Category.FUN}, usage="screenshot <url>")
-    async def screenshot(self, ctx, website:str):
+    @image.command(aliases=["screen"], extras={"category":Category.FUN}, usage="screenshot <url>")
+    @discord.app_commands.describe(website="The url of the website to screenshot")
+    async def screenshot(self, ctx: commands.Context, website:str):
         """Screenshot the specified webste!"""
-        async def func(data, *args):
+        async def func(data, *_):
             return await self.pxl.screenshot(url=data)
         await self.handle_command(ctx, website, func, validate=False)
 
     @check(2)
-    @commands.command(extras={"category":Category.FUN}, usage="sonic <text>")
-    async def sonic(self, ctx, *, text:str):
+    @image.command(extras={"category":Category.FUN}, usage="sonic <text>")
+    @discord.app_commands.describe(text="The text to let sonic say")
+    async def sonic(self, ctx: commands.Context, *, text: str):
         """Let sonic say anything you want"""
-        async def func(data, *args):
+        async def func(data, *_):
             return await self.pxl.sonic(text=data)
         await self.handle_command(ctx, text, func, validate=False)
 
-    @check(2)
-    @commands.command(aliases=['g','search'], extras={"category":Category.FUN}, usage="google <query>")
-    async def google(self, ctx, *, query:str):
-        """Get the best results for a query the web has to offer"""
-        
-        r = await self.pxl.web_search(query=query)
-        if r.success:
-            results = r.data['results']
-            embed = discord.Embed.from_dict({
-                'title': f'Results for query {query}',
-                'color': 0x1400ff,
-            })
-            for i in range(4 if len(results) >= 4 else len(results)):
-                res = results[i-1]
-                embed.add_field(name='** **', value=f'**[__{res["title"]}__]({res["url"]})**\n{res["description"][:100]}...' if len(res["description"]) > 100 else res["description"], inline=False)
-            return await self.client.send_message(ctx, embed=embed)
-        return await ctx.send(':x: '+r.error)
-
     @check(30) # long check because this is exhausting for the poor computer
-    @commands.command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")
-    async def spin(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
-        """Spins an image 'round and 'round and 'round and 'round..."""
-        data = await self._validate_input(ctx, args)
+    @image.command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def spin(self, ctx: commands.Context, target: str = None):
+        """Spins an image "round and "round and "round and "round..."""
+        data = await self._validate_input(ctx, target)
         if not data:
-            return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`', allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`", allowed_mentions=discord.AllowedMentions.none())
 
-        async with ctx.typing():
-            msg = await ctx.send("Processing...")
-            buffer = await self._create_spin_gif(data)
-            await msg.delete()
-            await self.client.send_message(ctx, file=discord.File(fp=buffer, filename="spin.gif"), reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.channel.typing()
+        await ctx.send("Processing...", ephemeral=True)
+        buffer = await self._create_spin_gif(data)
+        await self.client.send_message(ctx, file=discord.File(fp=buffer, filename="spin.gif"), reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 
     @check(10)
-    @commands.command(extras= {"category": Category.FUN}, usage= "wtf <user/url>")
-    async def wtf(self, ctx, args:Union[discord.Member, discord.PartialEmoji, str]=None):
+    @image.command(extras= {"category": Category.FUN}, usage= "wtf <user/url>")
+    @discord.app_commands.describe(target="A user, url or emoji to take the image from")
+    async def wtf(self, ctx: commands.Context, target: str = None):
         """Puts the wtf meme below the image provided"""
-        data = await self._validate_input(ctx, args)
+        data = await self._validate_input(ctx, target)
         if not data:
-            return await ctx.send(f'Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`', allowed_mentions=discord.AllowedMentions.none())
-
+            return await ctx.send(f"Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`", allowed_mentions=discord.AllowedMentions.none())
+        await ctx.channel.typing()
+        await ctx.send("Processing...", ephemeral=True)
         buffer = await self.create_wtf_meme(data)
         await self.client.send_message(ctx, file=discord.File(fp=buffer, filename="wtf.png"), reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 

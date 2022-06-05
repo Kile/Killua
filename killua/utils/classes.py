@@ -44,31 +44,31 @@ class SuccessfullDefense(CheckFailure):
 class PartialCard:
     """A class preventing a circular import by providing the bare minimum of methods and properties. Only used in this file"""
     def __init__(self, card_id:int):
-        card = items.find_one({'_id': card_id})
+        card = items.find_one({"_id": card_id})
         if card is None:
             raise CardNotFound
         
-        self.id:int = card['_id']
+        self.id:int = card["_id"]
         self.image_url:str = card["Image"]
-        self.owners:list = card['owners']
-        self.emoji:str = card['emoji']
-        self.limit:int = card['limit']
+        self.owners:list = card["owners"]
+        self.emoji:str = card["emoji"]
+        self.limit:int = card["limit"]
         try:
-            self.type:str = card['type']
+            self.type:str = card["type"]
         except KeyError:
-            items.update_one({'_id': self.id}, {'$set':{'type': 'normal'}})
-            self.type = 'normal'
+            items.update_one({"_id": self.id}, {"$set":{"type": "normal"}})
+            self.type = "normal"
 
     def add_owner(self, user_id:int):
         """Adds an owner to a card entry in my db. Only used in User().add_card()"""
         self.owners.append(user_id)
-        items.update_one({'_id': self.id}, {'$push': {'owners': user_id}})
+        items.update_one({"_id": self.id}, {"$push": {"owners": user_id}})
         return
 
     def remove_owner(self, user_id:int):
         """Removes an owner from a card entry in my db. Only used in User().remove_card()"""
         self.owners.remove(user_id)
-        items.update_one({'_id': self.id}, {'$set': {'owners': self.owners}})
+        items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
         return
 
 class _LootBoxButton(discord.ui.Button):
@@ -256,13 +256,13 @@ class Book:
         self.background_cache["first_page" if first_page else "default_background"] = data
 
     async def _getbackground(self, types) -> Image.Image:
-        url = ['https://alekeagle.me/XdYUt-P8Xv.png', 'https://alekeagle.me/wp2mKvzvCD.png']
+        url = ["https://alekeagle.me/XdYUt-P8Xv.png", "https://alekeagle.me/wp2mKvzvCD.png"]
         if (res:= self._get_from_cache(types)):
             return res.convert("RGBA")
 
         async with self.session.get(url[types]) as res: 
             image_bytes = await res.read()
-            background = (img:= Image.open(io.BytesIO(image_bytes))).convert('RGBA') 
+            background = (img:= Image.open(io.BytesIO(image_bytes))).convert("RGBA") 
 
         self._set_cache(img, types == 0)
         return background
@@ -271,16 +271,16 @@ class Book:
 
         async with self.session.get(url) as res:
             image_bytes = await res.read()
-            image_card = Image.open(io.BytesIO(image_bytes)).convert('RGBA')
+            image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
             image_card = image_card.resize((84, 115), Image.ANTIALIAS)
-        # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
+        # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp"s "Response payload is not completed" bug
         return image_card
 
     def _setpage(self, image, page):
         font = self._getfont(20)
         draw = ImageDraw.Draw(image)
-        draw.text((5, 385), f'{page*2-1}', (0,0,0), font=font)
-        draw.text((595, 385), f'{page*2}', (0,0,0), font=font)
+        draw.text((5, 385), f"{page*2-1}", (0,0,0), font=font)
+        draw.text((595, 385), f"{page*2}", (0,0,0), font=font)
         return image
 
     def _getfont(self, size) -> ImageFont.ImageFont:
@@ -317,7 +317,7 @@ class Book:
         draw = ImageDraw.Draw(image)
         for n, i in enumerate(data):
             if i[1] is None:
-                draw.text(numbers_pos[page][n], f'0{i[0]}', (165,165,165), font=font)
+                draw.text(numbers_pos[page][n], f"0{i[0]}", (165,165,165), font=font)
         return image
 
     async def _get_book(self, user:discord.Member, page:int, just_fs_cards:bool=False):
@@ -362,10 +362,10 @@ class Book:
 
         f = discord.File(buffer, filename="image.png")
         embed = discord.Embed.from_dict({
-            'title': f'{user.display_name}\'s book',
-            'color': 0x2f3136, # making the boarder "invisible" (assuming there are no light mode users)
-            'image': {'url': 'attachment://image.png' },
-            'footer': {'text': ''}
+            "title": f"{user.display_name}'s book",
+            "color": 0x2f3136, # making the boarder "invisible" (assuming there are no light mode users)
+            "image": {"url": "attachment://image.png" },
+            "footer": {"text": ""}
         })
         return embed, f
 
@@ -391,25 +391,25 @@ class User:
         if user_id in self.cache:
             return 
 
-        user = teams.find_one({'id': user_id})
+        user = teams.find_one({"id": user_id})
 
         self.id:int = user_id
 
         if user is None:
             self.add_empty(self.id, False)
-            user = teams.find_one({'id': user_id})
+            user = teams.find_one({"id": user_id})
 
-        if not 'cards' in user or not 'met_user' in user:
+        if not "cards" in user or not "met_user" in user:
             self.add_empty(self.id)
-            user = teams.find_one({'id': user_id})
+            user = teams.find_one({"id": user_id})
 
-        self.jenny:int = user['points']
-        self.daily_cooldown = user['cooldowndaily']
-        self.met_user:list = user['met_user']
-        self.effects:dict = user['cards']['effects']
-        self.rs_cards:list = user['cards']['rs']
-        self.fs_cards:list = user['cards']['fs']
-        self.badges:list = user['badges']
+        self.jenny:int = user["points"]
+        self.daily_cooldown = user["cooldowndaily"]
+        self.met_user:list = user["met_user"]
+        self.effects:dict = user["cards"]["effects"]
+        self.rs_cards:list = user["cards"]["rs"]
+        self.fs_cards:list = user["cards"]["fs"]
+        self.badges:list = user["badges"]
         self.votes = user["votes"] if "votes" in user else 0
         self.premium_guilds:dict = user["premium_guilds"] if "premium_guilds" in user else {}
         self.lootboxes:list = user["lootboxes"] if "lootboxes" in user else []
@@ -440,7 +440,7 @@ class User:
 
     @all_cards.setter
     def all_cards(self, other):
-        """The only time I'd realistically call this is to remove all cards"""
+        """The only time I"d realistically call this is to remove all cards"""
         if not isinstance(other, list) or len(other) != 0:
             raise TypeError("Can only set this property to an empty list") # setting this to something else by accident could be fatal
         self.fs_cards = []
@@ -449,28 +449,28 @@ class User:
     @classmethod
     def remove_all(cls) -> str:
         """Removes all cards etc from every user. Only used for testing"""
-        start = datetime.utcnow()
+        start = datetime.now()
         user = []
         for u in teams.find():
-            if 'cards' in u:
-                user.append(u['id'])
+            if "cards" in u:
+                user.append(u["id"])
             if "id" in u and u["id"] in cls.cache:
                 cls.cache[u["id"]].all_cards = []
                 cls.cache[u["id"]].effects = {}
 
-        teams.update_many({'$or': [{'id': x} for x in user]}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': []}})
+        teams.update_many({"$or": [{"id": x} for x in user]}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": []}})
         cards = [x for x in items.find() if "owners" in x and len(x["owners"]) > 0]
-        items.update_many({'_id': {"$in": [x["_id"] for x in items.find()]}}, {'$set': {'owners': []}})
+        items.update_many({"_id": {"$in": [x["_id"] for x in items.find()]}}, {"$set": {"owners": []}})
 
-        return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.utcnow() - start).seconds} second{'s' if (datetime.utcnow() - start).seconds > 1 else ''}"
+        return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
 
     @classmethod
     def is_registered(cls, user_id:int) -> bool:
         """Checks if the "cards" dictionary is in the database entry of the user"""
-        u = teams.find_one({'id': user_id})
+        u = teams.find_one({"id": user_id})
         if u is None:
             return False
-        if not 'cards' in u:
+        if not "cards" in u:
             return False
 
         return True   
@@ -480,9 +480,9 @@ class User:
     def add_empty(cls, user_id:int, cards:bool=True) -> None:
         """Can be called when the user does not have an entry to make the class return empty objects instead of None"""
         if cards:
-            teams.update_one({'id': user_id}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0}})  
+            teams.update_one({"id": user_id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0}})  
         else:
-            teams.insert_one({'id': user_id, 'points': 0, 'badges': [], 'cooldowndaily': '','cards': {'rs': [], 'fs': [], 'effects': {}}, 'met_user': [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}}) 
+            teams.insert_one({"id": user_id, "points": 0, "badges": [], "cooldowndaily": "","cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}}) 
 
     def _update_val(self, key:str, value:Any, operator:str="$set") -> None:
         """An easier way to update a value"""
@@ -499,7 +499,7 @@ class User:
     def remove_badge(self, badge:str) -> None:
         """Removes a badge from a user"""
         if not badge.lower() in self.badges:
-            return # Don't really care if that happens
+            return # don't really care if that happens
         self.badges.remove(badge.lower())
         self._update_val("badges", badge.lower(), "$pull")
 
@@ -520,7 +520,7 @@ class User:
 
     def add_premium_guild(self, guild_id:int) -> None:
         """Adds a guild to a users premium guilds"""
-        self.premium_guilds[str(guild_id)] = datetime.utcnow()
+        self.premium_guilds[str(guild_id)] = datetime.now()
         self._update_val("premium_guilds", self.premium_guilds)
 
     def remove_premium_guild(self, guild_id:int) -> None:
@@ -530,12 +530,12 @@ class User:
 
     def claim_weekly(self) -> None:
         """Sets the weekly cooldown new"""
-        self.weekly_cooldown = datetime.utcnow() +  timedelta(days=7)
+        self.weekly_cooldown = datetime.now() +  timedelta(days=7)
         self._update_val("weekly_cooldown", self.weekly_cooldown)
 
     def claim_daily(self) -> None:
         """Sets the daily cooldown new"""
-        self.daily_cooldown = datetime.utcnow() +  timedelta(days=1)
+        self.daily_cooldown = datetime.now() +  timedelta(days=1)
         self._update_val("cooldowndaily", self.daily_cooldown) 
 
     def has_lootbox(self, box:int) -> bool:
@@ -582,7 +582,7 @@ class User:
     def remove_jenny(self, amount:int):
         """Removes x Jenny from a user"""
         if self.jenny < amount:
-            raise Exception('Trying to remove more Jenny than the user has')
+            raise Exception("Trying to remove more Jenny than the user has")
         self.jenny -= amount
         self._update_val("points", -amount, "$inc")
 
@@ -635,7 +635,7 @@ class User:
     def remove_card(self, card_id: int, remove_fake: bool = None, restricted_slot: bool = None, clone: bool = None) -> List[int, dict]:
         """Removes a card from a user"""
         if self.has_any_card(card_id) is False:
-            raise NotInPossesion('This card is not in possesion of the specified user!')
+            raise NotInPossesion("This card is not in possesion of the specified user!")
 
         if restricted_slot:
             return self._remove_logic("rs", card_id, remove_fake, clone)
@@ -643,7 +643,7 @@ class User:
         elif restricted_slot is False:
             return self._remove_logic("fs", card_id, remove_fake, clone)
 
-        else: # if it wasn't specified it first tries to find it in the free slots, then restricted slots
+        else: # if it wasn"t specified it first tries to find it in the free slots, then restricted slots
             return self._remove_logic("fs", card_id, remove_fake, clone, no_exception=True)
 
     def bulk_remove(self, cards: List[List[int, dict]], fs_slots: bool = True, raise_if_failed: bool = False) -> None:
@@ -654,7 +654,7 @@ class User:
                     self.fs_cards.remove(c)
                 except Exception:
                     if raise_if_failed:
-                        raise NotInPossesion('This card is not in possesion of the specified user!')
+                        raise NotInPossesion("This card is not in possesion of the specified user!")
             self._update_val("cards.fs", self.fs_cards)
         else:
             for c in cards:
@@ -662,7 +662,7 @@ class User:
                     self.rs_cards.remove(c)
                 except Exception:
                     if raise_if_failed:
-                        raise NotInPossesion('This card is not in possesion of the specified user!')
+                        raise NotInPossesion("This card is not in possesion of the specified user!")
             self._update_val("cards.rs", self.rs_cards)
 
     def _add_card_owner(self, card:int, fake:bool) -> None:
@@ -685,7 +685,7 @@ class User:
                 return
 
         if len(self.fs_cards) >= FREE_SLOTS:
-            raise CardLimitReached('User reached card limit for free slots')
+            raise CardLimitReached("User reached card limit for free slots")
 
         self.fs_cards.append(data)
         self._add_card_owner(card_id, fake)
@@ -718,7 +718,7 @@ class User:
 
         self.rs_cards = [*self.rs_cards, *rs_cards]
         self.fs_cards = [*self.fs_cards, *fs_cards]
-        teams.update_one({"id": self.id}, {"$set": {'cards.rs': self.rs_cards, 'cards.fs': self.fs_cards}})
+        teams.update_one({"id": self.id}, {"$set": {"cards.rs": self.rs_cards, "cards.fs": self.fs_cards}})
 
     def has_defense(self) -> bool:
         """Checks if a user holds on to a defense spell card"""
@@ -730,32 +730,32 @@ class User:
 
     def can_swap(self, card_id: int) -> bool:
         """Checks if `swap` would return `False` without performing the actual swap"""
-        if (True in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id]):
+        if (True in [x[1]["fake"] for x in self.rs_cards if x[0] == card_id] and False in [x[1]["fake"] for x in self.fs_cards if x[0] == card_id]):
             return True
 
-        elif (True in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id]):
+        elif (True in [x[1]["fake"] for x in self.fs_cards if x[0] == card_id] and False in [x[1]["fake"] for x in self.rs_cards if x[0] == card_id]):
             return True
 
         else:
-            return False # Returned if the requirements haven't been met
+            return False # Returned if the requirements haven"t been met
 
     def swap(self, card_id: int) -> Union[bool, None]: 
         """Swaps a card from the free slots with one from the restricted slots. Usecase: swapping fake and real card"""
 
-        if (True in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id]):
+        if (True in [x[1]["fake"] for x in self.rs_cards if x[0] == card_id] and False in [x[1]["fake"] for x in self.fs_cards if x[0] == card_id]):
             r = self.remove_card(card_id, remove_fake=True, restricted_slot=True)
             r2 = self.remove_card(card_id, remove_fake=False, restricted_slot=False)
             self.add_card(card_id, False, r[1]["clone"])
             self.add_card(card_id, True, r2[1]["clone"])
 
-        elif (True in [x[1]['fake'] for x in self.fs_cards if x[0] == card_id] and False in [x[1]['fake'] for x in self.rs_cards if x[0] == card_id]):
+        elif (True in [x[1]["fake"] for x in self.fs_cards if x[0] == card_id] and False in [x[1]["fake"] for x in self.rs_cards if x[0] == card_id]):
             r = self.remove_card(card_id, remove_fake=True, restricted_slot=False)
             r2 = self.remove_card(card_id, remove_fake=False, restricted_slot=True)
             self.add_card(card_id, True, r[1]["clone"])
             self.add_card(card_id, False, r2[1]["clone"])
 
         else:
-            return False # Returned if the requirements haven't been met
+            return False # Returned if the requirements haven"t been met
             
 
     def add_effect(self, effect, value): 
@@ -795,24 +795,24 @@ class User:
 
         setattr(self, cards, [])
 
-    def nuke_cards(self, t='all') -> bool:
-        """A function only intended to be used by bot owners, not in any actual command, that's why it returns True, so the owner can see if it succeeded"""
-        if t == 'all': 
+    def nuke_cards(self, t="all") -> bool:
+        """A function only intended to be used by bot owners, not in any actual command, that"s why it returns True, so the owner can see if it succeeded"""
+        if t == "all": 
             self._remove("all_cards")
             self.effects = {}
-            teams.update_one({'id': self.id}, {'$set': {'cards': {'rs': [], 'fs': [], 'effects': {}}}})
+            teams.update_one({"id": self.id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}}})
             return True
-        if t == 'fs':
+        if t == "fs":
             self._remove("fs_cards")
-            teams.update_one({'id': self.id}, {'$set': {'cards.fs': []}})
+            teams.update_one({"id": self.id}, {"$set": {"cards.fs": []}})
             return True
-        if t == 'rs':
+        if t == "rs":
             self._remove("rs_cards")
-            teams.update_one({'id': self.id}, {'$set': {'cards.rs': []}})
+            teams.update_one({"id": self.id}, {"$set": {"cards.rs": []}})
             return True
-        if t == 'effects':
+        if t == "effects":
             self.effects = {}
-            teams.update_one({'id': self.id}, {'$set': {'cards.effects': {}}})
+            teams.update_one({"id": self.id}, {"$set": {"cards.effects": {}}})
             return True
 
 class TodoList():
@@ -839,27 +839,27 @@ class TodoList():
         if (list_id in self.cache) or (list_id in self.custom_id_cache):
             return
 
-        td_list = todo.find_one({'_id' if (isinstance(list_id, int) or list_id.isdigit()) else 'custom_id': int(list_id) if (isinstance(list_id, int) or list_id.isdigit()) else list_id.lower()})
+        td_list = todo.find_one({"_id" if (isinstance(list_id, int) or list_id.isdigit()) else "custom_id": int(list_id) if (isinstance(list_id, int) or list_id.isdigit()) else list_id.lower()})
 
         if not td_list:
             raise TodoListNotFound
 
-        self.id:int = td_list['_id']
-        self.owner:int = td_list['owner']
-        self.name:str = td_list['name']
-        self._custom_id:str = td_list['custom_id']
-        self.status:str = td_list['status']
-        self.delete_done:bool = td_list['delete_done']
-        self.viewer:list = td_list['viewer']
-        self.editor:list = td_list['editor']
-        self.created_at:str = td_list['created_at']
-        self.spots:int = td_list['spots']
-        self.views:int = td_list['views']
-        self.todos:list = td_list['todos']
+        self.id:int = td_list["_id"]
+        self.owner:int = td_list["owner"]
+        self.name:str = td_list["name"]
+        self._custom_id:str = td_list["custom_id"]
+        self.status:str = td_list["status"]
+        self.delete_done:bool = td_list["delete_done"]
+        self.viewer:list = td_list["viewer"]
+        self.editor:list = td_list["editor"]
+        self.created_at:str = td_list["created_at"]
+        self.spots:int = td_list["spots"]
+        self.views:int = td_list["views"]
+        self.todos:list = td_list["todos"]
         self._bought:list = []
-        self.thumbnail:str = td_list['thumbnail'] if 'thumbnail' in td_list else None
-        self.color:int = td_list['color'] if 'color' in td_list else None
-        self.description:str = td_list['description'] if 'description' in td_list else None
+        self.thumbnail:str = td_list["thumbnail"] if "thumbnail" in td_list else None
+        self.color:int = td_list["color"] if "color" in td_list else None
+        self.description:str = td_list["description"] if "description" in td_list else None
 
         if self._custom_id:
             self.custom_id_cache[self._custom_id] = self.id
@@ -876,7 +876,7 @@ class TodoList():
         self.custom_id_cache[value] = self.id
 
     def __len__(self) -> int:
-        """Makes it nicer to get the "length" of a todo list, or rather the length of its todo's"""
+        """Makes it nicer to get the "length" of a todo list, or rather the length of its todo"s"""
         return len(self.todos)
 
     @staticmethod
@@ -885,10 +885,10 @@ class TodoList():
         while len(l) != 6:
             l.append(str(random.randint(0,9)))
 
-        todo_id = todo.find_one({'_id': ''.join(l)})
+        todo_id = todo.find_one({"_id": "".join(l)})
 
         if todo_id is None:
-            return int(''.join(l))
+            return int("".join(l))
         else:
             return TodoList._generate_id()
 
@@ -896,7 +896,7 @@ class TodoList():
     def create(owner:int, title:str, status:str, done_delete:bool, custom_id:str=None) -> TodoList:
         """Creates a todo list and returns a TodoList class"""
         list_id = TodoList._generate_id()
-        todo.insert_one({'_id': list_id, 'name': title, 'owner': owner, 'custom_id': custom_id, 'status': status, 'delete_done': done_delete, 'viewer': [], 'editor': [], 'todos': [{'todo': 'add todos', 'marked': None, 'added_by': 756206646396452975, 'added_on': (datetime.utcnow()).strftime("%b %d %Y %H:%M:%S"), 'views':0, 'assigned_to': [], 'mark_log': []}], 'marks': [], 'created_at': (datetime.utcnow()).strftime("%b %d %Y %H:%M:%S"), 'spots': 10, 'views': 0 })
+        todo.insert_one({"_id": list_id, "name": title, "owner": owner, "custom_id": custom_id, "status": status, "delete_done": done_delete, "viewer": [], "editor": [], "todos": [{"todo": "add todos", "marked": None, "added_by": 756206646396452975, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "views":0, "assigned_to": [], "mark_log": []}], "marks": [], "created_at": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "spots": 10, "views": 0 })
         return TodoList(list_id)
 
     def delete(self) -> None:
@@ -904,11 +904,11 @@ class TodoList():
         del self.cache[self.id]
         if self.custom_id:
             del self.custom_id_cache[self.custom_id]
-        todo.delete_one({'_id': self.id})
+        todo.delete_one({"_id": self.id})
 
     def has_view_permission(self, user_id:int) -> bool:
         """Checks if someone has permission to view a todo list"""
-        if self.status == 'private':
+        if self.status == "private":
             if not (user_id in self.viewer or user_id in self.editor or user_id == self.owner):
                 return False
         return True
@@ -989,13 +989,13 @@ class Todo(TodoList):
         cls = super().__new__(cls, list_id)
         task = cls.todos[int(position)-1]
 
-        cls.todo:str = task['todo']
-        cls.marked:str = task['marked']
-        cls.added_by:int = task['added_by']
-        cls.added_on:str = task['added_on']
-        cls.views:int = task['views']
-        cls.assigned_to:list = task['assigned_to']
-        cls.mark_log:list = task['mark_log']
+        cls.todo:str = task["todo"]
+        cls.marked:str = task["marked"]
+        cls.added_by:int = task["added_by"]
+        cls.added_on:str = task["added_on"]
+        cls.views:int = task["views"]
+        cls.assigned_to:list = task["assigned_to"]
+        cls.mark_log:list = task["mark_log"]
         return cls
 
 class Guild():
@@ -1017,19 +1017,19 @@ class Guild():
         if guild_id in self.cache:
             return
 
-        g = guilds.find_one({'id': guild_id})
+        g = guilds.find_one({"id": guild_id})
 
         if not g:
             self.add_default(guild_id)
-            g = guilds.find_one({'id': guild_id})
+            g = guilds.find_one({"id": guild_id})
 
         self.id:int = guild_id
-        self.badges:list = g['badges']
-        self.prefix:str = g['prefix']
+        self.badges:list = g["badges"]
+        self.prefix:str = g["prefix"]
         self.commands:dict = {v for _, v in g["commands"].items()} if "commands" in g else {}
         
-        if 'tags' in g:
-            self.tags = g['tags']
+        if "tags" in g:
+            self.tags = g["tags"]
 
         self.cache[self.id] = self
 
@@ -1040,7 +1040,7 @@ class Guild():
     @classmethod
     def add_default(self, guild_id:int):
         """Adds a guild to the database"""
-        guilds.insert_one({'id': guild_id, 'points': 0,'items': '','badges': [], 'prefix': 'k!'})
+        guilds.insert_one({"id": guild_id, "points": 0,"items": "","badges": [], "prefix": "k!"})
 
     @classmethod
     def bullk_remove_premium(cls, guild_ids:List[int]) -> None:
@@ -1060,7 +1060,7 @@ class Guild():
     def delete(self):
         """Deletes a guild from the database"""
         del self.cache[self.id]
-        guilds.delete_one({'id': self.id})
+        guilds.delete_one({"id": self.id})
 
     def change_prefix(self, prefix:str):
         "Changes the prefix of a guild"

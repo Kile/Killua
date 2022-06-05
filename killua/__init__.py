@@ -13,7 +13,7 @@ from .utils.help import MyHelp
 from .utils.classes import Guild
 from .static.enums import Category
 from .utils.interactions import Modal
-from .static.constants import TOKEN, IPC_TOKEN, presence, TIPS, PORT
+from .static.constants import TOKEN, IPC_TOKEN, presence, TIPS, PORT, LOOTBOXES
 
 class Bot(commands.Bot):
 	def __init__(self, *args, **kwargs):
@@ -73,6 +73,12 @@ class Bot(commands.Bot):
 				except discord.NotFound:
 					return
 		return res
+
+	def get_lootbox_from_name(self, name: str) -> Union[int, None]:
+		"""Gets a lootbox id from its name"""
+		for k, v in LOOTBOXES.items():
+			if name.lower() == v["name"].lower():
+				return k
 
 	async def get_text_response(
 		self, 
@@ -147,7 +153,7 @@ class Bot(commands.Bot):
 		"""A helper function sending messages and adding a tip with the probability of 5%"""
 		msg = await messageable.send(*args, **kwargs)
 		if randint(1, 100) < 6: # 5% probability to send a tip afterwards
-			await messageable.send(f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.is_dev else 'kil!')}")
+			await messageable.send(f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.is_dev else 'kil!')}", ephemeral=True)
 		return msg
 
 	def convert_to_timestamp(self, id: int, args: str = "f") -> str:

@@ -43,7 +43,7 @@ class IPCRoutes(commands.Cog):
             pass
 
     @ipc.server.route()
-    async def top(self, data) -> List[dict]:
+    async def top(self, _) -> List[dict]:
         """Returns a list of the top 50 users by the amount of jenny they have"""
         members = teams.find({'id': {'$in': [x.id for x in self.client.users]} })
         top = sorted(members, key=lambda x: x['points'], reverse=True)[:50]
@@ -54,7 +54,7 @@ class IPCRoutes(commands.Cog):
         return res
 
     @ipc.server.route()
-    async def commands(self, data) -> dict:
+    async def commands(self, _) -> dict:
         """Returns all commands with descriptions etc"""
         return self.client.get_formatted_commands()
 

@@ -1,9 +1,8 @@
 import io
 import sys
 import discord
-import traceback
-import asyncio
 
+import traceback
 from datetime import datetime
 from discord.utils import find
 from discord.ext import commands, tasks
@@ -17,10 +16,12 @@ class Events(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.client.startup_datetime = datetime.utcnow()
+        self.status_started = False
+        self.client.startup_datetime = datetime.now()
 
     async def _post_guild_count(self) -> None:
-        data = {
+        """Posts relevant stats to the botlists Killua is on"""
+        data = { # The data for discordbotlist
             "guilds": len(self.client.guilds),
             "users": len(self.client.users)
         }
@@ -29,6 +30,7 @@ class Events(commands.Cog):
         await self.client.session.post(f"https://top.gg/api/bots/756206646396452975/stats", headers={"Authorization": TOPGG_TOKEN}, data={"server_count": len(self.client.guilds)})
 
     async def _load_cards_cache(self) -> None:
+        """Downloads all the card images so the image manipulation is fairly fast"""
         cards = [x for x in items.find()]
 
         if len(cards) == 0:
@@ -43,7 +45,7 @@ class Events(commands.Cog):
 
                 async with self.client.session.get(item["Image"]) as res:
                     image_bytes = await res.read()
-                    image_card = Image.open(io.BytesIO(image_bytes)).convert('RGBA')
+                    image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
                     image_card = image_card.resize((84, 115), Image.ANTIALIAS)
 
                 Book.card_cache[str(item["_id"])] = image_card
@@ -56,6 +58,7 @@ class Events(commands.Cog):
         print(f"{PrintColors.OKGREEN}All cards successfully cached{PrintColors.ENDC}")
 
     async def _set_patreon_banner(self) -> None:
+        """Loads the patron banner bytes so it can be quickly sent when needed"""
         res = await self.client.session.get(PatreonBanner.URL)
         image_bytes = await res.read()
         PatreonBanner.VALUE = image_bytes
@@ -65,8 +68,6 @@ class Events(commands.Cog):
         print(f"{PrintColors.OKGREEN}Running bot in dev enviroment...{PrintColors.ENDC}")
 
     async def cog_load(self):
-        self.status.start()
-
         #Changing Killua's status
         await self._set_patreon_banner()
         if self.client.is_dev:
@@ -77,13 +78,18 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        if not self.status_started:
+            self.status.start()
+            self.status_started = True
+
         print(f"{PrintColors.HEADER}{PrintColors.OKGREEN}------")
-        print('Logged in as: ' + self.client.user.name + f" (ID: {self.client.user.id})")
+        print("Logged in as: " + self.client.user.name + f" (ID: {self.client.user.id})")
         print(f"------{PrintColors.ENDC}")
 
     @tasks.loop(hours=12)
     async def status(self):
-        await self.client.update_presence()
+        await self.client.update_presence() # For some reason this does not work in cog_load because it always fires before the bot is connected and 
+        # thus throws an error so I have to do it a bit more hacky in here
         if not self.client.is_dev:
             await self._post_guild_count()
 
@@ -93,26 +99,15 @@ class Events(commands.Cog):
 
     @tasks.loop(hours=24)
     async def save_guilds(self):
-        # this is currently not used but the earlier we collect this data, the better becaase I do plan to use it
+        # this is currently not used but the earlier we collect this data, the better because I do plan to use it
         if not self.client.is_dev:
-            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.utcnow() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": teams.count_documents()}}})
+            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": teams.count_documents()}}})
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         #Changing the status
         await self.client.update_presence()
         Guild.add_default(guild.id)
-
-        general = find(lambda x: x.name == 'general',  guild.text_channels)
-        if general and general.permissions_for(guild.me).send_messages:
-            prefix = Guild(guild.id).prefix
-            embed = discord.Embed.from_dict({
-                'title': 'Hello {}!'.format(guild.name),
-                'description': f'Hi, my name is Killua, thank you for choosing me! \n\nTo get some info about me, use `{prefix}info`\n\nTo change the server prefix, use `{prefix}prefix <new prefix>` (you need administrator perms for that\n\nFor more commands, use `{prefix}help` to see every command\n\nPlease consider leaving feeback with `{prefix}fb` as this helps me improve Killua',
-                'color': 0x1400ff
-            })
-            await general.send(embed=embed)
-        await self._post_guild_count()
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
@@ -124,17 +119,17 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):
 
-        if ctx.channel.permissions_for(ctx.me).send_messages and not self.client.is_dev: # we don't want to raise an error inside the error handler when Killua can't send the error because that does not trigger `on_command_error`
+        if ctx.channel.permissions_for(ctx.me).send_messages and not self.client.is_dev: # we don't want to raise an error inside the error handler when Killua ' send the error because that does not trigger `on_command_error`
             return
 
         if ctx.command:
             usage = f"`{self.client.command_prefix(self.client, ctx.message)[2]}{(ctx.command.parent.name + ' ') if ctx.command.parent else ''}{ctx.command.usage}`"
 
         if isinstance(error, commands.BotMissingPermissions):
-            return await ctx.send(f"I don\'t have the required permissions to use this command! (`{', '.join(error.missing_permissions)}`)")
+            return await ctx.send(f"I don't have the required permissions to use this command! (`{', '.join(error.missing_permissions)}`)")
 
         if isinstance(error, commands.MissingPermissions):
-            return await ctx.send(f"You don\'t have the required permissions to use this command! (`{', '.join(error.missing_permissions)}`)")
+            return await ctx.send(f"You don't have the required permissions to use this command! (`{', '.join(error.missing_permissions)}`)")
 
         if isinstance(error, commands.MissingRequiredArgument):
             return await ctx.send(f"Seems like you missed a required argument for this command: `{str(error.param).split(':')[0]}`")
@@ -166,9 +161,9 @@ class Events(commands.Cog):
         else:
             guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
             command = ctx.command.name if ctx.command else "Error didn't occur during a command"
-            print(f'{PrintColors.FAIL}------------------------------------------')
-            print(f'An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}')
-            print(f'------------------------------------------{PrintColors.ENDC}')
+            print(f"{PrintColors.FAIL}------------------------------------------")
+            print(f"An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}")
+            print(f"------------------------------------------{PrintColors.ENDC}")
 
 Cog = Events
 

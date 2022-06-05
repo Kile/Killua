@@ -19,7 +19,7 @@ async def is_authorised(headers: dict) -> bool:
 
     return True
 
-@app.route('/vote/', methods=['POST', 'PUT'])
+@app.route("/vote/", methods=["POST", "PUT"])
 async def vote():
     """Handles a vote event and calls the right function within the bots code"""
 

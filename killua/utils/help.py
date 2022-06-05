@@ -31,7 +31,7 @@ class HelpEmbed(discord.Embed):
         self.title = "Help menu"
         self.color = 0x1400ff
         self.set_thumbnail(url=av)
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = datetime.datetime.now()
 
 class MyHelp(commands.HelpCommand):
     def __init__(self):
@@ -39,7 +39,7 @@ class MyHelp(commands.HelpCommand):
             command_attrs={
                 "help": "The help command for the bot",
                 "extras": {"category": Category.OTHER},
-                "aliases": ['commands']
+                "aliases": ["commands"]
             }
         )
         self.cache = None
@@ -69,10 +69,10 @@ class MyHelp(commands.HelpCommand):
             self.cache = ctx.bot.get_formatted_commands()
 
         for k, v in self.cache.items():
-            embed.add_field(name=f"{v['emoji']['normal']} `{k}` ({len(v['commands'])} commands)", value=v['description'], inline=False)
+            embed.add_field(name=f"{v['emoji']['normal']} `{k}` ({len(v['commands'])} commands)", value=v["description"], inline=False)
         embed.add_field(name="** **", value="\nFor more info to a specific command, use ```css\nhelp <command_name>```", inline=False)
         view = View(user_id=ctx.author.id, timeout=None)
-        view.add_item(Select([discord.SelectOption(label=k, value=str(i), emoji=v['emoji']['unicode']) for i, (k, v) in enumerate(self.cache.items())], placeholder="Select a command group"))
+        view.add_item(Select([discord.SelectOption(label=k, value=str(i), emoji=v["emoji"]["unicode"]) for i, (k, v) in enumerate(self.cache.items())], placeholder="Select a command group"))
 
         view.add_item(discord.ui.Button(url=ctx.bot.support_server_invite, label="Support server"))
         view.add_item(discord.ui.Button(url="https://github.com/kile/killua", label="Source code"))
@@ -92,7 +92,7 @@ class MyHelp(commands.HelpCommand):
     async def send_command_help(self, command):
         """triggers when a `<prefix>help <command>` is called"""
         ctx = self.context
-        if isinstance(command, commands.Group) or command.hidden or command.qualified_name.startswith("jishaku") or command.name == "help": # not showing what it's not supposed to. Hacky I know
+        if isinstance(command, commands.Group) or command.hidden or command.qualified_name.startswith("jishaku") or command.name == "help": # not showing what it"s not supposed to. Hacky I know
             return await ctx.send(f"No command called \"{command.name}\" found.")
 
         prefix = ctx.bot.command_prefix(ctx.bot, ctx.message)[2]

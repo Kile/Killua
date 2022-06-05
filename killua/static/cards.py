@@ -44,46 +44,46 @@ class Card:
 
     def __init__(self, name_or_id: str):
         card_id = self._find_card(name_or_id)
-        
+
         if card_id in self.cache:
             return 
 
         if card_id is None:
             raise CardNotFound
 
-        card = items.find_one({'_id': card_id})
+        card = items.find_one({"_id": card_id})
         
-        self.id:int = card['_id']
-        self.name:str = card['name']
-        self.image_url:str = card['Image']
-        self.owners:list = card['owners']
-        self.description:str = card['description']
-        self.emoji:str = card['emoji']
-        self.rank:str = card['rank']
-        self.limit:int = card['limit']
-        self.available:bool = card["available"] if 'available' in card else True
+        self.id:int = card["_id"]
+        self.name:str = card["name"]
+        self.image_url:str = card["Image"]
+        self.owners:list = card["owners"]
+        self.description:str = card["description"]
+        self.emoji:str = card["emoji"]
+        self.rank:str = card["rank"]
+        self.limit:int = card["limit"]
+        self.available:bool = card["available"] if "available" in card else True
         try:
-            self.type:str = card['type']
+            self.type:str = card["type"]
         except KeyError:
-            items.update_one({'_id': self.id}, {'$set':{'type': 'normal'}})
-            self.type = 'normal'
+            items.update_one({"_id": self.id}, {"$set":{"type": "normal"}})
+            self.type = "normal"
 
         if self.id > 1000 and not self.id == 1217: # If the card is a spell card it has two additional properties
-            self.range:str = card['range']
-            self.cls:list = card['class']
+            self.range:str = card["range"]
+            self.cls:list = card["class"]
 
         self.cache[self.id] = self
 
     def add_owner(self, user_id:int):
         """Adds an owner to a card entry in my db. Only used in Card().add_card()"""
         self.owners.append(user_id)
-        items.update_one({'_id': self.id}, {'$set': {'owners': self.owners}})
+        items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
         return
 
     def remove_owner(self, user_id:int):
         """Removes an owner from a card entry in my db. Only used in Card().remove_card()"""
         self.owners.remove(user_id)
-        items.update_one({'_id': self.id}, {'$set': {'owners': self.owners}})
+        items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
         return
 
     async def _wait_for_defense(self, ctx:commands.Context, other:User, effects:list) -> None:
@@ -123,22 +123,22 @@ class Card:
 
     async def _attack_defense_check(self, ctx: commands.Context, other: User, target_card:int) -> None:
         if target_card in [x[0] for x in other.rs_cards]: # A list of cards that steal from restricted slots
-            if f'page_protection_{int((target_card-10)/18+2)}' in other.effects and not target_card in [x[0] for x in other.fs_cards]:
-                raise SuccessfullDefense('The user has protected the page this card is in against spells!')
+            if f"page_protection_{int((target_card-10)/18+2)}" in other.effects and not target_card in [x[0] for x in other.fs_cards]:
+                raise SuccessfullDefense("The user has protected the page this card is in against spells!")
 
-        if other.has_effect('1026')[0]:
+        if other.has_effect("1026")[0]:
             if 1026 in [x[0] for x in other.all_cards]: # Card has to remain in posession
-                if other.effects['1026']-1 == 0:
-                    other.remove_effect('1026')
+                if other.effects["1026"]-1 == 0:
+                    other.remove_effect("1026")
                     other.remove_card(1026) 
                 else:
-                    other.add_effect('1026', other.effects['1026']-1)
-                raise SuccessfullDefense('The user had remaining protection from card 1026 thus your attack failed')
+                    other.add_effect("1026", other.effects["1026"]-1)
+                raise SuccessfullDefense("The user had remaining protection from card 1026 thus your attack failed")
 
         effects = []
         for c in other.fs_cards:
             if c[0] in DEF_SPELLS and not c[0] in effects:
-                if c[0] == 1019 and not self.range == 'SR':
+                if c[0] == 1019 and not self.range == "SR":
                     continue
                 if c[0] == 1004 and self.ctx.author.id not in other.met_user:
                     continue
@@ -149,7 +149,7 @@ class Card:
     def _permission_check(self, ctx:commands.Context, member:discord.Member) -> None:
         perms = ctx.channel.permissions_for(member)
         if not perms.send_messages or not perms.read_messages:
-            raise CheckFailure(f'You can only attack a user in a channel they have read and write permissions to which isn\'t the case with {self.Member.display_name}') 
+            raise CheckFailure(f"You can only attack a user in a channel they have read and write permissions to which isn't the case with {self.Member.display_name}") 
 
     def _has_cards_check(self, cards:List[list], card_type:str="", is_self:bool=False, uses_up:bool=False) -> None:
         if len(cards) == 0:
@@ -161,7 +161,7 @@ class Card:
 
     def _has_met_check(self, prefix:str, author:User, other:discord.Member) -> None:
         if not author.has_met(other.id):
-            raise CheckFailure(f"You haven\'t met this user yet! Use `{prefix}meet <@someone>` if they send a message in a channel to be able to use this card on them")
+            raise CheckFailure(f"You haven't met this user yet! Use `{prefix}meet <@someone>` if they send a message in a channel to be able to use this card on them")
 
     def _has_other_card_check(self, cards:List[list]) -> None:
         if len(cards) < 2:
@@ -170,7 +170,7 @@ class Card:
     def _is_maxed_check(self, card:int) -> None:
         c = Card(card)
         if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
-            raise CheckFailure(f'The maximum amount of existing cards with id {card} is reached!')
+            raise CheckFailure(f"The maximum amount of existing cards with id {card} is reached!")
 
     def _is_full_check(self, user:User) -> None:
         if len(user.fs_cards) >= FREE_SLOTS:
@@ -200,11 +200,11 @@ class Card:
             fields.append({"name": "Range", "value": card.range, "inline": True})
 
         embed = discord.Embed.from_dict({
-            'title': f'Info about card {card_id}',
-            'thumbnail': {'url': card.image_url},
-            'color': 0x1400ff,
+            "title": f"Info about card {card_id}",
+            "thumbnail": {"url": card.image_url},
+            "color": 0x1400ff,
             "description": card.description,
-            'fields': fields
+            "fields": fields
         })
         return embed
 
@@ -217,10 +217,10 @@ class Card:
             if not o in real_owners:
                 real_owners.append(o)
         embed = discord.Embed.from_dict({
-            'title': f'Infos about card {card.name}',
-            'description': f'**Total copies in circulation**: {len(card.owners)}\n\n**Total owners**: {len(real_owners)}',
-            'image': {'url': card.image_url},
-            'color': 0x1400ff
+            "title": f"Infos about card {card.name}",
+            "description": f"**Total copies in circulation**: {len(card.owners)}\n\n**Total owners**: {len(real_owners)}",
+            "image": {"url": card.image_url},
+            "color": 0x1400ff
         })
         return embed
 
@@ -288,7 +288,7 @@ class Card1007(Card):
 
         removed_card = other.remove_card(target_card, restricted_slot=True)
         author.add_card(target_card, removed_card[1]["fake"])
-        await self.ctx.send(f'Successfully stole card number `{target_card}` from `{member}`!')
+        await self.ctx.send(f"Successfully stole card number `{target_card}` from `{member}`!")
 
 class Card1008(Card):
 
@@ -314,7 +314,7 @@ class Card1008(Card):
         other.add_card(removed_card_author[0], removed_card_author[1]["fake"])
         author.add_card(removed_card_other[0], removed_card_other[1]["fake"])
 
-        await self.ctx.send(f'Successfully swapped cards! Gave {member} the card `{removed_card_author[0]}` and took card number `{removed_card_other[0]}` from them!')
+        await self.ctx.send(f"Successfully swapped cards! Gave {member} the card `{removed_card_author[0]}` and took card number `{removed_card_other[0]}` from them!")
 
 class Card1010(Card):
 
@@ -326,13 +326,13 @@ class Card1010(Card):
         user = User(self.ctx.author.id)
 
         if not user.has_any_card(card_id, False):
-            raise CheckFailure('Seems like you don\'t own this card You already need to own a (non-fake) copy of the card you want to duplicate')
+            raise CheckFailure("Seems like you don't own this card You already need to own a (non-fake) copy of the card you want to duplicate")
 
         self._is_maxed_check(card_id)
         user.remove_card(self.id)
         user.add_card(card_id, clone=True)
 
-        await self.ctx.send(f'Successfully added another copy of {card_id} to your book!') 
+        await self.ctx.send(f"Successfully added another copy of {card_id} to your book!") 
 
 class Card1011(Card):
 
@@ -350,7 +350,7 @@ class Card1011(Card):
         self._is_maxed_check(card[0])
 
         author.add_card(card[0], card[1]["fake"], True)
-        await self.ctx.send(f'Successfully added another copy of card No. {card[0]} to your book! This card is {"not" if card[1]["fake"] is False else ""} a fake!')
+        await self.ctx.send(f"Successfully added another copy of card No. {card[0]} to your book! This card is {'not' if card[1]['fake'] is False else ''} a fake!")
 
 class Card1015(Card):
 
@@ -404,9 +404,9 @@ class Card1018(Card):
 
         if len(stolen_cards) > 0:
             author.add_multi(stolen_cards)
-            await self.ctx.send(f'Success! Stole the card{"s" if len(stolen_cards) > 1 else ""} {", ".join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} user{"s" if len(users) > 1 else ""}!')
+            await self.ctx.send(f"Success! Stole the card{'s' if len(stolen_cards) > 1 else ''} {', '.join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} user{'s' if len(users) > 1 else ''}!")
         else:
-            await self.ctx.send('All targetted users were able to defend themselves!')
+            await self.ctx.send("All targetted users were able to defend themselves!")
 
 class Card1020(Card):
 
@@ -418,13 +418,13 @@ class Card1020(Card):
         self._is_valid_card_check(card_id)
 
         if card_id > 99 or card_id < 1:
-            raise CheckFailure(f"You can only use \"{self.name}\" on a card with id between 1 and 99!")
+            raise CheckFailure(f"You can only use '{self.name}' on a card with id between 1 and 99!")
 
         author = User(self.ctx.author.id)
 
         author.remove_card(self.id)
         author.add_card(card_id, True)
-        await self.ctx.send(f'Created a fake of card No. {card_id}! Make sure to remember that it\'s a fake, fakes don\'t count towards completion of the album')
+        await self.ctx.send(f"Created a fake of card No. {card_id}! Make sure to remember that it's a fake, fakes don't count towards completion of the album")
 
 class Card1021(Card):
 
@@ -474,8 +474,8 @@ class Card1024(Card):
         for c in fs_tbr:
             other.fs_cards.remove(c)
 
-        other._update_val('cards', {'rs': other.rs_cards, 'fs': other.fs_cards, 'effects': other.effects}) 
-        await self.ctx.send(f'Successfully removed all cloned and fake cards from `{member}`. Cards removed in total: {len(tbr)}')
+        other._update_val("cards", {"rs": other.rs_cards, "fs": other.fs_cards, "effects": other.effects}) 
+        await self.ctx.send(f"Successfully removed all cloned and fake cards from `{member}`. Cards removed in total: {len(tbr)}")
 
 class Card1026(Card):
 
@@ -509,7 +509,7 @@ class Card1026(Card):
 
         author.add_effect(str(self.id), 10)
 
-        await self.ctx.send('Done, you will be automatically protected from the next 10 attacks! You need to keep the card in your inventory until all 10 defenses are used up')
+        await self.ctx.send("Done, you will be automatically protected from the next 10 attacks! You need to keep the card in your inventory until all 10 defenses are used up")
 
 class Card1028(Card):
 
@@ -529,7 +529,7 @@ class Card1028(Card):
         author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
         other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=False, clone=target_card[1]["clone"])
-        await self.ctx.send(f'Success, you destroyed card No. {target_card[0]}!')
+        await self.ctx.send(f"Success, you destroyed card No. {target_card[0]}!")
 
 class Card1029(Card):
 
@@ -549,7 +549,7 @@ class Card1029(Card):
         author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
         other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=True, clone=target_card[1]["clone"])
-        await self.ctx.send(f'Success, you destroyed card No. {target_card[0]}!')
+        await self.ctx.send(f"Success, you destroyed card No. {target_card[0]}!")
 
 class Card1031(Card):
 
@@ -575,12 +575,12 @@ class Card1032(Card):
         author = User(self.ctx.author.id)
         self._is_full_check(author)
 
-        target = random.choice([x['_id'] for x in items.find({'type': 'normal', "available": True}) if x['rank'] != 'SS' and x["_id"] != 0]) # random card for lottery
+        target = random.choice([x["_id"] for x in items.find({"type": "normal", "available": True}) if x["rank"] != "SS" and x["_id"] != 0]) # random card for lottery
         author.remove_card(self.id)
         self._is_maxed_check(target)
         author.add_card(target)
 
-        await self.ctx.send(f'Successfully added card No. {target} to your inventory')
+        await self.ctx.send(f"Successfully added card No. {target} to your inventory")
 
 class Card1035(Card):
 
@@ -592,11 +592,11 @@ class Card1035(Card):
         author = User(self.ctx.author.id)
 
         if page > 6 or page < 1:
-            raise CheckFailure('You need to choose a page between 1 and 6')
+            raise CheckFailure("You need to choose a page between 1 and 6")
         self._has_effect_check(author, f"page_protection_{page}")
         author.remove_card(self.id)
-        author.add_effect(f'page_protection_{page}', datetime.utcnow()) # The value doesn't matter here
-        await self.ctx.send(f'Success! Page {page} is now permanently protected')
+        author.add_effect(f"page_protection_{page}", datetime.now()) # The valuedoesn't matter here
+        await self.ctx.send(f"Success! Page {page} is now permanently protected")
 
 class Card1036(Card):
 
@@ -608,14 +608,14 @@ class Card1036(Card):
         author = User(self.ctx.author.id)
 
         if not str(self.id) in author.effects and not author.has_fs_card(self.id):
-            raise CheckFailure(f'You need to have used the card {self.id} once to use this command')
+            raise CheckFailure(f"You need to have used the card {self.id} once to use this command")
 
         if author.has_fs_card(self.id) and not str(self.id) in author.effects:
             author.remove_card(self.id)
-        author.add_effect(str(self.id), datetime.utcnow())
+        author.add_effect(str(self.id), datetime.now())
 
         if not effect.lower() in ["list", "analysis", "1031", "1038"]:
-            raise CheckFailure(f'Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{self.client.command_prefix(self.client, self.ctx.message)[2]}use {self.id} <list/analysis> <card_id>`')
+            raise CheckFailure(f"Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{self.client.command_prefix(self.client, self.ctx.message)[2]}use {self.id} <list/analysis> <card_id>`")
 
         if effect.lower() in ["list", "1038"]:
             embed = self._get_list_embed(card_id)

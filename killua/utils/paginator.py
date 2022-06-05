@@ -31,7 +31,7 @@ class DefaultEmbed(discord.Embed):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.color = 0x1400ff
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = datetime.datetime.now()
         self.set_footer()
 
 class Buttons(View):

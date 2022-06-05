@@ -24,11 +24,11 @@ class Economy(commands.Cog):
 
     def _fieldify_lootboxes(self, lootboxes: List[int]):
         """Creates a list of fields from the lootboxes in the passed list"""
-        lbs: List[Tuple[int, int]] = []
-        res: List[dict] = []
+        lbs: List[Tuple[int, int]] = [] # A list containing the a tuple with the amount and id of the lootboxes owned
+        res: List[dict] = [] # The fields to be returned
 
         for lb in lootboxes:
-            if not lb in (l:= [y for x, y in lbs]):
+            if not lb in (l:= [y for _, y in lbs]):
                 lbs.append((1, lb))
             else:
                 indx = l.index(lb)
@@ -42,7 +42,7 @@ class Economy(commands.Cog):
         return res
          
     def _getmember(self, user: Union[discord.Member, discord.User]) -> discord.Embed:
-        """ a function to handle getting infos about a user for less messy code """
+        """A function to handle getting infos about a user for less messy code """
         joined = self.client.convert_to_timestamp(user.id)
         
         info = User(user.id)
@@ -51,47 +51,58 @@ class Economy(commands.Cog):
             flags.append(USER_FLAGS["nitro"])
         badges = [(KILLUA_BADGES[PREMIUM_ALIASES[x]] if x in PREMIUM_ALIASES.keys() else KILLUA_BADGES[x]) for x in info.badges]
         
-        if str(datetime.utcnow()) > str(info.daily_cooldown):
-            cooldown = 'Ready to claim!'
+        if str(datetime.now()) > str(info.daily_cooldown):
+            cooldown = "Ready to claim!"
         else:
             cooldown = f"<t:{int(info.daily_cooldown.timestamp())}:R>"
 
-        embed = discord.Embed.from_dict({
-                'title': f'Information about {user}',
-                'description': f'{user.id}\n{" ".join(flags)}',
+        return discord.Embed.from_dict({
+                "title": f"Information about {user}",
+                "description": f"{user.id}\n{' '.join(flags)}",
                 "fields": [{"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, {"name": "Jenny", "value": str(info.jenny), "inline": False}, {"name": "Account created at", "value": joined, "inline": False}, {"name": "daily cooldown", "value": cooldown or "Never claimed `k!daily` before", "inline": False}],
-                'thumbnail': {'url': str(user.avatar.url) if user.avatar else None},
+                "thumbnail": {"url": str(user.avatar.url) if user.avatar else None},
                 "image": {"url": user.banner.url if user.banner else None},
-                'color': 0x1400ff
+                "color": 0x1400ff
             })
-        return embed
 
-    def _lb(self, ctx: commands.Context, limit=10):
+    def _lb(self, ctx: commands.Context, limit: int = 10) -> dict:
         """Creates a list of the top members regarding jenny in a server"""
-        members = teams.find({'id': {'$in': [x.id for x in ctx.guild.members]} })
-        top = sorted(members, key=lambda x: x['points'], reverse=True)
+        members = teams.find({"id": {"$in": [x.id for x in ctx.guild.members]} })
+        top = sorted(members, key=lambda x: x["points"], reverse=True) # Bringing it in a nice lederboard order
         points = 0
         for m in top:
-            points = points + m['points']
-        data = {
+            points += m["points"] # Working out total points in the server
+
+        return {
             "points": points,
-            "top": [{"name": ctx.guild.get_member(x['id']), "points": x["points"]} for x in top][:(limit or len(top))]
+            "top": [{"name": ctx.guild.get_member(x["id"]), "points": x["points"]} for x in top][:(limit or len(top))]
         }
-        return data
+
+    async def lootbox_autocomplete(
+        self,
+        _: discord.Interaction,
+        current:str
+    ) -> List[discord.app_commands.Choice[str]]:
+        """A function to autocomplete the lootbox name"""
+        options = []
+        for lb in LOOTBOXES:
+            if current in lb["name"]:
+                options.append(discord.app_commands.Choice(lb["name"], lb["id"]))
+        return options
 
     @commands.hybrid_group()
     async def economy(self, _: commands.Context):
-        """Killua's commands resolving around jenny, lootboxes and the general economy"""
+        """' commands resolving around jenny, lootboxes and the general economy"""
         ...
 
     @check()
     @commands.guild_only()
-    @economy.command(aliases=['server'], extras={"category":Category.ECONOMY}, usage="guild")
+    @economy.command(aliases=["server"], extras={"category":Category.ECONOMY}, usage="guild")
     async def guild(self, ctx: commands.Context):
         """Displays infos about the current guild"""
         top = self._lb(ctx, limit=1)
         guild = Guild(ctx.guild.id)
-        badges = ' '.join([GUILD_BADGES[b] for b in guild.badges])
+        badges = " ".join([GUILD_BADGES[b] for b in guild.badges])
 
         embed = discord.Embed.from_dict({
             "title": f"Information about {ctx.guild.name}",
@@ -99,7 +110,7 @@ class Economy(commands.Cog):
                 {"name": "Owner", "value": str(ctx.guild.owner)},
                 {"name": "Killua Badges", "value": (badges if len(badges) > 0 else "No badges")},
                 {"name": "Combined Jenny", "value": top["points"]},
-                {"name": "Richest Member", "value": f'{top["top"][0]["name"]} with {top["top"][0]["points"]} jenny'},
+                {"name": "Richest Member", "value": f"{top['top'][0]['name']} with {top['top'][0]['points']} jenny"},
                 {"name": "Server created at", "value": self.client.convert_to_timestamp(ctx.guild.id)},
                 {"name": "Members", "value": ctx.guild.member_count}
             ],
@@ -111,15 +122,15 @@ class Economy(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @economy.command(aliases=['lb', 'top'], extras={"category":Category.ECONOMY}, usage="leaderboard")
+    @economy.command(aliases=["lb", "top"], extras={"category":Category.ECONOMY}, usage="leaderboard")
     async def leaderboard(self, ctx: commands.Context):
         """Get a leaderboard of members with the most jenny"""
         top = self._lb(ctx)
-        if len(top) == 0:
+        if top["points"] == 0:
             return await ctx.send(f"Nobody here has any jenny! Be the first to claim some with `{self.client.command_prefix(self.client, ctx.message)[2]}daily`!", allowed_mentions=discord.AllowedMentions.none())
         embed = discord.Embed.from_dict({
             "title": f"Top users on guild {ctx.guild.name}",
-            "description": '\n'.join([f'#{p+1} `{x["name"]}` with `{x["points"]}` jenny' for p, x in enumerate(top["top"])]),
+            "description": "\n".join([f"#{p+1} `{x['name']}` with `{x['points']}` jenny" for p, x in enumerate(top["top"])]),
             "color": 0x1400ff,
             "thumbnail": {"url": str(ctx.guild.icon.url)}
         })
@@ -127,6 +138,7 @@ class Economy(commands.Cog):
 
     @check()
     @economy.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
+    @discord.app_commands.describe(user="The user to get infos about")
     async def profile(self, ctx, user: str = None):
         """Get infos about a certain discord user with ID or mention"""
         if user is None:
@@ -135,13 +147,14 @@ class Economy(commands.Cog):
             res = await self.client.find_user(ctx, user)
 
             if not res:
-                return await ctx.send(f"Could not find user `{user}`", allowed_mentions=discord.AllowedMentions.none())
+                return await ctx.send(f"Could not find user `{user}`", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
         embed = self._getmember(res)
         return await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @economy.command(aliases=['bal', 'balance', 'points'], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
+    @economy.command(aliases=["bal", "balance", "points"], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
+    @discord.app_commands.describe(user="The user to see the number of jenny of")
     async def jenny(self, ctx: commands.Context, user: str = None):
         """Gives you a users balance"""
         
@@ -151,35 +164,33 @@ class Economy(commands.Cog):
             res = await self.client.find_user(ctx, user)
 
             if not res:
-                return await ctx.send('User not found')
+                return await ctx.send("User not found", ephemeral=True)
 
         balance = User(res.id).jenny
-        return await ctx.send(f'{res}\'s balance is {balance} Jenny')
+        return await ctx.send(f"{res}'s balance is {balance} Jenny")
         
     @check()
     @economy.command(extras={"category":Category.ECONOMY}, usage="daily")
     async def daily(self, ctx: commands.Context):
         """Claim your daily Jenny with this command!"""
-        now = datetime.utcnow()
+        now = datetime.now()
         user = User(ctx.author.id)
-        min = 50
-        max = 100
+
+        if str(user.daily_cooldown) > str(now): # When the cooldown is still active
+            return await ctx.send(f"You can claim your daily Jenny the next time in <t:{int(user.daily_cooldown.timestamp())}:R>")
+
+        min, max = 50, 100
         if user.is_premium:
-            min*=2
-            max*=2
+            min, max = min*2, max*2 # Sadly `min, max *= 2` does not work, this is the only way to fit it in one line
         if ctx.guild and Guild(ctx.guild.id).is_premium:
-            min*=2
-            max*=2
+            min, max = min*2, max*2
         daily = randint(min, max)
         if user.is_entitled_to_double_jenny:
             daily *= 2
-        if str(user.daily_cooldown) < str(now):
-            user.claim_daily()
-            user.add_jenny(daily)
-            await ctx.send(f'You claimed your {daily} daily Jenny and hold now on to {user.jenny}')
-        else:
-            cooldown = f"<t:{int(user.daily_cooldown.timestamp())}:R>"
-            await ctx.send(f'You can claim your daily Jenny the next time in {cooldown}')
+
+        user.claim_daily()
+        user.add_jenny(daily)
+        await ctx.send(f"You claimed your {daily} daily Jenny and hold now on to {user.jenny}")
 
     @check()
     @economy.command(extras={"category": Category.ECONOMY}, usage="open")
@@ -207,14 +218,13 @@ class Economy(commands.Cog):
         await view.wait()
 
         await view.disable(msg)
+        if view.timed_out:
+            await ctx.send("Timed out!", ephemeral=True)
 
-        if hasattr(view, "value"):
-            user.remove_lootbox(view.value)
-            values = LootBox.generate_rewards(view.value)
-            box = LootBox(ctx, values)
-            return await box.open()
-
-        await ctx.send("Timed out!")
+        user.remove_lootbox(view.value)
+        values = LootBox.generate_rewards(view.value)
+        box = LootBox(ctx, values)
+        return await box.open()
 
     @check()
     @economy.command(aliases=["lootboxes", "inv"], extras={"category": Category.ECONOMY}, usage="inventory")
@@ -230,21 +240,25 @@ class Economy(commands.Cog):
             "color": 0x1400ff,
             "fields": lootboxes
         })
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = datetime.now()
         await ctx.send(embed=embed)
 
     @check()
     @economy.command(extras={"category": Category.ECONOMY}, usage="boxinfo <box_id>")
-    async def boxinfo(self, ctx: commands.Context, box: int):
+    @discord.app_commands.autocomplete(box=lootbox_autocomplete)
+    @discord.app_commands.describe(box="The box to get infos about")
+    async def boxinfo(self, ctx: commands.Context, box: str):
         """Get infos about any box you desire"""
-        if not box in LOOTBOXES.keys():
-            return await ctx.send("Invalid box id")
+        if box.isdigit() and not int(box) in LOOTBOXES.keys():
+            box = self.client.get_lootbox_from_name(box)
+            if not box:
+                return await ctx.send("Invalid box name or id", ephemeral=True)
 
-        data = LOOTBOXES[box]
+        data = LOOTBOXES[int(box)]
 
         c_min, c_max = data["cards_total"]
         j_min, j_max = data["rewards"]["jenny"]
-        contains = f"{data['rewards_total']} total rewards\n{f'{c_min}-{c_max}' if c_max != c_min else c_min} cards\n{j_min}-{j_max} jenny per field\n" + ("" if c_max == 0 else f"card rarities: {' or '.join(data['rewards']['cards']['rarities'])}\ncard types: {' or '.join(data['rewards']['cards']['types'])}")
+        contains = f"{data['rewards_total']} total rewards\n{f'{c_min}-{c_max}' if c_max != c_min else c_min} cards\n{j_min}-{j_max} jenny per field\n" + ('' if c_max == 0 else f"card rarities: {' or '.join(data['rewards']['cards']['rarities'])}\ncard types: {' or '.join(data['rewards']['cards']['types'])}")
         embed = discord.Embed.from_dict({
             "title": f"Infos about lootbox {data['emoji']} {data['name']}",
             "description": data["description"],

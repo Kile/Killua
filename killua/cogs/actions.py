@@ -147,69 +147,75 @@ class Actions(commands.Cog):
 
     @check()
     @action.command(extras={"category": Category.ACTIONS}, usage="hug <user>")
-    async def hug(self, ctx, members: commands.Greedy[discord.Member]=None):
+    @discord.app_commands.describe(members="The people to hug")
+    async def hug(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Hug a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
     @action.command(extras={"category":Category.ACTIONS}, usage="pat <user>")
-    async def pat(self, ctx, members: commands.Greedy[discord.Member]=None):
+    @discord.app_commands.describe(members="The people to pat")
+    async def pat(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Pat a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
     @action.command(extras={"category":Category.ACTIONS}, usage="poke <user>")
-    async def poke(self, ctx, members: commands.Greedy[discord.Member]=None):
+    @discord.app_commands.describe(members="The people to poke")
+    async def poke(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Poke a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
     @action.command(extras={"category":Category.ACTIONS}, usage="tickle <usage>")
-    async def tickle(self, ctx, members: commands.Greedy[discord.Member]=None):
+    @discord.app_commands.describe(members="The people to tickle")
+    async def tickle(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Tickle a user wi- ha- hahaha- stop- haha"""
         return await self.do_action(ctx, members)
 
     @check()
     @action.command(extras={"category":Category.ACTIONS}, usage="slap <user>")
-    async def slap(self, ctx, members: commands.Greedy[discord.Member]=None):
+    @discord.app_commands.describe(members="The people to slap")
+    async def slap(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Slap a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
+    @action.command(extras={"category": Category.ACTIONS}, usage="cuddle")
+    @discord.app_commands.describe(members="The people to cuddle with")
+    async def cuddle(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
+        """Snuggle up to a user and cuddle them with this command"""
+        return await self.do_action(ctx, members)
+
+    @check()
     @action.command(extras={"category": Category.ACTIONS}, usage="dance")
-    async def dance(self, ctx):
+    async def dance(self, ctx: commands.Context):
         """Show off with your dance moves!"""
         return await self.get_image(ctx)
 
     @check()
     @action.command(extras={"category": Category.ACTIONS}, usage="neko")
-    async def neko(self, ctx):
+    async def neko(self, ctx: commands.Context):
         """uwu"""
         return await self.get_image(ctx)
 
     @check()
     @action.command(extras={"category": Category.ACTIONS}, usage="smile")
-    async def smile(self, ctx):
+    async def smile(self, ctx: commands.Context):
         """Show a bright smile with this command"""
         return await self.get_image(ctx)
 
     @check()
     @action.command(extras={"category": Category.ACTIONS}, usage="blush")
-    async def blush(self, ctx):
+    async def blush(self, ctx: commands.Context):
         """O-Oh! T-thank you for t-the compliment... You have beautiful fingernails too!"""
         return await self.get_image(ctx)
 
     @check()
     @action.command(extras={"category": Category.ACTIONS}, usage="tail")
-    async def tail(self, ctx):
+    async def tail(self, ctx: commands.Context):
         """Wag your tail when you're happy!"""
         return await self.get_image(ctx)
-
-    @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="cuddle")
-    async def cuddle(self, ctx, members: commands.Greedy[discord.Member]=None):
-        """Snuggle up to a user and cuddle them with this command"""
-        return await self.do_action(ctx, members)
 
     def _get_view(self, id:int, current: dict) -> View:
         options = [discord.SelectOption(label=k, value=k, default=v) for k, v in current.items()]
@@ -225,7 +231,7 @@ class Actions(commands.Cog):
 
     @check()
     @action.command(extras={"category": Category.ACTIONS}, usage="settings")
-    async def settings(self, ctx):
+    async def settings(self, ctx: commands.Context):
         """Change the settings that control who can use what action on you"""
 
         embed = discord.Embed.from_dict({

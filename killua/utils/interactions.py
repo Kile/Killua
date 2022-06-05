@@ -128,13 +128,13 @@ class ConfirmButton(discord.ui.View):
         self.timed_out = True
     
     @discord.ui.button(label="confirm", style=discord.ButtonStyle.green)
-    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def confirm(self, *_):
         self.value = True
         self.timed_out = False
         self.stop()
 
     @discord.ui.button(label="cancel", style=discord.ButtonStyle.red)
-    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def cancel(self, *_):
         self.value = False
         self.timed_out = False
         self.stop()
