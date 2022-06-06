@@ -43,7 +43,7 @@ class SuccessfullDefense(CheckFailure):
 
 class PartialCard:
     """A class preventing a circular import by providing the bare minimum of methods and properties. Only used in this file"""
-    def __init__(self, card_id:int):
+    def __init__(self, card_id: int):
         card = items.find_one({"_id": card_id})
         if card is None:
             raise CardNotFound
@@ -59,21 +59,19 @@ class PartialCard:
             items.update_one({"_id": self.id}, {"$set":{"type": "normal"}})
             self.type = "normal"
 
-    def add_owner(self, user_id:int):
+    def add_owner(self, user_id: int) -> None:
         """Adds an owner to a card entry in my db. Only used in User().add_card()"""
         self.owners.append(user_id)
         items.update_one({"_id": self.id}, {"$push": {"owners": user_id}})
-        return
 
-    def remove_owner(self, user_id:int):
+    def remove_owner(self, user_id: int) -> None:
         """Removes an owner from a card entry in my db. Only used in User().remove_card()"""
         self.owners.remove(user_id)
         items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
-        return
 
 class _LootBoxButton(discord.ui.Button):
     """A class used for lootbox buttons"""
-    def __init__(self, index:int, rewards:List[Union[PartialCard, int, None]],**kwargs):
+    def __init__(self, index: int, rewards: List[Union[PartialCard, int, None]], **kwargs):
         super().__init__(**kwargs)
         self.index = index
         if self.index != 24:
@@ -97,7 +95,7 @@ class _LootBoxButton(discord.ui.Button):
             
         return self.view
 
-    async def _respond(self, correct:bool, last:bool, view:View, interaction:discord.Interaction) -> discord.Message:
+    async def _respond(self, correct: bool, last: bool, view: View, interaction: discord.Interaction) -> discord.Message:
         """Responds with the new view"""
         if correct and last:
             return await interaction.response.edit_message(content="Congrats, you move on to the next level!", view=view)
@@ -140,7 +138,7 @@ class _LootBoxButton(discord.ui.Button):
         self.view.claimed.append(self.reward)
         await interaction.response.edit_message(content="Correct! To save your current rewards and exit, press save. Current rewards: " + (r if len((r:= self._format_rewards())) > 1 else "no rewards"), view=view)
 
-    async def callback(self, interaction: discord.Interaction):
+    async def callback(self, interaction: discord.Interaction) -> Union[None, discord.Message]:
         """The callback of the button which calls the right method depending on the reward and index"""        
         if self.index == 24:
             return await self._end_button(interaction)
@@ -153,11 +151,11 @@ class _LootBoxButton(discord.ui.Button):
     
 class LootBox:
     """A class which contains infos about a lootbox and can open one"""
-    def __init__(self, ctx:commands.Context, rewards:List[Union[None, PartialCard, int]]):
+    def __init__(self, ctx:commands.Context, rewards: List[Union[None, PartialCard, int]]):
         self.ctx = ctx
         self.rewards = rewards
 
-    def _assign_until_unique(self, taken:List[int]) -> int:
+    def _assign_until_unique(self, taken: List[int]) -> int:
         if taken[(res:= random.randint(0, 23))]:
             return self._assign_until_unique(taken)
         return res
@@ -183,12 +181,12 @@ class LootBox:
         return random.choices(list(LOOTBOXES.keys()), [x["probability"] for x in LOOTBOXES.values()])[0]
 
     @classmethod
-    def generate_rewards(self, box:int) -> List[Union[PartialCard, int]]:
+    def generate_rewards(self, box: int) -> List[Union[PartialCard, int]]:
         """Generates a list of rewards that can be used to pass to this class"""
         data = LOOTBOXES[box]
         rew = []
 
-        for i in range((cards:=random.choice(data["cards_total"]))):
+        for _ in range((cards:=random.choice(data["cards_total"]))):
             skip = False
             if data["rewards"]["guaranteed"]: # if a card is guaranteed it is added here, it will count as one of the total_cards though
                 for card, amount in data["rewards"]["guaranteed"].items():
@@ -206,7 +204,7 @@ class LootBox:
 
         return rew
 
-    async def open(self):
+    async def open(self) -> None:
         """Opens a lootbox"""
         view = self._create_view()
         msg = await self.ctx.send(f"There are {len(self.rewards)} rewards hidden in this box. Click a button to reveal a reward. You can reveal buttons as much as you like, but careful, if you hit a bomb you loose all rewards! If you are happy with your rewards and don't want to risk anything, hit save to claim them", view=view)
@@ -231,10 +229,11 @@ class Book:
     background_cache = {}
     card_cache = {}
 
-    def __init__(self, session:aiohttp.ClientSession):
+    def __init__(self, session: aiohttp.ClientSession):
         self.session = session
 
-    async def _imagefunction(self, data, restricted_slots, page:int):
+    async def _imagefunction(self, data: list, restricted_slots: bool, page: int) -> Image.Image:
+        """Creates the book image of the current page and returns it"""
         background = await self._getbackground(0 if len(data) == 10 else 1)
         if len(data) == 18 and restricted_slots:
             background = await self._numbers(background, data, page)
@@ -242,7 +241,8 @@ class Book:
         background = self._setpage(background, page)
         return background
 
-    def _get_from_cache(self, types:int) -> Union[Image.Image, None]:
+    def _get_from_cache(self, types: int) -> Union[Image.Image, None]:
+        """Gets background from the cache if it exists, otherwise returns None"""
         if types == 0:
             if "first_page" in self.background_cache:
                 return self.background_cache["first_page"]
@@ -252,10 +252,12 @@ class Book:
                 return self.background_cache["default_background"]
             return
         
-    def _set_cache(self, data:Image, first_page:bool) -> None:
+    def _set_cache(self, data: Image, first_page: bool) -> None:
+        """Sets the background cache"""
         self.background_cache["first_page" if first_page else "default_background"] = data
 
-    async def _getbackground(self, types) -> Image.Image:
+    async def _getbackground(self, types: int) -> Image.Image:
+        """Gets the background image of the book"""
         url = ["https://alekeagle.me/XdYUt-P8Xv.png", "https://alekeagle.me/wp2mKvzvCD.png"]
         if (res:= self._get_from_cache(types)):
             return res.convert("RGBA")
@@ -267,8 +269,8 @@ class Book:
         self._set_cache(img, types == 0)
         return background
 
-    async def _getcard(self, url) -> Image.Image:
-
+    async def _getcard(self, url: str) -> Image.Image:
+        """Gets a card image from the url"""
         async with self.session.get(url) as res:
             image_bytes = await res.read()
             image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
@@ -276,18 +278,20 @@ class Book:
         # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp"s "Response payload is not completed" bug
         return image_card
 
-    def _setpage(self, image, page):
+    def _setpage(self, image: Image.Image, page: int) -> Image.Image:
+        """Gets the plain page background and sets the page number"""
         font = self._getfont(20)
         draw = ImageDraw.Draw(image)
         draw.text((5, 385), f"{page*2-1}", (0,0,0), font=font)
         draw.text((595, 385), f"{page*2}", (0,0,0), font=font)
         return image
 
-    def _getfont(self, size) -> ImageFont.ImageFont:
+    def _getfont(self, size: int) -> ImageFont.ImageFont:
         font = ImageFont.truetype(str(pathlib.Path(__file__).parent.parent) + "/static/font.ttf", size, encoding="unic") 
         return font
 
-    async def _cards(self, image, data, option):
+    async def _cards(self, image: Image.Image, data: list, option: int) -> Image.Image:
+        """Puts the cards on the background if there are any"""
         card_pos:list = [
             [(112, 143),(318, 15),(418, 15),(513, 15),(318, 142),(418, 142),(514, 142),(318, 269),(418, 269),(514, 269)],
             [(12,14),(112,14),(207,14),(12,141),(112,143),(208,143),(13,271),(112,272),(209,272), (318, 15),(417, 15),(513, 15),(318, 142),(418, 142),(514, 142),(318, 269),(418, 269),(514, 269)]
@@ -302,7 +306,8 @@ class Book:
                     image.paste(card, (card_pos[option][n]), card)
         return image
 
-    async def _numbers(self, image, data, page):
+    async def _numbers(self, image: Image.Image, data: list, page: int) -> Image.Image:
+        """Puts the numbers on the restricted slots in the book"""
         page -= 2
         numbers_pos:list = [
         [(35, 60),(138, 60),(230, 60),(35, 188),(138, 188),(230, 188),(36, 317),(134, 317),(232, 317),(338, 60),(436, 60),(536, 60),(338, 188),(436, 188),(536, 188),(338, 317),(436, 317),(536, 317)], 
@@ -320,7 +325,8 @@ class Book:
                 draw.text(numbers_pos[page][n], f"0{i[0]}", (165,165,165), font=font)
         return image
 
-    async def _get_book(self, user:discord.Member, page:int, just_fs_cards:bool=False):
+    async def _get_book(self, user: discord.Member, page: int, just_fs_cards: bool = False) -> Tuple[discord.Embed, discord.File]:
+        """Gets a formatted embed containing the book for the user"""
         rs_cards = []
         fs_cards = []
         person = User(user.id)
@@ -377,23 +383,23 @@ class User:
     cache = {}
 
     @classmethod 
-    def __get_cache(cls, user_id:int):
+    def __get_cache(cls, user_id: int):
         """Returns a cached object"""
         return cls.cache[user_id] if user_id in cls.cache else None
 
-    def __new__(cls, user_id:int, *args, **kwargs):
+    def __new__(cls, user_id: int, *args, **kwargs):
         existing = cls.__get_cache(user_id)
         if existing:
             return existing
         return super().__new__(cls)
 
-    def __init__(self, user_id:int):
+    def __init__(self, user_id: int):
         if user_id in self.cache:
             return 
 
         user = teams.find_one({"id": user_id})
 
-        self.id:int = user_id
+        self.id: int = user_id
 
         if user is None:
             self.add_empty(self.id, False)
@@ -403,18 +409,19 @@ class User:
             self.add_empty(self.id)
             user = teams.find_one({"id": user_id})
 
-        self.jenny:int = user["points"]
-        self.daily_cooldown = user["cooldowndaily"]
-        self.met_user:list = user["met_user"]
-        self.effects:dict = user["cards"]["effects"]
-        self.rs_cards:list = user["cards"]["rs"]
-        self.fs_cards:list = user["cards"]["fs"]
-        self.badges:list = user["badges"]
-        self.votes = user["votes"] if "votes" in user else 0
-        self.premium_guilds:dict = user["premium_guilds"] if "premium_guilds" in user else {}
-        self.lootboxes:list = user["lootboxes"] if "lootboxes" in user else []
-        self.weekly_cooldown = user["weekly_cooldown"] if "weekly_cooldown" in user else None
-        self.action_settings:dict = user["action_settings"] if "action_settings" in user else {}
+        self.jenny: int = user["points"]
+        self.daily_cooldown: datetime = user["cooldowndaily"]
+        self.met_user: List[int] = user["met_user"]
+        self.effects: dict = user["cards"]["effects"]
+        self.rs_cards: List[list] = user["cards"]["rs"]
+        self.fs_cards: List[list] = user["cards"]["fs"]
+        self.badges: List[str] = user["badges"]
+        self.rps_stats: dict = user["stats.rps"] if "stats.rps" in user else {"wins": 0, "losses": 0, "ties": 0}
+        self.votes: int = user["votes"] if "votes" in user else 0
+        self.premium_guilds: dict = user["premium_guilds"] if "premium_guilds" in user else {}
+        self.lootboxes: List[int] = user["lootboxes"] if "lootboxes" in user else []
+        self.weekly_cooldown: Optional[datetime] = user["weekly_cooldown"] if "weekly_cooldown" in user else None
+        self.action_settings: dict = user["action_settings"] if "action_settings" in user else {}
 
         self.cache[self.id] = self
 
@@ -465,7 +472,7 @@ class User:
         return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
 
     @classmethod
-    def is_registered(cls, user_id:int) -> bool:
+    def is_registered(cls, user_id: int) -> bool:
         """Checks if the "cards" dictionary is in the database entry of the user"""
         u = teams.find_one({"id": user_id})
         if u is None:
@@ -477,18 +484,18 @@ class User:
 
     @classmethod # The reason for this being a classmethod is that User(user_id) automatically calls this function, 
     # so while I will also never use this, it at least makes more sense
-    def add_empty(cls, user_id:int, cards:bool=True) -> None:
+    def add_empty(cls, user_id: int, cards: bool = True) -> None:
         """Can be called when the user does not have an entry to make the class return empty objects instead of None"""
         if cards:
             teams.update_one({"id": user_id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0}})  
         else:
-            teams.insert_one({"id": user_id, "points": 0, "badges": [], "cooldowndaily": "","cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}}) 
+            teams.insert_one({"id": user_id, "points": 0, "badges": [], "cooldowndaily": "","cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}, "stats": {"rps": {"wins": 0, "losses": 0, "ties": 0}}})}}}) 
 
-    def _update_val(self, key:str, value:Any, operator:str="$set") -> None:
+    def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
         teams.update_one({"id": self.id}, {operator: {key: value}})
 
-    def add_badge(self, badge:str) -> None:
+    def add_badge(self, badge: str) -> None:
         """Adds a badge to a user"""
         if badge.lower() in self.badges:
             raise TypeError("Badge already in possesion of user")
@@ -496,14 +503,14 @@ class User:
         self.badges.append(badge.lower())
         self._update_val("badges", badge.lower(), "$push")
 
-    def remove_badge(self, badge:str) -> None:
+    def remove_badge(self, badge: str) -> None:
         """Removes a badge from a user"""
         if not badge.lower() in self.badges:
             return # don't really care if that happens
         self.badges.remove(badge.lower())
         self._update_val("badges", badge.lower(), "$pull")
 
-    def set_badges(self, badges:List[str]) -> None:
+    def set_badges(self, badges: List[str]) -> None:
         """Sets badges to anything"""
         self.badges = badges
         self._update_val("badges", self.badges)
@@ -518,12 +525,12 @@ class User:
         self.votes += 1
         self._update_val("votes", 1, "$inc")
 
-    def add_premium_guild(self, guild_id:int) -> None:
+    def add_premium_guild(self, guild_id: int) -> None:
         """Adds a guild to a users premium guilds"""
         self.premium_guilds[str(guild_id)] = datetime.now()
         self._update_val("premium_guilds", self.premium_guilds)
 
-    def remove_premium_guild(self, guild_id:int) -> None:
+    def remove_premium_guild(self, guild_id: int) -> None:
         """Removes a guild from a users premium guilds"""
         del self.premium_guilds[str(guild_id)]
         self._update_val("premium_guilds", self.premium_guilds)
@@ -538,16 +545,16 @@ class User:
         self.daily_cooldown = datetime.now() +  timedelta(days=1)
         self._update_val("cooldowndaily", self.daily_cooldown) 
 
-    def has_lootbox(self, box:int) -> bool:
+    def has_lootbox(self, box: int) -> bool:
         """Returns wether the user has the lootbox specified"""
         return box in self.lootboxes
 
-    def add_lootbox(self, box:int) -> None:
+    def add_lootbox(self, box: int) -> None:
         """Adds a lootbox to a users inventory"""
         self.lootboxes.append(box)
         self._update_val("lootboxes", box, "$push")
 
-    def remove_lootbox(self, box:int) -> None:
+    def remove_lootbox(self, box: int) -> None:
         """Removes a lootbox from a user"""
         self.lootboxes.remove(box)
         self._update_val("lootboxes", self.lootboxes, "$set")
@@ -557,7 +564,7 @@ class User:
         self.action_settings = settings
         self._update_val("action_settings", settings)
         
-    def _has_card(self, cards:List[list], card_id:int, fake_allowed:bool, only_allow_fakes:bool) -> bool:
+    def _has_card(self, cards: List[list], card_id: int, fake_allowed: bool, only_allow_fakes: bool) -> bool:
         counter = 0
         while counter != len(cards): # I use a while loop because it has c bindings and is thus faster than a for loop which is good for this 
             id, data = cards[counter]
@@ -567,36 +574,41 @@ class User:
             counter += 1
         return False
 
-    def has_rs_card(self, card_id:int, fake_allowed:bool=True, only_allow_fakes:bool=False) -> bool:
+    def has_rs_card(self, card_id: int, fake_allowed: bool = True, only_allow_fakes: bool = False) -> bool:
         """Checking if the user has a card specified in their restricted slots"""
         return self._has_card(self.rs_cards, card_id, fake_allowed, only_allow_fakes)
 
-    def has_fs_card(self, card_id:int, fake_allowed:bool=True, only_allow_fakes:bool=False) -> bool:
+    def has_fs_card(self, card_id: int, fake_allowed: bool = True, only_allow_fakes: bool = False) -> bool:
         """Checking if the user has a card specified in their free slots"""
         return self._has_card(self.fs_cards, card_id, fake_allowed, only_allow_fakes)
 
-    def has_any_card(self, card_id:int, fake_allowed:bool=True, only_allow_fakes:bool=False) -> bool:
+    def has_any_card(self, card_id: int, fake_allowed: bool = True, only_allow_fakes: bool = False) -> bool:
         """Checks if the user has the card"""
         return self._has_card(self.all_cards, card_id, fake_allowed, only_allow_fakes)
 
-    def remove_jenny(self, amount:int):
+    def remove_jenny(self, amount: int) -> None:
         """Removes x Jenny from a user"""
         if self.jenny < amount:
             raise Exception("Trying to remove more Jenny than the user has")
         self.jenny -= amount
         self._update_val("points", -amount, "$inc")
 
-    def add_jenny(self, amount:int):
+    def add_jenny(self, amount: int) -> None:
         """Adds x Jenny to a users balance"""
         self.jenny += amount
         self._update_val("points", amount, "$inc")
 
-    def set_jenny(self, amount:int):
+    def set_jenny(self, amount: int) -> None:
         """Sets the users jenny to the specified value. Only used for testing"""
         self.jenny = amount
         self._update_val("points", amount)
 
-    def _find_match(self, cards:List[list], card_id:int, fake:Optional[bool], clone:Optional[bool]) -> Tuple[Union[List[List[int, dict]], None], Union[List[int, dict], None]]:
+    def _find_match(self, 
+        cards: List[list], 
+        card_id: int, 
+        fake: Optional[bool], 
+        clone:Optional[bool]
+    ) -> Tuple[Union[List[List[int, dict]], None], Union[List[int, dict], None]]:
         counter = 0
         while counter != len(cards): # I use a while loop because it has c bindings and is thus faster than a for loop which is good for this 
             id, data = cards[counter]
@@ -618,7 +630,7 @@ class User:
             self.remove_card(0)
             self.remove_badge("greed_island_badge")
 
-    def _remove_logic(self, card_type:str, card_id:int, remove_fake:bool, clone:bool, no_exception:bool=False) -> List[int, dict]:
+    def _remove_logic(self, card_type: str, card_id: int, remove_fake: bool, clone: bool, no_exception: bool = False) -> List[int, dict]:
         """Handles the logic of the remove_card method"""
         attr = getattr(self, f"{card_type}_cards")
         cards, match = self._find_match(attr, card_id, remove_fake, clone)
@@ -691,11 +703,11 @@ class User:
         self._add_card_owner(card_id, fake)
         self._update_val("cards.fs", data, "$push")
 
-    def count_card(self, card_id:int, including_fakes:bool=True) -> int:
+    def count_card(self, card_id: int, including_fakes: bool = True) -> int:
         "Counts how many copies of a card someone has"
         return len([x for x in self.all_cards if (including_fakes or not x[1]["fake"]) and x[0] == card_id])
 
-    def add_multi(self, *args):
+    def add_multi(self, *args) -> None:
         """The purpose of this function is to be a faster alternative when adding multiple cards than for loop with add_card"""
         fs_cards = []
         rs_cards = []
@@ -758,35 +770,34 @@ class User:
             return False # Returned if the requirements haven"t been met
             
 
-    def add_effect(self, effect, value): 
+    def add_effect(self, effect: str, value: Any): 
         """Adds a card with specified value, easier than checking for appropriate value with effect name"""
         self.effects[effect] = value
         self._update_val("cards.effects", self.effects)
 
-    def remove_effect(self, effect):
+    def remove_effect(self, effect: str):
         """Remove effect provided"""
         self.effects.pop(effect, None)
         self._update_val("cards.effects", self.effects)
-
     
-    def has_effect(self, effect) -> Tuple[bool, Any]:
+    def has_effect(self, effect: str) -> Tuple[bool, Any]:
         """Checks if a user has an effect and returns what effect if the user has it"""
         if effect in self.effects:
             return True, self.effects[effect]
         else:
             return False, None
 
-    def add_met_user(self, user_id:int):
+    def add_met_user(self, user_id: int) -> None:
         """Adds a user to a "previously met" list which is a parameter in some spell cards"""
         if not user_id in self.met_user:
             self.met_user.append(user_id)
             self._update_val("met_user", user_id, "$push")
 
-    def has_met(self, user_id:int) -> bool:
+    def has_met(self, user_id: int) -> bool:
         """Checks if the user id provided has been met by the self.id user"""
         return user_id in self.met_user
 
-    def _remove(self, cards:str):
+    def _remove(self, cards: str) -> None:
         for card in [x[0] for x in getattr(self, cards)]:
             try:
                 PartialCard(card).remove_owner(self.id)
@@ -795,25 +806,31 @@ class User:
 
         setattr(self, cards, [])
 
-    def nuke_cards(self, t="all") -> bool:
+    def nuke_cards(self, t: str ="all") -> bool:
         """A function only intended to be used by bot owners, not in any actual command, that"s why it returns True, so the owner can see if it succeeded"""
         if t == "all": 
             self._remove("all_cards")
             self.effects = {}
             teams.update_one({"id": self.id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}}})
-            return True
         if t == "fs":
             self._remove("fs_cards")
             teams.update_one({"id": self.id}, {"$set": {"cards.fs": []}})
-            return True
         if t == "rs":
             self._remove("rs_cards")
             teams.update_one({"id": self.id}, {"$set": {"cards.rs": []}})
-            return True
         if t == "effects":
             self.effects = {}
             teams.update_one({"id": self.id}, {"$set": {"cards.effects": {}}})
-            return True
+
+        return True
+
+    def add_rps_stat(self, stat: str, val: int = 1) -> None:
+        """Adds a stat to the user's rps stats"""
+        if stat in self.rps_stats:
+            self.rps_stats[stat] += val
+        else:
+            self.rps_stats[stat] = val
+        self._update_val("stats.rps", self.rps_stats)
 
 class TodoList():
     cache = {}
@@ -834,7 +851,7 @@ class TodoList():
             return existing
         return super().__new__(cls)
 
-    def __init__(self, list_id:Union[int, str]):
+    def __init__(self, list_id: Union[int, str]):
         
         if (list_id in self.cache) or (list_id in self.custom_id_cache):
             return
@@ -844,22 +861,22 @@ class TodoList():
         if not td_list:
             raise TodoListNotFound
 
-        self.id:int = td_list["_id"]
-        self.owner:int = td_list["owner"]
-        self.name:str = td_list["name"]
-        self._custom_id:str = td_list["custom_id"]
-        self.status:str = td_list["status"]
-        self.delete_done:bool = td_list["delete_done"]
-        self.viewer:list = td_list["viewer"]
-        self.editor:list = td_list["editor"]
-        self.created_at:str = td_list["created_at"]
-        self.spots:int = td_list["spots"]
-        self.views:int = td_list["views"]
-        self.todos:list = td_list["todos"]
-        self._bought:list = []
-        self.thumbnail:str = td_list["thumbnail"] if "thumbnail" in td_list else None
-        self.color:int = td_list["color"] if "color" in td_list else None
-        self.description:str = td_list["description"] if "description" in td_list else None
+        self.id: int = td_list["_id"]
+        self.owner: int = td_list["owner"]
+        self.name: str = td_list["name"]
+        self._custom_id: str = td_list["custom_id"]
+        self.status: str = td_list["status"]
+        self.delete_done: bool = td_list["delete_done"]
+        self.viewer: List[int] = td_list["viewer"]
+        self.editor: List[int] = td_list["editor"]
+        self.created_at: str = td_list["created_at"]
+        self.spots: int = td_list["spots"]
+        self.views: int = td_list["views"]
+        self.todos: List[dict] = td_list["todos"]
+        self._bought: List[str] = [] if not "bought" in td_list else td_list["bought"]
+        self.thumbnail: str = td_list["thumbnail"] if "thumbnail" in td_list else None
+        self.color: int = td_list["color"] if "color" in td_list else None
+        self.description: str = td_list["description"] if "description" in td_list else None
 
         if self._custom_id:
             self.custom_id_cache[self._custom_id] = self.id
@@ -870,7 +887,7 @@ class TodoList():
         return self._custom_id
 
     @custom_id.setter
-    def custom_id(self, value):
+    def custom_id(self, value: str) -> None:
         del self.custom_id_cache[self._custom_id]
         self._custom_id = value
         self.custom_id_cache[value] = self.id
@@ -893,7 +910,7 @@ class TodoList():
             return TodoList._generate_id()
 
     @staticmethod
-    def create(owner:int, title:str, status:str, done_delete:bool, custom_id:str=None) -> TodoList:
+    def create(owner: int, title: str, status: str, done_delete: bool, custom_id: str = None) -> TodoList:
         """Creates a todo list and returns a TodoList class"""
         list_id = TodoList._generate_id()
         todo.insert_one({"_id": list_id, "name": title, "owner": owner, "custom_id": custom_id, "status": status, "delete_done": done_delete, "viewer": [], "editor": [], "todos": [{"todo": "add todos", "marked": None, "added_by": 756206646396452975, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "views":0, "assigned_to": [], "mark_log": []}], "marks": [], "created_at": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "spots": 10, "views": 0 })
@@ -906,60 +923,60 @@ class TodoList():
             del self.custom_id_cache[self.custom_id]
         todo.delete_one({"_id": self.id})
 
-    def has_view_permission(self, user_id:int) -> bool:
+    def has_view_permission(self, user_id: int) -> bool:
         """Checks if someone has permission to view a todo list"""
         if self.status == "private":
             if not (user_id in self.viewer or user_id in self.editor or user_id == self.owner):
                 return False
         return True
 
-    def has_edit_permission(self, user_id:int) -> bool:
+    def has_edit_permission(self, user_id: int) -> bool:
         """Checks if someone has permission to edit a todo list"""
         if not (user_id in self.editor or user_id == self.owner):
             return False
         return True
 
-    def _update_val(self, key:str, value:Any, operator:str="$set") -> None:
+    def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
         todo.update_one({"_id": self.id}, {operator: {key: value}})
 
-    def set_property(self, prop, value):
+    def set_property(self, prop: str, value: Any) -> None:
         """Sets any property and updates the db as well"""
         setattr(self, prop, value)
         self._update_val(prop, value)
 
-    def add_view(self, viewer:int) -> None:
+    def add_view(self, viewer: int) -> None:
         """Adds a view to a todo lists viewcount"""
         if not viewer == self.owner and not viewer in self.viewer and viewer in self.editor:
             self.views += 1
             self._update_val("views", 1, "$inc")
 
-    def add_spots(self, spots) -> None:
+    def add_spots(self, spots: int) -> None:
         """Easy way to add max spots"""
         self.spots += spots
         self._update_val("spots", spots, "$inc")
 
-    def add_editor(self, user:int) -> None:
+    def add_editor(self, user: int) -> None:
         """Easy way to add an editor"""
         self.editor.append(user)
         self._update_val("editor", user, "$push")
 
-    def add_viewer(self, user:int) -> None:
+    def add_viewer(self, user: int) -> None:
         """Easy way to add a viewer"""
         self.viewer.append(user)
         self._update_val("viewer", user, "$push")
 
-    def kick_editor(self, editor:int) -> None:
+    def kick_editor(self, editor: int) -> None:
         """Easy way to kick an editor"""
         self.editor.remove(editor)
         self._update_val("editor", editor, "$pull")
 
-    def kick_viewer(self, viewer:int) -> None:
+    def kick_viewer(self, viewer: int) -> None:
         """Easy way to kick a viewer"""
         self.viewer.remove(viewer)
         self._update_val("viewer", viewer, "$pull")
 
-    def has_todo(self, task:int) -> bool:
+    def has_todo(self, task: int) -> bool:
         """Checks if a list contains a certain todo task"""
         try:
             if task < 1:
@@ -977,6 +994,7 @@ class TodoList():
     def enable_addon(self, addon: str) -> None:
         """Adds an attribute to the bought list to be able to be used"""
         if not addon.lower() in self._bought:
+            self._update_val("bought", addon.lower(), "$push")
             self._bought.append(addon.lower())
 
     def has_addon(self, addon: str) -> bool:
@@ -989,13 +1007,13 @@ class Todo(TodoList):
         cls = super().__new__(cls, list_id)
         task = cls.todos[int(position)-1]
 
-        cls.todo:str = task["todo"]
-        cls.marked:str = task["marked"]
-        cls.added_by:int = task["added_by"]
-        cls.added_on:str = task["added_on"]
-        cls.views:int = task["views"]
-        cls.assigned_to:list = task["assigned_to"]
-        cls.mark_log:list = task["mark_log"]
+        cls.todo: str = task["todo"]
+        cls.marked: str = task["marked"]
+        cls.added_by: int = task["added_by"]
+        cls.added_on: str = task["added_on"]
+        cls.views: int = task["views"]
+        cls.assigned_to: List[int] = task["assigned_to"]
+        cls.mark_log: List[dict] = task["mark_log"]
         return cls
 
 class Guild():
@@ -1003,17 +1021,17 @@ class Guild():
     cache = {}
 
     @classmethod
-    def __get_cache(cls, guild_id:int) -> Union[Guild, None]:
+    def __get_cache(cls, guild_id: int) -> Union[Guild, None]:
         return cls.cache[guild_id] if guild_id in cls.cache else None
 
-    def __new__(cls, guild_id:int, *args, **kwargs):
+    def __new__(cls, guild_id: int, *args, **kwargs):
         existing = cls.__get_cache(guild_id)
         if existing:
             return existing
         guild = super().__new__(cls)
         return guild
 
-    def __init__(self, guild_id:int):
+    def __init__(self, guild_id: int):
         if guild_id in self.cache:
             return
 
@@ -1023,9 +1041,9 @@ class Guild():
             self.add_default(guild_id)
             g = guilds.find_one({"id": guild_id})
 
-        self.id:int = guild_id
-        self.badges:list = g["badges"]
-        self.prefix:str = g["prefix"]
+        self.id: int = guild_id
+        self.badges: List[str] = g["badges"]
+        self.prefix: str = g["prefix"]
         self.commands:dict = {v for _, v in g["commands"].items()} if "commands" in g else {}
         
         if "tags" in g:
@@ -1038,12 +1056,12 @@ class Guild():
         return ("partner" in self.badges) or ("premium" in self.badges)
 
     @classmethod
-    def add_default(self, guild_id:int):
+    def add_default(self, guild_id: int) -> None:
         """Adds a guild to the database"""
         guilds.insert_one({"id": guild_id, "points": 0,"items": "","badges": [], "prefix": "k!"})
 
     @classmethod
-    def bullk_remove_premium(cls, guild_ids:List[int]) -> None:
+    def bullk_remove_premium(cls, guild_ids: List[int]) -> None:
         """Removes premium from all guilds specified, if possible"""
         for guild in guild_ids:
             try:
@@ -1053,26 +1071,26 @@ class Guild():
 
         guilds.update_many({"id": {"$in": guild_ids}}, {"$pull": {"badges": "premium"}})
 
-    def _update_val(self, key:str, value:Any, operator:str="$set") -> None:
+    def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
         guilds.update_one({"id": self.id}, {operator: {key: value}})
 
-    def delete(self):
+    def delete(self) -> None:
         """Deletes a guild from the database"""
         del self.cache[self.id]
         guilds.delete_one({"id": self.id})
 
-    def change_prefix(self, prefix:str):
+    def change_prefix(self, prefix: str) -> None:
         "Changes the prefix of a guild"
         self.prefix = prefix
         self._update_val("prefix", self.prefix)
 
-    def add_premium(self):
+    def add_premium(self) -> None:
         """Adds premium to a guild"""
         self.badges.append("premium")
         self._update_val("badges", "premium", "$push")
 
-    def remove_premium(self):
+    def remove_premium(self) -> None:
         """"Removes premium from a guild"""
         self.badges.remove("premium")
         self._update_val("badges", "premium", "$pull")
