@@ -143,6 +143,7 @@ class Tags(commands.Cog):
             return await ctx.send("The tag title has too many characters!")
         
         content = await self.client.get_text_response(ctx, "What should the description of the tag be?", timeout=600, min_length=1, max_length=2000)
+        if not content: return
 
         if len(content) > 2000:
             return await ctx.send("Too many characters!")

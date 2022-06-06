@@ -247,25 +247,6 @@ class SmallCommands(commands.Cog):
             return await ctx.send("The following error occured while calculating:\n`{}`".format(answer["error"]))
         await self.client.send_message(ctx, "Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
-    @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="usage")
-    async def usage(self, ctx: commands.Context):
-        """Shows the commands used the most. Added for fun and out of interest"""
-        s = stats.find_one({"_id": "commands"})["command_usage"]
-        top = sorted(s.items(), key=lambda x: x[1], reverse=True)
-        def make_embed(page, embed, pages):
-            embed.title = "Top command usage"
-
-            if len(pages)-page*10+10 > 10:
-                top = pages[page*10-10:-(len(pages)-page*10)]
-            elif len(pages)-page*10+10 <= 10:
-                top = pages[-(len(pages)-page*10+10):]
-
-            embed.description = "```\n" + "\n".join(["#"+str(n+1)+" k!"+k+" with "+str(v)+" uses" for n, (k, v) in enumerate(top, page*10-10)]) + "\n```"
-            return embed
-
-        return await Paginator(ctx, top, func=make_embed, max_pages=math.ceil(len(top)/10)).start()
-
 Cog = SmallCommands
 
 async def setup(client):

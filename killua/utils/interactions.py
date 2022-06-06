@@ -32,7 +32,7 @@ class View(discord.ui.View):
         for c in self.children:
             c.disabled = True
 
-        if not self.interaction.response.is_done():
+        if self.interaction and not self.interaction.response.is_done():
             await self.interaction.response.edit_message(view=self)
         else:
             await msg.edit(view=self)

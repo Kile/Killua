@@ -80,7 +80,7 @@ class IPCRoutes(commands.Cog):
         """Makes sure the local cache is up to date with the db"""
         guild = Guild(data.id)
         guild.prefix = data.prefix
-        guild.commands = {v for k, v in data.commands.items()}
+        guild.commands = {v for _, v in data.commands.items()}
 
     @ipc.server.route()
     async def vote(self, data) -> None:

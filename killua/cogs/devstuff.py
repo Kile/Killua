@@ -1,19 +1,26 @@
 from discord.ext import commands
 import discord
-from typing import List
+
+import math
+from typing import List, Tuple
+from io import BytesIO
 from datetime import datetime
+from matplotlib import pyplot as plt
 
 from killua.utils.checks import check
+from killua.utils.paginator import Paginator
 from killua.utils.classes import User, Guild #lgtm [py/unused-import]
-from killua.static.enums import Category, Activities, Presences
+from killua.utils.interactions import View, Button
+from killua.static.enums import Category, Activities, Presences, StatsOptions
 from killua.static.cards import Card #lgtm [py/unused-import]
-from killua.static.constants import teams, guilds, blacklist, presence as pr, items, updates, UPDATE_CHANNEL, GUILD_OBJECT #lgtm [py/unused-import]
+from killua.static.constants import teams, guilds, blacklist, presence as pr, items, stats, updates, UPDATE_CHANNEL, GUILD_OBJECT #lgtm [py/unused-import]
 
 class DevStuff(commands.Cog):
 
     def __init__(self, client):
         self.client = client
         self.version_cache = []
+        # self.colors = ["white", "red", "blue", "black", "brown", "green", "orange", "purple", "yellow", "grey"]
 
     async def version_autocomplete(
         self,
@@ -21,19 +28,168 @@ class DevStuff(commands.Cog):
         current: str,
     ) -> List[discord.app_commands.Choice[str]]:
 
-        if self.version_cache is None:
-            current = updates.find_one({"_id":"current"})
-            all_versions = [x["version"] for x in updates.find_one({"_id": "log"})["past_updates"]]
-
-            if "version" in current:
-                all_versions.append(current["version"])
-
-            self.version_cache = all_versions
+        if not self.version_cache:
+            self.version_cache = [x["version"] for x in updates.find_one({"_id": "log"})["past_updates"]]
 
         return [
             discord.app_commands.Choice(name=v, value=v)
             for v in self.version_cache if current.lower() in v.lower()
         ]
+
+    def _create_piechart(self, data: List[list], ) -> discord.File:
+        """Creates a piechart with the given data"""
+        labels = [x[0] for x in data]
+        values = [x[1] for x in data]
+        buffer = BytesIO()
+        plt.pie(values, labels=labels, autopct="%1.1f%%", shadow=True)
+        plt.axis("equal")
+        plt.tight_layout()
+        plt.savefig(buffer, format="png")
+        buffer.seek(0)
+        plt.close()
+        file = discord.File(buffer, filename="piechart.png")
+        return file
+
+    def _create_graph(self, dates: List[datetime], y_points: List[int], label: str) -> BytesIO:
+        """Creates a graph with y over time supplied in the dates list"""
+        plt.style.use("seaborn") # After testing this is the best theme
+        # Plotting the main graph
+        plt.plot(dates, y_points, color="blue")
+        plt.xlabel("Time")
+        plt.ylabel(label)
+        # Plot the trend
+        avg_change_per_day = round(sum([y_points[i+1] - y_points[i] for i in range(len(y_points)-1)])/len(y_points), 2)
+        start = y_points[0]
+        trend = [start + avg_change_per_day * i for i in range(len(y_points))]
+        plt.plot(dates, trend, linestyle=":", color="grey")
+
+        plt.tight_layout() # Making the actual graph a bit bigger
+        buf = BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        plt.close()
+
+        return buf
+
+    def _calc_predictions(self, values: List[int]) -> dict:
+        """Calculates various predictions for the given values"""
+
+        #Calculates the average change between one value compared to the next one in the list
+        change = [values[i+1] - values[i] for i in range(len(values)-1)]
+        avg_change = round(sum(change)/len(values), 2)
+        # Calculates the standart deviation of the avergae change
+        std_change = round(math.sqrt(sum([(x - avg_change)**2 for x in change])/len(values)), 2)
+
+        recent_avg = round(sum(values[-10:]) / 10, 2)
+
+        return {
+            "recent_avg": recent_avg,
+            "min": min(values),
+            "max": max(values),
+            "avg_change": avg_change,
+            "std_change": std_change,
+            "median": sorted(values)[len(values) // 2],
+            "mode": max(set(values), key=values.count),
+        }
+
+    def _get_stats_embed(self, dates: List[datetime], data: List[dict], embed: discord.Embed, type: str) -> Tuple[discord.Embed, discord.File]:
+        """Creates an embed with the stats of the given type"""
+        type_list = [x[type] for x in data]
+        buffer = self._create_graph(dates, type_list, type.replace("_", " ").title())
+        file = discord.File(buffer, filename=f"{type}.png")
+        add_data = self._calc_predictions(type_list)
+
+        embed.set_image(url=f"attachment://{type}.png")
+        type = type.replace("_", "") # Because we don't want the _ of registered_users
+        embed.title = f"Statistics about {self.client.user.name}'s " + type.title()
+        embed.add_field(name=f"Maximum {type} reached", value=add_data["max"]) # This is only really relevant for guilds and users as registered users cannot decrease
+        embed.add_field(name=f"Average {type} last 10 days", value=add_data["recent_avg"])
+        embed.add_field(name=f"Average {type} gained per day", value=add_data["avg_change"])
+        embed.add_field(name=f"\U000003c3 of the average daily {type} gain", value=add_data["std_change"])
+        return embed, file
+
+    async def all_top(self, ctx: commands.Context, top: List[tuple]) -> None:
+        """Shows a list of all top commands"""
+        def make_embed(page, embed, pages):
+            embed.title = "Top command usage"
+
+            if len(pages)-page*10+10 > 10:
+                top = pages[page*10-10:-(len(pages)-page*10)]
+            elif len(pages)-page*10+10 <= 10:
+                top = pages[-(len(pages)-page*10+10):]
+
+            embed.description = "```\n" + "\n".join(["#"+str(n+1)+" k!"+k+" with "+str(v)+" uses" for n, (k, v) in enumerate(top, page*10-10)]) + "\n```"
+            return embed
+
+        await Paginator(ctx, top, func=make_embed, max_pages=math.ceil(len(top)/10)).start()
+
+    async def group_top(self, ctx: commands.Context, top: List[tuple], interaction: discord.Interaction) -> None:
+        """Displays a pie chart of the top used commands in a group"""
+        # A list of all valid groups as strings
+        possible_groups = [g.name for g in self.client.commands if not g.parent and g.name != "help"] # The only time a command doesn't have a parent is when it's a group
+        group = await self.client.get_text_response(ctx, "Please enter a command group", interaction=interaction, style=discord.TextStyle.short, placeholder=(", ".join(possible_groups))[:97] + "...")
+        if not group: return
+
+        if not group.lower() in possible_groups:
+            return await ctx.send("That is not a valid group", ephemeral=True)
+        else:
+            top = [(x[0].split(" ")[1], x[1]) for x in top if x[0].startswith(group.lower()) and len(x[0].split(" ")) > 1]
+            rest = 0
+            for x in top[-9:]:
+                rest += x[1]
+
+            if len(top) > 9:
+                real_top = [*top[:9], ("other", rest)]
+            else:
+                real_top = top[:9]
+
+            file = self._create_piechart(real_top)
+            embed = discord.Embed(title=f"Top 10 commands of group {group}", color=0x1400ff)
+            embed.set_image(url="attachment://piechart.png")
+
+            view = View(ctx.author.id)
+            view.add_item(Button(label="Back", style=discord.ButtonStyle.red, custom_id="back"))
+
+            msg = await ctx.send(embed=embed, file=file, view=view)
+            await view.wait()
+            
+            if view.timed_out:
+                await view.disable()
+
+            if view.value:
+                if view.value == "back":
+                    await msg.delete()
+                    await self.initial_top(ctx)
+
+    async def initial_top(self, ctx: commands.Context) -> None:
+        s = stats.find_one({"_id": "commands"})["command_usage"]
+        top = sorted(s.items(), key=lambda x: x[1], reverse=True)
+        rest = 0
+        for x in top[-9:]:
+            rest += x[1]
+
+        # creates a piechart in an embed with the top 10 commands using _create_piechart
+        file = self._create_piechart([*top[:9], ("other", rest)])
+        embed = discord.Embed(title="Top 10 commands", color=0x1400ff)
+        embed.set_image(url="attachment://piechart.png")
+
+        view = View(ctx.author.id)
+        view.add_item(Button(label="See all", style=discord.ButtonStyle.primary, custom_id="all"))
+        view.add_item(Button(label="See for group", style=discord.ButtonStyle.primary, custom_id="group"))
+
+        msg = await ctx.send(embed=embed, file=file, view=view)
+
+        await view.wait()
+        
+        if view.timed_out:
+            await view.disable()
+        else:
+            await msg.delete()
+            if view.value == "all":
+                await self.all_top(ctx, top)
+            elif view.value == "group":
+                await self.group_top(ctx, top, view.interaction)
+
 
     @commands.hybrid_group()
     async def dev(self, _: commands.Context):
@@ -175,6 +331,29 @@ class DevStuff(commands.Cog):
         await self.client.update_presence()
         await ctx.send(f"Successfully changed Killua's status to `{text}`! (I hope people like it >-<)", ephemeral=True)
 
+    @dev.command()
+    async def stats(self, ctx: commands.Context, type: StatsOptions):
+        """Shows some statistics about the bot such as growth and command usage"""
+        if type.name == "usage":
+            await self.initial_top(ctx)
+        else:
+            def make_embed(page, embed, _):
+                embed.clear_fields()
+
+                data = stats.find_one({"_id": "growth"})["growth"]
+                dates = [x["date"] for x in data]
+
+                if page == 1:
+                    # Guild growth
+                    return self._get_stats_embed(dates, data, embed, "guilds")
+                elif page == 2:
+                    # User growth
+                    return self._get_stats_embed(dates, data, embed, "users")
+                elif page == 3:
+                    # Registered user growth
+                    return self._get_stats_embed(dates, data, embed, "registered_users")
+
+            return await Paginator(ctx, func=make_embed, max_pages=3, has_file=True).start()
 
 
 Cog = DevStuff

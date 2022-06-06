@@ -86,17 +86,21 @@ class Bot(commands.Bot):
 		text: str, 
 		timeout: int = None, 
 		timeout_message: str = None, 
+		interaction: discord.Interaction = None,
 		*args, 
 		**kwargs
 	) -> Union[str, None]:
 		"""Gets a reponse from either a textinput UI or by waiting for a response"""
 
-		if ctx.interaction:
+		if (ctx.interaction and not ctx.interaction.response.is_done()) or interaction:
 			modal = Modal(ctx.author.id, title="Anser the question(s) and click submit", timeout=timeout)
 			textinput = discord.ui.TextInput(label=text, *args, **kwargs)
 			modal.add_item(textinput)
 
-			await ctx.interaction.response.send_modal(modal)
+			if interaction:
+				await interaction.response.send_modal(modal)
+			else:
+				await ctx.interaction.response.send_modal(modal)
 
 			await modal.wait()
 			if modal.timed_out:

@@ -211,3 +211,7 @@ class EyesOptions(Enum):
 class PremiumGuildOptions(Enum):
     add = auto()
     remove = auto()
+
+class StatsOptions(Enum):
+    usage = auto()
+    growth = auto()
