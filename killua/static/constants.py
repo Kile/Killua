@@ -475,6 +475,7 @@ GUILD_OBJECT = discord.Object(id=GUILD)
 
 # For the translate command
 LANGS = {
+    "auto": "autodetect",
     "afrikaans": "af", 
     "albanian": "sq", 
     "amharic": "am", 

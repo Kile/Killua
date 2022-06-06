@@ -6,7 +6,7 @@ import getopt, sys
 from random import randint, choice
 from discord.ext import commands, ipc
 from datetime import date
-from typing import Union
+from typing import Coroutine, Union
 
 from .webhook.api import app
 from .utils.help import MyHelp
@@ -79,6 +79,21 @@ class Bot(commands.Bot):
 		for k, v in LOOTBOXES.items():
 			if name.lower() == v["name"].lower():
 				return k
+
+	def callback_from_command(self, command: Coroutine, message: bool, *args, **kwargs) -> Coroutine[discord.Interaction, Union[discord.Member, discord.Message], None]:
+		"""Turn a command function into a context menu callback"""
+		if message:
+			async def callback(interaction: discord.Interaction, message: discord.Message):
+				ctx = await commands.Context.from_interaction(interaction)
+				ctx.message = message
+				ctx.invoked_by_modal = True # This is added so we can check inside of the command if it was invoked from a modal
+				await ctx.invoke(command, text=message.content, *args, **kwargs)
+		else:
+			async def callback(interaction: discord.Interaction, member: discord.Member):
+				ctx = await commands.Context.from_interaction(interaction)
+				ctx.invoked_by_modal = True
+				await ctx.invoke(command, str(member.id), *args, **kwargs)
+		return callback
 
 	async def get_text_response(
 		self, 

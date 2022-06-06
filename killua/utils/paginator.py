@@ -161,15 +161,16 @@ class Paginator:
     The paginator supports subclassing to for example modify buttons
     """
     def __init__(self,
-        ctx:commands.Context,
-        pages:Union[List[Union[str, int, dict]], None]=None,
-        timeout:Union[int, float]=200,
-        page:int=1, 
-        max_pages:Union[int, None]=None,
-        func:Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None]=None, 
-        embed:E=None,
-        defer:bool=False, # In case a pageturn can exceed 3 seconds this has to be set to True
-        has_file:bool=False,
+        ctx: commands.Context,
+        pages: Union[List[Union[str, int, dict]], None]=None,
+        timeout: Union[int, float]=200,
+        page: int = 1, 
+        max_pages: Union[int, None] = None,
+        func: Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None] = None, 
+        embed: E = None,
+        defer: bool = False, # In case a pageturn can exceed 3 seconds this has to be set to True
+        has_file: bool = False,
+        ephemeral: bool = False,
         **kwargs
         ):
 
@@ -182,6 +183,7 @@ class Paginator:
         self.defer = defer
         self.embed = embed or DefaultEmbed()
         self.has_file = has_file
+        self.ephemeral = ephemeral
         self.file = None
         self.user_id = self.ctx.author.id
         self.paginator = self
@@ -204,7 +206,7 @@ class Paginator:
     async def _start(self) -> View:
         """A seperate method so overwriting `start` can still use the logic of the normal paginator"""
         await self._get_first_embed()
-        self.view.message = (await self.ctx.bot.send_message(self.ctx, file=self.file, embed=self.embed, view=self.view)) if self.file else (await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view))
+        self.view.message = (await self.ctx.bot.send_message(self.ctx, file=self.file, embed=self.embed, view=self.view, ephermal=self.ephemeral)) if self.file else (await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view))
         
         await self.view.wait()
 

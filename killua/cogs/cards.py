@@ -29,6 +29,18 @@ class Cards(commands.Cog):
                 "C": [x["_id"] for x in items.find({"type": "monster", "rank": {"$in": ["C", "D", "E"]}})]
             }
         }
+        self._init_menus()
+
+    def _init_menus(self) -> None:
+        menus = []
+        menus.append(discord.app_commands.ContextMenu(
+            name='meet',
+            callback=self.client.callback_from_command(self.meet, message=False),
+            # guild_ids=[...],
+        ))
+
+        for menu in menus:
+            self.client.tree.add_command(menu)
 
     async def all_cards_autocomplete(
         self,
@@ -345,24 +357,26 @@ class Cards(commands.Cog):
     @cards.command(aliases=["approach"], extras={"category":Category.CARDS}, usage="meet <user>")
     async def meet(self, ctx: commands.Context, user: discord.Member):
         """Meet a user who has recently send a message in this channel to enable certain effects"""
+        if hasattr(ctx, "invoked_by_modal"):
+            user = await self.client.find_user(ctx, user)
 
         author = User(ctx.author.id)
         past_users = list()
         if user.bot:
-            return await ctx.send("You can't interact with bots with this command")
+            return await ctx.send("You can't interact with bots with this command", ephemeral=True)
         async for message in ctx.channel.history(limit=20):
             if message.author.id not in past_users:
                 past_users.append(message.author.id)
 
         if not user.id in past_users:
-            return await ctx.send("The user you tried to approach has not send a message in this channel recently")
+            return await ctx.send("The user you tried to approach has not send a message in this channel recently", ephemeral=True)
 
         if user.id in author.met_user:
             try:
                 await ctx.message.delete()
             except discord.HTTPException:
                 pass
-            return await ctx.send(f"You already have `{user}` in the list of users you met, {ctx.author.name}", delete_after=2, allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"You already have `{user}` in the list of users you met, {ctx.author.name}", delete_after=2, allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
         author.add_met_user(user.id)
         try:

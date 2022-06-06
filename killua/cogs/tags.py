@@ -80,6 +80,17 @@ class Tags(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self._init_menus()
+
+    def _init_menus(self) -> None:
+        menus = []
+        menus.append(discord.app_commands.ContextMenu(
+            name='tags',
+            callback=self.client.callback_from_command(self.user, message=False)
+        ))
+
+        for menu in menus:
+            self.client.tree.add_command(menu)
 
     def _build_embed(self, ctx:commands.Context, content:list, page:int, user:discord.User=None) -> discord.Embed:
 
@@ -126,7 +137,7 @@ class Tags(commands.Cog):
         member = Member(ctx.author.id, ctx.guild.id)
         if not Tag(ctx.guild.id, name).found is False:
             tag = Tag(ctx.guild.id, name)
-            user = self.client.get_member(tag.owner)
+            user = ctx.guild.get_member(tag.owner)
             return await ctx.send(f"This tag already exists and is owned by {user or '`user left`'}")
 
         if "tags" in guild:
@@ -269,21 +280,24 @@ class Tags(commands.Cog):
     @discord.app_commands.describe(user="User you want to see tags of")
     async def user(self, ctx: commands.Context, user: discord.Member):
         """Get the tags a user own sorted by uses"""
+        if hasattr(ctx, "invoked_by_modal"): # user is a string if invoked by modal
+            user = await self.client.find_user(ctx, user)
+
         member = Member(user.id, ctx.guild.id)
         if member.has_tags is False:
-            return await ctx.send("This user currently does not have any tags!")
+            return await ctx.send("This user currently does not have any tags!", ephemeral=True)
         z = sorted(zip([x[1] for x in member.tags], [x[0] for x in member.tags]), reverse=True)
         g:list = []
         for i in z:
             uses, name = i
             g.append(f"`{name}` with `{uses}` uses")
         if len(g) <= 10:
-            return await ctx.send(embed=self._build_embed(ctx, g, 1, user))
+            return await ctx.send(embed=self._build_embed(ctx, g, 1, user), ephemeral=hasattr(ctx, "invoked_by_modal"))
 
         def make_embed(page, _, pages):
             return self._build_embed(ctx, pages, page, user)
 
-        await Paginator(ctx, g, func=make_embed, max_pages=math.ceil(len(g)/10)).start()
+        await Paginator(ctx, g, func=make_embed, max_pages=math.ceil(len(g)/10), ephemeral=hasattr(ctx, "invoked_by_modal")).start()
 
 Cog = Tags
 

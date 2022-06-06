@@ -15,6 +15,23 @@ class Economy(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self._init_menus()
+
+    def _init_menus(self) -> None:
+        menus = []
+        menus.append(discord.app_commands.ContextMenu(
+            name='profile',
+            callback=self.client.callback_from_command(self.profile, message=False),
+            # guild_ids=[...],
+        ))
+        menus.append(discord.app_commands.ContextMenu(
+            name='balance',
+            callback=self.client.callback_from_command(self.jenny, message=False),
+        ))
+
+        for menu in menus:
+            self.client.tree.add_command(menu)
+
 
     async def _get_user(self, user_id: int) -> Union[discord.User, None]:
         u = self.client.get_user(user_id)
@@ -150,7 +167,7 @@ class Economy(commands.Cog):
                 return await ctx.send(f"Could not find user `{user}`", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
         embed = self._getmember(res)
-        return await self.client.send_message(ctx, embed=embed)
+        return await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_modal"))
 
     @check()
     @economy.command(aliases=["bal", "balance", "points"], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
@@ -167,7 +184,7 @@ class Economy(commands.Cog):
                 return await ctx.send("User not found", ephemeral=True)
 
         balance = User(res.id).jenny
-        return await ctx.send(f"{res}'s balance is {balance} Jenny")
+        return await ctx.send(f"{res}'s balance is {balance} Jenny", aphemeral=hasattr(ctx, "invoked_by_modal"))
         
     @check()
     @economy.command(extras={"category":Category.ECONOMY}, usage="daily")

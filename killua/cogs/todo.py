@@ -16,6 +16,17 @@ class TodoSystem(commands.Cog):
 
     def __init__(self,client):
         self.client = client
+        self._init_menus()
+
+    def _init_menus(self) -> None:
+        menus = []
+        menus.append(discord.app_commands.ContextMenu(
+            name='todo add',
+            callback=self.client.callback_from_command(self.add, message=True)
+        ))
+
+        for menu in menus:
+            self.client.tree.add_command(menu)
 
     async def _get_user(self, u: int) -> discord.User:
         """Gets a user from cache if possible, else makes an API request"""
@@ -465,27 +476,27 @@ class TodoSystem(commands.Cog):
 
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="add <text>")
-    @discord.app_commands.describe(task="What to add to the todo list")
-    async def add(self, ctx: commands.Context, *, task: str):
+    @discord.app_commands.describe(text="What to add to the todo list")
+    async def add(self, ctx: commands.Context, *, text: str):
         """Add a todo to your list, *yay, more work* (Only in editor mode)"""
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send(f"You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
         todo_list = TodoList(list_id)
 
-        if len(task) > 100:
-            return await ctx.send("Your todo can't have more than 100 characters")
+        if len(text) > 100:
+            return await ctx.send("Your todo can't have more than 100 characters", ephemeral=True)
         
         if len(todo_list.todos) >= todo_list.spots:
-            return await ctx.send(f"You don't have enough spots for that! Buy spots with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy space`. You can currently only have up to {todo_list.spots} spots in this list", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"You don't have enough spots for that! Buy spots with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy space`. You can currently only have up to {todo_list.spots} spots in this list", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
         todos = todo_list.todos
-        todos.append({"todo": task, "marked": None, "added_by": ctx.author.id, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"),"views": 0, "assigned_to": [], "mark_log": []})
+        todos.append({"todo": text, "marked": None, "added_by": ctx.author.id, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"),"views": 0, "assigned_to": [], "mark_log": []})
         
         todo_list.set_property("todos", todos)
-        return await ctx.send(f"Great! Added {task} to your todo list!", allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.send(f"Great! Added {text} to your todo list!", allowed_mentions=discord.AllowedMentions.none(), ephemeral=hasattr(ctx, "invoked_by_modal"))
 
     @check(20)
     @todo.command(extras={"category":Category.TODO}, usage="kick <user>")

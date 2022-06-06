@@ -6,18 +6,32 @@ import time
 from datetime import datetime
 from random import randint, choice
 import math
-from typing import Union
+from typing import List
 from urllib.parse import quote
 
-from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, stats, teams, LANGS
+from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, teams, LANGS
 from killua.utils.checks import check
 from killua.static.enums import Category
-from killua.utils.paginator import Paginator
 
 class SmallCommands(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self._init_menus()
+
+    def _init_menus(self) -> None:
+        menus = []
+        menus.append(discord.app_commands.ContextMenu(
+            name='uwufy',
+            callback=self.client.callback_from_command(self.uwufy, message=True),
+        ))
+        menus.append(discord.app_commands.ContextMenu(
+            name='translate',
+            callback=self.client.callback_from_command(self.translate, message=True, source="auto", target="en"),
+        ))
+
+        for menu in menus:
+            self.client.tree.add_command(menu)
 
     def hardcoded_aliases(self, text:str) -> str:
         l = []
@@ -77,10 +91,10 @@ class SmallCommands(commands.Cog):
 
     @check()
     @miscillaneous.command(aliases=["uwu", "owo", "owofy"], extras={"category":Category.FUN}, usage="uwufy <text>")
-    @discord.app_commands.describe(content="The text to uwufy")
-    async def uwufy(self, ctx: commands.Context, *, content: str):
+    @discord.app_commands.describe(text="The text to uwufy")
+    async def uwufy(self, ctx: commands.Context, *, text: str):
         """Uwufy any sentence you want with dis command, have fun >_<"""
-        return await self.client.send_message(ctx, self.build_uwufy(content, stuttering=3, cuteness=3))
+        return await self.client.send_message(ctx, self.build_uwufy(text, stuttering=3, cuteness=3))
 
     @check()
     @miscillaneous.command(extras={"category":Category.FUN}, usage="ping")
@@ -192,6 +206,17 @@ class SmallCommands(commands.Cog):
         view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://discordbotlist.com/bots/killua/upvote", label="dbl"))
         await ctx.send("Thanks for supporting Killua! Vote for him by clicking on the buttons!", view=view)
 
+    async def lang_autocomplete(
+        self, 
+        _: commands.Context,
+        current: str
+    ) -> List[discord.app_commands.Choice[str]]:
+        """Returns a list of flags that match the current string since there are too many flags for it to use the options feature"""
+        return [
+            discord.app_commands.Choice(name=i.title(), value=i) for i in LANGS.keys() 
+            if i.startswith(current.lower()) or current.lower() in i
+        ][:25]
+
     @check()
     @miscillaneous.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
     @discord.app_commands.describe(
@@ -199,34 +224,36 @@ class SmallCommands(commands.Cog):
         target="The language you want to translate to",
         text="The text you want to translate"
     )
+    @discord.app_commands.autocomplete(source=lang_autocomplete, target=lang_autocomplete)
     async def translate(self, ctx: commands.Context, source: str, target: str, *, text: str):
         """Translate anything to 20+ languages with this command!"""
-
         if source.lower() in LANGS: source = LANGS[source.lower()]
         if target.lower() in LANGS: target = LANGS[target.lower()]
 
         if not (target in LANGS.values()) or not (source in LANGS.values()):
-            return await ctx.send("Invalid language! This is how to use the command: `" + ctx.command.usage + "`")
+            return await ctx.send("Invalid language! This is how to use the command: `" + ctx.command.usage + "`", ephemeral=True)
 
         if len(source) > 1800:
-            return await ctx.send("Too many characters to translate!")
+            return await ctx.send("Too many characters to translate!", ephemeral=True)
 
-        text = quote(args, safe="")
-        res = await self.client.session.get("http://api.mymemory.translated.net/get?q=" + text + "&langpair=" + source.lower() + "|" + target.lower())
+        coded_text = quote(text, safe="")
+        res = await self.client.session.get("http://api.mymemory.translated.net/get?q=" + coded_text + "&langpair=" + source.lower() + "|" + target.lower())
 
         if not (res.status == 200):
-            return await ctx.send(":x: " + await res.text())
+            return await ctx.send(":x: " + await res.text(), ephemeral=True)
 
         translation = await res.json()
-            
+        if not "matches" in translation or len(translation["matches"]) < 1:
+            return await ctx.send("Translation failed!")
+
         embed = discord.Embed.from_dict({ 
             "title": f"Translation Successfull",
-            "description": f"```\n{args}```\n`{source}` -> `{target}`\n\n```\n{translation['responseData']['translatedText']}```",
+            "description": f"```\n{text}```\n`{source}` -> `{target}`\n\n```\n{translation['responseData']['translatedText']}```",
             "color": 0x1400ff,
-            "footer": {"text": "Confidence: " + str(translation["responseData"]["match"] * 100) + "%"}
+            "footer": {"text": "Confidence: " + str(translation["matches"][0]["quality"]) + "%"}
         })
         
-        await self.client.send_message(ctx, embed=embed)
+        await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_modal"))
 
     @check()
     @miscillaneous.command(extras={"category":Category.FUN}, usage="calc <math>")

@@ -20,7 +20,6 @@ class DevStuff(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.version_cache = []
-        # self.colors = ["white", "red", "blue", "black", "brown", "green", "orange", "purple", "yellow", "grey"]
 
     async def version_autocomplete(
         self,
@@ -281,34 +280,31 @@ class DevStuff(commands.Cog):
     @dev.command(extras={"category":Category.OTHER}, usage="blacklist <user_id>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     @discord.app_commands.describe(
-        id="The id of the user to blacklist",
+        user="The user to blacklist",
         reason="The reason for the blacklist"
     )
-    async def blacklist(self, ctx: commands.Context, id: int, *,reason = None):
+    async def blacklist(self, ctx: commands.Context, user: str, *,reason = None):
         """Blacklisting bad people like Hisoka. Owner restricted"""
-        try:
-            user = self.client.get_user(id) or await self.client.fetch_user(id)
-        except Exception as e:
-            return await ctx.send(e)
+        user = await self.client.find_user(user)
+        if not user:
+            return await ctx.send("Invalid user!", ephermal=True)
         # Inserting the bad person into my database
-        blacklist.insert_one({"id": id, "reason": reason or "No reason provided", "date": datetime.now()})
-        await ctx.send(f"Blacklisted user `{user}` for reason: {reason}")
+        blacklist.insert_one({"id": user, "reason": reason or "No reason provided", "date": datetime.now()})
+        await ctx.send(f"Blacklisted user `{user}` for reason: {reason}", ephermal=True)
         
     @commands.is_owner()
     @dev.command(extras={"category":Category.OTHER}, usage="whitelist <user_id>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     @discord.app_commands.describe(
-        id="The id of the user to whitelist"
+        user="The user to whitelist"
     )
-    async def whitelist(self, ctx: commands.Context, id: int):
+    async def whitelist(self, ctx: commands.Context, user: str):
         """Whitelists a user. Owner restricted"""
+        user = await self.client.find_user(user)
+        if not user:
+            return await ctx.send("Invalid user!", ephermal=True)
 
-        try:
-            user = self.client.get_user(id) or await self.client.fetch_user(id)
-        except Exception as e:
-            return await ctx.send(e)
-
-        blacklist.delete_one({"id": id})
+        blacklist.delete_one({"id": user})
         await ctx.send(f"Successfully whitelisted `{user}`")
 
     @commands.is_owner()

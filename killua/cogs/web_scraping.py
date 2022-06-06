@@ -29,6 +29,17 @@ class WebScraping(commands.Cog):
             "referer": "https://duckduckgo.com/",
             "authority": "duckduckgo.com",
         }
+        self._init_menus()
+
+    def _init_menus(self) -> None:
+        menus = []
+        menus.append(discord.app_commands.ContextMenu(
+            name='google',
+            callback=self.client.callback_from_command(self.google, message=True)
+        ))
+
+        for menu in menus:
+            self.client.tree.add_command(menu)
 
     def _try_else(self, x: Any, f: Callable[[Any], str], e: str = None) -> str:
         """Returns a book info it it exists, else "-" or e if provided"""
@@ -163,22 +174,22 @@ class WebScraping(commands.Cog):
 
     @check(2)
     @web.command(aliases=["g","search"], extras={"category":Category.FUN}, usage="google <query>")
-    @discord.app_commands.describe(query="What to search for")
-    async def google(self, ctx: commands.Context, *, query: str):
+    @discord.app_commands.describe(text="The query to search for")
+    async def google(self, ctx: commands.Context, *, text: str):
         """Get the best results for a query the web has to offer"""
         
-        r = await self.pxl.web_search(query=query)
+        r = await self.pxl.web_search(query=text)
         if r.success:
             results = r.data["results"]
             embed = discord.Embed.from_dict({
-                "title": f"Results for query {query}",
+                "title": f"Results for query {text}",
                 "color": 0x1400ff,
             })
             for i in range(4 if len(results) >= 4 else len(results)):
                 res = results[i-1]
                 embed.add_field(name="** **", value=f"**[__{res['title']}__]({res['url']})**\n{res['description'][:100]}..." if len(res["description"]) > 100 else res["description"], inline=False)
-            return await self.client.send_message(ctx, embed=embed)
-        return await ctx.send(":x: "+r.error)
+            return await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_modal"))
+        return await ctx.send(":x: "+r.error, epheremal=True)
 
 Cog = WebScraping
 

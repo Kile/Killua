@@ -489,7 +489,7 @@ class User:
         if cards:
             teams.update_one({"id": user_id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0}})  
         else:
-            teams.insert_one({"id": user_id, "points": 0, "badges": [], "cooldowndaily": "","cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}, "stats": {"rps": {"wins": 0, "losses": 0, "ties": 0}}})}}}) 
+            teams.insert_one({"id": user_id, "points": 0, "badges": [], "cooldowndaily": "","cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}, "stats": {"rps": {"wins": 0, "losses": 0, "ties": 0}}})
 
     def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
