@@ -8,7 +8,7 @@ from datetime import datetime
 from killua.utils.checks import check, premium_member_only
 from killua.utils.classes import User, Guild, LootBox
 from killua.static.enums import Category, PremiumGuildOptions
-from killua.static.constants import PATREON_TIERS, teams, GUILD, BOOSTER_ROLE, PATREON, LOOTBOXES, PREMIUM_BENEFITS
+from killua.static.constants import PATREON_TIERS, GUILD, BOOSTER_ROLE, PATREON, LOOTBOXES, PREMIUM_BENEFITS, DB
 
 class Patrons:
 
@@ -140,7 +140,7 @@ class Premium(commands.Cog):
     @tasks.loop(minutes=2)
     async def get_patrons(self):
         current_patrons = await Patreon(self.client.session, PATREON, "5394117").get_patrons()
-        saved_patrons = [x for x in teams.find({"badges": {"$in": list(PATREON_TIERS.keys())}})]
+        saved_patrons = [x for x in DB.teams.find({"badges": {"$in": list(PATREON_TIERS.keys())}})]
 
         diff = self._get_differences(current_patrons, saved_patrons)
         self._assign_badges(diff)

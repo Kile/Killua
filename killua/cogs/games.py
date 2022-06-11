@@ -20,6 +20,7 @@ class PlayAgainButton(discord.ui.Button):
         super().__init__(**kwargs)
         self.label = "Play Again"
         self.__clicked = None
+        self.custom_id = "play_again"
 
     async def callback(self, interaction: discord.Interaction):
 
@@ -365,7 +366,7 @@ class CountGame:
 
     def _create_solutions(self, keep_used: bool) -> None:
         """Creates the solution dictionary"""
-        res:dict = (self.solutions if hasattr(self, "solutions") else {}) if keep_used else {} 
+        res: dict = (self.solutions if hasattr(self, "solutions") else {}) if keep_used else {} 
         for i in range(1 if keep_used else self.level):
             res[len(res)+1 if keep_used else i+1] = self._assign_until_unique(list(res.values()))
         self.solutions = res
@@ -389,7 +390,7 @@ class CountGame:
         view = View(self.ctx.author.id, timeout=self.level*10*(0.5 if self.difficulty == "easy" else 1))
         view.stage = 1
         for i in range(25):
-            view.add_item(CountButtons(self.solutions, i+1, label=" "))
+            view.add_item(CountButtons(self.solutions, i+1, label=" ", custom_id=str(i+1)))
         await msg.edit(content="Can you remember?", view=view)
         await view.wait()
 

@@ -119,28 +119,28 @@ class Buttons(View):
             await self._get_embed()
             await interaction.response.edit_message(embed=self.embed, view=self)
 
-    @discord.ui.button(emoji=ButtonEmoji.FIRST_PAGE, style=Color.BLURPLE, disabled=True)
+    @discord.ui.button(emoji=ButtonEmoji.FIRST_PAGE, style=Color.BLURPLE, disabled=True, custom_id="first")
     async def first_page(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = 1
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=ButtonEmoji.BACKWARDS, style=Color.BLURPLE)
+    @discord.ui.button(emoji=ButtonEmoji.BACKWARDS, style=Color.BLURPLE, custom_id="previous")
     async def backwards(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.page - 1 if self.page > 1 else self.max_pages
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=ButtonEmoji.STOP, style=Color.RED)
+    @discord.ui.button(emoji=ButtonEmoji.STOP, style=Color.RED, custom_id="delete")
     async def delete(self, interaction: discord.Interaction, _: discord.ui.button):
         await interaction.message.delete()
         self.ignore = True
         self.stop()
 
-    @discord.ui.button(emoji=ButtonEmoji.FORWARD, style=Color.BLURPLE)
+    @discord.ui.button(emoji=ButtonEmoji.FORWARD, style=Color.BLURPLE, custom_id="next")
     async def forward(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.page + 1 if not self.page >= self.max_pages else 1
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=ButtonEmoji.LAST_PAGE, style=Color.BLURPLE)
+    @discord.ui.button(emoji=ButtonEmoji.LAST_PAGE, style=Color.BLURPLE, custom_id="last")
     async def last_page(self,interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.max_pages
         await self._edit_message(interaction)
@@ -206,7 +206,7 @@ class Paginator:
     async def _start(self) -> View:
         """A seperate method so overwriting `start` can still use the logic of the normal paginator"""
         await self._get_first_embed()
-        self.view.message = (await self.ctx.bot.send_message(self.ctx, file=self.file, embed=self.embed, view=self.view, ephermal=self.ephemeral)) if self.file else (await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view))
+        self.view.message = (await self.ctx.bot.send_message(self.ctx, file=self.file, embed=self.embed, view=self.view, ephemeral=self.ephemeral)) if self.file else (await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view))
         
         await self.view.wait()
 

@@ -12,7 +12,7 @@ from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatch
 from killua.static.enums import Category, HuntOptions, Items, SellOptions
 from killua.utils.interactions import ConfirmButton
 from killua.static.cards import Card
-from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, items, LOOTBOXES
+from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, LOOTBOXES, DB
 
 
 class Cards(commands.Cog):
@@ -21,12 +21,12 @@ class Cards(commands.Cog):
         self.client = client
         self.cardname_cache = {}
         self.reward_cache = {
-            "item": [x["_id"] for x in items.find({"type": "normal", "rank": { "$in": ["A", "B", "C"]}})],
-            "spell": [x["_id"] for x in items.find({"type": "spell", "rank": { "$in": ["B", "C"]}})],
+            "item": [x["_id"] for x in DB.items.find({"type": "normal", "rank": { "$in": ["A", "B", "C"]}})],
+            "spell": [x["_id"] for x in DB.items.find({"type": "spell", "rank": { "$in": ["B", "C"]}})],
             "monster": {
-                "E": [x["_id"] for x in items.find({"type": "monster", "rank": {"$in": ["E", "G", "H"]}})],
-                "D": [x["_id"] for x in items.find({"type": "monster", "rank": {"$in": ["D", "E", "F"]}})],
-                "C": [x["_id"] for x in items.find({"type": "monster", "rank": {"$in": ["C", "D", "E"]}})]
+                "E": [x["_id"] for x in DB.items.find({"type": "monster", "rank": {"$in": ["E", "G", "H"]}})],
+                "D": [x["_id"] for x in DB.items.find({"type": "monster", "rank": {"$in": ["D", "E", "F"]}})],
+                "C": [x["_id"] for x in DB.items.find({"type": "monster", "rank": {"$in": ["C", "D", "E"]}})]
             }
         }
         self._init_menus()
@@ -35,8 +35,7 @@ class Cards(commands.Cog):
         menus = []
         menus.append(discord.app_commands.ContextMenu(
             name='meet',
-            callback=self.client.callback_from_command(self.meet, message=False),
-            # guild_ids=[...],
+            callback=self.client.callback_from_command(self.meet, message=False)
         ))
 
         for menu in menus:
@@ -49,7 +48,7 @@ class Cards(commands.Cog):
     ) -> List[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         if not self.cardname_cache:
-            for card in items.find({}):
+            for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
         name_cards = [(x[0], self.cardname_cache[x[0]][0]) for x in User(interaction.user.id).all_cards if self.cardname_cache[x[0]][0].lower().startswith(current.lower())]
@@ -186,14 +185,14 @@ class Cards(commands.Cog):
                 if view.timed_out:
                     return await ctx.send(f"Timed out!")
                 else:
-                    await ctx.send(f"Successfully canceled!")
+                    return await ctx.send(f"Successfully canceled!")
             else:
                 if to_be_gained == 0:
-                    await ctx.send(f"You don't have any {type.name if not type.name == 'all' else 'free slots'} cards to sell!")
+                    return await ctx.send(f"You don't have any {type.name if not type.name == 'all' else 'free slots'} cards to sell!")
                 else:
                     user.bulk_remove(to_be_sold)
                     user.add_jenny(to_be_gained)
-                    await ctx.send(f"You sold all your {type.name if not type.name == 'all' else 'free slots'} cards for {to_be_gained} Jenny!")
+                    return await ctx.send(f"You sold all your {type.name if not type.name == 'all' else 'free slots'} cards for {to_be_gained} Jenny!")
         if not card:
             return
 
@@ -246,7 +245,7 @@ class Cards(commands.Cog):
         """Autocomplete for the swap command"""
                 
         if not self.cardname_cache:
-            for card in items.find({}):
+            for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
         user = User(interaction.user.id)
@@ -538,7 +537,7 @@ class Cards(commands.Cog):
         current: str,
     ) -> List[discord.app_commands.Choice[str]]:
         if not self.cardname_cache:
-            for card in items.find({}):
+            for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
         name_cards = [(x[0], self.cardname_cache[x[0]][0])for x in User(interaction.user.id).all_cards if self.cardname_cache[x[0]][0].lower().startswith(current.lower()) and self.cardname_cache[x[0]][1] == "spell"]

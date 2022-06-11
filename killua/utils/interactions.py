@@ -104,6 +104,7 @@ class ConfirmButton(discord.ui.View):
         self.user_id = user_id
         self.timed_out = False # helps subclasses using Button to have set this to False
         self.interaction = None
+        self.custom_id = "confirm"
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if not (val := interaction.user.id == self.user_id):

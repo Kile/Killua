@@ -2,7 +2,7 @@ import discord
 from discord.ext import ipc, commands
 
 from killua.utils.classes import User, Guild, LootBox
-from killua.static.constants import teams, LOOTBOXES
+from killua.static.constants import DB, LOOTBOXES
 
 from typing import List
 
@@ -45,7 +45,7 @@ class IPCRoutes(commands.Cog):
     @ipc.server.route()
     async def top(self, _) -> List[dict]:
         """Returns a list of the top 50 users by the amount of jenny they have"""
-        members = teams.find({'id': {'$in': [x.id for x in self.client.users]} })
+        members = DB.teams.find({'id': {'$in': [x.id for x in self.client.users]} })
         top = sorted(members, key=lambda x: x['points'], reverse=True)[:50]
         res = []
         for t in top:

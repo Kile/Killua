@@ -5,7 +5,7 @@ from discord.ext import commands
 from datetime import datetime
 from typing import List, Union
 
-from .constants import items, INDESTRUCTABLE, ALLOWED_AMOUNT_MULTIPLE, DEF_SPELLS, VIEW_DEF_SPELLS, FREE_SLOTS
+from .constants import INDESTRUCTABLE, ALLOWED_AMOUNT_MULTIPLE, DEF_SPELLS, VIEW_DEF_SPELLS, FREE_SLOTS, DB
 from killua.utils.classes import User, SuccessfullDefense, CheckFailure, CardNotFound, Book
 from killua.utils.paginator import Paginator
 from killua.utils.interactions import Select, View, Button, ConfirmButton
@@ -37,7 +37,7 @@ class Card:
             # This could be solved much easier but this allows the user to 
             # have case insensitivity when looking for a card
             if not self.cached_raw:
-                self.cached_raw = [(c["name"], c["_id"]) for c in items.find({})]
+                self.cached_raw = [(c["name"], c["_id"]) for c in DB.items.find({})]
             for c in self.cached_raw:
                 if c[0].lower() == name_or_id.lower():
                     return c[1]
@@ -51,7 +51,7 @@ class Card:
         if card_id is None:
             raise CardNotFound
 
-        card = items.find_one({"_id": card_id})
+        card = DB.items.find_one({"_id": card_id})
         
         self.id:int = card["_id"]
         self.name:str = card["name"]
@@ -65,7 +65,7 @@ class Card:
         try:
             self.type:str = card["type"]
         except KeyError:
-            items.update_one({"_id": self.id}, {"$set":{"type": "normal"}})
+            DB.items.update_one({"_id": self.id}, {"$set":{"type": "normal"}})
             self.type = "normal"
 
         if self.id > 1000 and not self.id == 1217: # If the card is a spell card it has two additional properties
@@ -77,13 +77,13 @@ class Card:
     def add_owner(self, user_id:int):
         """Adds an owner to a card entry in my db. Only used in Card().add_card()"""
         self.owners.append(user_id)
-        items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
+        DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
         return
 
     def remove_owner(self, user_id:int):
         """Removes an owner from a card entry in my db. Only used in Card().remove_card()"""
         self.owners.remove(user_id)
-        items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
+        DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
         return
 
     async def _wait_for_defense(self, ctx:commands.Context, other:User, effects:list) -> None:
@@ -94,7 +94,7 @@ class Card:
         effects = [Card(c) for c in effects]
         view = View(other.id, timeout=20)
         view.add_item(Select(options=[discord.SelectOption(label=c.name, emoji=c.emoji, value=str(c.id)) for c in effects]))
-        view.add_item(Button(label="Ignore", style=discord.ButtonStyle.red))
+        view.add_item(Button(label="Ignore", style=discord.ButtonStyle.red, custom_id="ignore"))
 
         msg = await ctx.send(f"<@{other.id}> {ctx.author} has used the spell `{self.id}` on you! You have {len(effects)} spells to defend yourself. You can either choose one of them to defend yourself with or let the attack go through", view=view)
         await view.wait()
@@ -575,7 +575,7 @@ class Card1032(Card):
         author = User(self.ctx.author.id)
         self._is_full_check(author)
 
-        target = random.choice([x["_id"] for x in items.find({"type": "normal", "available": True}) if x["rank"] != "SS" and x["_id"] != 0]) # random card for lottery
+        target = random.choice([x["_id"] for x in DB.items.find({"type": "normal", "available": True}) if x["rank"] != "SS" and x["_id"] != 0]) # random card for lottery
         author.remove_card(self.id)
         self._is_maxed_check(target)
         author.add_card(target)

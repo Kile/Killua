@@ -10,7 +10,7 @@ from PIL import Image
 
 from killua.utils.classes import Guild, Book
 from killua.static.enums import PrintColors
-from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, items, teams, PatreonBanner, stats
+from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, PatreonBanner, DB
 
 class Events(commands.Cog):
 
@@ -31,7 +31,7 @@ class Events(commands.Cog):
 
     async def _load_cards_cache(self) -> None:
         """Downloads all the card images so the image manipulation is fairly fast"""
-        cards = [x for x in items.find()]
+        cards = [x for x in DB.items.find()]
 
         if len(cards) == 0:
             return print(f"{PrintColors.WARNING}No cards in the database, could not load cache{PrintColors.ENDC}")
@@ -101,7 +101,7 @@ class Events(commands.Cog):
     async def save_guilds(self):
         # this is currently not used but the earlier we collect this data, the better because I do plan to use it
         if not self.client.is_dev:
-            stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": teams.count_documents()}}})
+            DB.stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": DB.teams.count_documents()}}})
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

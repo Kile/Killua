@@ -1,5 +1,4 @@
 from __future__ import annotations
-from ast import NotIn
 """
 This file comtains classes that are not specific to one group and are used across several files
 """
@@ -16,7 +15,7 @@ from PIL import Image, ImageFont, ImageDraw
 from typing import Union, Tuple, List, Any, Optional
 
 from .paginator import View
-from killua.static.constants import FREE_SLOTS, teams, items, guilds, todo, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES, DEF_SPELLS
+from killua.static.constants import FREE_SLOTS, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES, DEF_SPELLS, DB
 
 class NotInPossesion(Exception):
     pass
@@ -44,7 +43,7 @@ class SuccessfullDefense(CheckFailure):
 class PartialCard:
     """A class preventing a circular import by providing the bare minimum of methods and properties. Only used in this file"""
     def __init__(self, card_id: int):
-        card = items.find_one({"_id": card_id})
+        card = DB.items.find_one({"_id": card_id})
         if card is None:
             raise CardNotFound
         
@@ -56,24 +55,25 @@ class PartialCard:
         try:
             self.type:str = card["type"]
         except KeyError:
-            items.update_one({"_id": self.id}, {"$set":{"type": "normal"}})
+            DB.items.update_one({"_id": self.id}, {"$set":{"type": "normal"}})
             self.type = "normal"
 
     def add_owner(self, user_id: int) -> None:
         """Adds an owner to a card entry in my db. Only used in User().add_card()"""
         self.owners.append(user_id)
-        items.update_one({"_id": self.id}, {"$push": {"owners": user_id}})
+        DB.items.update_one({"_id": self.id}, {"$push": {"owners": user_id}})
 
     def remove_owner(self, user_id: int) -> None:
         """Removes an owner from a card entry in my db. Only used in User().remove_card()"""
         self.owners.remove(user_id)
-        items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
+        DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
 
 class _LootBoxButton(discord.ui.Button):
     """A class used for lootbox buttons"""
     def __init__(self, index: int, rewards: List[Union[PartialCard, int, None]], **kwargs):
         super().__init__(**kwargs)
         self.index = index
+        self.custom_id = str(index)
         if self.index != 24:
             self.reward = rewards[self.index]
             self.has_reward = not not self.reward
@@ -191,12 +191,12 @@ class LootBox:
             if data["rewards"]["guaranteed"]: # if a card is guaranteed it is added here, it will count as one of the total_cards though
                 for card, amount in data["rewards"]["guaranteed"].items():
                     if [r.id for r in rew].count(card) < amount:
-                        rew.append(PartialCard(items.find_one(card)["_id"]))
+                        rew.append(PartialCard(DB.items.find_one(card)["_id"]))
                         skip = True
                         break  
 
             if skip: continue
-            r = [x["_id"] for x in items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}, "available": True}) if x["_id"] != 0]
+            r = [x["_id"] for x in DB.items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}, "available": True}) if x["_id"] != 0]
             rew.append(PartialCard(random.choice(r)))
 
         for i in range(data["rewards_total"]-cards):
@@ -396,18 +396,16 @@ class User:
     def __init__(self, user_id: int):
         if user_id in self.cache:
             return 
-
-        user = teams.find_one({"id": user_id})
-
+        user = DB.teams.find_one({"id": user_id})
         self.id: int = user_id
 
         if user is None:
             self.add_empty(self.id, False)
-            user = teams.find_one({"id": user_id})
+            user = DB.teams.find_one({"id": user_id})
 
         if not "cards" in user or not "met_user" in user:
             self.add_empty(self.id)
-            user = teams.find_one({"id": user_id})
+            user = DB.teams.find_one({"id": user_id})
 
         self.jenny: int = user["points"]
         self.daily_cooldown: datetime = user["cooldowndaily"]
@@ -458,23 +456,23 @@ class User:
         """Removes all cards etc from every user. Only used for testing"""
         start = datetime.now()
         user = []
-        for u in teams.find():
+        for u in DB.teams.find():
             if "cards" in u:
                 user.append(u["id"])
             if "id" in u and u["id"] in cls.cache:
                 cls.cache[u["id"]].all_cards = []
                 cls.cache[u["id"]].effects = {}
 
-        teams.update_many({"$or": [{"id": x} for x in user]}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": []}})
-        cards = [x for x in items.find() if "owners" in x and len(x["owners"]) > 0]
-        items.update_many({"_id": {"$in": [x["_id"] for x in items.find()]}}, {"$set": {"owners": []}})
+        DB.teams.update_many({"$or": [{"id": x} for x in user]}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": []}})
+        cards = [x for x in DB.items.find() if "owners" in x and len(x["owners"]) > 0]
+        DB.items.update_many({"_id": {"$in": [x["_id"] for x in DB.items.find()]}}, {"$set": {"owners": []}})
 
         return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
 
     @classmethod
     def is_registered(cls, user_id: int) -> bool:
         """Checks if the "cards" dictionary is in the database entry of the user"""
-        u = teams.find_one({"id": user_id})
+        u = DB.teams.find_one({"id": user_id})
         if u is None:
             return False
         if not "cards" in u:
@@ -487,13 +485,13 @@ class User:
     def add_empty(cls, user_id: int, cards: bool = True) -> None:
         """Can be called when the user does not have an entry to make the class return empty objects instead of None"""
         if cards:
-            teams.update_one({"id": user_id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0}})  
+            DB.teams.update_one({"id": user_id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0}})  
         else:
-            teams.insert_one({"id": user_id, "points": 0, "badges": [], "cooldowndaily": "","cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}, "stats": {"rps": {"wins": 0, "losses": 0, "ties": 0}}})
+            DB.teams.insert_one({"id": user_id, "points": 0, "badges": [], "cooldowndaily": "","cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}, "stats": {"rps": {"wins": 0, "losses": 0, "ties": 0}}})
 
     def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
-        teams.update_one({"id": self.id}, {operator: {key: value}})
+        DB.teams.update_one({"id": self.id}, {operator: {key: value}})
 
     def add_badge(self, badge: str) -> None:
         """Adds a badge to a user"""
@@ -730,7 +728,7 @@ class User:
 
         self.rs_cards = [*self.rs_cards, *rs_cards]
         self.fs_cards = [*self.fs_cards, *fs_cards]
-        teams.update_one({"id": self.id}, {"$set": {"cards.rs": self.rs_cards, "cards.fs": self.fs_cards}})
+        DB.teams.update_one({"id": self.id}, {"$set": {"cards.rs": self.rs_cards, "cards.fs": self.fs_cards}})
 
     def has_defense(self) -> bool:
         """Checks if a user holds on to a defense spell card"""
@@ -811,16 +809,16 @@ class User:
         if t == "all": 
             self._remove("all_cards")
             self.effects = {}
-            teams.update_one({"id": self.id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}}})
+            DB.teams.update_one({"id": self.id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}}})
         if t == "fs":
             self._remove("fs_cards")
-            teams.update_one({"id": self.id}, {"$set": {"cards.fs": []}})
+            DB.teams.update_one({"id": self.id}, {"$set": {"cards.fs": []}})
         if t == "rs":
             self._remove("rs_cards")
-            teams.update_one({"id": self.id}, {"$set": {"cards.rs": []}})
+            DB.teams.update_one({"id": self.id}, {"$set": {"cards.rs": []}})
         if t == "effects":
             self.effects = {}
-            teams.update_one({"id": self.id}, {"$set": {"cards.effects": {}}})
+            DB.teams.update_one({"id": self.id}, {"$set": {"cards.effects": {}}})
 
         return True
 
@@ -832,7 +830,7 @@ class User:
             self.rps_stats[stat] = val
         self._update_val("stats.rps", self.rps_stats)
 
-class TodoList():
+class TodoList:
     cache = {}
     custom_id_cache = {}
 
@@ -856,7 +854,7 @@ class TodoList():
         if (list_id in self.cache) or (list_id in self.custom_id_cache):
             return
 
-        td_list = todo.find_one({"_id" if (isinstance(list_id, int) or list_id.isdigit()) else "custom_id": int(list_id) if (isinstance(list_id, int) or list_id.isdigit()) else list_id.lower()})
+        td_list = DB.todo.find_one({"_id" if (isinstance(list_id, int) or list_id.isdigit()) else "custom_id": int(list_id) if (isinstance(list_id, int) or list_id.isdigit()) else list_id.lower()})
 
         if not td_list:
             raise TodoListNotFound
@@ -902,7 +900,7 @@ class TodoList():
         while len(l) != 6:
             l.append(str(random.randint(0,9)))
 
-        todo_id = todo.find_one({"_id": "".join(l)})
+        todo_id = DB.todo.find_one({"_id": "".join(l)})
 
         if todo_id is None:
             return int("".join(l))
@@ -913,7 +911,7 @@ class TodoList():
     def create(owner: int, title: str, status: str, done_delete: bool, custom_id: str = None) -> TodoList:
         """Creates a todo list and returns a TodoList class"""
         list_id = TodoList._generate_id()
-        todo.insert_one({"_id": list_id, "name": title, "owner": owner, "custom_id": custom_id, "status": status, "delete_done": done_delete, "viewer": [], "editor": [], "todos": [{"todo": "add todos", "marked": None, "added_by": 756206646396452975, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "views":0, "assigned_to": [], "mark_log": []}], "marks": [], "created_at": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "spots": 10, "views": 0 })
+        DB.todo.insert_one({"_id": list_id, "name": title, "owner": owner, "custom_id": custom_id, "status": status, "delete_done": done_delete, "viewer": [], "editor": [], "todos": [{"todo": "add todos", "marked": None, "added_by": 756206646396452975, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "views":0, "assigned_to": [], "mark_log": []}], "marks": [], "created_at": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "spots": 10, "views": 0 })
         return TodoList(list_id)
 
     def delete(self) -> None:
@@ -921,7 +919,7 @@ class TodoList():
         del self.cache[self.id]
         if self.custom_id:
             del self.custom_id_cache[self.custom_id]
-        todo.delete_one({"_id": self.id})
+        DB.todo.delete_one({"_id": self.id})
 
     def has_view_permission(self, user_id: int) -> bool:
         """Checks if someone has permission to view a todo list"""
@@ -938,7 +936,7 @@ class TodoList():
 
     def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
-        todo.update_one({"_id": self.id}, {operator: {key: value}})
+        DB.todo.update_one({"_id": self.id}, {operator: {key: value}})
 
     def set_property(self, prop: str, value: Any) -> None:
         """Sets any property and updates the db as well"""
@@ -1016,7 +1014,7 @@ class Todo(TodoList):
         cls.mark_log: List[dict] = task["mark_log"]
         return cls
 
-class Guild():
+class Guild:
     """A class to handle basic guild data"""
     cache = {}
 
@@ -1035,11 +1033,11 @@ class Guild():
         if guild_id in self.cache:
             return
 
-        g = guilds.find_one({"id": guild_id})
+        g = DB.guilds.find_one({"id": guild_id})
 
         if not g:
             self.add_default(guild_id)
-            g = guilds.find_one({"id": guild_id})
+            g = DB.guilds.find_one({"id": guild_id})
 
         self.id: int = guild_id
         self.badges: List[str] = g["badges"]
@@ -1058,7 +1056,7 @@ class Guild():
     @classmethod
     def add_default(self, guild_id: int) -> None:
         """Adds a guild to the database"""
-        guilds.insert_one({"id": guild_id, "points": 0,"items": "","badges": [], "prefix": "k!"})
+        DB.guilds.insert_one({"id": guild_id, "points": 0,"items": "","badges": [], "prefix": "k!"})
 
     @classmethod
     def bullk_remove_premium(cls, guild_ids: List[int]) -> None:
@@ -1069,16 +1067,16 @@ class Guild():
             except Exception:
                 guild_ids.remove(guild) # in case something got messed up it removes the guild id before making the db interaction
 
-        guilds.update_many({"id": {"$in": guild_ids}}, {"$pull": {"badges": "premium"}})
+        DB.guilds.update_many({"id": {"$in": guild_ids}}, {"$pull": {"badges": "premium"}})
 
     def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
-        guilds.update_one({"id": self.id}, {operator: {key: value}})
+        DB.guilds.update_one({"id": self.id}, {operator: {key: value}})
 
     def delete(self) -> None:
         """Deletes a guild from the database"""
         del self.cache[self.id]
-        guilds.delete_one({"id": self.id})
+        DB.guilds.delete_one({"id": self.id})
 
     def change_prefix(self, prefix: str) -> None:
         "Changes the prefix of a guild"

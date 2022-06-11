@@ -5,7 +5,7 @@ import re
 import math
 from typing import Union, Optional, List
 
-from killua.static.constants import todo, editing, REPORT_CHANNEL
+from killua.static.constants import DB, editing, REPORT_CHANNEL
 from killua.utils.checks import check, blcheck
 from killua.utils.classes import TodoList, Todo, User, TodoListNotFound
 from killua.static.enums import Category, TodoDeleteWhenDone, TodoStatus, TodoPermissions
@@ -174,7 +174,7 @@ class TodoSystem(commands.Cog):
     async def create(self, ctx: commands.Context, name: str, status: TodoStatus, delete_when_done: TodoDeleteWhenDone, custom_id: Optional[str] = None):
         """Let"s you create your todo list in an interactive menu"""
         
-        user_todo_lists = [x for x in todo.find({"owner": ctx.author.id})]
+        user_todo_lists = [x for x in DB.todo.find({"owner": ctx.author.id})]
 
         if len(user_todo_lists) == 5:
             return await ctx.send("You can currently not own more than 5 todo lists", ephermeral=True)
@@ -696,9 +696,9 @@ class TodoSystem(commands.Cog):
     @todo.command(extras={"category":Category.TODO}, usage="lists")
     async def lists(self, ctx: commands.Context):
         """This shows a list of todo lists you own or have access to"""
-        lists_owning = todo.find({"owner": ctx.author.id})
-        lists_viewing = todo.find({"viewer": ctx.author.id})
-        lists_editing = todo.find({"editor": ctx.author.id})
+        lists_owning = DB.todo.find({"owner": ctx.author.id})
+        lists_viewing = DB.todo.find({"viewer": ctx.author.id})
+        lists_editing = DB.todo.find({"editor": ctx.author.id})
 
         l_o = "\n".join([f"{l['name']} (id: {l['_id']}/{l['custom_id'] or 'No custom id'})" for l in lists_owning])
         l_v = "\n".join([f"{l['name']} (id: {l['_id']}/{l['custom_id'] or 'No custom id'})" for l in lists_viewing])

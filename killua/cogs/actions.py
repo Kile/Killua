@@ -41,7 +41,7 @@ class Actions(commands.Cog):
         self.client = client
         self.session = self.client.session
 
-    async def request_action(self, endpoint:str) -> Union[dict, str]:
+    async def request_action(self, endpoint: str) -> Union[dict, str]:
 
         r = await self.session.get(f"https://purrbot.site/api/img/sfw/{endpoint}/gif")
         if r.status == 200:
@@ -65,12 +65,12 @@ class Actions(commands.Cog):
         })
         return await ctx.send(embed=embed)
 
-    def generate_users(self, members:list, title:str) -> str:
+    def generate_users(self, members: list, title: str) -> str:
         if isinstance(members, str):
             return members
         memberlist = ''
         for p, member in enumerate(members):
-            if len(memberlist+member.display_name+title.replace("(a)", "").replace("(u)", "")) > 231: # embed titles have a max lentgh of 256 characters. If the name list contains too many names, stuff breaks. This prevents that and displays the other people as "and x more"
+            if len(memberlist + member.display_name + title.replace("(a)", "").replace("(u)", "")) > 231: # embed titles have a max lentgh of 256 characters. If the name list contains too many names, stuff breaks. This prevents that and displays the other people as "and x more"
                 memberlist = memberlist + f" *and {len(members)-(p+1)} more*"
                 break
             if members[-1] == member and len(members) != 1:
@@ -82,7 +82,10 @@ class Actions(commands.Cog):
                     memberlist = memberlist + f', {member.display_name}'
         return memberlist
 
-    async def action_embed(self, endpoint:str, author, members:List[discord.Member], disabled:int = 0) -> discord.Embed:
+    async def action_embed(self, endpoint: str, author: Union[str, discord.User], members: List[discord.Member], disabled: int = 0) -> discord.Embed:
+        if disabled == len(members):
+            return "All members targetted have disabled this action."
+
         if endpoint == 'hug':
             image = {"link": random.choice(ACTIONS[endpoint]["images"])} # This might eventually be deprecated for copyright reasons
         else:
@@ -114,7 +117,7 @@ class Actions(commands.Cog):
         else:
             return await self.action_embed(ctx.command.name, 'Killua', ctx.author.name)
 
-    async def do_action(self, ctx, members:List[discord.Member]=None) -> Union[discord.Message, None]:
+    async def do_action(self, ctx, members: List[discord.Member] = None) -> Union[discord.Message, None]:
         if not members:
             embed = await self.no_argument(ctx)
             if not embed:
@@ -126,17 +129,18 @@ class Actions(commands.Cog):
             if len(members) == 1 and (ctx.command.name in first.action_settings) and not first.action_settings[ctx.command.name]:
                 return await ctx.send(f"**{members[0].display_name}** has disabled this action", allowed_mentions=discord.AllowedMentions.none())
 
+            allowed = []
             disabled = 0
             for member in members:
                 m = User(member.id)
-                if m.action_settings and not m.action_settings[ctx.command.name]:
+                if m.action_settings and m.action_settings[ctx.command.name] is False:
                     disabled+=1
-                    members.remove(member)
-
+                else:
+                    allowed.append(member)
             embed = await self.action_embed(ctx.command.name, ctx.author, members, disabled)
 
         if isinstance(embed, str):
-            return await ctx.send(embed)
+            return await ctx.send(content=embed)
         else:
             return await ctx.bot.send_message(ctx, embed=embed)
 
@@ -217,10 +221,10 @@ class Actions(commands.Cog):
         """Wag your tail when you're happy!"""
         return await self.get_image(ctx)
 
-    def _get_view(self, id:int, current: dict) -> View:
+    def _get_view(self, id: int, current: dict) -> View:
         options = [discord.SelectOption(label=k, value=k, default=v) for k, v in current.items()]
-        select = SettingsSelect(options, min_values=0, max_values=len(current))
-        button = SettingsButton(label="Save", style=discord.ButtonStyle.green, emoji="\U0001f4be")
+        select = SettingsSelect(options, min_values=0, max_values=len(current), custom_id="select")
+        button = SettingsButton(label="Save", style=discord.ButtonStyle.green, emoji="\U0001f4be", custom_id="save")
         view = View(user_id=id, timeout=100)
         view.timed_out = True
 
@@ -275,7 +279,7 @@ class Actions(commands.Cog):
 
             user.set_action_settings(current)
             view = self._get_view(ctx.author.id, current)
-        
+
             await msg.edit(embed=embed, view=view)
 
             await view.wait()

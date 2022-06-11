@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from typing import Union, Type
 
-from killua.static.constants import blacklist, PatreonBanner
+from killua.static.constants import DB, PatreonBanner
 from .classes import User, Guild
 
 cooldowndict = {}
@@ -31,7 +31,7 @@ def blcheck(userid:int): # It is necessary to define it twice as I might have to
     Purpose:
         Checking before everry command if the user is blacklisted
     """
-    result = blacklist.find_one({"id": userid})
+    result = DB.blacklist.find_one({"id": userid})
 
     if result is None:
         return False
@@ -70,13 +70,13 @@ def check(time: int = 0):
     """
     
     from datetime import datetime
-    from killua.static.constants import blacklist, stats
+    from killua.static.constants import DB
 
     def add_usage(command:Union[commands.Command, Type[commands.Command]]) -> None:
-        data = stats.find_one({"_id": "commands"})["command_usage"]
+        data = DB.stats.find_one({"_id": "commands"})["command_usage"]
         command = _clean_command_name(command)
         data[command] = data[command]+1 if command in data else 1
-        stats.update_one({"_id": "commands"}, {"$set": {"command_usage": data}})
+        DB.stats.update_one({"_id": "commands"}, {"$set": {"command_usage": data}})
 
     def blcheck(userid: int) -> bool:
         """
@@ -90,7 +90,7 @@ def check(time: int = 0):
             Checking before every command if the user is blacklisted
         """
 
-        result = blacklist.find_one({"id": userid})
+        result = DB.blacklist.find_one({"id": userid})
 
         if result is None:
             return False

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 import math
 
-from killua.static.constants import guilds
+from killua.static.constants import DB
 from killua.static.enums import Category
 from killua.utils.classes import Guild
 from killua.utils.checks import check, premium_guild_only
@@ -12,7 +12,7 @@ from killua.utils.paginator import Paginator
 
 class Tag():
     def __init__(self, guild_id: int, tag_name: str):
-        guild = guilds.find_one({"id": guild_id})
+        guild = DB.guilds.find_one({"id": guild_id})
         if guild is None:
             self.found = False
             return
@@ -39,22 +39,22 @@ class Tag():
     def update(self, new_content) -> None:
         indx:int = [r[0] for r in self.tags].index(self.name.lower())
         self.tags[indx][1]["content"] = new_content
-        guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
+        DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
 
     def delete(self) -> None:
         indx:int = [r[0] for r in self.tags].index(self.name.lower())
         self.tags.remove(self.tags[indx])
-        guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
+        DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
     
     def add_use(self) -> None:
         indx:int = [r[0] for r in self.tags].index(self.name.lower())
         self.tags[indx][1]["uses"] = self.tags[indx][1]["uses"]+1
-        guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
+        DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
 
 class Member():
 
     def __init__(self, user_id:int, guild_id:int):
-        guild = guilds.find_one({"id": guild_id})
+        guild = DB.guilds.find_one({"id": guild_id})
 
         if guild is None:
             self.has_tags = False
@@ -133,7 +133,7 @@ class Tags(commands.Cog):
     @discord.app_commands.describe(name="The name of the tag you want to create")
     async def create(self, ctx: commands.Context, *, name: str):
         """Create a tag with this command"""
-        guild = guilds.find_one({"id": ctx.guild.id})
+        guild = DB.guilds.find_one({"id": ctx.guild.id})
         member = Member(ctx.author.id, ctx.guild.id)
         if not Tag(ctx.guild.id, name).found is False:
             tag = Tag(ctx.guild.id, name)
@@ -160,7 +160,7 @@ class Tags(commands.Cog):
             return await ctx.send("Too many characters!")
 
         tags.append([name.lower(), {"name": name, "created_at": datetime.now(), "owner": ctx.author.id, "content": content, "uses": 0}])
-        guilds.update_one({"id": ctx.guild.id}, {"$set": {"tags": tags}})
+        DB.guilds.update_one({"id": ctx.guild.id}, {"$set": {"tags": tags}})
 
         return await ctx.send(f"Successfully created tag `{name}`")
 
@@ -232,7 +232,7 @@ class Tags(commands.Cog):
         tag = Tag(ctx.guild.id, name.lower())
         if tag.found is False:
             return await ctx.send("There is no tag with that name!")
-        guild = guilds.find_one({"id": ctx.guild.id})
+        guild = DB.guilds.find_one({"id": ctx.guild.id})
         owner = await self.client.fetch_user(tag.owner)
         s = sorted(zip([x[0] for x in guild["tags"]], [x[1]["uses"] for x in guild["tags"]]))
         rank = [x[0] for x in s].index(name.lower())+1
@@ -251,7 +251,7 @@ class Tags(commands.Cog):
     @discord.app_commands.describe(page="The page of the tag list you want to view")
     async def list(self, ctx: commands.Context, page: int = 1):
         """Get a list of tags on the current server sorted by uses"""
-        guild = guilds.find_one({"id": ctx.guild.id})
+        guild = DB.guilds.find_one({"id": ctx.guild.id})
         if not "tags" in guild:
             return await ctx.send("Seems like this server doesn't have any tags!")
 

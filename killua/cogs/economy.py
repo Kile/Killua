@@ -9,7 +9,7 @@ from killua.utils.interactions import View
 from killua.utils.interactions import Select
 from killua.utils.classes import User, Guild, LootBox
 from killua.static.enums import Category
-from killua.static.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, teams, LOOTBOXES, PREMIUM_ALIASES
+from killua.static.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, LOOTBOXES, PREMIUM_ALIASES, DB
 
 class Economy(commands.Cog):
 
@@ -84,7 +84,7 @@ class Economy(commands.Cog):
 
     def _lb(self, ctx: commands.Context, limit: int = 10) -> dict:
         """Creates a list of the top members regarding jenny in a server"""
-        members = teams.find({"id": {"$in": [x.id for x in ctx.guild.members]} })
+        members = DB.teams.find({"id": {"$in": [x.id for x in ctx.guild.members]} })
         top = sorted(members, key=lambda x: x["points"], reverse=True) # Bringing it in a nice lederboard order
         points = 0
         for m in top:

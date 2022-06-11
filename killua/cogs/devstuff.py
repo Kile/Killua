@@ -13,7 +13,7 @@ from killua.utils.classes import User, Guild #lgtm [py/unused-import]
 from killua.utils.interactions import View, Button
 from killua.static.enums import Category, Activities, Presences, StatsOptions
 from killua.static.cards import Card #lgtm [py/unused-import]
-from killua.static.constants import teams, guilds, blacklist, presence as pr, items, stats, updates, UPDATE_CHANNEL, GUILD_OBJECT #lgtm [py/unused-import]
+from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT
 
 class DevStuff(commands.Cog):
 
@@ -28,7 +28,7 @@ class DevStuff(commands.Cog):
     ) -> List[discord.app_commands.Choice[str]]:
 
         if not self.version_cache:
-            self.version_cache = [x["version"] for x in updates.find_one({"_id": "log"})["past_updates"]]
+            self.version_cache = [x["version"] for x in DB.updates.find_one({"_id": "log"})["past_updates"]]
 
         return [
             discord.app_commands.Choice(name=v, value=v)
@@ -161,7 +161,7 @@ class DevStuff(commands.Cog):
                     await self.initial_top(ctx)
 
     async def initial_top(self, ctx: commands.Context) -> None:
-        s = stats.find_one({"_id": "commands"})["command_usage"]
+        s = DB.stats.find_one({"_id": "commands"})["command_usage"]
         top = sorted(s.items(), key=lambda x: x[1], reverse=True)
         rest = 0
         for x in top[-9:]:
@@ -202,9 +202,9 @@ class DevStuff(commands.Cog):
     async def eval(self, ctx: commands.Context, *, code: str):
         """Standart eval command, owner restricted"""
         try:
-            await ctx.channel.send(f"```py\n{eval(code)}```")
+            await ctx.send(f"```py\n{eval(code)}```")
         except Exception as e:
-            await ctx.channel.send(str(e))
+            await ctx.send(str(e))
 
     @commands.is_owner()
     @commands.command(extras={"category":Category.OTHER}, usage="say <text>", hidden=True, with_app_command=False)
@@ -225,10 +225,10 @@ class DevStuff(commands.Cog):
     async def publish_update(self, ctx: commands.Context, version: str, *, update: str):
         """Allows me to publish Killua updates in a handy formart"""
 
-        old = updates.find_one({"_id":"current"})
+        old = DB.updates.find_one({"_id":"current"})
         old_version = old["version"] if "version" in old else "No version"
 
-        if version in [*[old_version],*[x["version"] for x in updates.find_one({"_id": "log"})["past_updates"]]]:
+        if version in [*[old_version],*[x["version"] for x in DB.updates.find_one({"_id": "log"})["past_updates"]]]:
             return await ctx.send("This is an already existing version")
 
         embed = discord.Embed.from_dict({
@@ -240,8 +240,8 @@ class DevStuff(commands.Cog):
         })
 
         data = {"version": version, "description": update, "published_on": datetime.now(), "published_by": ctx.author.id}
-        updates.update_one({"_id": "current"}, {"$set": data})
-        updates.update_one({"_id": "log"}, {"$push": {"past_updates": data}})
+        DB.updates.update_one({"_id": "current"}, {"$set": data})
+        DB.updates.update_one({"_id": "log"}, {"$push": {"past_updates": data}})
         self.version_cache.append(version)
 
         await ctx.send("Published new update " + f"`{old_version}` -> `{version}`", ephemeral=True)
@@ -260,9 +260,9 @@ class DevStuff(commands.Cog):
     async def update(self, ctx: commands.Context, version: str = None):
         """Allows you to view current and past updates"""
         if version is None:
-            data = updates.find_one({"_id": "current"})
+            data = DB.updates.find_one({"_id": "current"})
         else:
-            d = [x for x in updates.find_one({"_id": "log"})["past_updates"] if x["version"] == version]
+            d = [x for x in DB.updates.find_one({"_id": "log"})["past_updates"] if x["version"] == version]
             if len(d) == 0:
                 return await ctx.send("Invalid version!")
             data = d[0]
@@ -289,7 +289,7 @@ class DevStuff(commands.Cog):
         if not user:
             return await ctx.send("Invalid user!", ephermal=True)
         # Inserting the bad person into my database
-        blacklist.insert_one({"id": user, "reason": reason or "No reason provided", "date": datetime.now()})
+        DB.blacklist.insert_one({"id": user, "reason": reason or "No reason provided", "date": datetime.now()})
         await ctx.send(f"Blacklisted user `{user}` for reason: {reason}", ephermal=True)
         
     @commands.is_owner()
@@ -304,7 +304,7 @@ class DevStuff(commands.Cog):
         if not user:
             return await ctx.send("Invalid user!", ephermal=True)
 
-        blacklist.delete_one({"id": user})
+        DB.blacklist.delete_one({"id": user})
         await ctx.send(f"Successfully whitelisted `{user}`")
 
     @commands.is_owner()
@@ -319,11 +319,11 @@ class DevStuff(commands.Cog):
         """Changes the presence of Killua. Owner restricted"""
 
         if text == "-rm":
-            pr.update_many({}, {"$set": {"text": None, "activity": None, "presence": None}})
+            DB.presence.update_many({}, {"$set": {"text": None, "activity": None, "presence": None}})
             await ctx.send("Done! reset Killua's presence", ephemeral=True)
             return await self.client.update_presence()
 
-        pr.update_many({}, {"$set": {"text": text, "presence": presence.name if presence else None, "activity": activity.name if activity else None}})
+        DB.presence.update_many({}, {"$set": {"text": text, "presence": presence.name if presence else None, "activity": activity.name if activity else None}})
         await self.client.update_presence()
         await ctx.send(f"Successfully changed Killua's status to `{text}`! (I hope people like it >-<)", ephemeral=True)
 
@@ -336,7 +336,7 @@ class DevStuff(commands.Cog):
             def make_embed(page, embed, _):
                 embed.clear_fields()
 
-                data = stats.find_one({"_id": "growth"})["growth"]
+                data = DB.stats.find_one({"_id": "growth"})["growth"]
                 dates = [x["date"] for x in data]
 
                 if page == 1:

@@ -8,18 +8,19 @@ with open("config.json", "r") as config_file:
 
 CLUSTER = MongoClient(config["mongodb"])
 
-DB = CLUSTER["Killua"]
-teams = DB["teams"]
-items = DB["items"]
-guilds = DB["guilds"]
+class DB:
+    _DB = CLUSTER["Killua"]
+    teams = _DB["teams"]
+    items = _DB["items"]
+    guilds = _DB["guilds"]
 
-GDB = CLUSTER["general"]
-shop = GDB["shop"]
-blacklist = GDB["blacklist"]
-stats = GDB["stats"]
-presence = GDB["presence"]
-todo = GDB["todo"]
-updates = GDB["updates"]
+    GDB = CLUSTER["general"]
+    shop = GDB["shop"]
+    blacklist = GDB["blacklist"]
+    stats = GDB["stats"]
+    presence = GDB["presence"]
+    todo = GDB["todo"]
+    updates = GDB["updates"]
 
 IPC_TOKEN = config["ipc"]
 TOKEN = config["token"]
@@ -113,7 +114,7 @@ PAT_IMGS = [f"https://i.pinimg.com/originals/be/75/ff/be75ff9f2ba20efb4dbda09c62
 
 
 # ACTION TEXT
-HUG_TEXTS = ["<author> makes <user> blush by hugging them", "<author> gives <user> a hug. Their face lights up brighter than a star", "<author> makes <user>'s day by giving them a hug", "<author> hugs <user> so strong they can barely breathe", "<author> hugs <user> from behind like a hug-assassine :ninja:", "<user> looked like they needed one of these", f"<author> hugs <user> as strong as they can", f"<author> hugs <user> and makes sure to not let go", f"<author> gives <user> the longest hug they have ever seen", f"<author> cuddles <user>", f"<author> uses <user> as a teddybear", f"<author> hugs <user> until all their worries are gone and 5 minutes longer",f"<author> clones themself and together they hug <user>", f"<author> jumps in <user>'s arms", f"<author> gives <user> a bearhug", f"<author> finds a lamp with a Jinn and gets a wish. So they wish to hug <user>", f"<author> asks <user> for motivation and gets a hug","<author> looks at the floor, then up, then at the floor again and finally hugs <user> with passion", "<author> looks deep into <user>'s eyes and them gives them a hug", "<author> could do their homework but instead they decide to hug <user>", "<user> wanted to go get food but <author> wouldn't let go"]
+HUG_TEXTS = ["<author> makes <user> blush by hugging them", "<author> gives <user> a hug. Their face lights up brighter than a star", "<author> makes <user>'s day by giving them a hug", "<author> hugs <user> so strong they can barely breathe", "<author> hugs <user> from behind like a hug-assassine :ninja:", "<user> looked like they needed one of these", f"<author> hugs <user> as strong as they can", f"<author> hugs <user> and makes sure to not let go", f"<author> gives <user> the longest hug they have ever seen", f"<author> cuddles <user>", f"<author> uses <user> as a teddybear", f"<author> hugs <user> until all their worries are gone and 5 minutes longer",f"<author> clones themself and together they hug <user>", f"<author> jumps in <user>'s arms", f"<author> gives <user> a bearhug", f"<author> finds a lamp with a Jinn and gets a wish. So they wish to hug <user>", f"<author> asks <user> for motivation and gets a hug","<author> looks at the floor, then up, then at the floor again and finally hugs <user> with passion", "<author> looks deep into <user>'s eyes and then gives them a hug", "<author> could do their homework but instead they decide to hug <user>", "<user> wanted to go get food but <author> wouldn't let go"]
 PAT_TEXTS = ["<author> reaches over to pat <user> lovingly", "<user> is too far about to hug, so <author> pats them", "<author> wants to show appreciation, so they pat <user>", "<author> pats <user> like a cat", "<user>'s head seems very pattable", "<author> was too tired to hug <user> so they gave a pat instead", "<user> took 5 lp damage down so <author> gives them a healing head pat", "<author> tries to catch a spider, slips and instead pats <user>. <author> is also fine with that", "<author> pats <user>", "<author> thinks <user> is a cat and starts to pat them", "<author> looks at <user>'s fluffy hair and starts to pat them", "<author> didn't get pet so they pat <user> instead"]
 SLAP_TEXTS = ["<author> hits <user> hard enough to send them flying", "Uh oh! <user> gets slapped by <author> because they said something <author> did not like", "<author> noticed <user> staring off into the distance. So they obviously slap them", "<user> did some unspeakable things... so <author> slapped them!", "<author> slaps <user>", "<author> stares at <user> for a long time and then slaps them", "<author> has no mercy; they slap <user>", "<author> is unsure how to react so they slap <user>"]
 POKE_TEXTS = ["<user> is needed here", "<author> needs something from <user>", "<author> launches a poke attack at <user>", "<author> pokes <user> with so much force that their clothes nearly rip apart", "<author> uses the spell 'poke' to remove the tiredness 5 effect on <user>", "Look at me!", "<author> requires <user>'s attention please!", "<author> pokes <user>", "*Poke* *Poke*, <author> pokes <user>", "<author> starts poking <user>", "<author> pokes <user> with a big smile on their face"]

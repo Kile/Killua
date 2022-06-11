@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Union, Tuple, List
 
 from killua.static.cards import Card
-from killua.static.constants import items, shop, FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, editing
+from killua.static.constants import FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, DB, editing
 from killua.utils.classes import User, TodoList, CardNotFound, CardLimitReached
 from killua.static.enums import Category, PrintColors, TodoAddons
 from killua.utils.interactions import Button, ConfirmButton
@@ -23,7 +23,7 @@ class ShopPaginator(Paginator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.view.add_item(Button(label="Menu", style=discord.ButtonStyle.blurple, custom_id="1"))
+        self.view.add_item(Button(label="Menu", style=discord.ButtonStyle.blurple, custom_id="menu"))
 
     async def start(self):
         view = await self._start()
@@ -58,7 +58,7 @@ class Shop(commands.Cog):
 
     def _format_item(self, offer: int, reduced_item: int = None, reduced_by: int = None, number: int = None) -> dict:
         """Formats a single item for the shop"""
-        item = items.find_one({"_id": int(offer)})
+        item = DB.items.find_one({"_id": int(offer)})
         if reduced_item:
             if number == reduced_item:
                 return {"name":f"**Number {item['_id']}: {item['name']}** |{item['emoji']}|", 'value': f"**Description:** {item['description']}\n**Price:** {PRICES[item['rank']]-int(PRICES[item['rank']]*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item['type'].replace('normal', 'item')}\n**Rarity:** {item['rank']}"}  
@@ -71,51 +71,51 @@ class Shop(commands.Cog):
     
     @tasks.loop(hours=6)
     async def cards_shop_update(self):
-        #There have to be 4-5 shop items, inserted into the db as a list with the card numbers
-        #the challenge is to create a balanced system with good items rare enough but not too rare
+        # There have to be 4-5 shop items, inserted into the db as a list with the card numbers
+        # the challenge is to create a balanced system with good items rare enough but not too rare
         try:
             shop_items:list = []
-            number_of_items = randint(3,5) #How many items the shop has
+            number_of_items = randint(3,5) # How many items the shop has
             if randint(1,100) > 95:
-                #Add a S/A card to the shop
-                thing = [i["_id"] for i in items.find({"type": "normal", "rank": {"$in": ["A", "S"], "available": True}})]
+                # Add a S/A card to the shop
+                thing = [i["_id"] for i in DB.items.find({"type": "normal", "rank": {"$in": ["A", "S"], "available": True}})]
                 shop_items.append(choice(thing))
-            if randint(1,100) > 20: #80% chance for spell
-                if randint(1, 100) > 95: #5% chance for a good spell (they are rare)
-                    spells = [s["_id"] for s in items.find({"type": "spell", "rank": "A", "available": True})]
+            if randint(1,100) > 20: # 80% chance for spell
+                if randint(1, 100) > 95: # 5% chance for a good spell (they are rare)
+                    spells = [s["_id"] for s in DB.items.find({"type": "spell", "rank": "A", "available": True})]
                     shop_items.append(choice(spells))
-                elif randint(1,10) > 5: #50% chance of getting a medium good card
-                    spells = [s["_id"] for s in items.find({"type": "spell", "rank": {"$in": ["B", "C"]}, "available": True})]
+                elif randint(1,10) > 5: # 50% chance of getting a medium good card
+                    spells = [s["_id"] for s in DB.items.find({"type": "spell", "rank": {"$in": ["B", "C"]}, "available": True})]
                     shop_items.append(choice(spells))
-                else: #otherwise getting a fairly normal card
-                    spells = [s["_id"] for s in items.find({"type": "spell", "rank": {"$in": ["D", "E", "F", "G"]}, "available": True})]
+                else: # otherwise getting a fairly normal card
+                    spells = [s["_id"] for s in DB.items.find({"type": "spell", "rank": {"$in": ["D", "E", "F", "G"]}, "available": True})]
                     shop_items.append(choice(spells))
 
-                while len(shop_items) != number_of_items: #Filling remaining spots
-                    thing = [t["_id"] for t in items.find({"type": "normal", "rank": {"$in": ["D", "B"]}, "available": True})] 
-                    #There is just one D item so there is a really high probability of it being in the shop EVERY TIME
+                while len(shop_items) != number_of_items: # Filling remaining spots
+                    thing = [t["_id"] for t in DB.items.find({"type": "normal", "rank": {"$in": ["D", "B"]}, "available": True})] 
+                    # There is just one D item so there is a really high probability of it being in the shop EVERY TIME
                     t = choice(thing)
                     if not t in shop_items:
                         shop_items.append(t)
 
-                log = shop.find_one({"_id": "daily_offers"})["log"]
-                if randint(1, 10) > 6: #40% to have an item in the shop reduced
+                log = DB.shop.find_one({"_id": "daily_offers"})["log"]
+                if randint(1, 10) > 6: # 40% to have an item in the shop reduced
                     reduced_item = randint(0, len(shop_items)-1)
                     reduced_by = randint(15, 40)
                     print(f"{PrintColors.OKBLUE}Updated shop with following cards: " + ", ".join([str(x) for x in shop_items])+f", reduced item number {shop_items[reduced_item]} by {reduced_by}%{PrintColors.ENDC}")
                     log.append({"time": datetime.now(), "items": shop_items, "reduced": {"reduced_item": reduced_item, "reduced_by": reduced_by}})
-                    shop.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": {"reduced_item": reduced_item, "reduced_by": reduced_by}}})
+                    DB.shop.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": {"reduced_item": reduced_item, "reduced_by": reduced_by}}})
                 else:
                     print(f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}")
                     log.append({"time": datetime.now(), "items": shop_items, "redued": None})
-                    shop.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": None}})
+                    DB.shop.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": None}})
         except IndexError:
             print(f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}")
 
     def _get_view(self, ctx) -> View:
         """Creates a view for the shop"""
         view = View(ctx.author.id)
-        view.add_item(Button(label="Menu", style=discord.ButtonStyle.blurple))
+        view.add_item(Button(label="Menu", style=discord.ButtonStyle.blurple, custom_id="menu"))
         return view
 
     async def _shop_menu(self, ctx, msg, view) -> None:
@@ -160,14 +160,14 @@ class Shop(commands.Cog):
     async def cards_shop(self, ctx: commands.Context):
         """Shows the current cards for sale"""
         
-        sh = shop.find_one({"_id": "daily_offers"})
+        sh = DB.shop.find_one({"_id": "daily_offers"})
         shop_items:list = sh["offers"]
 
         if not sh["reduced"] is None:
             reduced_item = sh["reduced"]["reduced_item"]
             reduced_by = sh["reduced"]["reduced_by"]
             formatted = self._format_offers(shop_items, reduced_item, reduced_by)
-            embed = discord.Embed(title="Current Card shop", description=f"**{items.find_one({'_id': shop_items[reduced_item]})['name']} is reduced by {reduced_by}%**")
+            embed = discord.Embed(title="Current Card shop", description=f"**{DB.items.find_one({'_id': shop_items[reduced_item]})['name']} is reduced by {reduced_by}%**")
         else:
             formatted:list = self._format_offers(shop_items)
             embed = discord.Embed(title="Current Card shop")
@@ -248,7 +248,7 @@ class Shop(commands.Cog):
     async def card(self, ctx: commands.Context, item: str):
         """Buy a card from the shop with this command"""
         
-        shop_data = shop.find_one({"_id": "daily_offers"})
+        shop_data = DB.shop.find_one({"_id": "daily_offers"})
         shop_items = shop_data["offers"]
         user = User(ctx.author.id)
 
@@ -261,7 +261,7 @@ class Shop(commands.Cog):
             return await ctx.send(f"This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`", allowed_mentions=discord.AllowedMentions.none())
 
         if not shop_data["reduced"] is None:
-            if shop_items.index(card.id) == shop_data["reduced"]["reduced_item"]:
+            if shop_DB.items.index(card.id) == shop_data["reduced"]["reduced_item"]:
                 price = int(PRICES[card.rank] - int(PRICES[card.rank] * (shop_data["reduced"]["reduced_by"]/100)))
             else:
                 price = PRICES[card.rank]
@@ -411,7 +411,7 @@ class Shop(commands.Cog):
     ) -> List[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         if not self.cardname_cache:
-            for card in items.find({}):
+            for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
         name_cards = [(x[0], self.cardname_cache[x[0]][0]) for x in User(interaction.user.id).all_cards if self.cardname_cache[x[0]][0].lower().startswith(current.lower())]
