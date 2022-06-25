@@ -3,7 +3,6 @@ from discord.ext.commands import Context
 from ..testing import ResultData
 from .message import TestingMessage as Message
 from .user import TestingUser as User
-from .interaction import TestingInteraction as ArgumentInteraction
 
 from asyncio import create_task, sleep
 

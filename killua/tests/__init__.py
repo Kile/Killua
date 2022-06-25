@@ -14,11 +14,12 @@ async def run_tests() -> None:
         else:
             print(PrintColors.OKGREEN + f"{len(result.passed)} tests passed \U00002713" + PrintColors.ENDC)
             print(PrintColors.WARNING + f"{len(result.failed)} tests failed \U00002715" + PrintColors.ENDC)
-            print(PrintColors.FAIL + f"{len(result.errors)} tests raised an unhandled exceptions \U000026a0" + PrintColors.ENDC)
+            print(PrintColors.FAIL + f"{len(result.errors)} tests raised unhandled exceptions \U000026a0" + PrintColors.ENDC)
         
         total["passed"] = [*total["passed"], *result.passed]
         total["failed"] = [*total["failed"], *result.failed]
         total["errors"] = [*total["errors"], *result.errors]
+        del group
     
     print(PrintColors.OKCYAN + "Total test results:" + PrintColors.ENDC)
     if len(total["failed"]) == 0 and len(total["errors"]) == 0:
@@ -26,7 +27,7 @@ async def run_tests() -> None:
     else:
         print(PrintColors.OKGREEN + f"{len(total['passed'])} tests passed \U00002713" + PrintColors.ENDC)
         print(PrintColors.WARNING + f"{len(total['failed'])} tests failed \U00002715" + PrintColors.ENDC)
-        print(PrintColors.FAIL + f"{len(total['errors'])} tests raised an unhandled exceptions \U000026a0" + PrintColors.ENDC)
+        print(PrintColors.FAIL + f"{len(total['errors'])} tests raised unhandled exceptions \U000026a0" + PrintColors.ENDC)
         for failed in total["errors"]:
             print(PrintColors.FAIL + f"Errored test: {failed['command'].name}" + PrintColors.ENDC)
             print(PrintColors.FAIL + f"Error: {failed['error'].error}" + PrintColors.ENDC)

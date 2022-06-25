@@ -1,5 +1,6 @@
 from .actions import TestingActions
+from .cards import TestingCards
 
-tests = [TestingActions]
+tests = [TestingActions, TestingCards]
 
-__all__ = ["tests", "TestingActions"]
+__all__ = ["tests"]

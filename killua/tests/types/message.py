@@ -61,9 +61,20 @@ class TestingMessage(Message):
         self.__dict__.update(kwargs) # Changes the properties defined in the kwargs
         self.edited = True
         self.ctx.current_view = kwargs.pop("view", None)
-        if self.ctx.current_view and \
-            not len([c for c in self.ctx.current_view.children if c.disabled]) == len(self.ctx.current_view.children):
-            create_task(self.ctx.run_delayed(0.1, self.ctx.respond_to_view))
+        if "embed" in kwargs:
+            self.embeds.append(kwargs["embed"])
+
+        if self.ctx.current_view:
+            if not len([c for c in self.ctx.current_view.children if c.disabled]) == len(self.ctx.current_view.children):
+                create_task(self.ctx.run_delayed(5, self.ctx.respond_to_view))
+            else: return
+
+        self.ctx.result.message = self
+        # print(
+        #     "Edited view: ", self.view,
+        #     "Edited embeds: ", self.embeds,
+        #     "Edited content: ", self.content
+        # )
 
     async def delete(self) -> None:
         """Deletes the message"""

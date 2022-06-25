@@ -154,10 +154,13 @@ class Cards(commands.Cog):
         amount="The amount of the specified card to sell"
     )
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
-    async def sell(self, ctx, card: str = None, type: SellOptions = None, amount: int = 1):
+    async def sell(self, ctx: commands.Context, card: str = None, type: SellOptions = None, amount: int = 1):
         """Sell any amount of cards you own"""
 
         user = User(ctx.author.id)
+
+        if not type and not card:
+            return await ctx.send("You need to specify what exactly to sell", ephemeral=True)
 
         if type: # always prefers if a type argument was given. However if both a type argument and card argument was given,
             # both will be attempted to be executed.

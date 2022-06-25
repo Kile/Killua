@@ -20,7 +20,8 @@ class ArgumentResponseInteraction:
         if self._is_done:
             raise Exception("Interaction can only be responded to once.")
         self._is_done = True
-        await self.interaction.context.send(*args, **kwargs)
+        view = kwargs.pop("view", self.interaction.context.current_view) # If no new view is responded we want the old one still as the current view
+        await self.interaction.context.send(view=view, *args, **kwargs)
 
     async def edit_message(self, *args, **kwargs) -> None:
         if self._is_done:
