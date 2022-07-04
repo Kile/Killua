@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 from .utils import get_random_discord_id, random_name
 
 class TestingGuild(Guild):
-    """A class imulating a discord guild"""
+    """A class simulating a discord guild"""
 
     def __init__(self, **kwargs):
         payload = self.__get_payload(**kwargs)
@@ -20,6 +20,7 @@ class TestingGuild(Guild):
         state = ConnectionState()
         state.member_cache_flags = MemberCacheFlags()
         state.user = None
+        state.shard_count = 1
         super().__init__(state=state, data=payload)
 
     def __nothing(self) -> None:

@@ -1,52 +1,15 @@
 from ..types import *
-from ..testing import TestResult, Result, Testing, ResultData
+from ..testing import Testing
 from ...cogs.actions import Actions
 
-# from types import FunctionType
-# from inspect import isfunction, getmembers
-
-from discord.ext.commands.view import StringView
-
 from typing import Coroutine
-from asyncio import wait
+from asyncio import wait, wait_for
 from random import randrange, randint
 
-class TestingActions:
+class TestingActions(Testing):
 
     def __init__(self):
-        self.base_guild = DiscordGuild()
-        self.base_channel = TextChannel(guild=self.base_guild)
-        self.base_author = DiscordUser()
-        self.base_message = Message(author=self.base_author, channel=self.base_channel)
-        self.base_context = Context(message=self.base_message, bot=Bot, view=StringView("testing"))
-        # StringView is not used in any method I use and even if it would be, I would
-        # be overwriting that method anyways
-        self.result = TestResult()
-
-    @property
-    def all_tests(self) -> list:
-        # TODO make this smart. Tried and failed because dir() errors and __dict__ only lists attributes
-        # cog_methods = [(command.name, command) for command in self.cog.get_commands()]
-        # own_methods = [method for method in self.__dict__.items() if type(method[1]) == FunctionType]
-        # print([x for x in self.__dict__.items() if not str(x[0]).startswith("base")])
-        # print(own_methods)
-
-        # return [method for name, method in own_methods if name in [n for n, _ in cog_methods]]
-        return [self.hug, self.pat, self.poke, self.slap, self.tickle, self.cuddle, self.dance, self.neko, self.smile, self.blush, self.tail, self.settings]
-
-    def refresh_attributes(self) -> None:
-        """Resets all attributes in case they were changed as part of a command"""
-        self.base_context.result = None
-
-    async def run_tests(self) -> TestResult:
-        """The function that returns the test result for this group"""
-        await Bot.setup_hook()
-        self.cog = Actions(Bot) # Because this needs a workling instance of ClientSession which is only added here it also needs to be in here
-        for test in self.all_tests:
-            await test()
-
-        await self.cog.session.close()
-        return self.result
+        super().__init__(cog=Actions)
 
     async def action_logic(self, command: Coroutine) -> None:
         """The underlying test scenarios for an action command"""
@@ -162,6 +125,7 @@ class TestingActions:
         "Contains the logic for all action commands which have no arguments and respond with a GIF no matter what"
         # The one and only test needed for this is to make sure the command responds with a GIF in embed
         try:
+            self.base_context.command = command # To ensure the command is the one we want
             await command(self.cog, self.base_context)
             if self.base_context.result.message.embeds and \
                 self.base_context.result.message.embeds[0].image:
@@ -219,27 +183,30 @@ class TestingActions:
 
 
         # Test trying to save when no settings were changed
-        # BUG this is currently only working some times. After hours of debugging I have given up on finding on how to 
-        # consistently and correctly test it
-        # self.base_context.timeout_view = False
-        # try:
-        #     async def respond_to_view_no_settings_changed(context: Context):
-        #         for child in context.current_view.children:
-        #             if child.custom_id == "save":
-        #                 await child.callback(ArgumentInteraction(context))
-        #                 await context.current_view.on_timeout() # Because wrong save does not stop the view.wait I need to manually stop it here
-        #                 context.current_view.stop()
+        self.base_context.timeout_view = False
+        try:
+            async def respond_to_view_no_settings_changed(context: Context):
+                try:
+                    for child in context.current_view.children:
+                        if child.custom_id == "save":
+                            await child.callback(ArgumentInteraction(context))
+                            await context.current_view.on_timeout() # Because wrong save does not stop the view.wait I need to manually stop it here
+                            context.current_view.stop()
+                except AttributeError:
+                    pass # BUG This happens for some reason Idk why but the test still works so this is a hacky fix
 
-        #     self.base_context.respond_to_view = respond_to_view_no_settings_changed
-        #     await wait_for(self.cog.settings(self.cog, self.base_context), timeout=5)
-        #     if self.base_context.result.message.content == "You have not changed any settings":
-        #         self.result.completed_test(self.cog.settings, Result.passed)
-        #     else:
-        #         self.result.completed_test(self.cog.settings, Result.failed, result_data=self.base_context.result)
-        # except Exception as e:
-        #     self.result.completed_test(self.cog.settings, Result.errored, ResultData(error=e))
+            self.base_context.respond_to_view = respond_to_view_no_settings_changed
+            await wait_for(self.cog.settings(self.cog, self.base_context), timeout=5)
+            if self.base_context.result.message.content == "You have not changed any settings":
+                self.result.completed_test(self.cog.settings, Result.passed)
+            else:
+                self.result.completed_test(self.cog.settings, Result.failed, result_data=self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.settings, Result.errored, ResultData(error=e))
 
         # # Test changing one action setting and then saving
+        # BUG this is currently only working some times. After hours of debugging I have given up on finding on how to 
+        # consistently and correctly test it
         # try:
         #     self.base_context.view_counter = 0
 

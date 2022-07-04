@@ -1,3 +1,4 @@
+from curses import KEY_F21
 from typing import Optional, List, Dict
 
 class TestingDatabase:
@@ -21,6 +22,16 @@ class TestingDatabase:
     #     else:
     #         return res
 
+    def _normalize_dict(self, dictionary: dict) -> dict:
+        """Changes the {one.two: } to {one: {two: }}"""
+        for _, d in dictionary:
+            for key, val in d:
+                if "." in key:
+                    k1 = key.split(".")[0]
+                    k2 = key.split(".")[1]
+                    d[k1][k2] = val
+                    del d[key]
+
     def find_one(self, where: dict) -> Optional[dict]:
         coll = self.db[self.collection]
         for d in coll:
@@ -42,21 +53,37 @@ class TestingDatabase:
     def update_one(self, where: dict, update: Dict[str, dict]) -> dict:
         # updated = False
         operator = list(update.keys())[0] # This does not support multiple keys
+
+        for v in update.values(): # Making sure it is all in the right format
+            v = self._normalize_dict(v)
+
         for p, item in enumerate(self.db[self.collection]):
             for key, value in item.items():
                 if len([k for k, v in where.items() if key == k and value ==v]) == len(where):
                     if operator == "$set":
                         for k, val in update[operator].items():
-                            self.db[self.collection][p][k] = val
+                            if isinstance(val, dict):
+                                self.db[self.collection][p][k][val.keys()[0]] = val.values()[0]
+                            else:
+                                self.db[self.collection][p][k] = val
                     if operator == "$push":
                         for k, val in update[operator].items():
-                            self.db[self.collection][p][k].append(val)
+                            if isinstance(val, dict):
+                                self.db[self.collection][p][k][val.keys()[0]].append(val.values()[0])
+                            else:
+                                self.db[self.collection][p][k].append(val)
                     if operator == "$pull":
                         for k, val in update[operator].items():
-                            self.db[self.collection][p][k].remove(val)
+                            if isinstance(val, dict):
+                                self.db[self.collection][p][k][val.keys()[0]].remove(val.values()[0])
+                            else:
+                                self.db[self.collection][p][k].remove(val)
                     elif operator == "$inc":
                         for k, val in update[operator].items():
-                            self.db[self.collection][p][k] += val
+                            if isinstance(val, dict):
+                                self.db[self.collection][p][k][val.keys()[0]] += val.values()[0]
+                            else:
+                                self.db[self.collection][p][k] += val
                     # updated = True
 
         # if not updated:

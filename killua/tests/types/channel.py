@@ -4,11 +4,10 @@ from typing import TYPE_CHECKING, List
 from asyncio import create_task
 
 from .message import TestingMessage as Message
-from ..testing import ResultData
+from .testing_results import ResultData
 
 from discord import Guild, TextChannel
 from discord.state import ConnectionState
-from discord.ext.commands import Context
 
 if TYPE_CHECKING:
     from discord.types.channel import TextChannel as TextChannelPayload
@@ -22,7 +21,9 @@ class TestingTextChannel(TextChannel):
     def __init__(self, guild: Guild, permissions: List[dict] = [], **kwargs):
         payload = self.__get_payload(permissions, guild_id=Guild.id, **kwargs)
         ConnectionState.__init__ = self.__nothing # This is too complicated to construct with no benefit of it being instantiated correctly
-        super().__init__(state=ConnectionState(), guild=guild, data=payload)
+        state = ConnectionState()
+        state.shard_count = 1
+        super().__init__(state=state, guild=guild, data=payload)
 
     def __nothing(self) -> None:
         ...

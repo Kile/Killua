@@ -605,7 +605,7 @@ class User:
         cards: List[list], 
         card_id: int, 
         fake: Optional[bool], 
-        clone:Optional[bool]
+        clone: Optional[bool]
     ) -> Tuple[Union[List[List[int, dict]], None], Union[List[int, dict], None]]:
         counter = 0
         while counter != len(cards): # I use a while loop because it has c bindings and is thus faster than a for loop which is good for this 

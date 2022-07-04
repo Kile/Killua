@@ -1,6 +1,6 @@
 from discord.ext.commands import Context
 
-from ..testing import ResultData
+from .testing_results import ResultData
 from .message import TestingMessage as Message
 from .user import TestingUser as User
 

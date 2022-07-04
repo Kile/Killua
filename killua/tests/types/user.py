@@ -11,7 +11,9 @@ class TestingUser(User):
     def __init__(self, **kwargs):
         payload = self.__get_payload(**kwargs)
         ConnectionState.__init__ = self.__nothing # This is too complicated to construct with no benefit of it being instantiated correctly
-        super().__init__(state=ConnectionState(), data=payload)
+        state = ConnectionState()
+        state.shard_count = 1
+        super().__init__(state=state, data=payload)
 
     def __nothing(self) -> None:
         ...

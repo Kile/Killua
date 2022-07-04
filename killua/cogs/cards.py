@@ -170,6 +170,7 @@ class Cards(commands.Cog):
                 to_be_sold = [x for x in user.fs_cards if Card(x[0]).type == "spell" and not x[1]["clone"] and not x[1]["fake"]]
             elif type.name == "monsters":
                 to_be_sold = [x for x in user.fs_cards if Card(x[0]).type == "monster"and not x[1]["clone"] and not x[1]["fake"]]
+            else: to_be_sold = []
 
             to_be_gained = 0
 
@@ -178,6 +179,9 @@ class Cards(commands.Cog):
                 if user.is_entitled_to_double_jenny:
                     j *= 2
                 to_be_gained += j
+
+            if to_be_gained == 0:
+                return await ctx.send("You don't have any cards of that type to sell!", ephemeral=True)
 
             view = ConfirmButton(ctx.author.id, timeout=80)
             msg = await ctx.send(f"You will receive {to_be_gained} Jenny for selling all {type.name if not type.name == 'all' else 'free slots'} cards, do you want to proceed?", view=view)
@@ -190,12 +194,9 @@ class Cards(commands.Cog):
                 else:
                     return await ctx.send(f"Successfully canceled!")
             else:
-                if to_be_gained == 0:
-                    return await ctx.send(f"You don't have any {type.name if not type.name == 'all' else 'free slots'} cards to sell!")
-                else:
-                    user.bulk_remove(to_be_sold)
-                    user.add_jenny(to_be_gained)
-                    return await ctx.send(f"You sold all your {type.name if not type.name == 'all' else 'free slots'} cards for {to_be_gained} Jenny!")
+                user.bulk_remove(to_be_sold)
+                user.add_jenny(to_be_gained)
+                return await ctx.send(f"You sold all your {type.name if not type.name == 'all' else 'free slots cards'} for {to_be_gained} Jenny!")
         if not card:
             return
 
@@ -230,15 +231,10 @@ class Cards(commands.Cog):
             else:
                 return await ctx.send(f"Successfully canceled!")
             
-        card_amount = user.count_card(card, False)
-
-        if not card_amount >= amount:
-            return await ctx.send("Seems like you don't own enough non-fake copies of this card you try to sell")
-        else:
-            for i in range(amount):
-                user.remove_card(card, False)
-            user.add_jenny(jenny)
-            await ctx.send(f"Successfully sold {amount} cop{'y' if amount == 1 else 'ies'} of card {card} for {jenny} Jenny!")
+        for _ in range(amount):
+            user.remove_card(card.id, False)
+        user.add_jenny(jenny)
+        await ctx.send(f"Successfully sold {amount} cop{'y' if amount == 1 else 'ies'} of card {card.id} for {jenny} Jenny!")
 
     async def swap_cards_autocomplete(
         self,

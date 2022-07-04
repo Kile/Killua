@@ -1,40 +1,59 @@
-from discord.ext.commands import Context
+from __future__ import annotations
 
-from discord import Message
+from discord.ext.commands import Cog
+from discord.ext.commands.view import StringView
 
-from enum import Enum
-from typing import Any, Coroutine
+from typing import Any, Coroutine, TYPE_CHECKING
 
-class Result(Enum):
-    passed = 0
-    failed = 1
-    errored = 2
-
-class ResultData:
-    """An object containing the result of a command test"""
-
-    def __init__(self, message: Message = None, error: Exception = None, actual_result: Any = None):
-        self.message = message
-        self.error = error
-        self.actual_result = actual_result
-
-class TestResult:
-
-    def __init__(self):
-        self.passed = []
-        self.failed = []
-        self.errors = []
-
-    def completed_test(self, command: str, result: Result, result_data: ResultData = None) -> None:
-        if result == Result.passed:
-            self.passed.append(command)
-        elif result == Result.failed:
-            self.failed.append({"command": command, "result": result_data})
-        else:
-            self.errors.append({"command": command, "error": result_data})
+if TYPE_CHECKING:
+    from .types import Context, TestResult
 
 class Testing:
     """Modifies several discord classes to be suitable in a testing environment"""
+
+    def __new__(cls, *args, **kwargs): # This prevents this class from direct instatioation
+        if cls is Testing:
+            raise TypeError(f"only children of '{cls.__name__}' may be instantiated")
+        return object.__new__(cls, *args, **kwargs)
+
+    def __init__(self, cog: Cog):
+        from .types import DiscordGuild, TextChannel, DiscordUser, Message, Context, TestResult, Bot
+
+        self.base_guild = DiscordGuild()
+        self.base_channel = TextChannel(guild=self.base_guild)
+        self.base_author = DiscordUser()
+        self.base_message = Message(author=self.base_author, channel=self.base_channel)
+        self.base_context = Context(message=self.base_message, bot=Bot, view=StringView("testing"))
+        # StringView is not used in any method I use and even if it would be, I would
+        # be overwriting that method anyways
+        self.result = TestResult()
+        self.cog = cog(Bot)
+
+    @property
+    def all_tests(self) -> list:
+        cog_methods = []
+        for cmd in [(command.name, command) for command in self.cog.get_commands()]:
+            if cmd[1].walk_commands():
+                for child in cmd[1].walk_commands():
+                    cog_methods.append((child.name, child))
+            else:
+                cog_methods.append(cmd)
+
+        own_methods = [method for method in dir(self) if not method.startswith("__") and not method.startswith("base")]
+
+        return [getattr(self, name) for name in own_methods if name in [n for n, _ in cog_methods]]
+
+    def refresh_attributes(self) -> None:
+        """Resets all attributes in case they were changed as part of a command"""
+        self.base_context.result = None
+
+    async def run_tests(self) -> TestResult:
+        """The function that returns the test result for this group"""
+        for test in self.all_tests:
+            await test()
+
+        # await self.cog.client.session.close()
+        return self.result
 
     @classmethod
     async def run_command(self, command: Coroutine, context: Context, *args, **kwargs) -> Any:
@@ -42,3 +61,13 @@ class Testing:
             return await command(context, *args, **kwargs)
         except Exception as e:
             return e
+
+
+    @classmethod
+    async def press_confirm(cls, context: Context):
+        """Presses the confirm button of a ConfirmView"""
+        from .types import ArgumentInteraction
+
+        for child in context.current_view.children:
+            if child.custom_id == "confirm":
+                await child.callback(ArgumentInteraction(context))

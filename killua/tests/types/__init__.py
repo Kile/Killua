@@ -14,6 +14,7 @@ from .db_objects import TestingGuild as Guild
 from .db_objects import TestingTodo as Todo
 from .db_objects import TestingTodoList as TodoList
 from .db_objects import TestingPartialCard as PartialCard
+from .testing_results import TestResult, Result, ResultData
 from .utils import random_date, get_random_discord_id, random_name
 from typing import TYPE_CHECKING
 
@@ -37,6 +38,9 @@ __all__ = [
     "Todo",
     "TodoList",
     "PartialCard",
+    "TestResult",
+    "Result",
+    "ResultData",
     "random_date",
     "get_random_discord_id",
     "random_name"

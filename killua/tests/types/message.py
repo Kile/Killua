@@ -19,6 +19,7 @@ class TestingMessage(Message):
         ConnectionState.__init__ = self.__nothing # This is too complicated to construct with no benefit of it being instantiated correctly
         state = ConnectionState()
         state._users = {}
+        state.shard_count = 1
         super().__init__(data=payload, state=state, channel=channel)
         self.deleted = False
         self.edited = False

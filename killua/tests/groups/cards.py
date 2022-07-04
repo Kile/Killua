@@ -1,54 +1,19 @@
 from ..types import *
-from ..testing import TestResult, Result, Testing, ResultData
+from ..testing import Testing
 from ...cogs.cards import Cards
+from ...static.cards import Card
 from ...utils.paginator import Buttons
-from ...static.constants import DB
+from ...static.constants import DB, PRICES
+from killua.static.enums import Category, HuntOptions, Items, SellOptions
 
-# from types import FunctionType
-# from inspect import isfunction, getmembers
-
-from discord.ext.commands.view import StringView
-
-from typing import Coroutine
 from random import randint
 from math import ceil
+from asyncio import wait_for
 
-class TestingCards:
+class TestingCards(Testing):
 
     def __init__(self):
-        self.base_guild = DiscordGuild()
-        self.base_channel = TextChannel(guild=self.base_guild)
-        self.base_author = DiscordUser()
-        self.base_message = Message(author=self.base_author, channel=self.base_channel)
-        self.base_context = Context(message=self.base_message, bot=Bot, view=StringView("testing"))
-        # StringView is not used in any method I use and even if it would be, I would
-        # be overwriting that method anyways
-        self.result = TestResult()
-
-    @property
-    def all_tests(self) -> list:
-        # TODO make this smart. Tried and failed because dir() errors and __dict__ only lists attributes
-        # cog_methods = [(command.name, command) for command in self.cog.get_commands()]
-        # own_methods = [method for method in self.__dict__.items() if type(method[1]) == FunctionType]
-        # print([x for x in self.__dict__.items() if not str(x[0]).startswith("base")])
-        # print(own_methods)
-
-        # return [method for name, method in own_methods if name in [n for n, _ in cog_methods]]
-        return [self.book, self.sell]
-
-    def refresh_attributes(self) -> None:
-        """Resets all attributes in case they were changed as part of a command"""
-        self.base_context.result = None
-
-    async def run_tests(self) -> TestResult:
-        """The function that returns the test result for this group"""
-        await Bot.setup_hook()
-        await self.base_context.respond_to_view(self.base_context)
-        self.cog = Cards(Bot) # Because this needs a workling instance of ClientSession which is only added here it also needs to be in here
-        for test in self.all_tests:
-            await test()
-
-        return self.result
+        super().__init__(cog=Cards)
 
     async def book(self):
 
@@ -88,6 +53,7 @@ class TestingCards:
             self.result.completed_test(self.cog.book, Result.errored, ResultData(error=e))
 
     async def sell(self):
+        user = User(self.base_author.id)
 
         # Testing no arguments
         try:
@@ -99,3 +65,128 @@ class TestingCards:
                 self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
         except Exception as e:
             self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+
+        # Testing selling a card a user doesn't have
+        try:
+            await self.cog.sell(self.cog, self.base_context, "5")
+            if self.base_context.result.message.content == "Seems you don't own enough copies of this card. You own 0 copies of this card":
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+
+        # Testing selling a single valid card
+        try:
+            self.base_context.timeout_view = False
+            
+            self.base_context.respond_to_view = Testing.press_confirm
+            card = randint(1, 99)
+            user.add_card(card)
+            await wait_for(self.cog.sell(self.cog, self.base_context, card=str(card)), timeout=5)
+            if self.base_context.result.message.content == f"Successfully sold 1 copy of card {card} for {int(PRICES[Card(card).rank] * 0.1)} Jenny!" and \
+                User(self.base_author.id).count_card(card, including_fakes=False) == 0:
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+
+        # Testing selling a fake
+        try:
+            card = randint(1, 99)
+            user.add_card(card, fake=True)
+            await wait_for(self.cog.sell(self.cog, self.base_context, card=str(card)), timeout=5)
+            if self.base_context.result.message.content == "Seems you don't own enough copies of this card. You own 0 copies of this card":
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+
+        # Testing attempting to sell more cards than in possession
+        try:
+            card = randint(1, 99)
+            user.add_card(card)
+
+            await wait_for(self.cog.sell(self.cog, self.base_context, card=str(card), amount=2), timeout=5)
+            if self.base_context.result.message.content == "Seems you don't own enough copies of this card. You own 1 copy of this card":
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+        user.remove_card(card)
+
+        # Testing selling multiple cards
+        try:
+            self.base_context.timeout_view = False
+            
+            self.base_context.respond_to_view = Testing.press_confirm
+            card = randint(1, 99)
+            for _ in range(2):
+                user.add_card(card)
+            await wait_for(self.cog.sell(self.cog, self.base_context, card=str(card), amount=2), timeout=5)
+            if self.base_context.result.message.content == f"Successfully sold 2 copies of card {card} for {int(PRICES[Card(card).rank] * 0.2)} Jenny!" and \
+                user.count_card(card, including_fakes=False) == 0:
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+
+        # Testing selling multiple cards with a fake
+        try:
+            card = randint(1, 99)
+            user.add_card(card)
+            user.add_card(card, fake=True)
+
+            await wait_for(self.cog.sell(self.cog, self.base_context, card=str(card), amount=2), timeout=5)
+            if self.base_context.result.message.content == "Seems you don't own enough copies of this card. You own 1 copy of this card":
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+
+        user.remove_card(card, remove_fake=True) and user.remove_card(card)
+
+        # Testing selling all cards of a category when ownung none of them
+        try:
+            user.add_card(1) # So there won't be the generic "you have no cards" error message
+            await wait_for(self.cog.sell(self.cog, self.base_context, type=SellOptions.monsters), timeout=5)
+            if self.base_context.result.message.content == "You don't have any cards of that type to sell!":
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+
+        # Testing selling all cards of a category
+        try:
+            user.add_card(572)
+            user.add_card(697)
+
+            await wait_for(self.cog.sell(self.cog, self.base_context, type=SellOptions.monsters), timeout=5)
+            if self.base_context.result.message.content == f"You sold all your monsters for {int((PRICES[Card(572).rank] + PRICES[Card(697).rank]) * 0.1)} Jenny!" and \
+                user.count_card(572, including_fakes=False) == 0 and user.count_card(697, including_fakes=False) == 0:
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+
+        # Testing selling all cards of a category with a fake
+        try:
+            user.add_card(572)
+            user.add_card(697, fake=True)
+
+            await wait_for(self.cog.sell(self.cog, self.base_context, type=SellOptions.monsters), timeout=5)
+            if self.base_context.result.message.content == f"You sold all your monsters for {int(PRICES[Card(572).rank] * 0.1)} Jenny!" and \
+                user.count_card(572, including_fakes=False) == 0 and user.count_card(697, including_fakes=True) == 1:
+                self.result.completed_test(self.cog.sell, Result.passed)
+            else:
+                self.result.completed_test(self.cog.sell, Result.failed, self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.sell, Result.errored, ResultData(error=e))
+        user.remove_card(697, remove_fake=True)
