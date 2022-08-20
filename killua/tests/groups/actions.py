@@ -19,7 +19,7 @@ class TestingActions(Testing):
         try:
             Bot.fail_timeout = True
             await command(self.cog, self.base_context)
-            # We do not wait for completion here as it is supposed to time out
+        # We do not wait for completion here as it is supposed to time out
             if self.base_context.result.message.content == f"You provided no one to {command.name}.. Should- I {command.name} you?":
                 self.result.completed_test(command, Result.passed)
             else:
@@ -43,8 +43,7 @@ class TestingActions(Testing):
 
         # Testing argument = author
         try:
-            member = DiscordMember(user=self.base_author, guild=self.base_guild)
-            await command(self.cog, self.base_context, [member])
+            await command(self.cog, self.base_context, [self.base_author])
             if self.base_context.result.message.content == "Sorry... you can\'t use this command on yourself":
                 self.result.completed_test(command, Result.passed)
             else:
@@ -94,7 +93,6 @@ class TestingActions(Testing):
             disabled = 0
             for p, member in enumerate(members):
                 if p < len(members) - 1: # We do not want all members to have this action disabled
-                    # print(command.name)
                     User(member.id).set_action_settings({command.name: False})
                     disabled += 1
                 else:
@@ -205,37 +203,34 @@ class TestingActions(Testing):
             self.result.completed_test(self.cog.settings, Result.errored, ResultData(error=e))
 
         # # Test changing one action setting and then saving
-        # BUG this is currently only working some times. After hours of debugging I have given up on finding on how to 
-        # consistently and correctly test it
-        # try:
-        #     self.base_context.view_counter = 0
+        try:
+            self.base_context.view_counter = 0
+            async def respond_to_view_changing(context: Context):
+                if context.view_counter > 0:
+                    await context.current_view.on_timeout()
+                    return context.current_view.stop()
 
-        #     async def respond_to_view_changing(context: Context):
-        #         if context.view_counter > 0:
-        #             await context.current_view.on_timeout()
-        #             return context.current_view.stop()
+                context.current_view.values = []
+                context.current_view.timed_out = False
 
-        #         context.current_view.values = []
-        #         context.current_view.timed_out = False
+                for child in context.current_view.children:
+                    if child.custom_id != "save":
+                        for option in child.options:
+                            if option.label != "hug":
+                                context.current_view.values.append(option.value)
 
-        #         for child in context.current_view.children:
-        #             if child.custom_id != "save":
-        #                 for option in child.options:
-        #                     if option.label != "hug":
-        #                         context.current_view.values.append(option.value)
-
-        #         for child in context.current_view.children:
-        #             if child.custom_id == "save":
-        #                 await child.callback(ArgumentInteraction(context))
-        #         context.view_counter += 1 # This is to make sure the test is only run once
+                for child in context.current_view.children:
+                    if child.custom_id == "save":
+                        await child.callback(ArgumentInteraction(context))
+                context.view_counter += 1 # This is to make sure the test is only run once
                 
-        #     setattr(self.base_context, "respond_to_view", respond_to_view_changing)
-        #     await wait_for(self.cog.settings(self.cog, self.base_context), timeout=15)
+            self.base_context.respond_to_view = respond_to_view_changing
+            await wait_for(self.cog.settings(self.cog, self.base_context), timeout=15)
 
-        #     if User(self.base_context.author.id).action_settings["hug"] is False and \
-        #         self.base_context.result.message.embeds:
-        #         self.result.completed_test(self.cog.settings, Result.passed)
-        #     else:
-        #         self.result.completed_test(self.cog.settings, Result.failed, result_data=self.base_context.result)
-        # except Exception as e:
-        #     self.result.completed_test(self.cog.settings, Result.errored, ResultData(error=e))
+            if User(self.base_context.author.id).action_settings["hug"] is False and \
+                self.base_context.result.message.embeds:
+                self.result.completed_test(self.cog.settings, Result.passed)
+            else:
+                self.result.completed_test(self.cog.settings, Result.failed, result_data=self.base_context.result)
+        except Exception as e:
+            self.result.completed_test(self.cog.settings, Result.errored, ResultData(error=e))

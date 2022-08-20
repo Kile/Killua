@@ -6,8 +6,6 @@ from discord.ext.commands import Context
 from typing import Literal
 from .utils import get_random_discord_id, random_name
 
-from discord.state import ConnectionState
-
 class ArgumentResponseInteraction:
     def __init__(self, interaction: ArgumentInteraction):
         self.interaction = interaction
@@ -47,19 +45,7 @@ class ArgumentInteraction:
         self.response = ArgumentResponseInteraction(self)
 
 class TestingInteraction(Interaction):
-    """A testing class mocking an interaction class"""
-
-    def __init__(self, **kwargs):
-        ConnectionState.__init__ = self.__nothing # This is too complicated to construct with no benefit of it being instantiated correctly
-        ConnectionState._get_client = self.__nothing
-        state = ConnectionState()
-        state._guilds = {}
-        # state._HTTPClient__session = None # TODO Fix this going up in flames because of the ConnectionState
-        super().__init__(state=state, data=kwargs) # The constructor is not expected to be called without a classmethod so there are no checks here
-        
-    def __nothing(self) -> None:
-        print("Nothing")
-        ...
+    """A testing class mocking an interaction class""" 
 
     @classmethod
     def base_interaction(cls, **kwargs) -> dict:
