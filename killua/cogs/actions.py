@@ -133,7 +133,7 @@ class Actions(commands.Cog):
             disabled = 0
             for member in members:
                 m = User(member.id)
-                if m.action_settings and m.action_settings[ctx.command.name] is False:
+                if m.action_settings and ctx.command.name in m.action_settings and m.action_settings[ctx.command.name] is False:
                     disabled+=1
                 else:
                     allowed.append(member)

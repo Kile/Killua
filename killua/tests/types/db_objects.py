@@ -27,9 +27,10 @@ class TestingUser(User):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def clear_cache(self) -> None:
+    @classmethod
+    def clear_cache(cls) -> None:
         """Clear the cache of the users."""
-        self.cache = {}
+        cls.cache = {}
 
 class TestingGuild(Guild):
     """A class to construct a testing guild. This is needed to be added because it needs to use a testing database instead of a real one."""

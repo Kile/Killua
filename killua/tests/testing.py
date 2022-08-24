@@ -3,7 +3,9 @@ from __future__ import annotations
 from discord.ext.commands import Cog
 from discord.ext.commands.view import StringView
 
-from typing import Any, Coroutine, TYPE_CHECKING
+import sys, traceback
+import logging
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from .types import Context, TestResult
@@ -26,11 +28,11 @@ class Testing:
         self.base_context: Context = Context(message=self.base_message, bot=Bot, view=StringView("testing"))
         # StringView is not used in any method I use and even if it would be, I would
         # be overwriting that method anyways
-        self.result = TestResult()
-        self.cog = cog(Bot)
+        self.result: TestResult = TestResult()
+        self.cog: Cog = cog(Bot)
 
     @property
-    def all_tests(self) -> list:
+    def all_tests(self) -> List[Testing]:
         """Automatically checks what functions are test based on their name and the overlap with the Cog method names"""
         cog_methods = []
         for cmd in [(command.name, command) for command in self.cog.get_commands()]:
@@ -40,30 +42,34 @@ class Testing:
             else:
                 cog_methods.append(cmd)
 
-        own_methods = [method for method in dir(self) if not method.startswith("__") and not method.startswith("base")]
+        command_classes: List[Testing] = []
 
-        return [getattr(self, name) for name in own_methods if name in [n for n, _ in cog_methods]]
-
-    def refresh_attributes(self) -> None:
-        """Resets all attributes in case they were changed as part of a command"""
-        self.base_context.result = None
+        for cls in self.__class__.__subclasses__():
+            # print(cls)
+            if cls.__subclasses__():
+                for subcls in cls.__subclasses__():
+                    command_classes.append(subcls)
+            else:
+                command_classes.append(cls)
+        # print(command_classes)
+        # return [cls.test_command for cls in command_classes]
+        return [cls for cls in command_classes if cls.__name__.lower() in [n for n, _ in cog_methods]]
 
     async def run_tests(self) -> TestResult:
         """The function that returns the test result for this group"""
         for test in self.all_tests:
-            await test()
+            command = test()
+            await command.test_command()
+            self.result.add_result(command.result)
 
         # await self.cog.client.session.close()
         return self.result
 
-    from .types import Context
+    async def test_command(self) -> None:
+        """Runs all tests of a command"""
 
-    @classmethod
-    async def run_command(self, command: Coroutine, context: Context, *args, **kwargs) -> Any:
-        try:
-            return await command(context, *args, **kwargs)
-        except Exception as e:
-            return e
+        for method in test.tests(self):
+            await method(self)
 
     @classmethod
     async def press_confirm(cls, context: Context):
@@ -73,3 +79,41 @@ class Testing:
         for child in context.current_view.children:
             if child.custom_id == "confirm":
                 await child.callback(ArgumentInteraction(context))
+
+class test(object):
+
+    def __init__(self, method):
+        self._method = method
+
+    async def __call__(self, obj: Testing, *args, **kwargs):
+        from .types import Result, ResultData
+
+        try:
+            logging.debug(f"Running test {self._method.__name__} of command {obj.__class__.__name__}")
+            await self._method(obj, *args, **kwargs)
+            logging.debug("Sucessfully passed test")
+            obj.result.completed_test(self._method, Result.passed)
+        except Exception as e:
+            _, _, var = sys.exc_info()
+            traceback.print_tb(var)
+            tb_info =  traceback.extract_tb(var)
+            filename, line_number, function_name, text = tb_info[-1]
+
+            if isinstance(e, AssertionError):
+                parsed_text = text.split(",")[0]
+
+                logging.error(f"{filename}:{line_number} test \"{function_name}\" of command \"{obj.__class__.__name__.lower()}\" failed at \n{parsed_text} \nwith actual result \n\"{e}\"")
+                obj.result.completed_test(self._method, Result.failed, result_data=ResultData(error=e))
+            else:
+                logging.critical(f"{filename}:{line_number} test \"{function_name}\" of command \"{obj.__class__.__name__.lower()}\" raised the the following exception in the statement {text}: \n\"{e}\"")
+                obj.result.completed_test(self._method, Result.errored, ResultData(error=e))
+
+    @classmethod
+    def tests(cls, subject):
+        def g():
+            for name in dir(subject):
+                method = getattr(subject, name)
+                if isinstance(method, test):
+                    yield name, method
+
+        return [method for _, method in g()]
