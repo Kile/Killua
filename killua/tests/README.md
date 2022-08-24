@@ -7,7 +7,39 @@ Index
 [How tests are written](#how-tests-are-written)
 
 ## Design
-__UML Diagram__
+__The mock classes__
+In general, testing a command works by controlling everything *but* the command callback itself. That means of all relevant discord objects there exists a class in `killua/tests/types`, mocking their methods and attributes that are used inside of the commands. Their `__class__` is set to the discord class they mock to avoid an `isinstance(argument, discordClass)` inside of a command falsely failing on a mock class.
+
+There also exist mock classes for pymongo database stuff as the tests are designed to be able to work completely offline (which is currently not fully archived) and the database should not be spammed when all tests are run.
+
+__How responses can be verified__
+All mock classes of messagables (`Member`, `TextChannel`, `Context`...) have an overwritten `send` method that, instead of actually sending it somewhere, creates a mock message of how a message object would *look like* if sent, then sets this as the attribute `result` of the supplied `Context` object to the command. 
+
+This is why all messagables that *aren't* `Context` have a property referring back to it so they are able to set that attribute.
+
+__How `View`s and `Bot.wait_for` is handled__
+Both `View` and `Bot.wait_for` normally require another user interaction for the command functioning normally. For `View` it also strongly depends on what the user does on what the commands response is. They are handled by:
+
++ `Bot.wait_for`
+For this, `asyncio.wait` is used to call the command and a method of `Bot` that resolves the `wait_for` at the same time. 
+```py
+asyncio.wait({command(context), Bot.resolve("message", MockMessage())})
+```
+
++ `View`s
+Views were harder to tackle as they are much more complex in what could be responded to them. How it was solved is by before calling the command callback, the method `respond_to_view` of the mock `Context` supplied can be set which takes in one parameter `context`. Through `context.current_view` it can then access the view and go through it's `children` to modify values and call callbacks. 
+`respond_to_view` overwrites `View.wait()` if a `View` is supplied to a `send` method and so it will be called if the view requires a response, also avoiding the trouble of the tests taking much longer if the view had to be responded to from a separate asyncio loop. In code, this would simply look like this:
+```py
+async  def  respond_to_view_no_settings_changed(context: Context):
+	for  child  in  context.current_view.children:
+		if  child.custom_id == "save":
+			await  child.callback(MockInteraction(context))
+			
+context.respond_to_view = respond_to_view_no_settings_changed
+await command(context)
+```
+
+__UML Diagram of Testing structure__
 ![Image](https://imgur.com/a/KVNIBTE)
 
 In Essence one big class, `Testing` is subclassed first for each Cog, then that subclass for the cog is subclassed for each command.
