@@ -30,13 +30,13 @@ class Settings(TestingActions):
     async def no_settings_changed(self) -> None:
 
         async def respond_to_view_no_settings_changed(context: Context):
-            print("Called callback")
             for child in context.current_view.children:
                 if child.custom_id == "save":
                     await child.callback(ArgumentInteraction(context))
 
+        self.base_context.timeout_view = False
         self.base_context.respond_to_view = respond_to_view_no_settings_changed
-        await self.cog.settings(self.cog, self.base_context)
+        await self.command(self.cog, self.base_context)
         
         assert self.base_context.result.message.content == "You have not changed any settings", self.base_context.result.message.content
 
@@ -65,7 +65,7 @@ class Settings(TestingActions):
             context.view_counter += 1 # This is to make sure the test is only run once
                 
         self.base_context.respond_to_view = respond_to_view_changing
-        await self.cog.settings(self.cog, self.base_context)
+        await self.command(self.cog, self.base_context)
 
         assert User(self.base_context.author.id).action_settings["hug"] is False, User(self.base_context.author.id).action_settings["hug"]
         assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
