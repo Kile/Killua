@@ -3,21 +3,27 @@
 Index
 -
 
-[How it is designed in code](#design)
+[The design of the testing system](#design)
+
 [How tests are written](#how-tests-are-written)
 
+[Troubleshooting](#troubleshooting)
+
 ## Design
-__The mock classes__
+### The mock classes
+
 In general, testing a command works by controlling everything *but* the command callback itself. That means of all relevant discord objects there exists a class in `killua/tests/types`, mocking their methods and attributes that are used inside of the commands. Their `__class__` is set to the discord class they mock to avoid an `isinstance(argument, discordClass)` inside of a command falsely failing on a mock class.
 
 There also exist mock classes for pymongo database stuff as the tests are designed to be able to work completely offline (which is currently not fully archived) and the database should not be spammed when all tests are run.
 
-__How responses can be verified__
+### How responses can be verified
+
 All mock classes of messagables (`Member`, `TextChannel`, `Context`...) have an overwritten `send` method that, instead of actually sending it somewhere, creates a mock message of how a message object would *look like* if sent, then sets this as the attribute `result` of the supplied `Context` object to the command. 
 
 This is why all messagables that *aren't* `Context` have a property referring back to it so they are able to set that attribute.
 
-__How `View`s and `Bot.wait_for` is handled__
+### How `View`s and `Bot.wait_for` is handled
+
 Both `View` and `Bot.wait_for` normally require another user interaction for the command functioning normally. For `View` it also strongly depends on what the user does on what the commands response is. They are handled by:
 
 + `Bot.wait_for`
@@ -39,22 +45,31 @@ context.respond_to_view = respond_to_view_no_settings_changed
 await command(context)
 ```
 
-__UML Diagram of Testing structure__
-![Image](https://imgur.com/a/KVNIBTE)
+### UML Diagram of Testing structure
+
+![Image](https://imgur.com/9lmhQXp.png)
 
 In Essence one big class, `Testing` is subclassed first for each Cog, then that subclass for the cog is subclassed for each command.
 
 This way, commands can be dynamically found from methods defined in the base class and `__subclassess__()`. After many months of playing around with this this seems like the cleanest and most effective layout to me.
 
-__Logging__
+### Logging
+
 The system also uses the `logging` module instead of printing results. This leads to the output level being configurable with the command line argument for testing (`python3 -m killua -t <logging-level>`) defaulting to `INFO`.
 
-__Assertion checks__
+> **Warning**
+> Due to a fix to an issue with assertion errors displaying even though they are matched, **all console output without `INFO:`, `DEBUG:`, `WARNING:`, `ERROR:` or `CRITICAL:` will not be printed to the console.** So for debugging either use `logging.debug` or `print("DEBUG:", thing)`
+
+### Assertion checks
+
 All checks are written using the `assert` keyword. This way it is easier to identify where exactly a check has failed and what the actual result is. This is *insanely* useful from my testing. For example, a failed test output will look like this:
-![Image](https://imgur.com/a/kfCNbGs)
+
+![Image](https://imgur.com/CxYLfoS.png)
 Thanks to writing it like `assert actual == "Expected", actual` when catching the error `str(error)` will output the value of `actual` removing the necessity of having to debug it further (or if you are like me slapping print statements everywhere)
 
 ## How tests are written
+
+### The layout
 As explained in the [design](#design) section, an actual test is within a subclass of a subclass of `Testing`. So to test a command `hello` of Cog `Group` this layout would be used:
 
 ```py
@@ -73,7 +88,8 @@ class Hello(TestingGroup):
 		self.command = self.cog.hello # This is not required, handy for more dynamic subclasses
 ```
 
-__Writing a test__
+### Writing a test
+
 Now that everything is layed out, you just need to write tests. These are methods on the command class they are tests for decorated with `@test` (as imported previously). These tests call the command function directly with a mock context accessible though `self.base_context` and any other necessary commands. 
 
 After that, the context object will contain whatever was sent back by the command. So you can then check wether this is what you expected or not with pythons `assert` statement like this:
@@ -88,3 +104,15 @@ async def should_work(self):
 	# It is important to place whatever variable to test again after the comma so if it fails, 
 	# the actual value of that variable can be displayed in the logs 
 ```
+For writing tests including `Views`s or `Bot.wait_for` see [How `View`s and `Bot.wait_for` is handled](#how-views-and-bot.wait_for-is-handled)
+
+## Troubleshooting
+
+### `Views`
+Commonly view responses cause a bit of trouble, though luckily not as much as they used to. When a view response isn't as intended, check the following:
++ Is `context.timeout_view` set to `True`? If it is, the view automatically instantly times out
++ Is the callback you designed the view for the last time the callback is used? 
+
+### An issue with `User`
+
+Make sure the `User` database entry is exactly how you want it to be before the command. Resetting the database can often cause more harm than good!
