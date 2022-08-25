@@ -1,32 +1,35 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Union
 from asyncio import create_task
+from functools import partial
 
 from .message import TestingMessage as Message
+from .guild import TestingGuild as Guild
 from .testing_results import ResultData
 
-from discord import Guild, TextChannel
-from discord.state import ConnectionState
+from discord import Guild, TextChannel, ui
 
 if TYPE_CHECKING:
-    from discord.types.channel import TextChannel as TextChannelPayload
-    from discord.types.channel import  PermissionOverwrite
+    from discord.types.channel import  PermissionOverwrite, CategoryChannel
 
 from .utils import get_random_discord_id
 
-class TestingTextChannel(TextChannel):
+class TestingTextChannel:
     """A class imulating a discord text channel"""
 
-    def __init__(self, guild: Guild, permissions: List[dict] = [], **kwargs):
-        payload = self.__get_payload(permissions, guild_id=Guild.id, **kwargs)
-        ConnectionState.__init__ = self.__nothing # This is too complicated to construct with no benefit of it being instantiated correctly
-        state = ConnectionState()
-        state.shard_count = 1
-        super().__init__(state=state, guild=guild, data=payload)
+    __class__ = TextChannel
 
-    def __nothing(self) -> None:
-        ...
+    def __init__(self, guild: Guild, permissions: List[dict] = [], **kwargs):
+        self.guild: Guild = guild
+        self.name: str = kwargs.pop("name",  "test")
+        self.id: int = kwargs.pop("id", get_random_discord_id())
+        self.guild_i: int = kwargs.pop("guild_id", get_random_discord_id())
+        self.position: int = kwargs.pop("position", 1)
+        self.permission_overwrites: List[PermissionOverwrite] = self.__handle_permissions(permissions)
+        self.nsfw: bool = kwargs.pop("nsfw", False)
+        self.parent: Union[CategoryChannel, None] = kwargs.pop("parent", None)
+        self.type: int = kwargs.pop("type", 0)
 
     def __handle_permissions(self, permissions) -> None:
         """Handles permissions"""
@@ -39,26 +42,17 @@ class TestingTextChannel(TextChannel):
 
         return permissions
 
-    def __get_payload(self, permissions: List[dict], **kwargs) -> TextChannelPayload:
-        """Creates a dummy text channel payload to be used as an argument to pass to the constructor of TextChannel"""
-        
-        return {
-            "name": kwargs.pop("name",  "test"),
-            "id": kwargs.pop("id", get_random_discord_id()), # TODO random generate id
-            "guild_id": kwargs.pop("guild_id", get_random_discord_id()), # TODO random generate id
-            "position": kwargs.pop("position", 1),
-            "permission_overwrites": self.__handle_permissions(permissions),
-            "nsfw": kwargs.pop("nsfw", False),
-            "parent": kwargs.pop("parent", None) ,
-            "type": kwargs.pop("type", 0) 
-        }
-
 
     async def send(self, content: str, *args, **kwargs) -> None:
         """Sends a message"""
         message = Message(author=self.me, channel=self.channel, content=content, *args, **kwargs)
         self.result = ResultData(message=message)
-        self.ctx.current_view = kwargs.pop("view", None)
+        self.ctx.current_view: Union[ui.View, None] = kwargs.pop("view", None)
+
         if self.ctx.current_view:
-            create_task(self.ctx.run_delayed(0.1, self.ctx.respond_to_view))
+            if self.ctx.timeout_view:
+                await self.ctx.current_view.on_timeout()
+                self.ctx.current_view.stop()
+            else:
+                self.ctx.current_view.wait = partial(self.ctx.respond_to_view, self.ctx)
         return message

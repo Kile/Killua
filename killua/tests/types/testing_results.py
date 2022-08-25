@@ -32,3 +32,8 @@ class TestResult:
             self.failed.append({"command": command, "result": result_data})
         else:
             self.errored.append({"command": command, "error": result_data})
+
+    def add_result(self, result: "TestResult") -> None:
+        self.passed.extend(result.passed)
+        self.failed.extend(result.failed)
+        self.errored.extend(result.errored)

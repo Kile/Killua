@@ -1,241 +1,211 @@
 from ..types import *
-from ..testing import Testing
+from ..testing import Testing, test
 from ...cogs.actions import Actions
 
 from typing import Coroutine
-from asyncio import wait, wait_for
 from random import randrange, randint
+from asyncio import wait
 
 class TestingActions(Testing):
 
     def __init__(self):
         super().__init__(cog=Actions)
 
-    async def action_logic(self, command: Coroutine) -> None:
-        """The underlying test scenarios for an action command"""
-        # Testing no arguments with no "yes" response
-        self.base_context.command = command
+class Settings(TestingActions):
 
-        try:
-            Bot.fail_timeout = True
-            await command(self.cog, self.base_context)
-            # We do not wait for completion here as it is supposed to time out
-            if self.base_context.result.message.content == f"You provided no one to {command.name}.. Should- I {command.name} you?":
-                self.result.completed_test(command, Result.passed)
-            else:
-                self.result.completed_test(command, Result.failed, result_data=ResultData(self.base_context.result))
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, result_data=ResultData(error=e))
+    def __init__(self):
+        super().__init__()
+        self.command: Coroutine = self.cog.settings
+
+    @test
+    async def embed_times_out(self) -> None:
+        self.base_context.timeout_view = True
+
+        await self.command(self.cog, self.base_context)
+
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+        assert self.base_context.result.message.embeds[0].title == "Settings", self.base_context.result.message.embeds[0].title
+
+    @test
+    async def no_settings_changed(self) -> None:
+
+        async def respond_to_view_no_settings_changed(context: Context):
+            for child in context.current_view.children:
+                if child.custom_id == "save":
+                    await child.callback(ArgumentInteraction(context))
+
+        self.base_context.timeout_view = False
+        self.base_context.respond_to_view = respond_to_view_no_settings_changed
+        await self.command(self.cog, self.base_context)
         
+        assert self.base_context.result.message.content == "You have not changed any settings", self.base_context.result.message.content
+
+    @test
+    async def change_one_and_save(self) -> None:
+
+        self.base_context.view_counter = 0
+
+        async def respond_to_view_changing(context: Context):
+            if context.view_counter > 0:
+                await context.current_view.on_timeout()
+                return context.current_view.stop()
+
+            context.current_view.values = []
+            context.current_view.timed_out = False
+
+            for child in context.current_view.children:
+                if child.custom_id != "save":
+                    for option in child.options:
+                        if option.label != "hug":
+                            context.current_view.values.append(option.value)
+
+            for child in context.current_view.children:
+                if child.custom_id == "save":
+                    await child.callback(ArgumentInteraction(context))
+            context.view_counter += 1 # This is to make sure the test is only run once
+                
+        self.base_context.respond_to_view = respond_to_view_changing
+        await self.command(self.cog, self.base_context)
+
+        assert User(self.base_context.author.id).action_settings["hug"] is False, User(self.base_context.author.id).action_settings["hug"]
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+
+class _ActionCommand(TestingActions):
+
+    def __init__(self, command: str):
+        super().__init__()
+        self.command: Coroutine = getattr(self.cog, command)
+
+        self.base_context.command = self.command
+        self.__name__ = command # This is to identify what command it came from
+
+    @test
+    async def no_arguments_without_yes(self) -> None:
+        Bot.fail_timeout = True
+        await self.command(self.cog, self.base_context)
+
+        assert self.base_context.result.message.content == f"You provided no one to {self.command.name}.. Should- I {self.command.name} you?", self.base_context.result.message.content 
+
+    @test
+    async def no_arguments_with_yes(self) -> None:
         Bot.fail_timeout = False
 
-        # Testing no arguments with "yes" response
-        try:
-            resolving_message = Message(author=self.base_author, channel=self.base_channel, content="yes")
-            await wait({command(self.cog, self.base_context), Bot.resolve("message", resolving_message)})
-            if self.base_context.result.message.embeds and \
-                self.base_context.result.message.embeds[0].image:
-                self.result.completed_test(command, Result.passed)
+        resolving_message = Message(author=self.base_author, channel=self.base_channel, content="yes")
+        await wait({self.command(self.cog, self.base_context), Bot.resolve("message", resolving_message)})
+
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+        assert self.base_context.result.message.embeds[0].image, self.base_context.result.message.embeds[0].image
+
+    @test
+    async def argument_is_author(self) -> None:
+        await self.command(self.cog, self.base_context, [self.base_author])
+
+        assert self.base_context.result.message.content == "Sorry... you can\'t use this command on yourself", self.base_context.result.message.content
+
+    @test
+    async def one_member_correctly_supplied(self) -> None:
+        member = DiscordMember(guild=self.base_guild)
+        await self.command(self.cog, self.base_context, [member])
+
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+        assert self.base_context.result.message.embeds[0].image, self.base_context.result.message.embeds[0].image
+
+    @test
+    async def multiple_members_correctly_supplied(self) -> None:
+        members = [DiscordMember(guild=self.base_guild) for _ in range(randrange(2, 10))]
+        await self.command(self.cog, self.base_context, members)
+
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+        assert self.base_context.result.message.embeds[0].image, self.base_context.result.message.embeds[0].image
+
+    @test
+    async def single_member_action_disabled(self) -> None:
+        member = DiscordMember(guild=self.base_guild)
+        User(member.id).set_action_settings({self.command.name: False})
+        await self.command(self.cog, self.base_context, [member])
+
+        assert self.base_context.result.message.content == f"**{member.display_name}** has disabled this action", self.base_context.result.message.content
+
+    @test
+    async def some_members_action_disabled(self) -> None:
+        members = [DiscordMember(guild=self.base_guild, id=id) for id in range(randint(4, 10))]
+        disabled = 0
+        for p, member in enumerate(members):
+            if p < len(members) - 1: # We do not want all members to have this action disabled
+                User(member.id).set_action_settings({self.command.name: False})
+                disabled += 1
             else:
-                self.result.completed_test(command, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, ResultData(error=e))
+                User(member.id).set_action_settings({self.command.name: True})
+        await self.command(self.cog, self.base_context, members)
 
-        # Testing argument = author
-        try:
-            member = DiscordMember(user=self.base_author, guild=self.base_guild)
-            await command(self.cog, self.base_context, [member])
-            if self.base_context.result.message.content == "Sorry... you can\'t use this command on yourself":
-                self.result.completed_test(command, Result.passed)
-            else:
-                self.result.completed_test(command, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, ResultData(error=e))
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+        assert self.base_context.result.message.embeds[0].footer.text == f"{disabled} user{'s' if disabled > 1 else ''} disabled being targetted with this action", self.base_context.result.message.embeds[0].footer.text
 
-        # Testing one member correctly supplied
-        try:
-            member = DiscordMember(guild=self.base_guild)
-            await command(self.cog, self.base_context, [member])
-            if self.base_context.result.message.embeds and \
-                self.base_context.result.message.embeds[0].image:
-                self.result.completed_test(command, Result.passed)
-            else:
-                self.result.completed_test(command, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, ResultData(error=e))
+    @test
+    async def all_members_action_disabled(self) -> None:
+        members = [DiscordMember(guild=self.base_guild) for _ in range(randint(4, 10))]
+        for member in members:
+            User(member.id).set_action_settings({self.command.name: False})
+        await self.command(self.cog, self.base_context, members)
 
-        # Testing multiple members correctly supplied
-        try:
-            members = [DiscordMember(guild=self.base_guild) for _ in range(randrange(2, 10))]
-            await command(self.cog, self.base_context, members)
-            if self.base_context.result.message.embeds and \
-                self.base_context.result.message.embeds[0].image: 
-                self.result.completed_test(command, Result.passed)
-            else:
-                self.result.completed_test(command, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, ResultData(error=e))
-        
-        # Testing single member action disabled
-        try:
-            member = DiscordMember(guild=self.base_guild)
-            User(member.id).set_action_settings({command.name: False})
-            await command(self.cog, self.base_context, [member])
-            if self.base_context.result.message.content == f"**{member.display_name}** has disabled this action":
-                self.result.completed_test(command, Result.passed)
-            else:
-                self.result.completed_test(command, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, ResultData(error=e))
+        assert self.base_context.result.message.content == "All members targetted have disabled this action.", self.base_context.result.message.content
 
-        # Testing some members action disabled
-        try:
-            members = [DiscordMember(guild=self.base_guild, id=id) for id in range(randint(4, 10))]
-            disabled = 0
-            for p, member in enumerate(members):
-                if p < len(members) - 1: # We do not want all members to have this action disabled
-                    # print(command.name)
-                    User(member.id).set_action_settings({command.name: False})
-                    disabled += 1
-                else:
-                    User(member.id).set_action_settings({command.name: True})
-            await command(self.cog, self.base_context, members)
-            if self.base_context.result.message.embeds and \
-                self.base_context.result.message.embeds[0].footer.text == f"{disabled} user{'s' if disabled > 1 else ''} disabled being targetted with this action":
-                self.result.completed_test(command, Result.passed)
-            else:
-                self.result.completed_test(command, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, ResultData(error=e))
+class _NoArgsCommand(TestingActions):
 
-        # Testing all members action disabled
-        try:
-            members = [DiscordMember(guild=self.base_guild) for _ in range(randint(4, 10))]
-            for member in members:
-                User(member.id).set_action_settings({command.name: False})
-            await command(self.cog, self.base_context, members)
-            if self.base_context.result.message.content == "All members targetted have disabled this action.":
-                self.result.completed_test(command, Result.passed)
-            else:
-                self.result.completed_test(command, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, ResultData(error=e))
+    def __init__(self, command: str):
+        super().__init__()
+        self.command: Coroutine = getattr(self.cog, command)
 
-    async def no_arguments_logic(self, command: Coroutine) -> None:
-        "Contains the logic for all action commands which have no arguments and respond with a GIF no matter what"
-        # The one and only test needed for this is to make sure the command responds with a GIF in embed
-        try:
-            self.base_context.command = command # To ensure the command is the one we want
-            await command(self.cog, self.base_context)
-            if self.base_context.result.message.embeds and \
-                self.base_context.result.message.embeds[0].image:
-                self.result.completed_test(command, Result.passed)
-            else:
-                self.result.completed_test(command, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(command, Result.errored, ResultData(error=e))
+        self.base_context.command = self.command
+        self.__name__ = command
 
-    async def hug(self) -> None:
-        await self.action_logic(self.cog.hug)
+    @test
+    async def no_arguments(self) -> None:
+        await self.command(self.cog, self.base_context)
 
-    async def pat(self) -> None:
-        await self.action_logic(self.cog.pat)
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+        assert self.base_context.result.message.embeds[0].image, self.base_context.result.message.embeds[0].image
 
-    async def poke(self) -> None:
-        await self.action_logic(self.cog.poke)
+class Hug(_ActionCommand):
+    def __init__(self):
+        super().__init__("hug")
 
-    async def slap(self) -> None:
-        await self.action_logic(self.cog.slap)
+class Pat(_ActionCommand):
+    def __init__(self):
+        super().__init__("pat")
 
-    async def tickle(self) -> None:
-        await self.action_logic(self.cog.tickle)
+class Poke(_ActionCommand):
+    def __init__(self):
+        super().__init__("poke")
 
-    async def cuddle(self) -> None:
-        await self.action_logic(self.cog.cuddle)
+class Slap(_ActionCommand):
+    def __init__(self):
+        super().__init__("slap")
 
-    async def dance(self) -> None:
-        await self.no_arguments_logic(self.cog.dance)
+class Tickle(_ActionCommand):
+    def __init__(self):
+        super().__init__("tickle")
 
-    async def neko(self) -> None:
-        await self.no_arguments_logic(self.cog.neko)
+class Cuddle(_ActionCommand):
+    def __init__(self):
+        super().__init__("cuddle")
 
-    async def smile(self) -> None:
-        await self.no_arguments_logic(self.cog.smile)
+class Dance(_NoArgsCommand):
+    def __init__(self):
+        super().__init__("dance")
 
-    async def blush(self) -> None:
-        await self.no_arguments_logic(self.cog.blush)
+class Neko(_NoArgsCommand):
+    def __init__(self):
+        super().__init__("neko")
 
-    async def tail(self) -> None:
-        await self.no_arguments_logic(self.cog.tail)
+class Smile(_NoArgsCommand):
+    def __init__(self):
+        super().__init__("smile")
 
-    async def settings(self) -> None:
-        # Check when embed times out:
-        try:
-            self.base_context.timeout_view = True
-            await self.cog.settings(self.cog, self.base_context)
-            if self.base_context.result.message.embeds and \
-                self.base_context.result.message.embeds[0].title == "Settings":
-                self.result.completed_test(self.cog.settings, Result.passed)
-            else:
-                self.result.completed_test(self.cog.settings, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(self.cog.settings, Result.errored, ResultData(error=e))
+class Blush(_NoArgsCommand):
+    def __init__(self):
+        super().__init__("blush")
 
-
-        # Test trying to save when no settings were changed
-        self.base_context.timeout_view = False
-        try:
-            async def respond_to_view_no_settings_changed(context: Context):
-                try:
-                    for child in context.current_view.children:
-                        if child.custom_id == "save":
-                            await child.callback(ArgumentInteraction(context))
-                            await context.current_view.on_timeout() # Because wrong save does not stop the view.wait I need to manually stop it here
-                            context.current_view.stop()
-                except AttributeError:
-                    pass # BUG This happens for some reason Idk why but the test still works so this is a hacky fix
-
-            self.base_context.respond_to_view = respond_to_view_no_settings_changed
-            await wait_for(self.cog.settings(self.cog, self.base_context), timeout=5)
-            if self.base_context.result.message.content == "You have not changed any settings":
-                self.result.completed_test(self.cog.settings, Result.passed)
-            else:
-                self.result.completed_test(self.cog.settings, Result.failed, result_data=self.base_context.result)
-        except Exception as e:
-            self.result.completed_test(self.cog.settings, Result.errored, ResultData(error=e))
-
-        # # Test changing one action setting and then saving
-        # BUG this is currently only working some times. After hours of debugging I have given up on finding on how to 
-        # consistently and correctly test it
-        # try:
-        #     self.base_context.view_counter = 0
-
-        #     async def respond_to_view_changing(context: Context):
-        #         if context.view_counter > 0:
-        #             await context.current_view.on_timeout()
-        #             return context.current_view.stop()
-
-        #         context.current_view.values = []
-        #         context.current_view.timed_out = False
-
-        #         for child in context.current_view.children:
-        #             if child.custom_id != "save":
-        #                 for option in child.options:
-        #                     if option.label != "hug":
-        #                         context.current_view.values.append(option.value)
-
-        #         for child in context.current_view.children:
-        #             if child.custom_id == "save":
-        #                 await child.callback(ArgumentInteraction(context))
-        #         context.view_counter += 1 # This is to make sure the test is only run once
-                
-        #     setattr(self.base_context, "respond_to_view", respond_to_view_changing)
-        #     await wait_for(self.cog.settings(self.cog, self.base_context), timeout=15)
-
-        #     if User(self.base_context.author.id).action_settings["hug"] is False and \
-        #         self.base_context.result.message.embeds:
-        #         self.result.completed_test(self.cog.settings, Result.passed)
-        #     else:
-        #         self.result.completed_test(self.cog.settings, Result.failed, result_data=self.base_context.result)
-        # except Exception as e:
-        #     self.result.completed_test(self.cog.settings, Result.errored, ResultData(error=e))
+class Tail(_NoArgsCommand):
+    def __init__(self):
+        super().__init__("tail")

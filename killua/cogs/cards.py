@@ -39,7 +39,10 @@ class Cards(commands.Cog):
         ))
 
         for menu in menus:
-            self.client.tree.add_command(menu)
+            try:
+                self.client.tree.add_command(menu)
+            except discord.app_commands.errors.CommandAlreadyRegistered:
+                pass # Ignoring this
 
     async def all_cards_autocomplete(
         self,

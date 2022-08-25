@@ -1,8 +1,10 @@
+from killua.static.enums import PrintColors
 from . import cogs
 import discord
 import aiohttp
 import asyncio
 import getopt, sys
+import logging
 
 from .tests import run_tests
 from .bot import BaseBot as Bot, get_prefix
@@ -27,8 +29,14 @@ def should_run_tests() -> bool:
 	raw_arguments = sys.argv[1:]
 
 	arguments, _ = getopt.getopt(raw_arguments, "td", ["test", "development"])
-	for arg, _ in arguments:
+	for arg, val in arguments:
 		if arg in ("--test", "-t"):
+			if not val: val = "info"
+
+			if not getattr(logging, val.upper(), None):
+				raise ValueError(f"Invalid logging level: {val}")
+
+			logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s",datefmt='%I:%M:%S' ,level=getattr(logging, val.upper()))
 			return True
 	return False
 
