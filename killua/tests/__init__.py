@@ -13,12 +13,49 @@ class DevMod:
             if level in msg:
                 sys.__stderr__.write(msg)
 
-sys.stderr = DevMod()
+async def run_tests(args) -> None:
+    sys.stderr = DevMod()
 
-async def run_tests() -> None:
-    sys.stderr.write
+    Bot.command_prefix = lambda *_: ["mention1", "mention2", "k!"]
     await Bot.setup_hook()
     start = datetime.now()
+
+    if args:
+        if len(args) == 1:
+            for group in tests:
+                if group.__name__.replace("Testing", "").lower() == args[0].lower(): # If the argument was only a specific group/cog
+                    logging.info(PrintColors.OKCYAN + f"Testing group {group.__name__.replace('Testing', '')}..." + PrintColors.ENDC)
+                    result = await group().run_tests()
+                    logging.info(PrintColors.OKCYAN + f"Test results to test group {group.__name__.replace('Testing', '')}:" + PrintColors.ENDC)
+                    if len(result.failed) == 0 and len(result.errored) == 0:
+                        logging.info(PrintColors.OKGREEN + f"All ({len(result.passed)}) tests passed \U00002713" + PrintColors.ENDC)
+                    else:
+                        logging.info(PrintColors.OKGREEN + f"{len(result.passed)} tests passed \U00002713" + PrintColors.ENDC)
+                        logging.info(PrintColors.WARNING + f"{len(result.failed)} tests failed \U00002715" + PrintColors.ENDC)
+                        logging.info(PrintColors.FAIL + f"{len(result.errored)} tests raised unhandled exceptions \U000026a0" + PrintColors.ENDC)
+                    return logging.info(PrintColors.OKCYAN + "Tests finished after: " + PrintColors.OKBLUE + f"{round((datetime.now() - start).total_seconds())}" + PrintColors.OKCYAN + " seconds" + PrintColors.ENDC)
+            
+            sys.stderr = sys.__stderr__ # Making sure the error is displayed
+            raise ValueError(f"Invalid argument: {args[0]}. Make sure to provide a valid group/cog name.")
+
+        else: # Both a cog and command are supplied so only the command is tested
+            for group in tests:
+                if group.__name__.replace("Testing", "").lower() == args[0].lower():
+                    logging.info(PrintColors.OKCYAN + f"Testing command {args[1]} of group {group.__name__.replace('Testing', '')}..." + PrintColors.ENDC)
+                    result = await group().run_tests(args[1])
+                    logging.info(PrintColors.OKCYAN + f"Test results to test command {args[1]} of group {group.__name__.replace('Testing', '')}:" + PrintColors.ENDC)
+                    if len(result.failed) == 0 and len(result.errored) == 0:
+                        logging.info(PrintColors.OKGREEN + f"All ({len(result.passed)}) tests passed \U00002713" + PrintColors.ENDC)
+                    else:
+                        logging.info(PrintColors.OKGREEN + f"{len(result.passed)} tests passed \U00002713" + PrintColors.ENDC)
+                        logging.info(PrintColors.WARNING + f"{len(result.failed)} tests failed \U00002715" + PrintColors.ENDC)
+                        logging.info(PrintColors.FAIL + f"{len(result.errored)} tests raised unhandled exceptions \U000026a0" + PrintColors.ENDC)
+                    return logging.info(PrintColors.OKCYAN + "Tests finished after: " + PrintColors.OKBLUE + f"{round((datetime.now() - start).total_seconds())}" + PrintColors.OKCYAN + " seconds" + PrintColors.ENDC)
+
+            sys.stderr = sys.__stderr__ # Making sure the error is displayed
+            raise ValueError(f"Invalid arguments: {' '.join(args)}. Make sure to provide a valid group/cog and command.")
+
+
     total = {"passed": [], "failed": [], "errors": []}
 
     for group in tests:

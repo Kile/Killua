@@ -31,15 +31,21 @@ class Card:
 
     @classmethod
     def _find_card(self, name_or_id: Union[int, str]) -> Union[int, None]:
-        if isinstance(name_or_id, int) or name_or_id.isdigit():
-            return int(name_or_id)
-        else:
-            # This could be solved much easier but this allows the user to 
-            # have case insensitivity when looking for a card
-            if not self.cached_raw:
-                self.cached_raw = [(c["name"], c["_id"]) for c in DB.items.find({})]
-            for c in self.cached_raw:
+
+        # This could be solved much easier but this allows the user to 
+        # have case insensitivity when looking for a card
+        if not self.cached_raw:
+            self.cached_raw = [(c["name"], c["_id"]) for c in DB.items.find({})]
+        for c in self.cached_raw:
+
+            if not isinstance(name_or_id, int) and not name_or_id.isdigit():
                 if c[0].lower() == name_or_id.lower():
+                        return c[1]
+            elif isinstance(name_or_id, int):
+                if c[1] == name_or_id:
+                    return c[1]
+            else:
+                if c[1] == int(name_or_id):
                     return c[1]
 
     def __init__(self, name_or_id: str):

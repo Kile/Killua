@@ -5,7 +5,7 @@ from discord.ext.commands.view import StringView
 
 import sys, traceback
 import logging
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Coroutine, Optional
 
 if TYPE_CHECKING:
     from .types import Context, TestResult
@@ -55,10 +55,18 @@ class Testing:
         # return [cls.test_command for cls in command_classes]
         return [cls for cls in command_classes if cls.__name__.lower() in [n for n, _ in cog_methods]]
 
-    async def run_tests(self) -> TestResult:
+    @property
+    def command(self) -> Coroutine:
+        """The command that is being tested"""
+        return getattr(self.cog, self.__class__.__name__.lower())
+
+    async def run_tests(self, only_command: Optional[str] = None) -> TestResult:
         """The function that returns the test result for this group"""
         for test in self.all_tests:
             command = test()
+
+            if only_command and command.__class__.__name__.lower() != only_command: continue # Skip if the command is not the one we want to test
+
             await command.test_command()
             self.result.add_result(command.result)
 

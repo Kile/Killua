@@ -15,7 +15,6 @@ class Settings(TestingActions):
 
     def __init__(self):
         super().__init__()
-        self.command: Coroutine = self.cog.settings
 
     @test
     async def embed_times_out(self) -> None:
@@ -74,7 +73,6 @@ class _ActionCommand(TestingActions):
 
     def __init__(self, command: str):
         super().__init__()
-        self.command: Coroutine = getattr(self.cog, command)
 
         self.base_context.command = self.command
         self.__name__ = command # This is to identify what command it came from
@@ -154,7 +152,6 @@ class _NoArgsCommand(TestingActions):
 
     def __init__(self, command: str):
         super().__init__()
-        self.command: Coroutine = getattr(self.cog, command)
 
         self.base_context.command = self.command
         self.__name__ = command

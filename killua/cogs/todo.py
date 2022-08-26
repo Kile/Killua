@@ -1,22 +1,27 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from datetime import datetime
 import re
 import math
 from typing import Union, Optional, List
 
+from killua.static.enums import Category, TodoDeleteWhenDone, TodoStatus, TodoPermissions
 from killua.static.constants import DB, editing, REPORT_CHANNEL
 from killua.utils.checks import check, blcheck
 from killua.utils.classes import TodoList, Todo, User, TodoListNotFound
-from killua.static.enums import Category, TodoDeleteWhenDone, TodoStatus, TodoPermissions
 from killua.utils.interactions import ConfirmButton, Button
 from killua.utils.paginator import Paginator
+from killua.utils.converters import TimeConverter
 
 class TodoSystem(commands.Cog):
 
-    def __init__(self,client):
+    def __init__(self, client):
         self.client = client
         self._init_menus()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.check_todo_dues.start()
 
     def _init_menus(self) -> None:
         menus = []
@@ -27,6 +32,33 @@ class TodoSystem(commands.Cog):
 
         for menu in menus:
             self.client.tree.add_command(menu)
+
+    @tasks.loop(seconds=60)
+    async def check_todo_dues(self):
+        """
+        Checks if any todo's are due and sends a message to the owner if so
+        """
+        for todo_list in [TodoList(r["_id"]) for r in DB.todo.find()]:
+            for todo in todo_list.todos:
+
+                if "due_at" in todo and todo["due_at"] and todo["due_at"] < datetime.now() and not todo["notified"]:
+                    to_be_notifed = []
+                    to_be_notifed.append(self.client.get_user(todo["added_by"]))
+                    to_be_notifed.extend([self.client.get_user(u) for u in todo["assigned_to"]])
+
+                    for user in to_be_notifed:
+                        if user:
+                            try:
+                                await user.send(f"Your todo **{todo['todo']}** is due!\nFrom todo list: `{todo_list.name}` (ID: `{todo_list.id}`)")
+                            except discord.HTTPException:
+                                continue # If dms are closed we don't want to interrupt the loop
+
+                    todo["notified"] = True
+                    todo_list.set_property("todos", todo_list.todos)
+
+    @check_todo_dues.before_loop
+    async def before_check_todo_dues(self):
+        await self.client.wait_until_ready()
 
     async def _get_user(self, u: int) -> discord.User:
         """Gets a user from cache if possible, else makes an API request"""
@@ -64,7 +96,8 @@ class TodoSystem(commands.Cog):
         for n, t in enumerate(final_todos if page else l, page*10-10 if page else 0):
             t = Todo(n+1, todo_list.id)
             ma = f"\n`Marked as {t.marked}`" if t.marked else ""
-            desc.append(f"{n+1}) {t.todo}{ma}{await assigned_users(t) if len(t.assigned_to) > 0 else ''}")
+            due = f"\nDue <t:{int(t.due_at.timestamp())}:R>" if t.due_at else ""
+            desc.append(f"{n+1}) {t.todo}{ma}{due}{await assigned_users(t) if len(t.assigned_to) > 0 else ''}")
         desc = "\n".join(desc) if len(desc) > 0 else "No todos"
 
 
@@ -100,7 +133,7 @@ class TodoSystem(commands.Cog):
     **Status**: `{todo_list.status}`\n
     **Editors**: `{", ".join([str(await self._get_user(u)) for u in todo_list.editor]) if len(todo_list.editor) > 0 else "Nobody has editor perissions"}`\n
     **Viewers**: `{", ".join([str(await self._get_user(u)) for u in todo_list.viewer]) if len(todo_list.viewer) > 0 else "Nobody has viewer permissions"}`\n
-    **Todo"s**: `{len(todo_list)}/{todo_list.spots}`\n
+    **Todos**: `{len(todo_list)}/{todo_list.spots}`\n
     **Created on:** `{todo_list.created_at}`\n
     *{todo_list.views} views*
     """,
@@ -131,13 +164,14 @@ class TodoSystem(commands.Cog):
         By `{await self.__get_user(x["author"])}`
         On `{x["date"]}`""" for x in todo_task.mark_log[3:]])
 
+        due = f"**Due** <t:{int(todo_task.due_at.timestamp())}\n" if todo_task.due else ""
         embed = discord.Embed.from_dict({
             "title": f"Information for the todo task {task_id}",
             "description": f"""**Added by**: `{addist}`\n
     **Content**: {todo_task.todo}\n
     **Currently marked as**: `{todo_task.marked or "Not currently marked"}`\n
     **Assigned to**: `{", ".join([str(await self._get_user(u)) for u in todo_task.assigned_to]) if len(todo_task.assigned_to) > 0 else "unassigned"}`\n
-    **Added on:** `{todo_task.added_on}`\n
+    **Added on:** `{todo_task.added_on}`\n{due}
     **Latest changes marks**:
     {mark_log}\n
     *{todo_list.views} views*
@@ -298,13 +332,13 @@ class TodoSystem(commands.Cog):
     async def update(
         self, 
         ctx: commands.Context, 
-        name: str = None, 
-        status: TodoStatus = None, 
-        delete_when_done: TodoDeleteWhenDone = None, 
-        custom_id: str = None,
-        color: str = None,
-        thumbnail: str = None,
-        description: str = None
+        name: Optional[str] = None, 
+        status: Optional[TodoStatus] = None, 
+        delete_when_done: Optional[TodoDeleteWhenDone] = None, 
+        custom_id: Optional[str] = None,
+        color: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        description: Optional[str] = None
         ):
         """Update your todo list with this command (Only in editor mode)"""
 
@@ -474,10 +508,25 @@ class TodoSystem(commands.Cog):
             todo_list.set_property("todos", todos)
             return await ctx.send(f"Marked to-do number {todo_number} as `{marked_as}`!", allowed_mentions=discord.AllowedMentions.none())
 
+    async def due_in_autocomplete(
+        self,
+        _: discord.Interaction,
+        current: str
+    ) ->  List[discord.app_commands.Choice[TimeConverter]]:
+        """
+        Autocomplete for the due in parameter
+        """
+        times = ["1m", "5m", "10m", "30m", "1h", "12h", "1d", "7d"]
+        return list([ 
+            discord.app_commands.Choice(name=opt, value=opt) 
+            for opt in times if opt.lower().startswith(current.lower())
+        ])
+
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="add <text>")
     @discord.app_commands.describe(text="What to add to the todo list")
-    async def add(self, ctx: commands.Context, *, text: str):
+    @discord.app_commands.autocomplete(due_in=due_in_autocomplete)
+    async def add(self, ctx: commands.Context, *, text: str, due_in: Optional[TimeConverter] = None):
         """Add a todo to your list, *yay, more work* (Only in editor mode)"""
         try:
             list_id = editing[ctx.author.id]
@@ -492,8 +541,11 @@ class TodoSystem(commands.Cog):
         if len(todo_list.todos) >= todo_list.spots:
             return await ctx.send(f"You don't have enough spots for that! Buy spots with `{self.client.command_prefix(self.client, ctx.message)[2]}todo buy space`. You can currently only have up to {todo_list.spots} spots in this list", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
+        if due_in and not todo_list.has_addon("due_in"):
+            return await ctx.send("You cannot assign a time to a todo yet, you need to buy it in the shop", ephemeral=True)
+
         todos = todo_list.todos
-        todos.append({"todo": text, "marked": None, "added_by": ctx.author.id, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"),"views": 0, "assigned_to": [], "mark_log": []})
+        todos.append({"todo": text, "marked": None, "added_by": ctx.author.id, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"),"views": 0, "assigned_to": [], "mark_log": [], "due_at": (datetime.now() + due_in) if due_in else None, "notified": False if due_in else None})
         
         todo_list.set_property("todos", todos)
         return await ctx.send(f"Great! Added {text} to your todo list!", allowed_mentions=discord.AllowedMentions.none(), ephemeral=hasattr(ctx, "invoked_by_modal"))
@@ -675,6 +727,34 @@ class TodoSystem(commands.Cog):
             except discord.Forbidden:
                 pass
         return await ctx.send(f"Successfully assigned the task with number {todo_number} to `{user}`", allowed_mentions=discord.AllowedMentions.none())
+
+    @check()
+    @todo.command(extras={"category":Category.TODO}, usage="reorder <task_id> <position>")
+    @discord.app_commands.describe(
+        position="The position the todo is currently at",
+        new_position="Where to put the todo"
+    )
+    async def reorder(self, ctx, position: int, new_position: int):
+        """Reorder a todo task with this. (Only in editor mode)"""
+        try:
+            list_id = editing[ctx.author.id]
+        except KeyError:
+            return await ctx.send("You have to be in the editor mode to use this command! Use `k!todo edit <todo_list_id>`")
+
+        todo_list = TodoList(list_id)
+
+        if not ctx.author.id == todo_list.owner and not ctx.author.id in todo_list.editor:
+            return await ctx.send("You can only reorder tasks who have permission to edit this todo list")
+
+        if not todo_list.has_todo(position):
+            return await ctx.send(f"You don't have a number {position} on your current todo list")
+
+        if new_position > len(todo_list.todos) or new_position < 1:
+            return await ctx.send(f"You can't reorder todo task {position} to position {new_position} because it's out of range")
+
+        todo_list.todos.insert(new_position-1, todo_list.todos.pop(position-1))
+        todo_list.set_property("todos", todo_list.todos)
+        return await ctx.send(f"Successfully reordered todo task {position} to position {new_position}")
     
     @check()
     @todo.command(extras={"category":Category.TODO}, usage="delete <list_id>")

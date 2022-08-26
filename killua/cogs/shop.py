@@ -198,6 +198,9 @@ class Shop(commands.Cog):
 **Cost**: 1000 Jenny
 `description` add a description to your todo list (recommended for public lists with custom id)
 
+**Timed todos**: 2000 Jenny
+`timed` add todos with deadline to your list and get notified when the deadline is reached
+
 **Cost**: number of current spots * 50
 `space` buy 10 more spots for todo"s for your list""",
             "color": 0x1400ff
@@ -357,8 +360,17 @@ class Shop(commands.Cog):
             user.remove_jenny(int(100*todo_list.spots*0.5))
             todo_list.add_spots(10)
             return await ctx.send("Congrats! You just bought 10 more todo spots for the current todo list!")
-
+        elif what.name == "timing":
+            if todo_list.has_addon("due_in"):
+                return await ctx.send("You already have this addon!")
+            if user.jenny < 2000:
+                return await ctx.send(f"You don't have enough Jenny to buy this item. You need 2000 Jenny while you currently have {user.jenny}")
+            user.remove_jenny(2000)
+            todo_list.enable_addon("due_in")
+            return await ctx.send("Congrats! You just bought the timing addon for the current todo list! You can now specifiy the `due_in` parameter when adding a todo.")
         else:
+            if todo_list.has_addon(what.name):
+                return await ctx.send("You already have this addon!")
             if user.jenny < 1000:
                 return await ctx.send(f"You don't have enough Jenny to buy this item. You need 1000 Jenny while you currently have {user.jenny}")
             user.remove_jenny(1000)

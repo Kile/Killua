@@ -1,12 +1,12 @@
-from killua.static.enums import PrintColors
 from . import cogs
 import discord
 import aiohttp
 import asyncio
-import getopt, sys
+import argparse
 import logging
 
 from .tests import run_tests
+from .migrate import migrate
 from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a seperate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
@@ -14,35 +14,25 @@ from .webhook.api import app
 from .utils.help import MyHelp
 from .static.constants import TOKEN, PORT
 
-def is_dev() -> bool:
-	"""Checks if the bot is run with the --development argument"""
-	raw_arguments = sys.argv[1:]
-
-	arguments, _ = getopt.getopt(raw_arguments, "d", ["development"])
-	for arg, _ in arguments:
-		if arg in ("--development", "-d"):
-			return True
-	return False
-
-def should_run_tests() -> bool:
-	"""Checks wether arguments were given to run the tests"""
-	raw_arguments = sys.argv[1:]
-
-	arguments, _ = getopt.getopt(raw_arguments, "td", ["test", "development"])
-	for arg, val in arguments:
-		if arg in ("--test", "-t"):
-			if not val: val = "info"
-
-			if not getattr(logging, val.upper(), None):
-				raise ValueError(f"Invalid logging level: {val}")
-
-			logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s",datefmt='%I:%M:%S' ,level=getattr(logging, val.upper()))
-			return True
-	return False
+def get_args():
+	parser = argparse.ArgumentParser(description="CLI arguments for the bot")
+	parser.add_argument("-d", "--development", help="Run the bot in development mode", action="store_const", const=True)
+	parser.add_argument("-m", "--migrate", help="Migrates the database setup from a previous version to the current one", action="store_const", const=True)
+	parser.add_argument("-t", "--test", help="Run the tests", nargs="*", default=None, metavar=("cog", "command"))
+	parser.add_argument("-l", "--log", help="Set the logging level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], metavar="level")
+	return parser.parse_args()
 
 async def main():
-	if should_run_tests():
-		return await run_tests()
+	args = get_args()
+
+	# Set up logger from command line arguments
+	logging.basicConfig(level=getattr(logging, args.log.upper()), datefmt='%I:%M:%S', format="[%(asctime)s] %(levelname)s: %(message)s")
+
+	if args.migrate:
+		return migrate()
+		
+	if args.test:
+		return await run_tests(args.test)
 
 	session = aiohttp.ClientSession()
 	intents = discord.Intents(
@@ -64,7 +54,7 @@ async def main():
 	# Setup commands.
 	bot.help_command = MyHelp()
 	# Checks if the bot is a dev bot
-	bot.is_dev = is_dev()
+	bot.is_dev = args.development
 
 	# Setup cogs.
 	for cog in cogs.all_cogs:

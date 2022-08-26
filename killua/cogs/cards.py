@@ -283,7 +283,7 @@ class Cards(commands.Cog):
         except CardNotFound:
             return await ctx.send("Please use a valid card number!")
 
-        if card == 0:
+        if card.id == 0:
             return await ctx.send("You cannot swap out card No. 0!")
 
         sw = user.swap(card.id)

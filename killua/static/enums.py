@@ -141,6 +141,7 @@ class TodoAddons(Enum):
     space = auto()
     color = auto()
     description = auto()
+    timing = auto()
 
 # class FlagOptions(Enum):
 #     asexual = auto()

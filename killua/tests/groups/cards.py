@@ -8,6 +8,7 @@ from killua.static.enums import Category, HuntOptions, Items, SellOptions
 
 from random import randint
 from math import ceil
+from datetime import datetime, timedelta
 
 class TestingCards(Testing):
 
@@ -52,14 +53,23 @@ class Sell(TestingCards):
 
     @test
     async def no_arguments(self) -> None:
-        await self.cog.sell(self.cog, self.base_context)
+        await self.command(self.cog, self.base_context)
         
         assert self.base_context.result.message, self.base_context.result.message
         assert self.base_context.result.message.content == "You need to specify what exactly to sell", self.base_context.result.message.content
 
     @test
+    async def sell_without_any_cards(self) -> None:
+        self.user.nuke_cards("all")
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "You don't have any cards yet!", self.base_context.result.message.content
+
+    @test
     async def selling_a_card_not_in_possession(self) -> None:
-        await self.cog.sell(self.cog, self.base_context, "5")
+        self.user.add_card(6) #Add a card to avoid "You don't have any cards yet!" error
+
+        await self.command(self.cog, self.base_context, "5")
 
         assert self.base_context.result.message.content == "Seems you don't own enough copies of this card. You own 0 copies of this card", self.base_context.result.message.content
 
@@ -70,7 +80,7 @@ class Sell(TestingCards):
         self.base_context.respond_to_view = Testing.press_confirm
         card = randint(1, 99)
         self.user.add_card(card)
-        await self.cog.sell(self.cog, self.base_context, card=str(card))
+        await self.command(self.cog, self.base_context, card=str(card))
 
         assert self.base_context.result.message.content == f"Successfully sold 1 copy of card {card} for {int(PRICES[Card(card).rank] * 0.1)} Jenny!", self.base_context.result.message.content
         assert self.user.count_card(card, including_fakes=False) == 0, self.user.count_card(card, including_fakes=False)
@@ -79,7 +89,7 @@ class Sell(TestingCards):
     async def sell_single_fake(self) -> None:
         card = randint(1, 99)
         self.user.add_card(card, fake=True)
-        await self.cog.sell(self.cog, self.base_context, card=str(card))
+        await self.command(self.cog, self.base_context, card=str(card))
 
         assert self.base_context.result.message.content == "Seems you don't own enough copies of this card. You own 0 copies of this card", self.base_context.result.message.content
 
@@ -88,7 +98,7 @@ class Sell(TestingCards):
         card = randint(1, 99)
         self.user.add_card(card)
 
-        await self.cog.sell(self.cog, self.base_context, card=str(card), amount=2)
+        await self.command(self.cog, self.base_context, card=str(card), amount=2)
         assert self.base_context.result.message.content == "Seems you don't own enough copies of this card. You own 1 copy of this card", self.base_context.result.message.content
 
     @test
@@ -99,7 +109,7 @@ class Sell(TestingCards):
         card = randint(1, 99)
         for _ in range(2):
             self.user.add_card(card)
-        await self.cog.sell(self.cog, self.base_context, card=str(card), amount=2)
+        await self.command(self.cog, self.base_context, card=str(card), amount=2)
         
         assert self.base_context.result.message.content == f"Successfully sold 2 copies of card {card} for {int(PRICES[Card(card).rank] * 0.2)} Jenny!", self.base_context.result.message.content
         assert self.user.count_card(card, including_fakes=False) == 0, self.user.count_card(card, including_fakes=False)
@@ -110,7 +120,7 @@ class Sell(TestingCards):
         self.user.add_card(card)
         self.user.add_card(card, fake=True)
 
-        await self.cog.sell(self.cog, self.base_context, card=str(card), amount=2)
+        await self.command(self.cog, self.base_context, card=str(card), amount=2)
         
         assert self.base_context.result.message.content == "Seems you don't own enough copies of this card. You own 1 copy of this card", self.base_context.result.message.content 
 
@@ -120,7 +130,7 @@ class Sell(TestingCards):
     async def sell_all_of_category_when_owning_none(self) -> None:
         self.user.add_card(1) # So there won't be the generic "you have no cards" error message
         self.base_context.respond_to_view = self.press_confirm
-        await self.cog.sell(self.cog, self.base_context, type=SellOptions.monsters)
+        await self.command(self.cog, self.base_context, type=SellOptions.monsters)
 
         assert self.base_context.result.message.content == "You don't have any cards of that type to sell!", self.base_context.result.message.content
 
@@ -130,7 +140,7 @@ class Sell(TestingCards):
         self.user.add_card(697)
 
         self.base_context.respond_to_view = self.press_confirm
-        await self.cog.sell(self.cog, self.base_context, type=SellOptions.monsters)
+        await self.command(self.cog, self.base_context, type=SellOptions.monsters)
 
         assert self.base_context.result.message.content == f"You sold all your monsters for {int((PRICES[Card(572).rank] + PRICES[Card(697).rank]) * 0.1)} Jenny!", self.base_context.result.message.content
         assert self.user.count_card(572, including_fakes=False) == 0 and self.user.count_card(697, including_fakes=False) == 0, self.user.count_card(572, including_fakes=False) == 0 and self.user.count_card(697, including_fakes=False) == 0
@@ -141,7 +151,151 @@ class Sell(TestingCards):
         self.user.add_card(697, fake=True)
 
         self.base_context.respond_to_view = self.press_confirm
-        await self.cog.sell(self.cog, self.base_context, type=SellOptions.monsters)
+        await self.command(self.cog, self.base_context, type=SellOptions.monsters)
 
         assert self.base_context.result.message.content == f"You sold all your monsters for {int(PRICES[Card(572).rank] * 0.1)} Jenny!", self.base_context.result.message.content
         assert self.user.count_card(572, including_fakes=False) == 0 and self.user.count_card(697, including_fakes=True) == 1, self.user.count_card(572, including_fakes=False) == 0 and self.user.count_card(697, including_fakes=True) == 1
+
+class Swap(TestingCards):
+
+    def __init__(self):
+        super().__init__()
+        self.user = User(self.base_author.id)
+
+    @test
+    async def swap_when_none_owned(self) -> None:
+        self.user.nuke_cards("all")
+
+        await self.command(self.cog, self.base_context, card=str(randint(1, 99)))
+        assert self.base_context.result.message.content == "You don't have any cards yet!", self.base_context.result.message.content
+
+    @test
+    async def invalid_card(self) -> None:
+        await self.command(self.cog, self.base_context, card="10000")
+
+        assert self.base_context.result.message.content == "Please use a valid card number!", self.base_context.result.message.content
+
+    @test
+    async def swap_card_0(self) -> None:
+        await self.command(self.cog, self.base_context, card="0")
+
+        assert self.base_context.result.message.content == "You cannot swap out card No. 0!", self.base_context.result.message.content
+
+    @test
+    async def swap_non_owned_card(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1)
+
+        await self.command(self.cog, self.base_context, card="2")
+
+        assert self.base_context.result.message.content == f"You don't own a fake and real copy of card `{Card('2').name}` you can swap out!", self.base_context.result.message.content
+
+    @test
+    async def swap_single_owned_card(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1)
+
+        await self.command(self.cog, self.base_context, card="1")
+
+        assert self.base_context.result.message.content == f"You don't own a fake and real copy of card `{Card('1').name}` you can swap out!", self.base_context.result.message.content
+
+    @test
+    async def swap_two_non_fakes(self) -> None:
+        self.user.nuke_cards("all")
+
+        self.user.add_card(1)
+        self.user.add_card(1)
+
+        await self.command(self.cog, self.base_context, card="1")
+
+        assert self.base_context.result.message.content == f"You don't own a fake and real copy of card `{Card('1').name}` you can swap out!", self.base_context.result.message.content
+
+    @test
+    async def correct_usage(self) -> None:
+        self.user.nuke_cards("all")
+
+        self.user.add_card(1, fake=True)
+        self.user.add_card(1)
+
+        await self.command(self.cog, self.base_context, card="1")
+
+        assert self.base_context.result.message.content == f"Successfully swapped out card {Card('1').name}", self.base_context.result.message.content
+        assert not self.user.rs_cards[0][1]["fake"], self.user.rs_cards[0][1]["fake"]
+        assert self.user.fs_cards[0][1]["fake"], self.user.fs_cards[0][1]["fake"]
+
+class Hunt(TestingCards):
+    def __init__(self):
+        super().__init__()
+        self.user = User(self.base_author.id)
+
+    @test
+    async def hunt_time_when_not_hunting(self) -> None:
+        self.user.nuke_cards("effects")
+        await self.command(self.cog, self.base_context, option=HuntOptions.time)
+
+        assert self.base_context.result.message.content == "You are not on a hunt yet!", self.base_context.result.message.content
+
+    @test
+    async def hunt_time_when_hunting(self) -> None:
+        self.user.nuke_cards("effects")
+
+        started_at = random_date()
+        self.user.add_effect("hunting", started_at)
+
+        await self.command(self.cog, self.base_context, option=HuntOptions.time)
+
+        assert self.base_context.result.message.content == f"You've started hunting <t:{int(started_at.timestamp())}:R>.", self.base_context.result.message.content
+
+    @test
+    async def hunt_end_when_not_hunting(self) -> None:
+        self.user.nuke_cards("effects")
+        await self.command(self.cog, self.base_context, option=HuntOptions.end)
+
+        assert self.base_context.result.message.content == f"You aren't on a hunt yet! Start one with `k!hunt`", self.base_context.result.message.content
+
+    @test
+    async def end_hunt_below_12h(self) -> None:
+        self.user.nuke_cards("effects")
+
+        started_at = datetime.now() - timedelta(minutes=10)
+        self.user.add_effect("hunting", started_at)
+
+        await self.command(self.cog, self.base_context, option=HuntOptions.end)
+
+        assert self.base_context.result.message.content == "You must be at least hunting for twelve hours!", self.base_context.result.message.content
+
+    @test
+    async def end_hunt_correctly(self) -> None:
+        self.user.nuke_cards("all")
+
+        started_at = datetime.now() - timedelta(hours=20)
+        self.user.add_effect("hunting", started_at)
+
+        await self.command(self.cog, self.base_context, option=HuntOptions.end)
+
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+        assert self.base_context.result.message.embeds[0].title == "Hunt returned!", self.base_context.result.message.embeds[0].title
+        assert self.base_context.result.message.embeds[0].description.startswith(f"You've started hunting <t:{int(started_at.timestamp())}:R>. You brought back the following items from your hunt: \n\n"), self.base_context.result.message.embeds[0].description
+        assert not self.user.has_effect("hunting")[0], self.user.has_effect("hunting")
+        assert len(self.user.all_cards) > 0, self.user.all_cards
+
+    @test
+    async def start_hunting_when_on_hunt(self) -> None:
+        self.user.nuke_cards("effects")
+
+        started_at = random_date()
+        self.user.add_effect("hunting", started_at)
+
+        await self.command(self.cog, self.base_context, option=HuntOptions.start)
+
+        assert self.base_context.result.message.content == f"You are already on a hunt! Get the results with `k!hunt end`", self.base_context.result.message.content
+
+    @test
+    async def start_hunting_correctly(self) -> None:
+        self.user.nuke_cards("effects")
+
+        await self.command(self.cog, self.base_context, option=HuntOptions.start)
+
+        assert self.base_context.result.message.content == f"You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get", self.base_context.result.message.content
+        assert self.user.has_effect("hunting")[0], self.user.has_effect("hunting")[0]
+        assert (datetime.now() - self.user.effects["hunting"] < timedelta(minutes=1)), self.user.effects["hunting"]

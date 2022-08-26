@@ -765,7 +765,7 @@ class User:
             self.add_card(card_id, False, r2[1]["clone"])
 
         else:
-            return False # Returned if the requirements haven"t been met
+            return False # Returned if the requirements haven't been met
             
 
     def add_effect(self, effect: str, value: Any): 
@@ -1005,6 +1005,7 @@ class Todo(TodoList):
         cls = super().__new__(cls, list_id)
         task = cls.todos[int(position)-1]
 
+        cls.position = position
         cls.todo: str = task["todo"]
         cls.marked: str = task["marked"]
         cls.added_by: int = task["added_by"]
@@ -1012,6 +1013,8 @@ class Todo(TodoList):
         cls.views: int = task["views"]
         cls.assigned_to: List[int] = task["assigned_to"]
         cls.mark_log: List[dict] = task["mark_log"]
+        cls.due_at: datetime = task["due_at"] if "due_at" in task else None
+        cls.notified: bool = task["notified"] if "notified" in task else False
         return cls
 
 class Guild:
