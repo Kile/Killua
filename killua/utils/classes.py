@@ -566,7 +566,7 @@ class User:
         counter = 0
         while counter != len(cards): # I use a while loop because it has c bindings and is thus faster than a for loop which is good for this 
             id, data = cards[counter]
-            if (id == card_id) and ((only_allow_fakes and data["fake"]) or (not data["fake"] or fake_allowed)):
+            if (id == card_id) and ((only_allow_fakes and data["fake"]) or ((not data["fake"] and not only_allow_fakes) or (data["fake"] and fake_allowed))):
                 return True
 
             counter += 1

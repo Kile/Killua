@@ -299,3 +299,198 @@ class Hunt(TestingCards):
         assert self.base_context.result.message.content == f"You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get", self.base_context.result.message.content
         assert self.user.has_effect("hunting")[0], self.user.has_effect("hunting")[0]
         assert (datetime.now() - self.user.effects["hunting"] < timedelta(minutes=1)), self.user.effects["hunting"]
+
+class Meet(TestingCards):
+    def __init__(self):
+        super().__init__()
+        self.user = User(self.base_author.id)
+
+    @test
+    async def target_is_bot(self) -> None:
+        other = DiscordMember(bot=True)
+
+        await self.command(self.cog, self.base_context, other)
+
+        assert self.base_context.result.message.content == "You can't interact with bots with this command", self.base_context.result.message.content
+
+    @test
+    async def no_recent_messages(self) -> None:
+        other = DiscordMember()
+
+        messages = [Message(author=DiscordMember(), channel=self.base_context.channel) for _ in range(10)]
+        self.base_context.channel.history_return = messages
+
+        await self.command(self.cog, self.base_context, other)
+
+        assert self.base_context.result.message.content == "The user you tried to approach has not send a message in this channel recently", self.base_context.result.message.content
+
+    @test
+    async def already_met(self) -> None:
+        other = DiscordMember()
+
+        messages = [Message(author=DiscordMember(), channel=self.base_context.channel) for _ in range(10)]
+        messages.extend([Message(author=other, channel=self.base_context.channel)]) # Add argument to recent messages
+        self.base_context.channel.history_return = messages
+        self.base_channel.history_return = messages
+
+        self.user.add_met_user(other.id)
+
+        await self.command(self.cog, self.base_context, other)
+
+        assert self.base_context.result.message.content == f"You already have `{other}` in the list of users you met, {self.base_author.name}", self.base_context.result.message.content
+
+    @test
+    async def meet_correctly(self) -> None:
+        other = DiscordMember()
+
+        messages = [Message(author=DiscordMember(), channel=self.base_context.channel) for _ in range(10)]
+        messages.extend([Message(author=other, channel=self.base_context.channel)]) # Add argument to recent messages
+        self.base_context.channel.history_return = messages
+        self.base_channel.history_return = messages
+
+        await self.command(self.cog, self.base_context, other)
+
+        assert self.base_context.result.message.content == f"Done {self.base_author.mention}! Successfully added `{other}` to the list of people you've met", self.base_context.result.message.content
+        assert self.user.has_met(other.id), self.user.met_user
+
+
+class Discard(TestingCards):
+
+    def __init__(self):
+        super().__init__()
+        self.user = User(self.base_author.id)
+
+    @test
+    async def discord_non_existent_card(self) -> None:
+        await self.command(self.cog, self.base_context, "non_existent_card")
+
+        assert self.base_context.result.message.content == "This card does not exist!", self.base_context.result.message.content
+
+    @test
+    async def discard_not_in_posession_card(self) -> None:
+        self.user.nuke_cards("all")
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "You are not in possesion of this card!", self.base_context.result.message.content
+
+    @test
+    async def discard_card_0(self) -> None: 
+        self.user.nuke_cards("all")
+        self.user.add_card(0)
+
+        await self.command(self.cog, self.base_context, "0")
+
+        assert self.base_context.result.message.content == "You cannot discard this card!", self.base_context.result.message.content
+
+    @test
+    async def cancel_discard(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1)
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "Successfully cancelled!", self.base_context.result.message.content
+
+    @test
+    async def discard_correctly(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1)
+
+        self.base_context.respond_to_view = self.press_confirm
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == f"Successfully thrown away card No. `1`", self.base_context.result.message.content
+        assert not self.user.has_any_card("1"), self.user.has_any_card("1")
+
+class Cardinfo(TestingCards):
+
+    def __init__(self):
+        super().__init__()
+        self.user = User(self.base_author.id)
+
+    @test
+    async def invalid_card(self) -> None:
+        await self.command(self.cog, self.base_context, "invalid")
+
+        assert self.base_context.result.message.content == "Invalid card", self.base_context.result.message.content
+
+    @test
+    async def card_not_owned(self) -> None:
+        self.user.nuke_cards("all")
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "You don't own a copy of this card so you can't view its infos", self.base_context.result.message.content
+
+    @test
+    async def correct_usage(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1)
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.embeds, self.base_context.result.message.embeds
+        assert self.base_context.result.message.embeds[0].title == "Info about card 1", self.base_context.result.message.embeds[0].title
+        assert self.base_context.result.message.embeds[0].description == Card("1").description, self.base_context.result.message.embeds[0].description
+
+class Check(TestingCards):
+
+    def __init__(self):
+        super().__init__()
+        self.user = User(self.base_author.id)
+
+    @test
+    async def invalid_card(self) -> None:
+        await self.command(self.cog, self.base_context, "invalid")
+
+        assert self.base_context.result.message.content == "Invalid card", self.base_context.result.message.content
+
+    @test
+    async def card_not_owned(self) -> None:
+        self.user.nuke_cards("all")
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "You don't own any copies of this card which are fake", self.base_context.result.message.content
+
+    @test
+    async def owned_but_not_fake(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1)
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "You don't own any copies of this card which are fake", self.base_context.result.message.content
+
+    @test
+    async def restricted_slots_fake(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1, fake=True)
+        self.user.add_card(1)
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "The card in your restricted slots is fake", self.base_context.result.message.content
+
+    @test
+    async def free_slots_fake(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1)
+        self.user.add_card(1, fake=True)
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "1 copy of this card in your free slots is fake", self.base_context.result.message.content
+
+    @test
+    async def restricted_slots_and_free_slots_fake(self) -> None:
+        self.user.nuke_cards("all")
+        self.user.add_card(1, fake=True)
+        self.user.add_card(1, fake=True)
+        self.user.add_card(1, fake=True)
+
+        await self.command(self.cog, self.base_context, "1")
+
+        assert self.base_context.result.message.content == "The card in your restricted slots is fake and 2 copies of this card in your free slots are fake", self.base_context.result.message.content

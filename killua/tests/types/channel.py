@@ -31,6 +31,8 @@ class TestingTextChannel:
         self.parent: Union[CategoryChannel, None] = kwargs.pop("parent", None)
         self.type: int = kwargs.pop("type", 0)
 
+        self.history_return: List[Message] = []
+
     def __handle_permissions(self, permissions) -> None:
         """Handles permissions"""
         if len(permissions) == 0:
@@ -41,6 +43,11 @@ class TestingTextChannel:
                 perm = PermissionOverwrite(perm)
 
         return permissions
+
+    async def history(self, limit: int = None, before: Message = None, after: Message = None) -> List[Message]:
+        """Gets the history of the channel"""
+        for message in self.history_return[:limit]:
+            yield message
 
 
     async def send(self, content: str, *args, **kwargs) -> None:

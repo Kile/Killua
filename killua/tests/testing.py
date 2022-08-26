@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from discord.ext.commands import Cog
+from discord.ext.commands import Cog, Command
 from discord.ext.commands.view import StringView
 
 import sys, traceback
@@ -58,7 +58,10 @@ class Testing:
     @property
     def command(self) -> Coroutine:
         """The command that is being tested"""
-        return getattr(self.cog, self.__class__.__name__.lower())
+        for command in self.cog.walk_commands():
+            if isinstance(command, Command):
+                if command.name.lower() == self.__class__.__name__.lower():
+                    return command
 
     async def run_tests(self, only_command: Optional[str] = None) -> TestResult:
         """The function that returns the test result for this group"""
@@ -105,15 +108,15 @@ class test(object):
             _, _, var = sys.exc_info()
             traceback.print_tb(var)
             tb_info =  traceback.extract_tb(var)
-            filename, line_number, function_name, text = tb_info[-1]
+            filename, line_number, _, text = tb_info[-1]
 
             if isinstance(e, AssertionError):
                 parsed_text = text.split(",")[0]
 
-                logging.error(f"{filename}:{line_number} test \"{function_name}\" of command \"{obj.__class__.__name__.lower()}\" failed at \n{parsed_text} \nwith actual result \n\"{e}\"")
+                logging.error(f"{filename}:{line_number} test \"{self._method.__name__}\" of command \"{obj.__class__.__name__.lower()}\" failed at \n{parsed_text} \nwith actual result \n\"{e}\"")
                 obj.result.completed_test(self._method, Result.failed, result_data=ResultData(error=e))
             else:
-                logging.critical(f"{filename}:{line_number} test \"{function_name}\" of command \"{obj.__class__.__name__.lower()}\" raised the the following exception in the statement {text}: \n\"{e}\"")
+                logging.critical(f"{filename}:{line_number} test \"{self._method.__name__}\" of command \"{obj.__class__.__name__.lower()}\" raised the the following exception in the statement {text}: \n\"{e}\"")
                 obj.result.completed_test(self._method, Result.errored, ResultData(error=e))
 
     @classmethod

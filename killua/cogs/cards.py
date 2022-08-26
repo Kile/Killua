@@ -414,11 +414,11 @@ class Cards(commands.Cog):
             if view.timed_out:
                 return await ctx.send(f"Timed out!")
             else:
-                return await ctx.send(f"Successfully canceled!")
+                return await ctx.send(f"Successfully cancelled!")
 
         try:
             user.remove_card(card.id, remove_fake=True, restricted_slot=False)
-            # essentially here it first looks for fakes in your free slots and tried to remove them. If itdoesn't find any fakes in the free slots, it will remove the first match of the card it finds in free or restricted slots
+            # essentially here it first looks for fakes in your free slots and tried to remove them. If it doesn't find any fakes in the free slots, it will remove the first match of the card it finds in free or restricted slots
         except NoMatches:
             user.remove_card(card.id)
         await ctx.send(f"Successfully thrown away card No. `{card.id}`")
@@ -453,25 +453,22 @@ class Cards(commands.Cog):
     async def _check(self, ctx: commands.Context, card: str):
         """Lets you see how many copies of the specified card are fakes"""
         try:
-            Card(card)
+            card_obj = Card(card)
         except CardNotFound:
             return await ctx.send("Invalid card")
 
         author = User(ctx.author.id)
 
-        if not author.has_any_card(card, only_allow_fakes=True):
-            return await ctx.send("You don't any copies of this card which are fake")
+        if not author.has_any_card(card_obj.id, only_allow_fakes=True):
+            return await ctx.send("You don't own any copies of this card which are fake")
 
         text = ""
 
-        if len([x for x in author.rs_cards if x[1]["fake"] is True and x[0] == card]) > 0:
+        if len([x for x in author.rs_cards if x[1]["fake"] is True and x[0] == card_obj.id]) > 0:
             text += f"The card in your restricted slots is fake"
 
-        if (fs:= len([x for x in author.fs_cards if x[1]["fake"] is True and x[0] == card])) > 0:
+        if (fs := len([x for x in author.fs_cards if x[1]["fake"] is True and x[0] == card_obj.id])) > 0:
             text += (" and " if len(text) > 0 else "") + f"{fs} cop{'ies' if fs > 1 else 'y'} of this card in your free slots {'are' if fs > 1 else 'is'} fake"
-
-        if len(text) == 0:
-            text = "No fake copies of that card!"
 
         await ctx.send(text)
 
@@ -486,7 +483,7 @@ class Cards(commands.Cog):
     def _use_check(self, ctx: commands.Context, card: str, args: Optional[Union[discord.Member, int, str]], add_args: Optional[int]) -> None:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card = Card(card)
+            card: Card = Card(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 

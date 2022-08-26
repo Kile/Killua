@@ -30,8 +30,8 @@ async def main():
 
 	if args.migrate:
 		return migrate()
-		
-	if args.test:
+
+	if args.test is not None:
 		return await run_tests(args.test)
 
 	session = aiohttp.ClientSession()

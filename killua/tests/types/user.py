@@ -17,6 +17,10 @@ class TestingUser:
         self.avatar = kwargs.pop("avatar", None)
         self.bot = kwargs.pop("bot", False)
         self.premium_type = kwargs.pop("premium_type", 0)
+    
+    @property
+    def mention(self) -> str:
+        return "<@{}>".format(self.id)
 
     def __random_discriminator(self) -> str:
         """Creates a random discriminator"""
