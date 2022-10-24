@@ -3,6 +3,7 @@ from discord.ext import commands
 from typing import List, Union
 from datetime import datetime
 
+from killua.bot import BaseBot
 from killua.utils.converters import TimeConverter
 from killua.utils.checks import check
 from killua.utils.classes import Guild
@@ -12,7 +13,7 @@ Choice = discord.app_commands.Choice
 
 class Moderation(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
     
     async def check_perms(self, ctx, member) -> Union[None, discord.Message]:

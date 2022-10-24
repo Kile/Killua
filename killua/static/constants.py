@@ -1,26 +1,60 @@
-# MONGODB CONNECTIONS
 import json
 import io
 import discord
 from pymongo import MongoClient
+
+from killua.utils.test_db import TestingDatabase as Database
+import killua.args as args
+
+args.init()
+
 with open("config.json", "r") as config_file:
     config = json.loads(config_file.read())
 
 CLUSTER = MongoClient(config["mongodb"])
 
 class DB:
-    _DB = CLUSTER["Killua"]
-    teams = _DB["teams"]
-    items = _DB["items"]
-    guilds = _DB["guilds"]
+    _DB = None
+    GDB = None
 
-    GDB = CLUSTER["general"]
-    shop = GDB["shop"]
-    blacklist = GDB["blacklist"]
-    stats = GDB["stats"]
-    presence = GDB["presence"]
-    todo = GDB["todo"]
-    updates = GDB["updates"]
+    def __init__(self):
+        if not args.Args.test:
+            self._DB = CLUSTER["Killua"]
+            self.GDB = CLUSTER["general"]
+
+    @property
+    def teams(self):
+        return self._DB["teams"] if not args.Args.test else Database("teams")
+
+    @property
+    def items(self):
+        return self._DB["items"] if not args.Args.test else Database("items")
+
+    @property
+    def guilds(self):
+        return self._DB["guilds"] if not args.Args.test else Database("guilds")
+
+    @property
+    def updates(self):
+        return self.GDB["updates"] if not args.Args.test else Database("updates")
+
+    @property
+    def shop(self):
+        return self._DB["shop"] if not args.Args.test else Database("shop")
+
+    @property
+    def blacklist(self):
+        return self._DB["blacklist"] if not args.Args.development else Database("blacklist")
+
+    @property
+    def stats(self):
+        return self._DB["stats"] if not args.Args.development else Database("stats")
+
+    @property
+    def todo(self):
+        return self._DB["todo"] if not args.Args.development else Database("todo")
+
+DB = DB()
 
 IPC_TOKEN = config["ipc"]
 TOKEN = config["token"]

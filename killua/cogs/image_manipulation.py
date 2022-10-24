@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw, ImageChops
 
 from pypxl import PxlClient # My own library ✨
 
+from killua.bot import BaseBot
 from killua.utils.gif import save_transparent_gif
 from killua.utils.checks import check
 from killua.static.enums import Category, SnapOptions, EyesOptions #, FlagOptions
@@ -14,7 +15,7 @@ from killua.static.constants import NOKIA_CODE, PXLAPI
 
 class ImageManipulation(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self.wtf_meme = None
         self.wtf_meme_url = "https://i.redd.it/pvdxasy5z7k41.jpg"

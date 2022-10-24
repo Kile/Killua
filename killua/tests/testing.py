@@ -36,7 +36,7 @@ class Testing:
         """Automatically checks what functions are test based on their name and the overlap with the Cog method names"""
         cog_methods = []
         for cmd in [(command.name, command) for command in self.cog.get_commands()]:
-            if cmd[1].walk_commands():
+            if hasattr(cmd[1], "walk_commands") and cmd[1].walk_commands():
                 for child in cmd[1].walk_commands():
                     cog_methods.append((child.name, child))
             else:

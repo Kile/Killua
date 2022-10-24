@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List
 import math
 
+from killua.bot import BaseBot
 from killua.static.constants import DB
 from killua.static.enums import Category
 from killua.utils.classes import Guild
@@ -53,7 +54,7 @@ class Tag():
 
 class Member():
 
-    def __init__(self, user_id:int, guild_id:int):
+    def __init__(self, user_id: int, guild_id: int):
         guild = DB.guilds.find_one({"id": guild_id})
 
         if guild is None:
@@ -78,7 +79,7 @@ class Member():
 
 class Tags(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self._init_menus()
 

@@ -1,4 +1,3 @@
-from curses import KEY_F21
 from typing import Optional, List, Dict
 
 class TestingDatabase:
@@ -24,13 +23,14 @@ class TestingDatabase:
 
     def _normalize_dict(self, dictionary: dict) -> dict:
         """Changes the {one.two: } to {one: {two: }}"""
-        for _, d in dictionary:
-            for key, val in d:
-                if "." in key:
-                    k1 = key.split(".")[0]
-                    k2 = key.split(".")[1]
-                    d[k1][k2] = val
-                    del d[key]
+        for _, d in dictionary.items():
+            if isinstance(d, dict):
+                for key, val in d.items():
+                    if "." in key:
+                        k1 = key.split(".")[0]
+                        k2 = key.split(".")[1]
+                        d[k1][k2] = val
+                        del d[key]
 
     def find_one(self, where: dict) -> Optional[dict]:
         coll = self.db[self.collection]
@@ -43,7 +43,7 @@ class TestingDatabase:
         coll = self.db[self.collection]
         results = []
         for d in coll:
-            for key, value in d:
+            for key, value in d.items():
                 if len([k for k, v in where.items() if k == key and v == value]) == len(where): # When all conditions defined in "where" are met
                     results.append(d)
     

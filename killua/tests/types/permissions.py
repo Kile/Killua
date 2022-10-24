@@ -61,7 +61,11 @@ class PermissionOverwrite:
             self.deny |= int(val)
 
 class Permissions:
-    def __init__(self):
+    def __init__(self, permissions: int = 0, **kwargs):
+        self.value = permissions
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+            
         self.overwrites = []
 
     def add_overwrite(self, **kwargs):

@@ -1,9 +1,10 @@
 import discord
 from discord.ext import commands
 from typing import Union, List, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 from random import randint
 
+from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.interactions import View
 from killua.utils.interactions import Select
@@ -13,7 +14,7 @@ from killua.static.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, LOO
 
 class Economy(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self._init_menus()
 

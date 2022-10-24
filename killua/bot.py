@@ -7,7 +7,6 @@ from discord.ext import commands, ipc
 from datetime import date
 from typing import Coroutine, Union
 
-from .utils.classes import Guild
 from .static.enums import Category
 from .utils.interactions import Modal
 from .static.constants import IPC_TOKEN, TIPS, LOOTBOXES, DB
@@ -16,6 +15,8 @@ def get_prefix(bot, message):
 	if bot.is_dev:
 		return commands.when_mentioned_or('kil!', 'kil.')(bot, message)
 	try:
+		from .utils.classes import Guild
+		
 		g = Guild(message.guild.id)
 		if g is None:
 			return commands.when_mentioned_or('k!')(bot, message)
@@ -45,7 +46,7 @@ class BaseBot(commands.Bot):
 	async def on_ipc_error(self, endpoint, error):
 		print(endpoint, "raised", error)
 
-	def __format_command(self, res:dict, cmd:commands.Command, group:Union[None, str]=None) -> dict:
+	def __format_command(self, res: dict, cmd: commands.Command, group: Union[None, str] = None) -> dict:
 		"""Adds a command to a dict of formatted commands"""
 		if cmd.name in ["jishaku", "help"] or cmd.hidden:
 			return res

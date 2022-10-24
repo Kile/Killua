@@ -6,13 +6,12 @@ from discord.ext import commands, tasks
 from datetime import datetime
 from typing import Union, Tuple, List
 
+from killua.bot import BaseBot
 from killua.static.cards import Card
 from killua.static.constants import FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, DB, editing
 from killua.utils.classes import User, TodoList, CardNotFound, CardLimitReached
 from killua.static.enums import Category, PrintColors, TodoAddons
 from killua.utils.interactions import Button, ConfirmButton
-
-
 from killua.utils.checks import check
 from killua.utils.paginator import DefaultEmbed, Paginator
 from killua.utils.interactions import Select, View
@@ -39,7 +38,7 @@ class ShopPaginator(Paginator):
 
 class Shop(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
 
     def _format_offers(self, offers: list, reduced_item: int = None, reduced_by: int = None) -> list:

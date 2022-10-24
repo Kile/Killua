@@ -2,28 +2,35 @@ from . import cogs
 import discord
 import aiohttp
 import asyncio
-import argparse
 import logging
 
 from .tests import run_tests
+# from .tests.types.db import TestingDatabase as Database
 from .migrate import migrate
 from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a seperate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
 from .webhook.api import app
 from .utils.help import MyHelp
-from .static.constants import TOKEN, PORT
 
-def get_args():
-	parser = argparse.ArgumentParser(description="CLI arguments for the bot")
-	parser.add_argument("-d", "--development", help="Run the bot in development mode", action="store_const", const=True)
-	parser.add_argument("-m", "--migrate", help="Migrates the database setup from a previous version to the current one", action="store_const", const=True)
-	parser.add_argument("-t", "--test", help="Run the tests", nargs="*", default=None, metavar=("cog", "command"))
-	parser.add_argument("-l", "--log", help="Set the logging level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], metavar="level")
-	return parser.parse_args()
+import killua.args as args_file
+
+# class TestingDB:
+#     teams = Database("teams")
+#     items = Database("items")
+#     guilds = Database("guilds")
+
+#     shop = Database("shop")
+#     blacklist = Database("blacklist")
+#     stats = Database("stats")
+#     presence = Database("presence")
+#     todo = Database("todo")
+#     updates = Database("updates")
 
 async def main():
-	args = get_args()
+	args_file.Args.get_args()
+
+	args = args_file.Args
 
 	# Set up logger from command line arguments
 	logging.basicConfig(level=getattr(logging, args.log.upper()), datefmt='%I:%M:%S', format="[%(asctime)s] %(levelname)s: %(message)s")
@@ -62,9 +69,9 @@ async def main():
 
 	if bot.is_dev: # runs the api locally if the bot is in dev mode
 		# loop = asyncio.get_event_loop()
-		await asyncio.wait([bot.start(TOKEN), app.run_task(host="0.0.0.0", port=PORT)], return_when=asyncio.FIRST_COMPLETED)
+		await asyncio.wait([bot.start(constants.TOKEN), app.run_task(host="0.0.0.0", port=constants.PORT)], return_when=asyncio.FIRST_COMPLETED)
 		# loop.run_forever()
 		# Thread(target=loop.run_forever).start()
 	else:
 		# Start the bot.		
-		await bot.start(TOKEN)
+		await bot.start(constants.TOKEN)

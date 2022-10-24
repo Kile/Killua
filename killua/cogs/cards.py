@@ -6,6 +6,7 @@ from datetime import datetime
 
 from typing import Union, List, Optional, Tuple, Optional, Dict
 
+from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches
@@ -17,7 +18,7 @@ from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPE
 
 class Cards(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self.cardname_cache = {}
         self.reward_cache = {
@@ -487,14 +488,14 @@ class Cards(commands.Cog):
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
-        if card.id in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
-            raise CheckFailure("You can only use this card in response to an attack!")
+        if not card.id in [x[0] for x in User(ctx.author.id).fs_cards] and not card.id in [1036]:
+            raise CheckFailure("You are not in possesion of this card!")
 
         if card.type != "spell":
             raise CheckFailure("You can only use spell cards!")
 
-        if not card.id in [x[0] for x in User(ctx.author.id).fs_cards] and not card.id in [1036]:
-            raise CheckFailure("You are not in possesion of this card!")
+        if card.id in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
+            raise CheckFailure("You can only use this card in response to an attack!")
 
         if args:
             if isinstance(args, discord.Member):

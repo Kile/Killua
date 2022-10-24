@@ -1,20 +1,21 @@
 import io
+from lib2to3.pytree import Base
 import sys
 import discord
 
 import traceback
 from datetime import datetime
-from discord.utils import find
 from discord.ext import commands, tasks
 from PIL import Image
 
+from killua.bot import BaseBot
 from killua.utils.classes import Guild, Book
 from killua.static.enums import PrintColors
 from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, PatreonBanner, DB
 
 class Events(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self.status_started = False
         self.client.startup_datetime = datetime.now()

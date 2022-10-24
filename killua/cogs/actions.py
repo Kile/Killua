@@ -3,6 +3,7 @@ from discord.ext import commands
 import random
 import asyncio
 from typing import List, Union
+from killua.bot import BaseBot
 
 from killua.utils.checks import check
 from killua.utils.classes import User
@@ -37,7 +38,7 @@ class SettingsButton(discord.ui.Button):
 
 class Actions(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self.session = self.client.session
 

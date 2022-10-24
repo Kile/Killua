@@ -1,6 +1,7 @@
 import discord
 from discord.ext import ipc, commands
 
+from killua.bot import BaseBot
 from killua.utils.classes import User, Guild, LootBox
 from killua.static.constants import DB, LOOTBOXES
 
@@ -8,7 +9,7 @@ from typing import List
 
 class IPCRoutes(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
 
     def _get_reward(self, user:User, weekend:bool) -> int:

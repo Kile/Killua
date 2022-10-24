@@ -8,6 +8,7 @@ from aiohttp import ClientSession
 from urllib.parse import unquote
 from typing import Union, List, Tuple
 
+from killua.bot import BaseBot
 from killua.utils.paginator import View
 from killua.utils.classes import User
 from killua.utils.interactions import ConfirmButton
@@ -422,7 +423,7 @@ class CountGame:
 
 class Games(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
 
     @commands.hybrid_group()

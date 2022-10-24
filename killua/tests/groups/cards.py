@@ -1,4 +1,5 @@
 from ..types import *
+from ...utils.classes import *
 from ..testing import Testing, test
 from ...cogs.cards import Cards
 from ...static.cards import Card
@@ -494,3 +495,80 @@ class Check(TestingCards):
         await self.command(self.cog, self.base_context, "1")
 
         assert self.base_context.result.message.content == "The card in your restricted slots is fake and 2 copies of this card in your free slots are fake", self.base_context.result.message.content
+
+# class Use(TestingCards):
+
+#     def __init__(self):
+#         super().__init__()
+#         self.user = User(self.base_author.id)
+
+#     async def test_command(self) -> None:
+#         """Runs all tests of a command"""
+
+#         for method in test.tests(self):
+#             await method(self)
+
+#         for subclass in self.__class__.__subclasses__():
+#             sub = subclass()
+#             for method in test.tests(sub):
+#                 await method(sub)
+
+#     @test
+#     async def invalid_card(self) -> None:
+#         await self.command(self.cog, self.base_context, "invalid", "irrelevant")
+
+#         assert self.base_context.result.message.content == "Invalid card id", self.base_context.result.message.content
+
+#     @test
+#     async def not_in_posession(self) -> None:
+#         self.user.nuke_cards("all")
+#         self.user.add_card(1)
+
+#         await self.command(self.cog, self.base_context, "1", "irrelevant")
+
+#         assert self.base_context.result.message.content == "You are not in possesion of this card!", self.base_context.result.message.content
+
+#     @test
+#     async def non_spell(self) -> None:
+#         self.user.nuke_cards("all")
+#         self.user.add_card(1)
+
+#         await self.command(self.cog, self.base_context, "1", "irrelevant")
+
+#         assert self.base_context.result.message.content == "You can only use spell cards!", self.base_context.result.message.content
+
+#     @test
+#     async def defense_spell(self) -> None:
+#         self.user.nuke_cards("all")
+
+#         await self.command(self.cog, self.base_context, "1003", "irrelevant")
+
+#         assert self.base_context.result.message.content == "You can only use this card in response to an attack!", self.base_context.result.message.content
+
+# class Card1001(Use):
+
+#     def __init__(self):
+#         super().__init__()
+
+#     @test
+#     async def has_not_met(self) -> None:
+#         self.user.nuke_cards("all")
+#         self.user.add_card(1001)
+#         other = DiscordMember()
+#         self.user.met_user = []
+
+#         await self.command(self.cog, self.base_context, "1001", other)
+
+#         assert self.base_context.result.message.content == "You haven't met this user yet! Use `k!meet <@someone>` if they send a message in a channel to be able to use this card on them", self.base_context.result.message.content
+
+#     @test
+#     async def no_permissions(self) -> None:
+#         self.user.nuke_cards("all")
+#         self.user.add_card(1001)
+#         self.base_channel._has_permissions = False
+#         other = DiscordMember()
+#         self.user.add_met_user(other)
+
+#         await self.command(self.cog, self.base_context, "1001", other)
+
+#         assert self.base_context.result.message.content == f"You can only attack a user in a channel they have read and write permissions to which isn't the case with {other.name}", self.base_context.result.message.content

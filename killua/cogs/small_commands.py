@@ -9,13 +9,14 @@ import math
 from typing import List
 from urllib.parse import quote
 
+from killua.bot import BaseBot
 from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, DB
 from killua.utils.checks import check
 from killua.static.enums import Category
 
 class SmallCommands(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self._init_menus()
 

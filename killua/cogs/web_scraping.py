@@ -7,6 +7,7 @@ from json import loads
 from typing import Union
 from pypxl import PxlClient
 
+from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 from killua.static.enums import Category
@@ -16,7 +17,7 @@ from typing import Any, Callable
 
 class WebScraping(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self.pxl = PxlClient(token=PXLAPI, stop_on_error=False, session=self.client.session)
         self.headers = {

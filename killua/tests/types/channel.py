@@ -30,6 +30,7 @@ class TestingTextChannel:
         self.nsfw: bool = kwargs.pop("nsfw", False)
         self.parent: Union[CategoryChannel, None] = kwargs.pop("parent", None)
         self.type: int = kwargs.pop("type", 0)
+        self._has_permission: int = kwargs.pop("has_permission", True)
 
         self.history_return: List[Message] = []
 
@@ -63,3 +64,7 @@ class TestingTextChannel:
             else:
                 self.ctx.current_view.wait = partial(self.ctx.respond_to_view, self.ctx)
         return message
+
+    def permissions_for(self, member: Guild.Member) -> ui.Permissions:
+        """Gets the permissions for a member"""
+        return self._has_permission

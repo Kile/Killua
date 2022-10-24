@@ -9,6 +9,7 @@ from discord import Intents, Message
 from discord.abc import Messageable
 from ...bot import BaseBot
 from .channel import TestingTextChannel
+from .user import TestingUser
 
 from typing import Any, Optional, Callable
 from asyncio import get_event_loop, TimeoutError, sleep
@@ -23,6 +24,9 @@ class TestingBot(BaseBot):
     def get_channel(self, channel: int):
         """Returns a channel object"""
         return TestingTextChannel(channel)
+
+    def get_user(self, user: int) -> Any:
+        return TestingUser(id=user)
 
     @property
     def loop(self):

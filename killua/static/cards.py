@@ -59,15 +59,15 @@ class Card:
 
         card = DB.items.find_one({"_id": card_id})
         
-        self.id:int = card["_id"]
-        self.name:str = card["name"]
-        self.image_url:str = card["Image"]
-        self.owners:list = card["owners"]
-        self.description:str = card["description"]
-        self.emoji:str = card["emoji"]
-        self.rank:str = card["rank"]
-        self.limit:int = card["limit"]
-        self.available:bool = card["available"] if "available" in card else True
+        self.id: int = card["_id"]
+        self.name: str = card["name"]
+        self.image_url: str = card["Image"]
+        self.owners: list = card["owners"]
+        self.description: str = card["description"]
+        self.emoji: str = card["emoji"]
+        self.rank: str = card["rank"]
+        self.limit: int = card["limit"]
+        self.available: bool = card["available"] if "available" in card else True
         try:
             self.type:str = card["type"]
         except KeyError:
@@ -75,12 +75,12 @@ class Card:
             self.type = "normal"
 
         if self.id > 1000 and not self.id == 1217: # If the card is a spell card it has two additional properties
-            self.range:str = card["range"]
-            self.cls:list = card["class"]
+            self.range: str = card["range"]
+            self.cls: list = card["class"]
 
         self.cache[self.id] = self
 
-    def add_owner(self, user_id:int):
+    def add_owner(self, user_id: int):
         """Adds an owner to a card entry in my db. Only used in Card().add_card()"""
         self.owners.append(user_id)
         DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
@@ -157,7 +157,7 @@ class Card:
         if not perms.send_messages or not perms.read_messages:
             raise CheckFailure(f"You can only attack a user in a channel they have read and write permissions to which isn't the case with {self.Member.display_name}") 
 
-    def _has_cards_check(self, cards:List[list], card_type:str="", is_self:bool=False, uses_up:bool=False) -> None:
+    def _has_cards_check(self, cards: List[list], card_type: str = "", is_self: bool = False, uses_up: bool = False) -> None:
         if len(cards) == 0:
             raise CheckFailure((f"You do not have cards{card_type}!" if is_self else f"This user does not have any cards{card_type}!") + f" This information uses up card {self.name}." if uses_up else "")
 
@@ -165,30 +165,30 @@ class Card:
         if not user.has_any_card(card_id):
             raise CheckFailure("The specified user doesn't have this card")
 
-    def _has_met_check(self, prefix:str, author:User, other:discord.Member) -> None:
+    def _has_met_check(self, prefix: str, author: User, other: discord.Member) -> None:
         if not author.has_met(other.id):
             raise CheckFailure(f"You haven't met this user yet! Use `{prefix}meet <@someone>` if they send a message in a channel to be able to use this card on them")
 
-    def _has_other_card_check(self, cards:List[list]) -> None:
+    def _has_other_card_check(self, cards: List[list]) -> None:
         if len(cards) < 2:
             raise CheckFailure(f"You don't have any cards other than card {self.name}!")
 
-    def _is_maxed_check(self, card:int) -> None:
+    def _is_maxed_check(self, card: int) -> None:
         c = Card(card)
         if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
             raise CheckFailure(f"The maximum amount of existing cards with id {card} is reached!")
 
-    def _is_full_check(self, user:User) -> None:
+    def _is_full_check(self, user: User) -> None:
         if len(user.fs_cards) >= FREE_SLOTS:
             raise CheckFailure("You don't have any space in your free slots left!")
 
-    def _is_valid_card_check(self, card_id:int) -> None:
+    def _is_valid_card_check(self, card_id: int) -> None:
         try:
             Card(card_id)
         except CardNotFound:
             raise CheckFailure("Specified card is invalid!")
 
-    def _has_effect_check(self, user:User, effect:str) -> None:
+    def _has_effect_check(self, user: User, effect: str) -> None:
         if user.has_effect(effect)[0]:
             raise CheckFailure("You already have this effect in place!")
 
@@ -214,7 +214,7 @@ class Card:
         })
         return embed
 
-    def _get_list_embed(self, card_id:int) -> discord.Embed:
+    def _get_list_embed(self, card_id: int) -> discord.Embed:
         card = Card(card_id)
 
         real_owners = []
@@ -236,7 +236,7 @@ class Card1001(Card):
         self.ctx = ctx
         super().__init__(**kwargs)
 
-    async def exec(self, member:discord.Member) -> None:
+    async def exec(self, member: discord.Member) -> None:
         author = User(self.ctx.author.id)
         other = User(member.id)
 
@@ -259,7 +259,7 @@ class Card1002(Card):
         self.ctx = ctx
         super().__init__(**kwargs)
 
-    async def exec(self, member:discord.Member) -> None:
+    async def exec(self, member: discord.Member) -> None:
         author = User(self.ctx.author.id)
         other = User(member.id)
 

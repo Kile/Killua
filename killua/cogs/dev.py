@@ -7,6 +7,7 @@ from io import BytesIO
 from datetime import datetime
 from matplotlib import pyplot as plt
 
+from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 from killua.utils.classes import User, Guild #lgtm [py/unused-import]
@@ -15,9 +16,9 @@ from killua.static.enums import Category, Activities, Presences, StatsOptions
 from killua.static.cards import Card #lgtm [py/unused-import]
 from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT
 
-class DevStuff(commands.Cog):
+class Dev(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self.version_cache = []
 
@@ -225,7 +226,7 @@ class DevStuff(commands.Cog):
     async def publish_update(self, ctx: commands.Context, version: str, *, update: str):
         """Allows me to publish Killua updates in a handy formart"""
 
-        old = DB.updates.find_one({"_id":"current"})
+        old = DB.updates.find_one({"_id": "current"})
         old_version = old["version"] if "version" in old else "No version"
 
         if version in [*[old_version],*[x["version"] for x in DB.updates.find_one({"_id": "log"})["past_updates"]]]:
@@ -267,7 +268,7 @@ class DevStuff(commands.Cog):
                 return await ctx.send("Invalid version!")
             data = d[0]
             
-        author = await self.client.fetch_user(data["published_by"])
+        author = self.client.get_user(data["published_by"])
         embed = discord.Embed.from_dict({
             "title": f"Infos about version `{data['version']}`",
             "description": str(data["description"]),
@@ -352,7 +353,7 @@ class DevStuff(commands.Cog):
             return await Paginator(ctx, func=make_embed, max_pages=3, has_file=True).start()
 
 
-Cog = DevStuff
+Cog = Dev
 
 async def setup(client):
-    await client.add_cog(DevStuff(client))
+    await client.add_cog(Dev(client))

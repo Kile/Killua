@@ -38,6 +38,8 @@ class TestingMessage:
         self.embeds = kwargs.get("embeds", []),
         self.pinned = kwargs.pop("pinned", False),
         self.type = kwargs.pop("type", 0) # https://discord.com/developers/docs/resources/channel#message-object-message-types 
+        self.referencing = kwargs.pop("reference", None)
+        self.reference = self
         
         if "embed" in kwargs:
             self.embeds = [kwargs.pop("embed")]

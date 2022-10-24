@@ -5,6 +5,7 @@ import re
 import math
 from typing import Union, Optional, List
 
+from killua.bot import BaseBot
 from killua.static.enums import Category, TodoDeleteWhenDone, TodoStatus, TodoPermissions
 from killua.static.constants import DB, editing, REPORT_CHANNEL
 from killua.utils.checks import check, blcheck
@@ -15,7 +16,7 @@ from killua.utils.converters import TimeConverter
 
 class TodoSystem(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self._init_menus()
 

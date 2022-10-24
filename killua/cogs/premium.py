@@ -5,6 +5,7 @@ from typing import List, Union
 from aiohttp import ClientSession
 from datetime import datetime
 
+from killua.bot import BaseBot
 from killua.utils.checks import check, premium_member_only
 from killua.utils.classes import User, Guild, LootBox
 from killua.static.enums import Category, PremiumGuildOptions
@@ -12,7 +13,7 @@ from killua.static.constants import PATREON_TIERS, GUILD, BOOSTER_ROLE, PATREON,
 
 class Patrons:
 
-    def __init__(self, patrons:List[dict]):
+    def __init__(self, patrons: List[dict]):
         self.patrons = patrons
         self.invalid = [x for x in self.patrons if x["discord"] is None]
 
@@ -94,7 +95,7 @@ class Patreon:
 
 class Premium(commands.Cog):
 
-    def __init__(self, client):
+    def __init__(self, client: BaseBot):
         self.client = client
         self.invalid = True # this is only `True` the first time the bot starts because the boosters of the support server are not cached at that point, so it avoids removing their badge
 
