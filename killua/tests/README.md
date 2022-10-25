@@ -1,7 +1,6 @@
 # Explanation of how testing works with Killua
 
 Index
--
 
 [The design of the testing system](#design)
 
@@ -14,7 +13,7 @@ Index
 
 In general, testing a command works by controlling everything *but* the command callback itself. That means of all relevant discord objects there exists a class in `killua/tests/types`, mocking their methods and attributes that are used inside of the commands. Their `__class__` is set to the discord class they mock to avoid an `isinstance(argument, discordClass)` inside of a command falsely failing on a mock class.
 
-There also exist mock classes for pymongo database stuff as the tests are designed to be able to work completely offline (which is currently not fully archived) and the database should not be spammed when all tests are run.
+There also exist mock classes for pymongo database stuff in a different file location as the tests are designed to be able to work completely offline (which is currently not fully archived) and the database should not be spammed when all tests are run. When tests are run, the `DB` class containing all details of connections will automatically switch to the mock data instead of the real one.
 
 ### How responses can be verified
 
