@@ -3,6 +3,7 @@ from lib2to3.pytree import Base
 import sys
 import discord
 
+import logging
 import traceback
 from datetime import datetime
 from discord.ext import commands, tasks
@@ -35,9 +36,9 @@ class Events(commands.Cog):
         cards = [x for x in DB.items.find()]
 
         if len(cards) == 0:
-            return print(f"{PrintColors.WARNING}No cards in the database, could not load cache{PrintColors.ENDC}")
+            return logging.error(f"{PrintColors.WARNING}No cards in the database, could not load cache{PrintColors.ENDC}")
 
-        print(f"{PrintColors.WARNING}Loading cards cache....{PrintColors.ENDC}")
+        logging.info(f"{PrintColors.WARNING}Loading cards cache....{PrintColors.ENDC}")
         percentages = [25, 50, 75]
         for p, item in enumerate(cards):
             try:
@@ -51,22 +52,22 @@ class Events(commands.Cog):
 
                 Book.card_cache[str(item["_id"])] = image_card
                 if len(percentages) >= 1 and (p/len(cards))*100 > (percent:= percentages[0]):
-                    print(f"{PrintColors.WARNING}Cache loaded {percent}%...{PrintColors.ENDC}")
+                    logging.info(f"{PrintColors.WARNING}Cache loaded {percent}%...{PrintColors.ENDC}")
                     percentages.remove(percent)
             except Exception as e:
-                print(f"{PrintColors.FAIL}Failed to load card {item['_id']} with error: {e}{PrintColors.ENDC}")
+                logging.error(f"{PrintColors.FAIL}Failed to load card {item['_id']} with error: {e}{PrintColors.ENDC}")
 
-        print(f"{PrintColors.OKGREEN}All cards successfully cached{PrintColors.ENDC}")
+        logging.info(f"{PrintColors.OKGREEN}All cards successfully cached{PrintColors.ENDC}")
 
     async def _set_patreon_banner(self) -> None:
         """Loads the patron banner bytes so it can be quickly sent when needed"""
         res = await self.client.session.get(PatreonBanner.URL)
         image_bytes = await res.read()
         PatreonBanner.VALUE = image_bytes
-        print(f"{PrintColors.OKGREEN}Successfully loaded patreon banner{PrintColors.ENDC}")
+        logging.info(f"{PrintColors.OKGREEN}Successfully loaded patreon banner{PrintColors.ENDC}")
 
     def print_dev_text(self) -> None:
-        print(f"{PrintColors.OKGREEN}Running bot in dev enviroment...{PrintColors.ENDC}")
+        logging.info(f"{PrintColors.OKGREEN}Running bot in dev enviroment...{PrintColors.ENDC}")
 
     async def cog_load(self):
         #Changing Killua's status
@@ -83,9 +84,7 @@ class Events(commands.Cog):
             self.status.start()
             self.status_started = True
 
-        print(f"{PrintColors.HEADER}{PrintColors.OKGREEN}------")
-        print("Logged in as: " + self.client.user.name + f" (ID: {self.client.user.id})")
-        print(f"------{PrintColors.ENDC}")
+        logging.info(PrintColors.OKGREEN + "Logged in as: " + self.client.user.name + f" (ID: {self.client.user.id})" + PrintColors.ENDC)
 
     @tasks.loop(hours=12)
     async def status(self):
@@ -155,16 +154,16 @@ class Events(commands.Cog):
         await ctx.send(":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.", view=view)
 
         if self.client.is_dev: # prints the full traceback in dev enviroment
-            print(PrintColors.FAIL + "Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
+            logging.error(PrintColors.FAIL + "Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
             return print(PrintColors.ENDC)
         
         else:
             guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)
             command = ctx.command.name if ctx.command else "Error didn't occur during a command"
-            print(f"{PrintColors.FAIL}------------------------------------------")
-            print(f"An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}")
-            print(f"------------------------------------------{PrintColors.ENDC}")
+            logging.error(f"{PrintColors.FAIL}------------------------------------------")
+            logging.error(f"An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}")
+            logging.error(f"------------------------------------------{PrintColors.ENDC}")
 
 Cog = Events
 

@@ -3,7 +3,7 @@ from discord.ext import commands
 
 import asyncio
 from random import randint, choice
-from discord.ext import commands, ipc
+from discord.ext import commands # NOTE Ipc needed here
 from datetime import date
 from typing import Coroutine, Union
 
@@ -31,20 +31,17 @@ class BaseBot(commands.Bot):
 
 		self.support_server_invite = "https://discord.gg/MKyWA5M"
 		self.invite = "https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands"
-		self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
+		# self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
 		self.is_dev = False
 
 	async def setup_hook(self):
 		await self.load_extension("jishaku")
-		await self.ipc.start()
+		# await self.ipc.start()
 		await self.tree.sync()
 
 	async def close(self):
 		await super().close()
 		await self.session.close()
-
-	async def on_ipc_error(self, endpoint, error):
-		print(endpoint, "raised", error)
 
 	def __format_command(self, res: dict, cmd: commands.Command, group: Union[None, str] = None) -> dict:
 		"""Adds a command to a dict of formatted commands"""

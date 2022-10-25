@@ -40,19 +40,23 @@ class DB:
 
     @property
     def shop(self):
-        return self._DB["shop"] if not args.Args.test else Database("shop")
+        return self.GDB["shop"] if not args.Args.test else Database("shop")
 
     @property
     def blacklist(self):
-        return self._DB["blacklist"] if not args.Args.development else Database("blacklist")
+        return self.GDB["blacklist"] if not args.Args.test else Database("blacklist")
+
+    @property
+    def presence(self):
+        return self.GDB["presence"] if not args.Args.test else Database("presence")
 
     @property
     def stats(self):
-        return self._DB["stats"] if not args.Args.development else Database("stats")
+        return self.GDB["stats"] if not args.Args.test else Database("stats")
 
     @property
     def todo(self):
-        return self._DB["todo"] if not args.Args.development else Database("todo")
+        return self.GDB["todo"] if not args.Args.test else Database("todo")
 
 DB = DB()
 

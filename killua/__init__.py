@@ -12,6 +12,7 @@ from .bot import BaseBot as Bot, get_prefix
 # avoid relative import errors when subclassing it in the testing module
 from .webhook.api import app
 from .utils.help import MyHelp
+from .static.constants import TOKEN, PORT
 
 import killua.args as args_file
 
@@ -69,9 +70,9 @@ async def main():
 
 	if bot.is_dev: # runs the api locally if the bot is in dev mode
 		# loop = asyncio.get_event_loop()
-		await asyncio.wait([bot.start(constants.TOKEN), app.run_task(host="0.0.0.0", port=constants.PORT)], return_when=asyncio.FIRST_COMPLETED)
+		await asyncio.wait([bot.start(TOKEN), app.run_task(host="0.0.0.0", port=PORT)], return_when=asyncio.FIRST_COMPLETED)
 		# loop.run_forever()
 		# Thread(target=loop.run_forever).start()
 	else:
 		# Start the bot.		
-		await bot.start(constants.TOKEN)
+		await bot.start(TOKEN)

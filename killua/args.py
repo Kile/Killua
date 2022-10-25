@@ -20,7 +20,6 @@ class _Args:
 
         parsed = parser.parse_args()
 
-        print(parsed)
         cls.development = parsed.development
         cls.migrate = parsed.migrate
         cls.test = parsed.test

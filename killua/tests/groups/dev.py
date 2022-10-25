@@ -62,7 +62,6 @@ class Update(TestingDev):
 
     @test
     async def incorrect_usage(self) -> None:
-        print("INFO: ", type(DB.teams))
         await self.command(self.cog, self.base_context, version="incorrect")
 
         assert self.base_context.result.message.content == "Invalid version!", self.base_context.result.message.content

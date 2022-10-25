@@ -1,6 +1,6 @@
 import re
 import discord
-import asyncio
+import logging
 from random import randint, choice
 from discord.ext import commands, tasks
 from datetime import datetime
@@ -101,15 +101,15 @@ class Shop(commands.Cog):
                 if randint(1, 10) > 6: # 40% to have an item in the shop reduced
                     reduced_item = randint(0, len(shop_items)-1)
                     reduced_by = randint(15, 40)
-                    print(f"{PrintColors.OKBLUE}Updated shop with following cards: " + ", ".join([str(x) for x in shop_items])+f", reduced item number {shop_items[reduced_item]} by {reduced_by}%{PrintColors.ENDC}")
+                    logging.info(f"{PrintColors.OKBLUE}Updated shop with following cards: " + ", ".join([str(x) for x in shop_items])+f", reduced item number {shop_items[reduced_item]} by {reduced_by}%{PrintColors.ENDC}")
                     log.append({"time": datetime.now(), "items": shop_items, "reduced": {"reduced_item": reduced_item, "reduced_by": reduced_by}})
                     DB.shop.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": {"reduced_item": reduced_item, "reduced_by": reduced_by}}})
                 else:
-                    print(f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}")
+                    logging.info(f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}")
                     log.append({"time": datetime.now(), "items": shop_items, "redued": None})
                     DB.shop.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": None}})
-        except IndexError:
-            print(f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}")
+        except (IndexError, TypeError):
+            logging.error(f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}")
 
     def _get_view(self, ctx) -> View:
         """Creates a view for the shop"""
@@ -251,7 +251,7 @@ class Shop(commands.Cog):
         """Buy a card from the shop with this command"""
         
         shop_data = DB.shop.find_one({"_id": "daily_offers"})
-        shop_items = shop_data["offers"]
+        shop_items: list = shop_data["offers"]
         user = User(ctx.author.id)
 
         try:
@@ -263,7 +263,7 @@ class Shop(commands.Cog):
             return await ctx.send(f"This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`", allowed_mentions=discord.AllowedMentions.none())
 
         if not shop_data["reduced"] is None:
-            if shop_DB.items.index(card.id) == shop_data["reduced"]["reduced_item"]:
+            if shop_items.index(card.id) == shop_data["reduced"]["reduced_item"]:
                 price = int(PRICES[card.rank] - int(PRICES[card.rank] * (shop_data["reduced"]["reduced_by"]/100)))
             else:
                 price = PRICES[card.rank]
@@ -284,7 +284,7 @@ class Shop(commands.Cog):
             if isinstance(e, CardLimitReached):
                 return await ctx.send(f"Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell <card>`", allowed_mentions=discord.AllowedMentions.none())
             else:
-                print(e)
+                raise
 
         user.remove_jenny(price) #Always putting substracting points before giving the item so if the payment errors no item is given
         return await ctx.send(f"Successfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!", allowed_mentions=discord.AllowedMentions.none())

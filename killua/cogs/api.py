@@ -1,5 +1,9 @@
 import discord
-from discord.ext import ipc, commands
+from discord.ext import commands # NOTE ipc needed here
+
+from asyncio import create_task
+from zmq import REP, POLLIN, NOBLOCK
+from zmq.asyncio import Context, Poller
 
 from killua.bot import BaseBot
 from killua.utils.classes import User, Guild, LootBox
@@ -11,8 +15,29 @@ class IPCRoutes(commands.Cog):
 
     def __init__(self, client: BaseBot):
         self.client = client
+        create_task(self.start())
 
-    def _get_reward(self, user:User, weekend:bool) -> int:
+    async def start(self):
+        """Starts the zmq server asyncronously and handles incoming requests"""
+        context = Context()
+        socket = context.socket(REP)
+        socket.bind("tcp://*:5555")
+
+        poller = Poller()
+        poller.register(socket, POLLIN)
+
+        while True:
+            socks = dict(await poller.poll())
+
+            if socket in socks and socks[socket] == POLLIN:
+                message = await socket.recv_json(NOBLOCK)
+                res = await getattr(self, message["route"])(message["data"])
+                if res:
+                    socket.send_json(res)
+                else:
+                    socket.send_json({"status": "ok"})
+
+    def _get_reward(self, user: User, weekend: bool) -> int:
         """A pretty simple algorithm that adjusts the reward for voting"""
         if user.votes % 5 == 0:
             return LootBox.get_random_lootbox()
@@ -43,7 +68,6 @@ class IPCRoutes(commands.Cog):
         except discord.HTTPException:
             pass
 
-    @ipc.server.route()
     async def top(self, _) -> List[dict]:
         """Returns a list of the top 50 users by the amount of jenny they have"""
         members = DB.teams.find({'id': {'$in': [x.id for x in self.client.users]} })
@@ -54,39 +78,33 @@ class IPCRoutes(commands.Cog):
             res.append({"name": u.name, "tag": u.discriminator, "avatar": str(u.avatar.url), "jenny": t["points"]})
         return res
 
-    @ipc.server.route()
     async def commands(self, _) -> dict:
         """Returns all commands with descriptions etc"""
         return self.client.get_formatted_commands()
 
-    @ipc.server.route()
     async def save_user(self, data) -> None:
         """This functions purpose is not that much getting user data but saving a user in the database"""
-        User(data.user)
+        User(data["user"])
 
-    @ipc.server.route()
     async def get_discord_user(self, data) -> dict:
         """Getting additional info about a user with their id"""
-        res =  self.client.get_user(data.user)
+        res =  self.client.get_user(data["user"])
         return {"name": res.name, "tag": res.discriminator, "avatar": str(res.avatar.url), "created_at": res.created_at.strftime('%Y-%m-%dT%H:%M:%SZ')}
 
-    @ipc.server.route()
     async def get_guild_data(self, data) -> dict:
         """Getting some info about guild roles and channels for black and whitelisting"""
-        res = self.client.get_guild(int(data.guild))
+        res = self.client.get_guild(int(data["guild"]))
         return {"roles": [{"name": r.name, "id": str(r.id), "color": r.color.value} for r in res.roles], "channels": [{"name": c.name, "id": c.id} for c in res.channels if isinstance(c, discord.TextChannel)]}
 
-    @ipc.server.route()
     async def update_guild_cache(self, data) -> None:
         """Makes sure the local cache is up to date with the db"""
         guild = Guild(data.id)
-        guild.prefix = data.prefix
+        guild.prefix = data["prefix"]
         guild.commands = {v for _, v in data.commands.items()}
 
-    @ipc.server.route()
     async def vote(self, data) -> None:
         """Registers a vote from either topgg or dbl"""
-        await self.handle_vote(data.data)
+        await self.handle_vote(data)
 
 
 Cog = IPCRoutes

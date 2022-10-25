@@ -1,6 +1,8 @@
 import sys, os
-from discord.ext import ipc
 from quart import jsonify, Quart, request
+from json import dumps
+from zmq import REQ
+from zmq.asyncio import Context
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) # This is a necessary hacky fix for importing issues
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -8,7 +10,15 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from static.constants import PASSWORD, IPC_TOKEN
 
 app = Quart(__name__)
-ipc_client = ipc.Client(secret_key=IPC_TOKEN)
+
+# Create async IPC request maker
+async def make_request(route: str, data: dict) -> dict:
+    context = Context()
+    socket = context.socket(REQ)
+    socket.connect("tcp://localhost:5555")
+
+    await socket.send_json({"route": route, "data": data})
+    return socket.recv_json()
 
 async def is_authorised(headers: dict) -> bool:
     if not "Authorization" in headers:
@@ -28,7 +38,7 @@ async def vote():
         
     data = await request.get_json()
 
-    await ipc_client.request("vote", data = dict(data))
+    await make_request("vote", data = dict(data))
 
     return jsonify({"message": "Success"}), 200
 

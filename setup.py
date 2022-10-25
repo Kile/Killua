@@ -9,6 +9,7 @@ Note: As the console says when running this program, you will need to add data f
 """
 from pymongo import errors, collection
 
+import logging
 from killua.static.enums import PrintColors
 from killua.static.constants import (
     shop,
@@ -21,7 +22,7 @@ def _try(coll: collection, args:dict):
     try:
         coll.insert_one(args)
     except errors.DuplicateKeyError:
-        print(f"{PrintColors.FAIL} \"{args['_id']}\" key already exists, skipped...{PrintColors.ENDC}")
+        logging.info(f"{PrintColors.FAIL} \"{args['_id']}\" key already exists, skipped...{PrintColors.ENDC}")
 
 def main():
     
@@ -32,7 +33,7 @@ def main():
     _try(updates, {"_id": "log", "past_updates": []})
     _try(stats, {"_id": "growth", "growth": []})
     
-    print(f"""
+    logging.info(f"""
     {PrintColors.OKGREEN} Successfully added all collections {PrintColors.WARNING}
 
      The "item" items have to be added manually. Structure:
