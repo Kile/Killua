@@ -328,7 +328,7 @@ class Dev(commands.Cog):
         await self.client.update_presence()
         await ctx.send(f"Successfully changed Killua's status to `{text}`! (I hope people like it >-<)", ephemeral=True)
 
-    @dev.command()
+    @dev.command(extras={"category":Category.OTHER}, usage="stats")
     async def stats(self, ctx: commands.Context, type: StatsOptions):
         """Shows some statistics about the bot such as growth and command usage"""
         if type.name == "usage":

@@ -5,28 +5,14 @@ import asyncio
 import logging
 
 from .tests import run_tests
-# from .tests.types.db import TestingDatabase as Database
 from .migrate import migrate
 from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a seperate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
 from .webhook.api import app
-from .utils.help import MyHelp
 from .static.constants import TOKEN, PORT
 
 import killua.args as args_file
-
-# class TestingDB:
-#     teams = Database("teams")
-#     items = Database("items")
-#     guilds = Database("guilds")
-
-#     shop = Database("shop")
-#     blacklist = Database("blacklist")
-#     stats = Database("stats")
-#     presence = Database("presence")
-#     todo = Database("todo")
-#     updates = Database("updates")
 
 async def main():
 	args_file.Args.get_args()

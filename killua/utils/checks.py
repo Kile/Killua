@@ -49,6 +49,8 @@ def premium_guild_only():
             return False
         return True
 
+    predicate.premium_guild_only = True
+
     return commands.check(predicate)
 
 def premium_member_only():
@@ -62,6 +64,8 @@ def premium_member_only():
                 return False
             return True
 
+    predicate.premium_member_only = True
+
     return commands.check(predicate)
 
 def check(time: int = 0):
@@ -72,7 +76,7 @@ def check(time: int = 0):
     from datetime import datetime
     from killua.static.constants import DB
 
-    def add_usage(command:Union[commands.Command, Type[commands.Command]]) -> None:
+    def add_usage(command: Union[commands.Command, Type[commands.Command]]) -> None:
         data = DB.stats.find_one({"_id": "commands"})["command_usage"]
         command = _clean_command_name(command)
         data[command] = data[command]+1 if command in data else 1
@@ -200,5 +204,7 @@ def check(time: int = 0):
         add_usage(ctx.command)
 
         return True
+
+    predicate.cooldown = time
 
     return commands.check(predicate)

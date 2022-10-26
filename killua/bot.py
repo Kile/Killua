@@ -5,7 +5,7 @@ import asyncio
 from random import randint, choice
 from discord.ext import commands # NOTE Ipc needed here
 from datetime import date
-from typing import Coroutine, Union
+from typing import Coroutine, Union, Dict
 
 from .static.enums import Category
 from .utils.interactions import Modal
@@ -43,23 +43,23 @@ class BaseBot(commands.Bot):
 		await super().close()
 		await self.session.close()
 
-	def __format_command(self, res: dict, cmd: commands.Command, group: Union[None, str] = None) -> dict:
+	def __format_command(self, res: Dict[str, list], cmd: commands.Command) -> dict:
 		"""Adds a command to a dict of formatted commands"""
 		if cmd.name in ["jishaku", "help"] or cmd.hidden:
 			return res
 
-		res[cmd.extras["category"].value["name"]]["commands"].append({"name": cmd.name, "usage": cmd.usage, "help": cmd.help, "parent": group})
+		res[cmd.extras["category"].value["name"]]["commands"].append(cmd)
         
 		return res
 
 	def get_formatted_commands(self) -> dict:
 		"""Gets a dictionary of formatted commands"""
-		res = {c.value["name"]:{"description":c.value["description"], "emoji": c.value["emoji"], "commands": []} for c in Category}
+		res = {c.value["name"]: {"description": c.value["description"], "emoji": c.value["emoji"], "commands": []} for c in Category}
 
 		for cmd in self.commands:
 			if isinstance(cmd, commands.Group) and cmd.name != "jishaku":
 				for c in cmd.commands:
-					res = self.__format_command(res, c, group=cmd.qualified_name)
+					res = self.__format_command(res, c)
 				continue
 			res = self.__format_command(res, cmd)
 

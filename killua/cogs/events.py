@@ -154,7 +154,7 @@ class Events(commands.Cog):
         await ctx.send(":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.", view=view)
 
         if self.client.is_dev: # prints the full traceback in dev enviroment
-            logging.error(PrintColors.FAIL + "Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
+            logging.error(PrintColors.FAIL + "Ignoring exception in command {}:".format(ctx.command))
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
             return print(PrintColors.ENDC)
         
