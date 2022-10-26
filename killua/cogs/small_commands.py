@@ -276,6 +276,3 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, "Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
 Cog = SmallCommands
-
-async def setup(client):
-    await client.add_cog(SmallCommands(client))

@@ -108,6 +108,3 @@ class IPCRoutes(commands.Cog):
 
 
 Cog = IPCRoutes
-
-async def setup(client):
-    await client.add_cog(IPCRoutes(client))

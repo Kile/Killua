@@ -490,6 +490,3 @@ class Shop(commands.Cog):
 
 
 Cog = Shop
-
-async def setup(client):
-    await client.add_cog(Shop(client))

@@ -77,7 +77,13 @@ class Economy(commands.Cog):
         return discord.Embed.from_dict({
                 "title": f"Information about {user}",
                 "description": f"{user.id}\n{' '.join(flags)}",
-                "fields": [{"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, {"name": "Jenny", "value": str(info.jenny), "inline": False}, {"name": "Account created at", "value": joined, "inline": False}, {"name": "daily cooldown", "value": cooldown or "Never claimed `k!daily` before", "inline": False}],
+                "fields": [
+                    {"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, 
+                    {"name": "Jenny", "value": str(info.jenny), "inline": False}, 
+                    {"name": "Account created at", "value": joined, "inline": False},
+                    {"name": "Rock Paper Scissors stats", "value": f"Wins: {info.rps_wins}\nLosses: {info.rps_losses}\nDraws: {info.rps_draws}", "inline": False},
+                    {"name": "daily cooldown", "value": cooldown or "Never claimed `daily` before", "inline": False}
+                ],
                 "thumbnail": {"url": str(user.avatar.url) if user.avatar else None},
                 "image": {"url": user.banner.url if user.banner else None},
                 "color": 0x1400ff
@@ -292,7 +298,4 @@ class Economy(commands.Cog):
 
 
 Cog = Economy
-
-async def setup(client):
-  await client.add_cog(Economy(client))
 

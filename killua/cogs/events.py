@@ -166,6 +166,3 @@ class Events(commands.Cog):
             logging.error(f"------------------------------------------{PrintColors.ENDC}")
 
 Cog = Events
-
-async def setup(client):
-    await client.add_cog(Events(client))

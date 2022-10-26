@@ -354,6 +354,3 @@ class Dev(commands.Cog):
 
 
 Cog = Dev
-
-async def setup(client):
-    await client.add_cog(Dev(client))

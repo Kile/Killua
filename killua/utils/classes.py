@@ -12,7 +12,7 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw
-from typing import Union, Tuple, List, Any, Optional
+from typing import Union, Tuple, List, Any, Optional, Literal
 
 from .paginator import View
 from killua.static.constants import FREE_SLOTS, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES, DEF_SPELLS, DB
@@ -414,7 +414,12 @@ class User:
         self.rs_cards: List[list] = user["cards"]["rs"]
         self.fs_cards: List[list] = user["cards"]["fs"]
         self.badges: List[str] = user["badges"]
-        self.rps_stats: dict = user["stats.rps"] if "stats.rps" in user else {"wins": 0, "losses": 0, "ties": 0}
+
+        self.rps_stats: dict = user["stats"]["rps"] if "stats" in user and "rps" in user["stats"] else {"pvp": {"won": 0, "lost": 0, "tied": 0}, "pve": {"won": 0, "lost": 0, "tied": 0}}
+        self.counting_highscore: dict = user["stats"]["counting_highscore"] if "stats" in user and "counting_highscore" in user["stats"] else {"easy": 0, "hard": 0}
+        self.trivia_stats: dict = user["stats"]["trivia"] if "stats" in user and "trivia" in user["stats"] else {"easy": {"right": 0, "wrong": 0}, "medium": {"right": 0, "wrong": 0}, "hard": {"right": 0, "wrong": 0}}
+
+        self.achievements: List[str] = user["achievements"] if "achievements" in user else [] # A list of one time achivenments so track what was archived and what not
         self.votes: int = user["votes"] if "votes" in user else 0
         self.premium_guilds: dict = user["premium_guilds"] if "premium_guilds" in user else {}
         self.lootboxes: List[int] = user["lootboxes"] if "lootboxes" in user else []
@@ -487,7 +492,54 @@ class User:
         if cards:
             DB.teams.update_one({"id": user_id}, {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0}})  
         else:
-            DB.teams.insert_one({"id": user_id, "points": 0, "badges": [], "cooldowndaily": "","cards": {"rs": [], "fs": [], "effects": {}}, "met_user": [], "votes": 0, "premium_guilds": {}, "lootboxes": [], "weekly_cooldown": None, "action_settings": {}, "stats": {"rps": {"wins": 0, "losses": 0, "ties": 0}}})
+            DB.teams.insert_one(
+                {"id": user_id, "points": 0, 
+                "badges": [], 
+                "cooldowndaily": "",
+                "cards": {"rs": [], "fs": [], "effects": {}}, 
+                "met_user": [], 
+                "votes": 0, 
+                "premium_guilds": {}, 
+                "lootboxes": [], 
+                "weekly_cooldown": None, 
+                "action_settings": {}, 
+                "achivements": [], 
+                "stats": {
+                    "rps":
+                        {
+                            "pvp": 
+                                {
+                                    "won": 0, 
+                                    "lost": 0, 
+                                    "tied": 0
+                                }, 
+                            "pve": 
+                                {
+                                    "won": 0, 
+                                    "lost": 0, 
+                                    "tied": 0
+                                }
+                        },
+                    "counting": {
+                        "easy": 0,
+                        "hard": 0
+                    },
+                    "trivia": {
+                        "easy": {
+                            "right": 0,
+                            "wrong": 0
+                        },
+                        "medium": {
+                            "right": 0,
+                            "wrong": 0
+                        },
+                        "hard": {
+                            "right": 0,
+                            "wrong": 0
+                        }
+                    }
+                }
+            })
 
     def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
@@ -692,6 +744,7 @@ class User:
                 if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
                     self.add_card(0)
                     self.add_badge("greed_island_badge")
+                    self.add_achievement("full_house")
                 return
 
         if len(self.fs_cards) >= FREE_SLOTS:
@@ -822,13 +875,33 @@ class User:
 
         return True
 
-    def add_rps_stat(self, stat: str, val: int = 1) -> None:
+    def add_rps_stat(self, stat: Literal["won", "tied", "lost"], against_bot: bool, val: int = 1) -> None:
         """Adds a stat to the user's rps stats"""
         if stat in self.rps_stats:
-            self.rps_stats[stat] += val
+            self.rps_stats["pvp" if not against_bot else "pve"][stat] += val
         else:
-            self.rps_stats[stat] = val
-        self._update_val("stats.rps", self.rps_stats)
+            self.rps_stats["pvp" if not against_bot else "pve"][stat] = val
+        self._update_val(f"stats.rps", self.rps_stats)
+        
+    def add_trivia_stat(self, stat: Literal["right", "wrong"], difficulty: Literal["easy", "medium", "hard"]) -> None:
+        """Adds a stat to the user's trivia stats"""
+        if stat in self.trivia_stats:
+            self.trivia_stats[difficulty][stat] += 1
+        else:
+            self.trivia_stats[difficulty][stat] = 1
+        self._update_val(f"stats.trivia", self.trivia_stats)
+
+    def set_counting_highscore(self, difficulty: Literal["easy", "hard"], score: int) -> None:
+        """Sets the highscore for counting"""
+        if score > self.counting_highscore[difficulty]:
+            self.counting_highscore[difficulty] = score
+            self._update_val(f"stats.counting_highscore", self.counting_highscore)
+
+    def add_achievement(self, achievement: str) -> None:
+        """Adds an achievement to the user's achievements"""
+        if not achievement in self.achievements:
+            self.achievements.append(achievement)
+            self._update_val("achievements", achievement, "$push")
 
 class TodoList:
     cache = {}

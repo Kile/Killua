@@ -628,6 +628,3 @@ class Cards(commands.Cog):
             return await ctx.send(f"Done! Added lootbox \"{LOOTBOXES[int(item)]['name']}\" to your inventory")
 
 Cog = Cards
-
-async def setup(client):
-    await client.add_cog(Cards(client))

@@ -193,6 +193,3 @@ class WebScraping(commands.Cog):
         return await ctx.send(":x: "+r.error, epheremal=True)
 
 Cog = WebScraping
-
-async def setup(client):
-  await client.add_cog(WebScraping(client))

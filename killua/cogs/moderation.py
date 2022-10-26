@@ -93,7 +93,7 @@ class Moderation(commands.Cog):
     @moderation.command(extras={"category":Category.MODERATION}, usage="unban <user>")
     @discord.app_commands.describe(member="The member to be unbanned")
     async def unban(self, ctx: commands.Context, *, member: str):
-        """Unbans a user by ID **or**, which is unique, by tag, meaning k!unban Kile#0606 will work"""
+        """Unbans a user by ID or by tag, meaning `unban Kile#0606` will also work"""
         banned_users = []
         async for ban in ctx.guild.bans(limit=100): # The last 100 band should be enough
             banned_users.append(ban.user)
@@ -229,7 +229,4 @@ class Moderation(commands.Cog):
         await ctx.send(f"The current server prefix is `{guild.prefix}`", allowed_mentions=discord.AllowedMentions.none())
 
 
-Cog = Moderation        
-              
-async def setup(client):
-    await client.add_cog(Moderation(client))
+Cog = Moderation

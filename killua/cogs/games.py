@@ -1,20 +1,30 @@
 import discord
 from discord.ext import commands
 
+import re
 import random
 import asyncio
 import math
 from aiohttp import ClientSession
 from urllib.parse import unquote
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Literal
+
+from numpy import right_shift
 
 from killua.bot import BaseBot
 from killua.utils.paginator import View
-from killua.utils.classes import User
+from killua.utils.classes import CardLimitReached, User
 from killua.utils.interactions import ConfirmButton
-from killua.static.enums import Category, TriviaDifficulties, CountDifficulties
+from killua.static.cards import Card
+from killua.static.enums import Category, TriviaDifficulties, CountDifficulties, GameOptions
+from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, DB
 from killua.utils.checks import blcheck, check
 from killua.utils.interactions import Select
+
+leaderboard_options = [
+    discord.app_commands.Choice(name="global", value="global"),
+    discord.app_commands.Choice(name="server", value="server")
+]
 
 class PlayAgainButton(discord.ui.Button):
     def __init__(self, **kwargs):
@@ -86,6 +96,7 @@ class Trivia:
     def _create_embed(self) -> discord.Embed:
         """Creates the trivia embed"""
         question = unquote(self.data["question"])
+        question = re.sub("&.*?;", "", question) # Yes, apparently unqote is not enough to remove all html entities
         self.embed = discord.Embed.from_dict({
             "title": f"Trivia of category {self.data['category']}",
             "description": f"**difficulty:** {self.data['difficulty']}\n\n**Question:**\n{question}",
@@ -123,6 +134,8 @@ class Trivia:
 
     async def send_result(self) -> None:
         """Sends the result of the trivia and hands out jenny as rewards"""
+        user = User(self.ctx.author.id)
+
         if self.failed:
             return
 
@@ -130,14 +143,15 @@ class Trivia:
             await self.ctx.send("Timed out!", reference=self.msg)
 
         elif self.result != self.correct_index:
+            user.add_trivia_stat("wrong", self.difficulty)
             await self.ctx.send(f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}")
 
         else:
-            user = User(self.ctx.author.id)
             rew = random.randint(*self.rewards[self.difficulty])
             if user.is_entitled_to_double_jenny:
                 rew *= 2
             user.add_jenny(rew)
+            user.add_trivia_stat("right", self.difficulty)
             await self.ctx.send(f"Correct! Here are {rew} Jenny as a reward!")
 
 
@@ -211,11 +225,32 @@ class Rps:
 
         return [v for _, v in data]
 
+    async def check_for_achivement(self, player: discord.User) -> None:
+        """Checks wether someone has earend the "rps master" achivement"""
+        user = User(player.id)
+        if not "rps_master" in user.achievements and user.rps_stats["pve"]["won"] >= 25:
+            user.add_achievement(["rps_master"])
+            card = Card(83)
+            try:
+                if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
+                    user.add_jenny(1000)
+                    await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly the normal reward, the card \"{card.name}\" {card.emoji}, is currently owned by too many people, so insead you get **1000 Jenny** as a reward!")
+                else:
+                    user.add_card(83)
+                    await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! As a reward you recieve the card \"{card.name}\" {card.emoji}")
+            except CardLimitReached:
+                user.add_jenny(1000)
+                await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly you have no space in your book for the normal reward, the card \"{card.name}\" {card.emoji}, so insead you get **1000 Jenny** as a reward!")
+
     async def _eval_outcome(self, winlose: int, choice1: int, choice2: int, player1:discord.Member, player2: discord.Member, view: View) -> discord.Message:
         """Evaluates the outcome, informs the players and handles the points """
         p1 = User(player1.id)
         p2 = User(player2.id)
         if winlose == -1:
+            p1.add_rps_stat("won", player2 == self.ctx.me)
+            p2.add_rps_stat("lost", player1 == self.ctx.me)
+            await self.check_for_achivement(player1)
+
             if self.points:
                 p1.add_jenny(self.points)
                 if player2 != self.ctx.me:
@@ -223,11 +258,20 @@ class Rps:
                 return await self.ctx.send(f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}", view=view)
             else:
                 return await self.ctx.send(f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}", view=view)
+
         elif winlose == 0:
+            p1.add_rps_stat("tied", player2 == self.ctx.me)
+            if player2 != self.ctx.me:
+                p2.add_rps_stat("tied", player1 == self.ctx.me)
             return await self.ctx.send(f"{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}", view=view)
+
         elif winlose == 1:
+            p1.add_rps_stat("lost", player2 == self.ctx.me)
+            p2.add_rps_stat("won", player1 == self.ctx.me)
+            await self.check_for_achivement(player2)
+
             if self.points:
-                p1.remove_jenny(self.points)
+                p1.remove_jenny(self.points, player2 == self.ctx.me)
                 if player2 != self.ctx.me:
                     p2.add_jenny(self.points)
                 return await self.ctx.send(f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}", view=view)
@@ -402,7 +446,13 @@ class CountGame:
                 child.disabled = True
             await msg.edit(view=view)
             self.user.add_jenny(reward)
-            return await self.ctx.send(resp + " But well done, you made it to level " + str(self.level) + " which brings you a reward of " + str(reward) + " Jenny!")
+
+            if self.level-1 > self.user.counting_highscore[self.difficulty]:
+                self.user.set_counting_highscore(self.difficulty, self.level-1)
+                return await self.ctx.send(resp + " But well done, you made it to level " + str(self.level) + ", your new **personal best**, which brings you a reward of " + str(reward) + " Jenny!")
+            else:
+                return await self.ctx.send(resp + " But well done, you made it to level " + str(self.level) + ", which brings you a reward of " + str(reward) + " Jenny!")
+
 
         self.level += 1
 
@@ -479,12 +529,156 @@ class Games(commands.Cog):
     @discord.app_commands.describe(difficulty="The difficulty of the question")
     async def trivia(self, ctx: commands.Context, difficulty: TriviaDifficulties = TriviaDifficulties.easy):
         """Play trivial and earn some jenny if you"re right!"""
+        await ctx.defer()
         game = Trivia(ctx, difficulty.name, self.client.session)
         await game.create()
         await game.send()
         await game.send_result()
 
-Cog = Games
+    @check()
+    @games.command(extras={"category": Category.GAMES}, usage="stats <game> <user(optional)>")
+    @discord.app_commands.describe(member="The person to check the stats of")
+    async def stats(self, ctx: commands.Context, game_type: GameOptions, member: discord.Member = None):
+        """Check the game stats of yourself or another user"""
+        if not member:
+            member = ctx.author
 
-async def setup(client):
-    await client.add_cog(Games(client))
+        user = User(member.id)
+
+        if game_type == GameOptions.rps:
+            pve_played = (user.rps_stats["pve"]["tied"] + user.rps_stats["pve"]["lost"] + user.rps_stats["pve"]["won"])
+            pve_win_rate = int(100*(user.rps_stats["pve"]["won"]/pve_played)) if pve_played != 0 else 0
+
+            pvp_played = (user.rps_stats["pvp"]["tied"] + user.rps_stats["pvp"]["lost"] + user.rps_stats["pvp"]["won"])
+            pvp_win_rate = int(100*(user.rps_stats["pvp"]["won"]/pvp_played)) if pvp_played != 0 else 0
+
+            await ctx.send(embed=discord.Embed(
+                title=f"{member.name}'s RPS stats",
+                description=f"**__PVE__**:\n:crown: Win rate: {pve_win_rate}%\n\n Wins: {user.rps_stats['pve']['won']}\nDraws: {user.rps_stats['pve']['tied']}\nLosses: {user.rps_stats['pve']['lost']}" + \
+                    f"\n\n**__PVP__**:\n:crown: Win rate: {pvp_win_rate}%\n\n Wins: {user.rps_stats['pvp']['won']}\nDraws: {user.rps_stats['pvp']['tied']}\nLosses: {user.rps_stats['pvp']['lost']}",
+                color=0x1400ff
+            ))
+
+        elif game_type == GameOptions.trivia:
+            overall_right = user.trivia_stats["easy"]["right"] + user.trivia_stats["medium"]["right"] + user.trivia_stats["hard"]["right"]
+            overall_wrong = user.trivia_stats["easy"]["wrong"] + user.trivia_stats["medium"]["wrong"] + user.trivia_stats["hard"]["wrong"]
+
+            win_rate_overall = int(100*(overall_right/(overall_right + user.trivia_stats["easy"]["wrong"] + user.trivia_stats["medium"]["wrong"] + user.trivia_stats["hard"]["wrong"]))) if overall_wrong != 0 else 0
+
+            easy_played = user.trivia_stats["easy"]["wrong"] + user.trivia_stats["easy"]["right"]
+            win_rate_easy = int(100*(user.trivia_stats["easy"]["right"]/easy_played)) if easy_played != 0 else 0
+
+            medium_played = user.trivia_stats["medium"]["wrong"] + user.trivia_stats["medium"]["right"]
+            win_rate_medium = int(100*(user.trivia_stats["medium"]["right"]/medium_played)) if medium_played != 0 else 0
+
+            hard_played = user.trivia_stats["hard"]["wrong"] + user.trivia_stats["hard"]["right"]
+            win_rate_hard = int(100*(user.trivia_stats["hard"]["right"]/hard_played)) if hard_played != 0 else 0
+
+            await ctx.send(embed=discord.Embed(
+                title=f"{member.name}'s Trivia stats",
+                description=f"__Overall correctness__: {win_rate_overall}%\n\n__Hard__:\nRight answers: {user.trivia_stats['hard']['right']}\nWrong answers: {user.trivia_stats['hard']['wrong']}\n{win_rate_hard}% correct\n\n__Medium__:\nRight answers: {user.trivia_stats['medium']['right']}\nWrong answers: {user.trivia_stats['medium']['wrong']}\n{win_rate_medium}% correct\n\n__Easy__:\nRight answers: {user.trivia_stats['easy']['right']}\nWrong answers: {user.trivia_stats['easy']['wrong']}\n{win_rate_easy}% correct",
+                color=0x1400ff
+            ))
+
+        elif game_type == GameOptions.counting:
+            await ctx.send(embed=discord.Embed(
+                title=f"{member.name}'s Counting stats",
+                description=f"High score easy mode: {user.counting_highscore['easy']}\n\nHigh score hard mode: {user.counting_highscore['hard']}",
+                color=0x1400ff
+            ))
+
+    @check()
+    @games.command(extras={"category": Category.GAMES}, usage="leaderboard <game> <global/server(optional)>")
+    @discord.app_commands.describe(game="The game to check the leaderboard of", where="Whether to show the global or server leaderboard")
+    async def leaderboard(self, ctx: commands.Context, game: GameOptions, where: Literal["global", "server"] = "global"):
+        """Checks the top 10 players of a game, globally or on the server."""
+        all: List[dict] = list(DB.teams.find({} if where == "global" else {"id": {"$in": [m.id for m in ctx.guild.members]}}))
+
+        if game == GameOptions.rps:
+            top_5_pve: List[dict] = all
+            top_5_pve.sort(key=lambda x: dict(x).get("stats", {}).get("rps", {}).get("pve", {}).get("won", 0), reverse=True)
+
+            top_5_pvp: List[dict] = all
+            top_5_pvp.sort(key=lambda x: dict(x).get("stats", {}).get("rps", {}).get("pvp", {}).get("won", 0), reverse=True)
+
+            embed = discord.Embed(title="Global RPS leaderboard", description="**PVE**", color=0x1400ff)
+            for pos, player in enumerate(top_5_pve[:5]):
+                # user = self.client.get_user(player["_id"])
+                # if user:
+                wins = player.get("stats", {}).get("rps", {}).get("pve", {}).get("won", 0)
+                embed.description += f"\n**{pos+1}.** <@{player['id']}> - {wins} win{'s' if wins != 1 else ''}"
+
+            embed.description += "\n\n**PVP**"
+
+            for pos, player in enumerate(top_5_pvp[:5]):
+                # user = self.client.get_user(player["_id"])
+                # if user:
+                wins = player.get("stats", {}).get("rps", {}).get("pvp", {}).get("won", 0)
+                embed.description += f"\n**{pos+1}.** <@{player['id']}> - {wins} win{'s' if wins != 1 else ''}"
+
+            await ctx.send(embed=embed)
+
+        elif game == GameOptions.trivia:
+            top_5_hard = all
+            top_5_hard.sort(key=lambda x: dict(x).get("stats", {}).get("trivia", {}).get("hard", {}).get("right", 0), reverse=True)
+
+            top_5_medium = all
+            top_5_medium.sort(key=lambda x: dict(x).get("stats", {}).get("trivia", {}).get("medium", {}).get("right", 0), reverse=True)
+
+            top_5_easy = all
+            top_5_easy.sort(key=lambda x: dict(x).get("stats", {}).get("trivia", {}).get("easy", {}).get("right", 0), reverse=True)
+
+            embed = discord.Embed(title="Global Trivia leaderboard", description="**Hard**", color=0x1400ff)
+            for pos, player in enumerate(top_5_hard[:5]):
+                # user = self.client.get_user(player["_id"])
+                # if user:
+                right_answers = player.get("stats", {}).get("trivia", {}).get("hard", {}).get("right", 0)
+                embed.description += f"\n**{pos+1}.** <@{player['id']}> - {right_answers} right answer{'s' if right_answers != 1 else ''}"
+                    
+            embed.description += "\n\n**Medium**"
+
+            for pos, player in enumerate(top_5_medium[:5]):
+                # user = self.client.get_user(player["_id"])
+                # if user:
+                right_answers = player.get("stats", {}).get("trivia", {}).get("medium", {}).get("right", 0)
+                embed.description += f"\n**{pos+1}.** <@{player['id']}> - {right_answers} right answer{'s' if right_answers != 1 else ''}"
+
+            embed.description += "\n\n**Easy**"
+
+            for pos, player in enumerate(top_5_easy[:5]):
+                # user = self.client.get_user(player["_id"])
+                # if user:
+                right_answers = player.get("stats", {}).get("trivia", {}).get("easy", {}).get("right", 0)
+                embed.description += f"\n**{pos+1}.** <@{player['id']}> - {right_answers} right answer{'s' if right_answers != 1 else ''}"
+
+            await ctx.send(embed=embed)
+
+        elif game == GameOptions.counting:
+            top_5_hard = all
+            top_5_hard.sort(key=lambda x: dict(x).get("stats", {}).get("counting_highscore", {}).get("hard", 0), reverse=True)
+
+            top_5_easy = all
+            top_5_easy.sort(key=lambda x: dict(x).get("stats", {}).get("counting_highscore", {}).get("easy", 0), reverse=True)
+
+            embed = discord.Embed(title="Global Counting leaderboard", description="**Hard**", color=0x1400ff)
+            for pos, player in enumerate(top_5_hard[:5]):
+                # user = self.client.get_user(player["_id"])
+                # if user:
+                embed.description += f"\n**{pos+1}.** <@{player['id']}> - {player.get('stats', {}).get('counting_highscore', {}).get('hard', 0)} high score"
+                    
+            embed.description += "\n\n**Easy**"
+
+            for pos, player in enumerate(top_5_easy[:5]):
+                # user = self.client.get_user(player["_id"])
+                # if user:
+                embed.description += f"\n**{pos+1}.** <@{player['id']}> - {player.get('stats', {}).get('counting_highscore', {}).get('easy', 0)} high score"
+
+            await ctx.send(embed=embed)
+
+
+d = [{"a": 1}, {"a": 2}, {"a": 3}, {"b": 1}]
+# sort dictionary d by the value of the key "a", then only use the first 2
+
+d.sort(key=lambda x: x.get("a", 0), reverse=True)
+
+Cog = Games

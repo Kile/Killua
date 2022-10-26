@@ -301,6 +301,3 @@ class Tags(commands.Cog):
         await Paginator(ctx, g, func=make_embed, max_pages=math.ceil(len(g)/10), ephemeral=hasattr(ctx, "invoked_by_modal")).start()
 
 Cog = Tags
-
-async def setup(client):
-    await client.add_cog(Tags(client))

@@ -68,6 +68,7 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] caching
 *   [ ] Website with backend
 *   [ ] CSS
+*   [ ] Threading
 
 ## Contributors
 
@@ -87,7 +88,7 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 *   [danii](https://github.com/danii)
 
-> Helped to create the incredibly bad mess of everything in one file into an organised, dynamic system and helped out with git commands
+> Helped to change the incredibly bad mess of everything in one file into an organised, dynamic system and helped out with git commands
 
 *   [DerUSBStick](https://github.com/DerUSBstick)
 

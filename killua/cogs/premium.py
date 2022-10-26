@@ -219,6 +219,3 @@ class Premium(commands.Cog):
         await self.client.send_message(ctx, embed=embed, view=view)
 
 Cog = Premium
-
-async def setup(client):
-    await client.add_cog(Premium(client))

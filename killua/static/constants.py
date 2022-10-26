@@ -1,7 +1,8 @@
 import json
 import io
 import discord
-from pymongo import MongoClient
+from pymongo import MongoClient, collection
+from typing import Union
 
 from killua.utils.test_db import TestingDatabase as Database
 import killua.args as args
@@ -23,39 +24,39 @@ class DB:
             self.GDB = CLUSTER["general"]
 
     @property
-    def teams(self):
+    def teams(self) -> Union[collection.Collection, Database]:
         return self._DB["teams"] if not args.Args.test else Database("teams")
 
     @property
-    def items(self):
+    def items(self) -> Union[collection.Collection, Database]:
         return self._DB["items"] if not args.Args.test else Database("items")
 
     @property
-    def guilds(self):
+    def guilds(self) -> Union[collection.Collection, Database]:
         return self._DB["guilds"] if not args.Args.test else Database("guilds")
 
     @property
-    def updates(self):
+    def updates(self) -> Union[collection.Collection, Database]:
         return self.GDB["updates"] if not args.Args.test else Database("updates")
 
     @property
-    def shop(self):
+    def shop(self) -> Union[collection.Collection, Database]:
         return self.GDB["shop"] if not args.Args.test else Database("shop")
 
     @property
-    def blacklist(self):
+    def blacklist(self) -> Union[collection.Collection, Database]:
         return self.GDB["blacklist"] if not args.Args.test else Database("blacklist")
 
     @property
-    def presence(self):
+    def presence(self) -> Union[collection.Collection, Database]:
         return self.GDB["presence"] if not args.Args.test else Database("presence")
 
     @property
-    def stats(self):
+    def stats(self) -> Union[collection.Collection, Database]:
         return self.GDB["stats"] if not args.Args.test else Database("stats")
 
     @property
-    def todo(self):
+    def todo(self) -> Union[collection.Collection, Database]:
         return self.GDB["todo"] if not args.Args.test else Database("todo")
 
 DB = DB()

@@ -325,6 +325,3 @@ class ImageManipulation(commands.Cog):
         await self.client.send_message(ctx, file=discord.File(fp=buffer, filename="wtf.png"), reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 
 Cog = ImageManipulation
-
-async def setup(client):
-    await client.add_cog(ImageManipulation(client))

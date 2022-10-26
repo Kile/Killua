@@ -794,6 +794,3 @@ class TodoSystem(commands.Cog):
         return await ctx.send(embed=embed)
   
 Cog = TodoSystem
-        
-async def setup(client):
-    await client.add_cog(TodoSystem(client))

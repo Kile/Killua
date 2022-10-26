@@ -45,8 +45,6 @@ async def main():
 		session=session
 	)
 	bot.session = session
-	# Setup commands.
-	bot.help_command = MyHelp()
 	# Checks if the bot is a dev bot
 	bot.is_dev = args.development
 
