@@ -119,7 +119,7 @@ class WebScraping(commands.Cog):
     async def book(self, ctx: commands.Context, *, book: str):
         """With this command you can search for books! Just say the book title and look through the results"""
         response = await self.client.session.get(f"https://www.goodreads.com/search?q={book}")
-        content = await response.text()
+        content: str = await response.text()
         p = BeautifulSoup(content.encode(), "html.parser")
         if not self._has_results(p):
             return await ctx.send("No results found")

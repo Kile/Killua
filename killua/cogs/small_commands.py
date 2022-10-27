@@ -10,7 +10,7 @@ from typing import List
 from urllib.parse import quote
 
 from killua.bot import BaseBot
-from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, DB
+from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, DB, WYR
 from killua.utils.interactions import View, Button
 from killua.utils.checks import check
 from killua.static.enums import Category
@@ -327,6 +327,29 @@ class SmallCommands(commands.Cog):
 
         close_item = discord.ui.Button(style=discord.ButtonStyle.red, label="Close Poll", custom_id=f"poll:close:{ctx.author.id}")
         view.add_item(close_item)
+
+        await ctx.send(embed=embed, view=view)
+
+    @check()
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="wyr")
+    async def wyr(self, ctx: commands.Context):
+        """Asks a random would you rather question and allows you to vote."""
+        
+        view = discord.ui.View(timeout=None)
+
+        embed = discord.Embed(title="Would you rather...", color=0x1400ff)
+        embed.set_footer(text=f"Command ran by {ctx.author}", icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
+        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/761621578458202122/1035249833335861308/unknown.png")
+
+        A, B = choice(WYR)
+
+        embed.add_field(name="A) " + A + " `[0 people]`", value="No takers", inline=False)
+        embed.add_field(name="B) " + B + " `[0 people]`", value="No takers", inline=False)
+
+        itemA = discord.ui.Button(style=discord.ButtonStyle.blurple, label="Option A", custom_id=f"wyr:option-a:{ctx.author.id}")
+        itemB = discord.ui.Button(style=discord.ButtonStyle.blurple, label="Option B", custom_id=f"wyr:option-b:{ctx.author.id}")
+
+        view.add_item(itemA).add_item(itemB)
 
         await ctx.send(embed=embed, view=view)
 

@@ -125,7 +125,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         # Welcomes new member
-        if self.client.is_dev: # In theory it would be cool if the dev bot welcomed you but it just isn't always online
+        if not self.client.is_dev: # In theory it would be cool if the dev bot welcomed you but it just isn't always online
             embed = discord.Embed.from_dict({
                 "title": "Welcome to the Killua support server a.k.a. Kile's dev!",
                 "description": "You joined. What now?\n\n**Where to go**\n" + \
@@ -176,18 +176,20 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
         if interaction.type == discord.InteractionType.component:
-            if interaction.data["custom_id"] and interaction.data["custom_id"].startswith("poll:"):
-                _, action, poll_creator = interaction.data["custom_id"].split(":")
+            if interaction.data["custom_id"] and (interaction.data["custom_id"].startswith("poll:") or interaction.data["custom_id"].startswith("wyr:")):
+                _p, action, poll_creator = interaction.data["custom_id"].split(":")
+                poll = _p == "poll" # As the logic for polls and wyr overlaps we can use the same code for both, just need to differentiate for a few small things
+
                 if action.startswith("option"):
-                    option = int(action.split("-")[1])
+                    option = int(action.split("-")[1]) if poll else {"a": 1, "b": 2}[action.split("-")[1]]
                     
                     votes: Dict[int, list] = {}
 
                     for pos, field in enumerate(interaction.message.embeds[0].fields):
-                        votes[pos] = [int(v.replace("<@", "").replace(">", "")) for v in field.value.split("\n") if not v == "No votes"]
+                        votes[pos] = [int(v.replace("<@", "").replace(">", "")) for v in field.value.split("\n") if not v == ("No votes" if poll else "No takers")]
                         if interaction.user.id in votes[pos]:
                             if pos == option-1:
-                                return await interaction.response.send_message("You already voted for this option!", ephemeral=True)
+                                return await interaction.response.send_message(f"You already {'voted for' if poll else 'chose'} this option!", ephemeral=True)
                             else:
                                 votes[pos].remove(interaction.user.id)
 
@@ -197,11 +199,13 @@ class Events(commands.Cog):
 
                     new_embed = discord.Embed(title=embed.title, description=embed.description, color=embed.color)
                     new_embed.set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+                    if embed.thumbnail:
+                        new_embed.set_thumbnail(url=embed.thumbnail.url)
 
                     for pos, field in enumerate(embed.fields):
-                        new_name = field.name[:-self.find_counter_start(field.name)] + f"`[{str(len(votes[pos]))} vote{'s' if len(votes[pos]) != 1 else ''}]`"
+                        new_name = field.name[:-self.find_counter_start(field.name)] + f"`[{str(len(votes[pos]))} " + (f"vote{'s' if len(votes[pos]) != 1 else ''}" if poll else f"{'people' if len(votes[pos]) != 1 else 'person'}") + "]`"
                         if len(votes[pos]) <= 5:
-                            value = "\n".join([f"<@{v}>" for v in votes[pos]]) if votes[pos] else "No votes"
+                            value = "\n".join([f"<@{v}>" for v in votes[pos]]) if votes[pos] else ("No votes" if poll else "No takers")
                         else:
                             value = "\n".join([f"<@{v}>" for v in votes[pos]][:5]) + f"\n*+ {len(votes[pos])-5} more...*"
                         new_embed.add_field(name=new_name, value=value, inline=False)

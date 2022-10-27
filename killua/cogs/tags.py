@@ -21,12 +21,13 @@ class Tag():
             self.found = False
             return
 
-        self.tags:list = guild["tags"]
+        self.tags: list = guild["tags"]
+
         if not tag_name.lower() in [r[0] for r in self.tags]:
             self.found = False
             return
 
-        indx:int = [r[0] for r in self.tags].index(tag_name.lower())
+        indx: int = [r[0] for r in self.tags].index(tag_name.lower())
         tag = self.tags[indx]
 
         self.guild_id = guild_id
@@ -38,18 +39,20 @@ class Tag():
         self.uses = tag[1]["uses"]
 
     def update(self, new_content) -> None:
-        indx:int = [r[0] for r in self.tags].index(self.name.lower())
-        self.tags[indx][1]["content"] = new_content
+        self.tags[self.indx][1]["content"] = new_content
         DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
 
     def delete(self) -> None:
-        indx:int = [r[0] for r in self.tags].index(self.name.lower())
-        self.tags.remove(self.tags[indx])
+        self.tags.remove(self.tags[self.indx])
         DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
     
     def add_use(self) -> None:
-        indx:int = [r[0] for r in self.tags].index(self.name.lower())
-        self.tags[indx][1]["uses"] = self.tags[indx][1]["uses"]+1
+        self.tags[self.indx][1]["uses"] = self.tags[self.indx][1]["uses"]+1
+        DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
+
+    def transfer(self, to: int) -> None:
+        """Transfers the ownership of a tag to the new id"""
+        self.tags[self.indx][1]["owner"] = to
         DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
 
 class Member():
@@ -93,7 +96,7 @@ class Tags(commands.Cog):
         for menu in menus:
             self.client.tree.add_command(menu)
 
-    def _build_embed(self, ctx:commands.Context, content:list, page:int, user:discord.User=None) -> discord.Embed:
+    def _build_embed(self, ctx: commands.Context, content: list, page: int, user: discord.User=None) -> discord.Embed:
 
         if len(content)-page*10+10 > 10:
             final_tags = content[page*10-10:-(len(content)-page*10)]
@@ -115,7 +118,7 @@ class Tags(commands.Cog):
         ) -> List[discord.app_commands.Choice[str]]:
         """Returns a list of tags that match the message. """
         guild = Guild(interaction.guild.id)
-        tags:list = guild.tags
+        tags: list = guild.tags
 
         return [
             discord.app_commands.Choice(name=t[1]["name"], value=t[1]["name"]) for t in tags 
@@ -129,13 +132,13 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="create <tag_name>")
     @discord.app_commands.describe(name="The name of the tag you want to create")
     async def create(self, ctx: commands.Context, *, name: str):
         """Create a tag with this command"""
         guild = DB.guilds.find_one({"id": ctx.guild.id})
         member = Member(ctx.author.id, ctx.guild.id)
+
         if not Tag(ctx.guild.id, name).found is False:
             tag = Tag(ctx.guild.id, name)
             user = ctx.guild.get_member(tag.owner)
@@ -146,11 +149,13 @@ class Tags(commands.Cog):
         else:
             tags = []
 
-        if len(tags) >= 50:
-            return await ctx.send("Your server has reached the limit of tags!")
+        if len(tags) >= 10 and not Guild(ctx.guild.id).is_premium:
+            return await ctx.send("Your server has reached the limit of tags! Buy premium to up to 250 tags!")
+
         if member.has_tags:
-            if len(member.tags) > 15:
+            if len(member.tags) > 50:
                 return await ctx.send("You can't own more than 15 tags on a guild, consider deleting one")
+
         if len(name) > 30:
             return await ctx.send("The tag title has too many characters!")
         
@@ -167,7 +172,6 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="delete <tag_name>")
     @discord.app_commands.describe(name="The name of the tag you want to delete")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
@@ -186,7 +190,6 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="edit <tag_name>")
     @discord.app_commands.describe(name="The name of the tag you want to edit")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
@@ -210,7 +213,24 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @premium_guild_only()
+    @tag.command(extras={"category":Category.TAGS}, usage="transfer <user> <tag_name>")
+    @discord.app_commands.describe(user="The user to tranfer the tag ownership to", name="The name of the tag you want to transfer")
+    @discord.app_commands.autocomplete(name=tag_autocomplete)
+    async def transfer(self, ctx: commands.Context, user: discord.Member, *, name: str):
+        """Transfer a tag you own to another user"""
+        tag = Tag(ctx.guild.id, name)
+
+        if tag.found is False:
+            return await ctx.send("A tag with that name does not exist!", ephemeral=True)
+
+        if not ctx.author.id == tag.owner:
+            return await ctx.send("You need to be tag owner to transfer this tag!", ephemeral=True)
+
+        tag.transfer(user.id)
+        return await ctx.send(f"Successfully transferred tag `{tag.name}` to {user}", allowed_mentions=discord.AllowedMentions.none())
+
+    @check()
+    @commands.guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="get <tag_name>")
     @discord.app_commands.describe(name="The name of the tag you want look at")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
@@ -224,7 +244,6 @@ class Tags(commands.Cog):
     
     @check()
     @commands.guild_only()
-    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="info <tag_name>")
     @discord.app_commands.describe(name="The name of the tag to get info about")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
@@ -233,8 +252,10 @@ class Tags(commands.Cog):
         tag = Tag(ctx.guild.id, name.lower())
         if tag.found is False:
             return await ctx.send("There is no tag with that name!")
+
         guild = DB.guilds.find_one({"id": ctx.guild.id})
-        owner = await self.client.fetch_user(tag.owner)
+        owner = self.client.get_user(tag.owner) or await self.client.fetch_user(tag.owner)
+
         s = sorted(zip([x[0] for x in guild["tags"]], [x[1]["uses"] for x in guild["tags"]]))
         rank = [x[0] for x in s].index(name.lower())+1
         embed = discord.Embed.from_dict({
@@ -247,7 +268,6 @@ class Tags(commands.Cog):
     
     @check()
     @commands.guild_only()
-    @premium_guild_only()
     @tag.command(aliases=["l"], extras={"category":Category.TAGS}, usage="list")
     @discord.app_commands.describe(page="The page of the tag list you want to view")
     async def list(self, ctx: commands.Context, page: int = 1):
@@ -276,7 +296,6 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @premium_guild_only()
     @tag.command(extras={"category":Category.TAGS}, usage="user <user>")
     @discord.app_commands.describe(user="User you want to see tags of")
     async def user(self, ctx: commands.Context, user: discord.Member):
