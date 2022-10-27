@@ -1118,7 +1118,8 @@ class Guild:
         self.id: int = guild_id
         self.badges: List[str] = g["badges"]
         self.prefix: str = g["prefix"]
-        self.commands:dict = {v for _, v in g["commands"].items()} if "commands" in g else {}
+        self.commands: dict = {v for _, v in g["commands"].items()} if "commands" in g else {}
+        self.running_polls: List[int] = g["running_polls"] if "running_polls" in g else []
         
         if "tags" in g:
             self.tags = g["tags"]
@@ -1168,3 +1169,8 @@ class Guild:
         """"Removes premium from a guild"""
         self.badges.remove("premium")
         self._update_val("badges", "premium", "$pull")
+
+    def add_poll(self, poll_id: int) -> None:
+        """Adds a poll to the list of running polls"""
+        self.running_polls.append(poll_id)
+        self._update_val("running_polls", poll_id, "$push")

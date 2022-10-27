@@ -9,8 +9,6 @@ from aiohttp import ClientSession
 from urllib.parse import unquote
 from typing import Union, List, Tuple, Literal
 
-from numpy import right_shift
-
 from killua.bot import BaseBot
 from killua.utils.paginator import View
 from killua.utils.classes import CardLimitReached, User

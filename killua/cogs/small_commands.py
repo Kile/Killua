@@ -11,8 +11,23 @@ from urllib.parse import quote
 
 from killua.bot import BaseBot
 from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, DB
+from killua.utils.interactions import View, Button
 from killua.utils.checks import check
 from killua.static.enums import Category
+
+class PollSetup(discord.ui.Modal):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(title="Poll setup", *args, **kwargs)
+        self.add_item(discord.ui.TextInput(label="Question", custom_id="question", max_length=256, style=discord.TextStyle.long, placeholder="Are there more doors or wheels in the world?"))
+        self.add_item(discord.ui.TextInput(label="Option 1", custom_id="option:1", max_length=246, placeholder="Doors"))
+        self.add_item(discord.ui.TextInput(label="Option 2", custom_id="option:2", max_length=246, placeholder="Wheels"))
+        self.add_item(discord.ui.TextInput(label="Option 3", custom_id="option:3", max_length=246, placeholder="Both", required=False))
+        self.add_item(discord.ui.TextInput(label="Option 4", custom_id="option:4", max_length=246, placeholder="Neither", required=False))
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        """Called when the modal is submitted"""
+        await interaction.response.defer()
 
 class SmallCommands(commands.Cog):
 
@@ -274,5 +289,45 @@ class SmallCommands(commands.Cog):
         if answer["error"]:
             return await ctx.send("The following error occured while calculating:\n`{}`".format(answer["error"]))
         await self.client.send_message(ctx, "Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
+
+    @check()
+    @miscillaneous.command(extras={"category":Category.FUN}, usage="poll")
+    async def poll(self, ctx: commands.Context):
+        """Creates a poll"""
+        if not ctx.interaction:
+            view = View(ctx.author.id)
+            view.add_item(Button(style=discord.ButtonStyle.green, label="Setup"))
+            msg = await ctx.send("Please press the button to setup the poll", view=view)
+            await view.wait()
+
+            if view.timed_out:
+                return await msg.delete()
+            else:
+                await msg.delete()
+                ctx.interaction = view.interaction
+            
+        modal = PollSetup()
+        await ctx.interaction.response.send_modal(modal)
+
+        timed_out = await modal.wait()
+
+        if timed_out:
+            return
+
+        view = discord.ui.View(timeout=None)
+
+        embed = discord.Embed(title="Poll", description=modal.children[0].value, color=0x1400ff)
+        embed.set_footer(text=f"Poll by {ctx.author}", icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
+
+        for pos, child in enumerate(modal.children):
+            if child.value and child.label.startswith("Option"):
+                embed.add_field(name=f"{pos}) " + child.value + " `[0 votes]`", value="No votes", inline=False)
+                item = discord.ui.Button(style=discord.ButtonStyle.blurple, label=f"Option {pos}", custom_id=f"poll:option-{pos}:{ctx.author.id}")
+                view.add_item(item)
+
+        close_item = discord.ui.Button(style=discord.ButtonStyle.red, label="Close Poll", custom_id=f"poll:close:{ctx.author.id}")
+        view.add_item(close_item)
+
+        await ctx.send(embed=embed, view=view)
 
 Cog = SmallCommands

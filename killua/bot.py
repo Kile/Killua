@@ -3,13 +3,13 @@ from discord.ext import commands
 
 import asyncio
 from random import randint, choice
-from discord.ext import commands # NOTE Ipc needed here
+from discord.ext import commands
 from datetime import date
 from typing import Coroutine, Union, Dict
 
 from .static.enums import Category
 from .utils.interactions import Modal
-from .static.constants import IPC_TOKEN, TIPS, LOOTBOXES, DB
+from .static.constants import TIPS, LOOTBOXES, DB
 
 def get_prefix(bot, message):
 	if bot.is_dev:
@@ -133,12 +133,12 @@ class BaseBot(commands.Bot):
 			return textinput.value
 
 		else:
-			def check(m):
+			def check(m: discord.Message):
 				return m.author.id == ctx.author.id
 
 			msg = await ctx.send(text)
 			try:
-				confirmmsg = await self.wait_for('message', check=check, timeout=timeout)
+				confirmmsg: discord.Message = await self.wait_for('message', check=check, timeout=timeout)
 			except asyncio.TimeoutError:
 				if timeout_message:
 					await ctx.send(timeout_message, delete_after=5)

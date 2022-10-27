@@ -1,5 +1,4 @@
 import io
-from lib2to3.pytree import Base
 import sys
 import discord
 
@@ -8,6 +7,8 @@ import traceback
 from datetime import datetime
 from discord.ext import commands, tasks
 from PIL import Image
+from typing import Dict, List
+from matplotlib import pyplot as plt
 
 from killua.bot import BaseBot
 from killua.utils.classes import Guild, Book
@@ -115,6 +116,90 @@ class Events(commands.Cog):
         await self.client.update_presence()
         Guild(guild.id).delete()
         await self._post_guild_count()
+
+    def _create_piechart(self, data: List[list], title: str) -> discord.File:
+        """Creates a piechart with the given data"""
+        data = [l for l in data if l[1] > 0] # We want to avoid a 0% slice
+
+        labels = [x[0] for x in data]
+        values = [x[1] for x in data]
+        colours = [x[2] for x in data]
+        buffer = io.BytesIO()
+        plt.pie(values, labels=labels, autopct="%1.1f%%", shadow=True, textprops={'color':"w"}, colors=colours)
+        plt.title(title, fontdict={"color": "w"})
+        plt.axis("equal")
+        plt.tight_layout()
+        plt.savefig(buffer, format="png", transparent=True)
+        buffer.seek(0)
+        plt.close()
+        file = discord.File(buffer, filename="piechart.png")
+        return file
+
+    def find_counter_start(self, title: str) -> int:
+        """Finds where the counter in a poll title starts"""
+        revers = title[::-1]
+        for i, char in enumerate(revers):
+            if char == "`" and revers[i-1] == "[":
+                return i+1
+
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        if interaction.type == discord.InteractionType.component:
+            if interaction.data["custom_id"] and interaction.data["custom_id"].startswith("poll:"):
+                _, action, poll_creator = interaction.data["custom_id"].split(":")
+                if action.startswith("option"):
+                    option = int(action.split("-")[1])
+                    
+                    votes: Dict[int, list] = {}
+
+                    for pos, field in enumerate(interaction.message.embeds[0].fields):
+                        votes[pos] = [int(v.replace("<@", "").replace(">", "")) for v in field.value.split("\n") if not v == "No votes"]
+                        if interaction.user.id in votes[pos]:
+                            if pos == option-1:
+                                return await interaction.response.send_message("You already voted for this option!", ephemeral=True)
+                            else:
+                                votes[pos].remove(interaction.user.id)
+
+                    votes[option-1].append(interaction.user.id)
+
+                    embed = interaction.message.embeds[0]
+
+                    new_embed = discord.Embed(title=embed.title, description=embed.description, color=embed.color)
+                    new_embed.set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+
+                    for pos, field in enumerate(embed.fields):
+                        new_name = field.name[:-self.find_counter_start(field.name)] + f"`[{str(len(votes[pos]))} vote{'s' if len(votes[pos]) != 1 else ''}]`"
+                        if len(votes[pos]) <= 5:
+                            value = "\n".join([f"<@{v}>" for v in votes[pos]]) if votes[pos] else "No votes"
+                        else:
+                            value = "\n".join([f"<@{v}>" for v in votes[pos]][:5]) + f"\n*+ {len(votes[pos])-5} more...*"
+                        new_embed.add_field(name=new_name, value=value, inline=False)
+
+                    await interaction.response.edit_message(embed=new_embed)
+
+                elif action == "close":
+                    if interaction.user.id == int(poll_creator):
+                        # Create a piechart with the results
+                        colours = ["#6aaae8", "#84ae62", "#a58fd0", "#e69639"]
+                        piechart = self._create_piechart([[field.name[:-self.find_counter_start(field.name)][3:], 0 if field.value == "No votes" else len(field.value.split("\n")), colours[pos]] for pos, field in enumerate(interaction.message.embeds[0].fields)], 
+                        interaction.message.embeds[0].description)
+
+                        new_embed = discord.Embed(title=interaction.message.embeds[0].title + " [closed]", description=interaction.message.embeds[0].description, color=interaction.message.embeds[0].color)
+                        new_embed.set_image(url="attachment://piechart.png")
+
+                        colour_emotes = ["\U0001f535", "\U0001f7e2", "\U0001f7e3", "\U0001f7e0"]
+                        for pos, field in enumerate(interaction.message.embeds[0].fields):
+                            new_embed.add_field(name=field.name + f" {colour_emotes[pos]}", value=field.value, inline=False)
+
+                        new_view = discord.ui.View()
+                        for button in interaction.message.components[0].children:
+                            new_button = discord.ui.Button(label=button.label, style=button.style, disabled=True)
+                            new_view.add_item(new_button)
+
+                        await interaction.message.delete()
+                        await interaction.response.send_message(embed=new_embed, file=piechart, view=new_view)
+                    else:
+                        await interaction.response.send_message("Only the polll author can close this poll!", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):

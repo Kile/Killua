@@ -67,7 +67,7 @@ class Modal(discord.ui.Modal):
 
         await msg.edit(view=self)
 
-    async def on_submit(self, interaction:discord.Interaction) -> None:
+    async def on_submit(self, interaction: discord.Interaction) -> None:
         """Called when the modal is submitted"""
         await interaction.response.defer()
 

@@ -3,8 +3,8 @@ from discord.ext import commands
 import random
 import asyncio
 from typing import List, Union
-from killua.bot import BaseBot
 
+from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.classes import User
 from killua.static.enums import Category
