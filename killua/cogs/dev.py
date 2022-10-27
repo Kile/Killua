@@ -16,6 +16,23 @@ from killua.static.enums import Category, Activities, Presences, StatsOptions
 from killua.static.cards import Card #lgtm [py/unused-import]
 from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT
 
+class UsagePaginator(Paginator):
+    """A normal paginator with a button that returns to the original help command"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.view.add_item(Button(label="Back", style=discord.ButtonStyle.red, custom_id="1"))
+
+    async def start(self):
+        view = await self._start()
+
+        if view.ignore or view.timed_out:
+            return
+        
+        await self.view.message.delete()
+        await self.ctx.command.__call__(self.ctx, StatsOptions.usage)
+
 class Dev(commands.Cog):
 
     def __init__(self, client: BaseBot):
@@ -41,10 +58,10 @@ class Dev(commands.Cog):
         labels = [x[0] for x in data]
         values = [x[1] for x in data]
         buffer = BytesIO()
-        plt.pie(values, labels=labels, autopct="%1.1f%%", shadow=True)
+        plt.pie(values, labels=labels, autopct="%1.1f%%", shadow=True, textprops={'color':"w"})
         plt.axis("equal")
         plt.tight_layout()
-        plt.savefig(buffer, format="png")
+        plt.savefig(buffer, format="png", transparent=True)
         buffer.seek(0)
         plt.close()
         file = discord.File(buffer, filename="piechart.png")
@@ -118,10 +135,10 @@ class Dev(commands.Cog):
             elif len(pages)-page*10+10 <= 10:
                 top = pages[-(len(pages)-page*10+10):]
 
-            embed.description = "```\n" + "\n".join(["#"+str(n+1)+" k!"+k+" with "+str(v)+" uses" for n, (k, v) in enumerate(top, page*10-10)]) + "\n```"
+            embed.description = "```\n" + "\n".join(["#"+str(n+1)+" /"+k+" with "+str(v)+" uses" for n, (k, v) in enumerate(top, page*10-10)]) + "\n```"
             return embed
 
-        await Paginator(ctx, top, func=make_embed, max_pages=math.ceil(len(top)/10)).start()
+        await UsagePaginator(ctx, top, func=make_embed, max_pages=math.ceil(len(top)/10)).start()
 
     async def group_top(self, ctx: commands.Context, top: List[tuple], interaction: discord.Interaction) -> None:
         """Displays a pie chart of the top used commands in a group"""
@@ -144,7 +161,7 @@ class Dev(commands.Cog):
                 real_top = top[:9]
 
             file = self._create_piechart(real_top)
-            embed = discord.Embed(title=f"Top 10 commands of group {group}", color=0x1400ff)
+            embed = discord.Embed(title=f"Top 10 used commands of group {group}", color=0x1400ff)
             embed.set_image(url="attachment://piechart.png")
 
             view = View(ctx.author.id)
@@ -170,7 +187,7 @@ class Dev(commands.Cog):
 
         # creates a piechart in an embed with the top 10 commands using _create_piechart
         file = self._create_piechart([*top[:9], ("other", rest)])
-        embed = discord.Embed(title="Top 10 commands", color=0x1400ff)
+        embed = discord.Embed(title="Top 10 used commands", color=0x1400ff)
         embed.set_image(url="attachment://piechart.png")
 
         view = View(ctx.author.id)

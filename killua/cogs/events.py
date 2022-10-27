@@ -13,14 +13,19 @@ from matplotlib import pyplot as plt
 from killua.bot import BaseBot
 from killua.utils.classes import Guild, Book
 from killua.static.enums import PrintColors
-from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, PatreonBanner, DB
+from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, PatreonBanner, DB, GUILD
 
 class Events(commands.Cog):
 
     def __init__(self, client: BaseBot):
         self.client = client
         self.status_started = False
+        self.log_channel_id = 718818548524384310
         self.client.startup_datetime = datetime.now()
+
+    @property
+    def log_channel(self):
+        return self.client.get_guild(GUILD).get_channel(self.log_channel_id)
 
     async def _post_guild_count(self) -> None:
         """Posts relevant stats to the botlists Killua is on"""
@@ -116,6 +121,32 @@ class Events(commands.Cog):
         await self.client.update_presence()
         Guild(guild.id).delete()
         await self._post_guild_count()
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        # Welcomes new member
+        if self.client.is_dev: # In theory it would be cool if the dev bot welcomed you but it just isn't always online
+            embed = discord.Embed.from_dict({
+                "title": "Welcome to the Killua support server a.k.a. Kile's dev!",
+                "description": "You joined. What now?\n\n**Where to go**\n" + \
+                    "┗ <#1019657047568035841> to recieve help or report bugs\n" + \
+                    "┗ <#787819439596896288> To get some ping roles\n" +\
+                    "┗ <#886546434663538728> Good place to check before asking questions\n" +\
+                    "┗ <#754063177553150002> To see newest announcements\n" +\
+                    "┗ <#757170264294424646> Read up on the newest Killua updates\n" +\
+                    "┗ <#716357592493981707> Use bots in here\n" +\
+                    "┗ <#811903366925516821> Check if there is any known outage/bug\n\n" +\
+                    "Thanks for joining and don't forget to vote for Killua! :)",
+                "color": 0x1400ff,
+            })
+            embed.set_thumbnail(url=self.client.user.avatar.url if self.client.user else None)
+            embed.timestamp = datetime.now()
+
+            await self.log_channel.send(content=member.mention, embed=embed)
+            # try:
+            #     await member.send(embed=embed)
+            # except discord.Forbidden:
+            #     pass
 
     def _create_piechart(self, data: List[list], title: str) -> discord.File:
         """Creates a piechart with the given data"""
