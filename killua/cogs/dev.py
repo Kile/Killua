@@ -366,8 +366,11 @@ class Dev(commands.Cog):
                 elif page == 3:
                     # Registered user growth
                     return self._get_stats_embed(dates, data, embed, "registered_users")
+                elif page == 4:
+                    # Daily users
+                    return self._get_stats_embed(dates, data, embed, "daily_users")
 
-            return await Paginator(ctx, func=make_embed, max_pages=3, has_file=True).start()
+            return await Paginator(ctx, func=make_embed, max_pages=4, has_file=True).start()
 
 
 Cog = Dev

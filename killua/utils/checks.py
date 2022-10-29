@@ -2,8 +2,9 @@
 import discord
 from discord.ext import commands
 from typing import Union, Type
+from datetime import datetime
 
-from killua.static.constants import DB, PatreonBanner
+from killua.static.constants import DB, PatreonBanner, daily_users
 from .classes import User, Guild
 
 cooldowndict = {}
@@ -22,14 +23,7 @@ def _clean_command_name(command:Union[commands.Command, Type[commands.Command]])
 
 def blcheck(userid:int): # It is necessary to define it twice as I might have to use this function on its own
     """
-    Input:
-        userid (int): The id of the user who should be checked
-
-    Returns:
-        (boolean): if the user is blacklisted or not
-
-    Purpose:
-        Checking before everry command if the user is blacklisted
+    Checks if a user is blacklisted
     """
     result = DB.blacklist.find_one({"id": userid})
 
@@ -72,34 +66,19 @@ def check(time: int = 0):
     """
     A check that checks for blacklists, dashboard configuration and cooldown in that order
     """
-    
-    from datetime import datetime
-    from killua.static.constants import DB
+
+    def add_daily_user(userid: int):
+        """
+        Adds a user who has run a command to the daily_users list if they are not already in it
+        """
+        if userid not in daily_users:
+            daily_users.append(userid)
 
     def add_usage(command: Union[commands.Command, Type[commands.Command]]) -> None:
         data = DB.stats.find_one({"_id": "commands"})["command_usage"]
         command = _clean_command_name(command)
         data[command] = data[command]+1 if command in data else 1
         DB.stats.update_one({"_id": "commands"}, {"$set": {"command_usage": data}})
-
-    def blcheck(userid: int) -> bool:
-        """
-        Input:
-            userid (int): The id of the user who should be checked
-
-        Returns:
-            (boolean): if the user is blacklisted or not
-
-        Purpose:
-            Checking before every command if the user is blacklisted
-        """
-
-        result = DB.blacklist.find_one({"id": userid})
-
-        if result is None:
-            return False
-        else:
-            return True
     
     async def custom_cooldown(ctx: commands.Context, time:int) -> bool:
         global cooldowndict
@@ -202,6 +181,7 @@ def check(time: int = 0):
             return False
 
         add_usage(ctx.command)
+        add_daily_user(ctx.author.id)
 
         return True
 

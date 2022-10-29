@@ -19,6 +19,7 @@ class Events(commands.Cog):
 
     def __init__(self, client: BaseBot):
         self.client = client
+        self.skipped_first = False
         self.status_started = False
         self.log_channel_id = 718818548524384310
         self.client.startup_datetime = datetime.now()
@@ -86,6 +87,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        self.save_guilds.start()
         if not self.status_started:
             self.status.start()
             self.status_started = True
@@ -105,9 +107,13 @@ class Events(commands.Cog):
 
     @tasks.loop(hours=24)
     async def save_guilds(self):
-        # this is currently not used but the earlier we collect this data, the better because I do plan to use it
-        if not self.client.is_dev:
-            DB.stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": DB.teams.count_documents()}}})
+        from killua.static.constants import daily_users
+
+        if not self.client.is_dev and self.skipped_first:
+            DB.stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": DB.teams.count_documents({}), "daily_users": len(daily_users)}}})
+            daily_users = [] # Resetting the daily users
+        elif not self.skipped_first: # We want to avoid saving data each time the bot restarts, start 24h after one
+            self.skipped_first = True
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

@@ -168,6 +168,9 @@ CUDDLE_TEXTS = ["<author> snuggles up to <user> and cuddles them", "<author> cud
 # the todo editing cache, needs to be defined here so I can use it across files
 editing = {}
 
+# The users who have ran a command in the last 24h
+daily_users = []
+
 # ACTION DATA
 ACTIONS = {
     "hug": {
