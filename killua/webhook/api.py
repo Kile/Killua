@@ -1,6 +1,5 @@
 import sys, os
 from quart import jsonify, Quart, request
-from json import dumps
 from zmq import REQ
 from zmq.asyncio import Context
 

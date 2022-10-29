@@ -107,6 +107,8 @@ class Events(commands.Cog):
 
     @tasks.loop(hours=24)
     async def save_guilds(self):
+        from killua.static.constants import daily_users
+        
         if not self.client.is_dev and self.skipped_first:
             DB.stats.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": DB.teams.count_documents({}), "daily_users": len(daily_users)}}})
             daily_users = [] # Resetting the daily users

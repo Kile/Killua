@@ -1,4 +1,3 @@
-import re
 import discord
 import logging
 from random import randint, choice

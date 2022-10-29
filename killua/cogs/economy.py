@@ -111,7 +111,7 @@ class Economy(commands.Cog):
         options = []
         for lb in LOOTBOXES:
             if current in lb["name"]:
-                options.append(discord.app_commands.Choice(lb["name"], lb["id"]))
+                options.append(discord.app_commands.Choice(name=lb["name"], value=lb["id"]))
         return options
 
     @commands.hybrid_group()
