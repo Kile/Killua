@@ -1,5 +1,4 @@
 from discord import User
-from discord.types.user import User as UserPayload
 
 from random import randint
 

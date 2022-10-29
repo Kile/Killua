@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from asyncio import create_task
 from functools import partial
 
 from discord import Message, Member, TextChannel

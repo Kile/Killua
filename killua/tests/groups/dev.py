@@ -1,9 +1,7 @@
 from ..types import *
 from ..testing import Testing, test
 from ...cogs.dev import Dev
-from ...utils.paginator import Buttons
 from ...static.constants import DB
-from killua.static.enums import Category, HuntOptions, Items, SellOptions
 
 class TestingDev(Testing):
 

@@ -4,8 +4,8 @@ from ..testing import Testing, test
 from ...cogs.cards import Cards
 from ...static.cards import Card
 from ...utils.paginator import Buttons
-from ...static.constants import DB, PRICES
-from killua.static.enums import Category, HuntOptions, Items, SellOptions
+from ...static.constants import PRICES
+from killua.static.enums import  HuntOptions, SellOptions
 
 from random import randint
 from math import ceil

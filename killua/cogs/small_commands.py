@@ -15,7 +15,7 @@ from killua.utils.interactions import View, Button
 from killua.utils.checks import check
 from killua.static.enums import Category
 
-class PollSetup(discord.ui.Modal):
+class PollSetup(discord.ui.Modal): # lgtm [py/missing-call-to-init]
 
     def __init__(self, *args, **kwargs):
         super().__init__(title="Poll setup", *args, **kwargs)

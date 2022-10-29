@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Union
-from asyncio import create_task
 from functools import partial
 
 from .message import TestingMessage as Message
@@ -41,7 +40,7 @@ class TestingTextChannel:
 
         if isinstance(permissions[0]):
             for perm in permissions:
-                perm = PermissionOverwrite(perm)
+                perm = PermissionOverwrite(perm) # lgtm [py/multiple-definition]
 
         return permissions
 

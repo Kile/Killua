@@ -55,7 +55,7 @@ class TestingDatabase:
         operator = list(update.keys())[0] # This does not support multiple keys
 
         for v in update.values(): # Making sure it is all in the right format
-            v = self._normalize_dict(v)
+            v = self._normalize_dict(v) # lgtm [py/multiple-definition]
 
         for p, item in enumerate(self.db[self.collection]):
             for key, value in item.items():
