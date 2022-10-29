@@ -8,7 +8,7 @@ from killua.bot import BaseBot
 from killua.static.constants import DB
 from killua.static.enums import Category
 from killua.utils.classes import Guild
-from killua.utils.checks import check, premium_guild_only
+from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 
 class Tag():

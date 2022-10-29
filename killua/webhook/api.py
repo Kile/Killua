@@ -14,6 +14,9 @@ app = Quart(__name__)
 async def make_request(route: str, data: dict) -> dict:
     context = Context()
     socket = context.socket(REQ)
+    # socket.setsockopt_string()
+    socket.plain_username = b"killua"
+    socket.plain_password = IPC_TOKEN.encode("UTF-8")
     socket.connect("tcp://localhost:5555")
 
     await socket.send_json({"route": route, "data": data})

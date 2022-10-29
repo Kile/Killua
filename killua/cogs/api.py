@@ -1,13 +1,14 @@
 import discord
-from discord.ext import commands # NOTE ipc needed here
+from discord.ext import commands
 
 from asyncio import create_task
 from zmq import REP, POLLIN, NOBLOCK
 from zmq.asyncio import Context, Poller
+from zmq.auth.asyncio import AsyncioAuthenticator
 
 from killua.bot import BaseBot
 from killua.utils.classes import User, Guild, LootBox
-from killua.static.constants import DB, LOOTBOXES
+from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN
 
 from typing import List
 
@@ -20,7 +21,14 @@ class IPCRoutes(commands.Cog):
     async def start(self):
         """Starts the zmq server asyncronously and handles incoming requests"""
         context = Context()
+
+        auth = AsyncioAuthenticator(context)
+        auth.start()
+        auth.configure_plain(domain="*", passwords={"killua": IPC_TOKEN})
+        auth.allow("127.0.0.1")
+
         socket = context.socket(REP)
+        socket.plain_server = True
         socket.bind("tcp://*:5555")
 
         poller = Poller()

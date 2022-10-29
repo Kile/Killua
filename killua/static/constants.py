@@ -61,7 +61,7 @@ class DB:
 
 DB = DB()
 
-IPC_TOKEN = config["ipc"]
+IPC_TOKEN: str = config["ipc"]
 TOKEN = config["token"]
 PATREON = config["patreon"]
 PXLAPI = config["pxlapi"]
