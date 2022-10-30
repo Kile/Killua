@@ -20,6 +20,7 @@ CONST_DEFAULT = [ # The default values for the const collection
     {"_id": "shop", "offers": [], "log": []},
     {"_id": "presence", "text": None, "activity": None, "presence": None},
     {"_id": "updates", "updates": []},
+    {"_id": "blacklist", "blacklist": []},
 ]
 
 class DB:

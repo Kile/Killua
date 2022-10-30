@@ -111,8 +111,7 @@ class Events(commands.Cog):
 
         if not self.client.is_dev and self.skipped_first:
             DB.const.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": DB.teams.count_documents({}), "daily_users": len(daily_users)}}})
-            daily_users = [] #lgtm [py/unused-local-variable]
-            # Resetting the daily users list
+            daily_users = [] # Resetting the daily users list lgtm [py/unused-local-variable]
         elif not self.skipped_first: # We want to avoid saving data each time the bot restarts, start 24h after one
             self.skipped_first = True
 

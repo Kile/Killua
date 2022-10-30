@@ -33,7 +33,8 @@ async def run_tests(args) -> None:
                         logging.info(PrintColors.OKGREEN + f"{len(result.passed)} tests passed \U00002713" + PrintColors.ENDC)
                         logging.info(PrintColors.WARNING + f"{len(result.failed)} tests failed \U00002715" + PrintColors.ENDC)
                         logging.info(PrintColors.FAIL + f"{len(result.errored)} tests raised unhandled exceptions \U000026a0" + PrintColors.ENDC)
-                    return logging.info(PrintColors.OKCYAN + "Tests finished after: " + PrintColors.OKBLUE + f"{round((datetime.now() - start).total_seconds())}" + PrintColors.OKCYAN + " seconds" + PrintColors.ENDC)
+                    logging.info(PrintColors.OKCYAN + "Tests finished after: " + PrintColors.OKBLUE + f"{round((datetime.now() - start).total_seconds())}" + PrintColors.OKCYAN + " seconds" + PrintColors.ENDC)
+                    return
             
             sys.stderr = sys.__stderr__ # Making sure the error is displayed
             raise ValueError(f"Invalid argument: {args[0]}. Make sure to provide a valid group/cog name.")
@@ -50,7 +51,8 @@ async def run_tests(args) -> None:
                         logging.info(PrintColors.OKGREEN + f"{len(result.passed)} tests passed \U00002713" + PrintColors.ENDC)
                         logging.info(PrintColors.WARNING + f"{len(result.failed)} tests failed \U00002715" + PrintColors.ENDC)
                         logging.info(PrintColors.FAIL + f"{len(result.errored)} tests raised unhandled exceptions \U000026a0" + PrintColors.ENDC)
-                    return logging.info(PrintColors.OKCYAN + "Tests finished after: " + PrintColors.OKBLUE + f"{round((datetime.now() - start).total_seconds())}" + PrintColors.OKCYAN + " seconds" + PrintColors.ENDC)
+                    logging.info(PrintColors.OKCYAN + "Tests finished after: " + PrintColors.OKBLUE + f"{round((datetime.now() - start).total_seconds())}" + PrintColors.OKCYAN + " seconds" + PrintColors.ENDC)
+                    return
 
             sys.stderr = sys.__stderr__ # Making sure the error is displayed
             raise ValueError(f"Invalid arguments: {' '.join(args)}. Make sure to provide a valid group/cog and command.")

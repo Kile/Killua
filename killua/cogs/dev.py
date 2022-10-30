@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 
 import math
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from io import BytesIO
 from datetime import datetime
 from matplotlib import pyplot as plt
@@ -302,13 +302,13 @@ class Dev(commands.Cog):
         user="The user to blacklist",
         reason="The reason for the blacklist"
     )
-    async def blacklist(self, ctx: commands.Context, user: str, *,reason = None):
+    async def blacklist(self, ctx: commands.Context, user: str, *, reason = None):
         """Blacklisting bad people like Hisoka. Owner restricted"""
-        user = await self.client.find_user(user)
-        if not user:
+        discord_user: Union[discord.User, None] = await self.client.find_user(user)
+        if not discord_user:
             return await ctx.send("Invalid user!", ephermal=True)
         # Inserting the bad person into my database
-        DB.blacklist.insert_one({"id": user, "reason": reason or "No reason provided", "date": datetime.now()})
+        DB.const.update_one({"_id": "blacklist"}, {"$push": {"blacklist": {"id": discord_user.id,"reason": reason or "No reason provided", "date": datetime.now()}}})
         await ctx.send(f"Blacklisted user `{user}` for reason: {reason}", ephermal=True)
         
     @commands.is_owner()
@@ -319,11 +319,16 @@ class Dev(commands.Cog):
     )
     async def whitelist(self, ctx: commands.Context, user: str):
         """Whitelists a user. Owner restricted"""
-        user = await self.client.find_user(user)
+        user: Union[discord.User, None] = await self.client.find_user(user)
         if not user:
             return await ctx.send("Invalid user!", ephermal=True)
 
-        DB.blacklist.delete_one({"id": user})
+        to_pull = [d for d in DB.const.find_one({"_id": "blacklist"})["blacklist"] if d["id"] == user.id]
+
+        if not to_pull:
+            return await ctx.send("User is not blacklisted!", ephermal=True)
+
+        DB.const.update_one({"_id": "blacklist"}, {"$pull": {"blacklist": to_pull[0]}})
         await ctx.send(f"Successfully whitelisted `{user}`")
 
     @commands.is_owner()

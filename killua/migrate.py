@@ -13,6 +13,11 @@ def migrate_requiring_bot(bot: Type[AutoShardedBot]):
     """
     const: Collection = DB._DB["const"]
 
+    if bot.is_dev:
+        const.insert_one({"_id": "usage", "command_usage": {}})
+        const.update_one({"_id": "migrate"}, {"$set": {"value": False}}) # Only migrate once
+        return
+
     # Migrate the current command usage statistics the const collecting, adjusting its values
     coll: Collection = DB._DB["stats"]
     usage = coll.find_one({"_id": "commands"})["command_usage"]
@@ -56,14 +61,18 @@ def migrate():
     
     # Migrate single item collection into a new "const" collection
     const: Collection = DB._DB["const"]
+    GDB: Collection = CLUSTER["general"]
+
     # shop
     const.insert_one({"_id": "shop", "offers": [], "log": []})
     # custom presence
     const.insert_one({"_id": "presence", "text": None, "activity": None, "presence": None})
     # updates
-    const.insert_one({"_id": "updates", "updates": []}) # TODO adjust test to new structure
+    const.insert_one({"_id": "updates", "updates": []})
     # stats (growth)
-    const.insert_one({"_id": "growth", "growth": []}) # TODO rewrite everything using this to use new structure
+    const.insert_one({"_id": "growth", "growth": []}) 
+    # blacklist
+    const.insert_one({"_id": "blacklist", "blacklist": []})
 
     # Transfer all todo lists to another namespace
     todo: Collection = DB._DB["todo"]

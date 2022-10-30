@@ -69,6 +69,7 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [ ] Website with backend
 *   [ ] CSS
 *   [ ] Threading
+*   [ ] Github workflows
 
 ## Contributors
 
@@ -88,11 +89,19 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 *   [danii](https://github.com/danii)
 
-> Helped to change the incredibly bad mess of everything in one file into an organised, dynamic system and helped out with git commands
+> Helped to change the incredibly bad mess of everything in one file into an organised, dynamic system and helped out with git commands.
 
 *   [DerUSBStick](https://github.com/DerUSBstick)
 
 > He contributed a lot to one of the best looking commands, `book` which uses image generation to make your collection book filled with cards!
+
+*   [Scarfy](https://odaibako.net/u/ano_furi)
+
+> Helped write some of the action texts, topics, 8ball responses and would you rather questions.
+
+*   [Scientia](https://github.com/ScientiaEtVeritas)
+
+> Gave me the original idea for this bot and helped me in the early stages, enduring lots of pings and stupid questions.
 
 ## Running Killua locally
 
