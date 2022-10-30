@@ -41,7 +41,8 @@ class BaseBot(commands.AutoShardedBot):
 		await self.load_extension("jishaku")
 		# await self.ipc.start()
 		await self.tree.sync()
-		migrate_requiring_bot(self)
+		if DB.const.find_one({"_id": "migrate"})["value"]:
+			migrate_requiring_bot(self)
 
 	async def close(self):
 		await super().close()

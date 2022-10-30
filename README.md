@@ -95,7 +95,7 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 > He contributed a lot to one of the best looking commands, `book` which uses image generation to make your collection book filled with cards!
 
-*   [Scarfy](https://odaibako.net/u/ano_furi)
+*   [Scarf](https://odaibako.net/u/ano_furi)
 
 > Helped write some of the action texts, topics, 8ball responses and would you rather questions.
 

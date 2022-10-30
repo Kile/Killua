@@ -42,13 +42,25 @@ class TestingDatabase:
     def find(self, where: dict) -> Optional[dict]:
         coll = self.db[self.collection]
         results = []
+
         for d in coll:
             for key, value in d.items():
-                if len([k for k, v in where.items() if k == key and v == value]) == len(where): # When all conditions defined in "where" are met
+                if [x for x in list(where.values()) if isinstance(x, dict) and "$in" in x.keys()]:
+                    for k, v in [(k, v) for k, v in list(where.items()) if isinstance(v, dict) and "$in" in v.keys()]:
+                        if k == key and value in v["$in"]:
+                            results.append(d)
+
+                elif len([k for k, v in where.items() if k == key and v == value]) == len(where): # When all conditions defined in "where" are met
                     results.append(d)
+
+        return results
     
     def insert_one(self, object: dict) -> None:
         self.db[self.collection].append(object)
+
+    def insert_many(self, objects: List[dict]) -> None:
+        for obj in objects:
+            self.insert_one(obj)
 
     def update_one(self, where: dict, update: Dict[str, dict]) -> dict:
         # updated = False
@@ -63,25 +75,25 @@ class TestingDatabase:
                     if operator == "$set":
                         for k, val in update[operator].items():
                             if isinstance(val, dict):
-                                self.db[self.collection][p][k][val.keys()[0]] = val.values()[0]
+                                self.db[self.collection][p][k][list(val.keys())[0]] = list(val.values())[0]
                             else:
                                 self.db[self.collection][p][k] = val
                     if operator == "$push":
                         for k, val in update[operator].items():
                             if isinstance(val, dict):
-                                self.db[self.collection][p][k][val.keys()[0]].append(val.values()[0])
+                                self.db[self.collection][p][k][list(val.keys())[0]].append(list(val.values())[0])
                             else:
                                 self.db[self.collection][p][k].append(val)
                     if operator == "$pull":
                         for k, val in update[operator].items():
                             if isinstance(val, dict):
-                                self.db[self.collection][p][k][val.keys()[0]].remove(val.values()[0])
+                                self.db[self.collection][p][k][list(val.keys())[0]].remove(list(val.values())[0])
                             else:
                                 self.db[self.collection][p][k].remove(val)
                     elif operator == "$inc":
                         for k, val in update[operator].items():
                             if isinstance(val, dict):
-                                self.db[self.collection][p][k][val.keys()[0]] += val.values()[0]
+                                self.db[self.collection][p][k][list(val.keys())[0]] += list(val.values())[0]
                             else:
                                 self.db[self.collection][p][k] += val
                     # updated = True

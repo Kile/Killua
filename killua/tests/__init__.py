@@ -14,7 +14,7 @@ class DevMod:
                 sys.__stderr__.write(msg)
 
 async def run_tests(args) -> None:
-    sys.stderr = DevMod()
+    # sys.stderr = DevMod()
 
     Bot.command_prefix = lambda *_: ["mention1", "mention2", "k!"]
     await Bot.setup_hook()

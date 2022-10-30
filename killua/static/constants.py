@@ -4,6 +4,7 @@ import discord
 from pymongo import MongoClient, collection
 from typing import Union
 
+from os.path import exists
 from killua.utils.test_db import TestingDatabase as Database
 import killua.args as args
 
@@ -23,6 +24,8 @@ CONST_DEFAULT = [ # The default values for the const collection
     {"_id": "blacklist", "blacklist": []},
 ]
 
+CARDS_URL = "https://json.extendsclass.com/bin/7d2c78bde0cd"
+
 class DB:
     _DB = None
     const = None
@@ -30,27 +33,37 @@ class DB:
     def __init__(self):
         if not args.Args.test:
             self._DB = CLUSTER["Killua"]
-            self.const = self._DB["const"]
 
     @property
     def teams(self) -> Union[collection.Collection, Database]:
-        return self._DB["teams"] if not args.Args.test else Database("teams")
+        return self._DB["teams"] if args.Args.test is None else Database("teams")
 
     @property
     def items(self) -> Union[collection.Collection, Database]:
-        return self._DB["items"] if not args.Args.test else Database("items")
+        if args.Args.test is not None:
+            if exists("cards.json"):
+                with open("cards.json", "r") as file:
+                    res = json.loads(file.read())
+                    db = Database("items")
+                    db.db["items"] = res["data"]
+                    file.close()
+                    return db
+            else:
+                raise FileNotFoundError("cards.json does not exist. Run `python3 -m killua -dl` to download the cards first.")
+        else:
+            return self._DB["items"]
 
     @property
     def guilds(self) -> Union[collection.Collection, Database]:
-        return self._DB["guilds"] if not args.Args.test else Database("guilds")
+        return self._DB["guilds"] if args.Args.test is None else Database("guilds")
 
     @property
     def todo(self) -> Union[collection.Collection, Database]:
-        return self._DB["todo"] if not args.Args.test else Database("todo")
+        return self._DB["todo"] if args.Args.test is None else Database("todo")
 
     @property
     def const(self) -> Union[collection.Collection, Database]:
-        if args.Args.test:
+        if args.Args.test is not None:
             db = Database("const")
             db.insert_many(CONST_DEFAULT)
 
@@ -134,6 +147,17 @@ Premium guild <:premium_guild_badge:883473807292121149>
 <a:arrow:876801266381127710> halved cooldown for entire server (stacks with premium sub)
 <a:arrow:876801266381127710> access to premium server restricted commands
 <a:arrow:876801266381127710> doubled daily jenny for entire server (stacks with premium sub)
+"""
+
+INFO = "This bot is themed after the character Killua from the anime [hunter x hunter](https://en.wikipedia.org/wiki/Hunter_×_Hunter)." + \
+"""
+I chose this character because it was sort of a role model I had during a tough time and I wanted to give back by creating a bot that would best represent the character.
+At that point I had never programmed in python before, but I had a goal and I taught myself (through some pingspams in the support servers) how to code step by step to achieve that goal.
+
+Killua has become a way I continue to teach myself programming and by now it has taught me a lot. The bot was never build to profit. 
+And so even though I myself invested quite a lot of money into the bot, Killua will barely have any paywalls at all. If you do like the project, there is a patreon, however if you don't want to spend money, Killua will still have many things to offer for you.
+
+If you're reading this that means you're using Killua, so I want to thank you for that. Being the only developer on this pretty massive codebase is not easy, but knowing people enjoy bot makes it worth it :)
 """
 
 # Tips that can be added to any send message send with bot.send_message

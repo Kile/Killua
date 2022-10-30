@@ -4,7 +4,7 @@ import discord
 import math
 from typing import List, Tuple, Union
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 from matplotlib import pyplot as plt
 
 from killua.bot import BaseBot
@@ -14,7 +14,7 @@ from killua.utils.classes import User, Guild #lgtm [py/unused-import]
 from killua.utils.interactions import View, Button
 from killua.static.enums import Category, Activities, Presences, StatsOptions
 from killua.static.cards import Card #lgtm [py/unused-import]
-from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT
+from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT, INFO
 
 class UsagePaginator(Paginator):
     """A normal paginator with a button that returns to the original help command"""
@@ -351,12 +351,14 @@ class Dev(commands.Cog):
         await self.client.update_presence()
         await ctx.send(f"Successfully changed Killua's status to `{text}`! (I hope people like it >-<)", ephemeral=True)
 
-    @dev.command(extras={"category":Category.OTHER}, usage="stats")
+    @check()
+    @dev.command(extras={"category":Category.OTHER}, usage="stats <usage/growth/general>")
+    @discord.app_commands.describe(type="The type of stats you want to see")
     async def stats(self, ctx: commands.Context, type: StatsOptions):
         """Shows some statistics about the bot such as growth and command usage"""
-        if type.name == "usage":
+        if type == type.usage:
             await self.initial_top(ctx)
-        else:
+        elif type == StatsOptions.growth:
             def make_embed(page, embed, _):
                 embed.clear_fields()
 
@@ -376,6 +378,45 @@ class Dev(commands.Cog):
                     return self._get_stats_embed(data, embed, "daily_users")
 
             return await Paginator(ctx, func=make_embed, max_pages=4, has_file=True).start()
+        else:
+            n_of_commands = 0
 
+            for command in self.client.walk_commands():
+                if not command.hidden and not isinstance(command, commands.HybridGroup) and command.qualified_name.startswith("jishau"):
+                    n_of_commands += 1
+
+            data = DB.const.find_one({"_id": "updates"})["updates"]
+            bot_version = "`Development`" if self.client.is_dev else (data[:-1]["version"] if "version" in data[:-1] else "`Unknown`")
+
+            now = datetime.now()
+            diff: timedelta = now - self.client.startup_datetime
+            time = f"{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds"
+
+            embed = discord.Embed.from_dict({
+                "title": "General bot stats",
+                "fields": [
+                    {"name": "Bot uptime", "value": time, "inline": True},
+                    {"name": "Bot users", "value": str(len(self.client.users)), "inline": True},
+                    {"name": "Bot guilds", "value": str(len(self.client.guilds)), "inline": True},
+                    {"name": "Registered users", "value": str(DB.teams.count_documents({})), "inline": True},
+                    {"name": "Bot commands", "value": str(n_of_commands), "inline": True},
+                    {"name": "Owner id", "value": "606162661184372736", "inline": True},
+                    {"name": "Latency", "value": f"{int(self.client.latency*100)} ms", "inline": True},
+                    {"name": "Shard", "value": f"{self.client.shard_id}/{self.client.shard_count}", "inline": True},
+                    {"name": "Bot version", "value": f"{bot_version}", "inline": True},
+                ],
+                "color": 0x1400ff,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+
+            await ctx.send(embed=embed)
+
+    @check()
+    @dev.command(extras={"category":Category.OTHER}, usage="info")
+    async def info(self, ctx: commands.Context):
+        """Get some general information (lore) about the bot"""
+        embed = discord.Embed(title="Infos about the bot", description=INFO)
+        embed.color = 0x1400ff
+        return await ctx.send(embed=embed, ephemeral=True)
 
 Cog = Dev

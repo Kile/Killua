@@ -396,6 +396,7 @@ class User:
     def __init__(self, user_id: int):
         if user_id in self.cache:
             return 
+
         user = DB.teams.find_one({"id": user_id})
         self.id: int = user_id
 

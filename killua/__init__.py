@@ -6,6 +6,7 @@ import logging
 
 from .tests import run_tests
 from .migrate import migrate
+from .download import download
 from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a seperate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
@@ -27,6 +28,9 @@ async def main():
 
 	if args.test is not None:
 		return await run_tests(args.test)
+
+	if args.download:
+		return await download()
 
 	session = aiohttp.ClientSession()
 	intents = discord.Intents(

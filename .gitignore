@@ -1,6 +1,9 @@
 # Configuration
 /config.json
 
+# Downloaded cards
+/cards.json
+
 #python stuff
 **/__pycache__
 

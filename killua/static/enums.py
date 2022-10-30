@@ -216,6 +216,7 @@ class PremiumGuildOptions(Enum):
 class StatsOptions(Enum):
     usage = auto()
     growth = auto()
+    general = auto()
 
 class GameOptions(Enum):
     rps = auto()

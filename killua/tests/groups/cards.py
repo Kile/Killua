@@ -80,6 +80,7 @@ class Sell(TestingCards):
             
         self.base_context.respond_to_view = Testing.press_confirm
         card = randint(1, 99)
+        self.user.nuke_cards("all")
         self.user.add_card(card)
         await self.command(self.cog, self.base_context, card=str(card))
 

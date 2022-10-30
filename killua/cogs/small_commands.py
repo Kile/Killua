@@ -170,21 +170,6 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @miscillaneous.command(aliases=["stats"], extras={"category":Category.FUN}, usage="info")
-    async def info(self, ctx: commands.Context):
-        """Gives you some infos and stats about Killua"""
-        now = datetime.now()
-        diff = now - self.client.startup_datetime
-        t = f"{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds"
-        embed = discord.Embed.from_dict({
-            "title": f"Infos about {ctx.me.name}",
-            "description": f"This is Killua, a bot designed to be a fun multipurpose bot themed after the hxh character Killua. I started this bot when I started learning Python (You can see when on Killua's status). This means I am unexperienced and have to go over old buggy code again and again in the process. Thank you all for helping me out by testing Killua, please consider leaving feedback with `k!fb`\n\n**__Bot stats__**\n__Bot uptime:__ `{t}`\n__Bot users:__ `{len(self.client.users)}`\n__Bot guilds:__ `{len(self.client.guilds)}`\n__Registered users:__ `{DB.teams.count_documents({})}`\n__Bot commands:__ `{len(self.client.commands)}`\n__Owner id:__ `606162661184372736`\n__Latency:__ `{int(self.client.latency*100)}` ms",
-            "color": 0x1400ff,
-            "thumbnail": {"url": str(ctx.me.avatar.url)}
-        })
-        await self.client.send_message(ctx, embed=embed)
-
-    @check()
     @miscillaneous.command(extras={"category":Category.FUN}, usage="invite")
     async def invite(self, ctx: commands.Context):
         """Allows you to invite Killua to any guild you have at least `manage server` permissions."""
