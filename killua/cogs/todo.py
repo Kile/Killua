@@ -7,7 +7,7 @@ from typing import Union, Optional, List
 
 from killua.bot import BaseBot
 from killua.static.enums import Category, TodoDeleteWhenDone, TodoStatus, TodoPermissions
-from killua.static.constants import DB, editing, REPORT_CHANNEL
+from killua.static.constants import DB, URL_REGEX, editing, REPORT_CHANNEL
 from killua.utils.checks import check, blcheck
 from killua.utils.classes import TodoList, Todo, User, TodoListNotFound
 from killua.utils.interactions import ConfirmButton, Button
@@ -401,7 +401,7 @@ class TodoSystem(commands.Cog):
         if thumbnail:
             if not res.has_addon("thumbnail"):
                 return await ctx.send("You can't customize this property, you need to buy it in the shop", ephemeral=True)
-            search_url = re.search(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))", thumbnail)
+            search_url = re.search(URL_REGEX, thumbnail)
 
             if search_url:
                 image = re.search(r"png|jpg|gif|svg", thumbnail)

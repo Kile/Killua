@@ -11,7 +11,7 @@ from killua.bot import BaseBot
 from killua.utils.gif import save_transparent_gif
 from killua.utils.checks import check
 from killua.static.enums import Category, SnapOptions, EyesOptions #, FlagOptions
-from killua.static.constants import NOKIA_CODE, PXLAPI
+from killua.static.constants import NOKIA_CODE, PXLAPI, URL_REGEX
 
 class ImageManipulation(commands.Cog):
 
@@ -106,7 +106,7 @@ class ImageManipulation(commands.Cog):
                 except discord.NotFound:
                     pass
             else:
-                url = re.search(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))", target) 
+                url = re.search(URL_REGEX, target) 
                 # Makes sure the url is valid.
                 # This check is not perfect but it works for most cases and if it"s a false positive itdoesn't matter too much
                 if not url:
