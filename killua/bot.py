@@ -8,6 +8,7 @@ from discord.ext import commands
 from datetime import date
 from typing import Coroutine, Union, Dict
 
+from .migrate import migrate_requiring_bot
 from .static.enums import Category
 from .utils.interactions import Modal
 from .static.constants import TIPS, LOOTBOXES, DB
@@ -26,7 +27,7 @@ def get_prefix(bot, message):
 		# in case message.guild is `None` or something went wrong getting the prefix the bot still NEEDS to react to mentions and k!
 		return commands.when_mentioned_or('k!')(bot, message)
 
-class BaseBot(commands.Bot):
+class BaseBot(commands.AutoShardedBot):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
@@ -40,6 +41,7 @@ class BaseBot(commands.Bot):
 		await self.load_extension("jishaku")
 		# await self.ipc.start()
 		await self.tree.sync()
+		# migrate_requiring_bot(self)
 
 	async def close(self):
 		await super().close()
@@ -158,7 +160,7 @@ class BaseBot(commands.Bot):
 
 
 	async def update_presence(self):
-		status = DB.presence.find_one({})
+		status = DB.const.find_one({"_id": "presence"})
 		if status['text']:
 			if not status['activity']:
 				status['activity'] = 'playing'

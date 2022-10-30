@@ -68,13 +68,13 @@ class HelpCommand(commands.Cog):
 
         premium_guild, premium_user, cooldown = False, False, False
 
-        if [c for c in checks if getattr(c, "premium_guild_only", False)]:
+        if [c for c in checks if hasattr(c, "premium_guild_only")]:
             premium_guild = True
 
-        if [c for c in checks if getattr(c, "premium_user_only", False)]:
+        if [c for c in checks if hasattr(c, "premium_user_only")]:
             premium_user = True
 
-        if (res := [c for c in checks if getattr(c, "cooldown", False)]):
+        if (res := [c for c in checks if hasattr(c, "cooldown")]):
             check = res[0]
             cooldown = getattr(check, "cooldown", False)
 
@@ -109,9 +109,24 @@ class HelpCommand(commands.Cog):
 
         return HelpPaginator(ctx, c, timeout=100, func=make_embed)
 
+    async def help_autocomplete(
+        self,
+        _: discord.Interaction,
+        current: str,
+    ) -> List[discord.app_commands.Choice[str]]:
+        """Autocomplete for all cards"""
+        if not self.cache:
+            self.cache = self.client.get_formatted_commands()
+
+        all_commands = [v["commands"] for v in self.cache.values()]
+        # combine all individual lists in all_commands into one in one line
+        all_commands: List[commands.Command] = [item for sublist in all_commands for item in sublist]
+        
+        return [command.qualified_name for command in all_commands if current.lower() in command.qualified_name]
+
     @commands.hybrid_command()
     @discord.app_commands.describe(group="The group to get help for", command="The command to get help for")
-    async def help(self, ctx: commands.Context, group: str = None, command: str = None) -> None:
+    async def help(self, ctx: commands.Context, group: Category = None, command: str = None) -> None:
         """Displays helfpul information about a command, group, or the bot itself."""
         message_prefix = Guild(ctx.guild.id).prefix if ctx.guild else "k!"
 
@@ -138,7 +153,8 @@ class HelpCommand(commands.Cog):
             
             await view.wait()
             if view.timed_out:
-                return await view.disable(msg)
+                view.children[0].disabled = True # Instead of looping through all the children, we just disable the select menu since we want the links to remain clickable
+                return await msg.edit(view=view)
             else:
                 #await msg.edit(embed=msg.embeds[0], view=discord.ui.View())
                 await msg.delete()
@@ -170,10 +186,10 @@ class HelpCommand(commands.Cog):
             return await ctx.send(embed=embed, view=source_view)
 
         elif group:
-            if group not in self.cache:
-                return await ctx.send(f"No group called \"{group}\" found.", ephemeral=True)
+            if group.name not in self.cache:
+                return await ctx.send(f"No group called \"{group.name}\" found.", ephemeral=True)
 
-            paginator = self.get_group_help(ctx, group, message_prefix)
+            paginator = self.get_group_help(ctx, group.name, message_prefix)
             return await paginator.start()
 
 Cog = HelpCommand

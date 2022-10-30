@@ -42,12 +42,12 @@ class Shop(commands.Cog):
 
     def _format_offers(self, offers: list, reduced_item: int = None, reduced_by: int = None) -> list:
         """Formats the offers for the shop"""
-        formatted:list = []
+        formatted: list = []
         if reduced_item and reduced_by:
-            x:int = 0
+            x: int = 0
             for offer in offers:
                 formatted.append(self._format_item(offer, reduced_item, reduced_by, x))
-                x = x+1
+                x += 1
         else:
             for offer in offers:
                 formatted.append(self._format_item(offer))
@@ -96,17 +96,17 @@ class Shop(commands.Cog):
                     if not t in shop_items:
                         shop_items.append(t)
 
-                log = DB.shop.find_one({"_id": "daily_offers"})["log"]
+                log = DB.const.find_one({"_id": "shop"})["log"]
                 if randint(1, 10) > 6: # 40% to have an item in the shop reduced
                     reduced_item = randint(0, len(shop_items)-1)
                     reduced_by = randint(15, 40)
                     logging.info(f"{PrintColors.OKBLUE}Updated shop with following cards: " + ", ".join([str(x) for x in shop_items])+f", reduced item number {shop_items[reduced_item]} by {reduced_by}%{PrintColors.ENDC}")
                     log.append({"time": datetime.now(), "items": shop_items, "reduced": {"reduced_item": reduced_item, "reduced_by": reduced_by}})
-                    DB.shop.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": {"reduced_item": reduced_item, "reduced_by": reduced_by}}})
+                    DB.const.update_many({"_id": "shop"}, {"$set": {"offers": shop_items, "log": log, "reduced": {"reduced_item": reduced_item, "reduced_by": reduced_by}}})
                 else:
                     logging.info(f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}")
                     log.append({"time": datetime.now(), "items": shop_items, "redued": None})
-                    DB.shop.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": None}})
+                    DB.const.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "log": log, "reduced": None}})
         except (IndexError, TypeError):
             logging.error(f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}")
 
@@ -158,14 +158,14 @@ class Shop(commands.Cog):
     async def cards_shop(self, ctx: commands.Context):
         """Shows the current cards for sale"""
         
-        sh = DB.shop.find_one({"_id": "daily_offers"})
+        sh = DB.const.find_one({"_id": "shop"})
         shop_items:list = sh["offers"]
 
         if not sh["reduced"] is None:
             reduced_item = sh["reduced"]["reduced_item"]
             reduced_by = sh["reduced"]["reduced_by"]
             formatted = self._format_offers(shop_items, reduced_item, reduced_by)
-            embed = discord.Embed(title="Current Card shop", description=f"**{DB.items.find_one({'_id': shop_items[reduced_item]})['name']} is reduced by {reduced_by}%**")
+            embed = discord.Embed(title="Current Card shop", description=f"**{Card(shop_items[reduced_item]).name} is reduced by {reduced_by}%**")
         else:
             formatted:list = self._format_offers(shop_items)
             embed = discord.Embed(title="Current Card shop")
@@ -249,7 +249,7 @@ class Shop(commands.Cog):
     async def card(self, ctx: commands.Context, item: str):
         """Buy a card from the shop with this command"""
         
-        shop_data = DB.shop.find_one({"_id": "daily_offers"})
+        shop_data = DB.const.find_one({"_id": "shop"})
         shop_items: list = shop_data["offers"]
         user = User(ctx.author.id)
 

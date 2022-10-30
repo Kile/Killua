@@ -46,7 +46,7 @@ class Dev(commands.Cog):
     ) -> List[discord.app_commands.Choice[str]]:
 
         if not self.version_cache:
-            self.version_cache = [x["version"] for x in DB.updates.find_one({"_id": "log"})["past_updates"]]
+            self.version_cache = [x["version"] for x in DB.const.find_one({"_id": "updates"})["updates"]]
 
         return [
             discord.app_commands.Choice(name=v, value=v)
@@ -109,9 +109,11 @@ class Dev(commands.Cog):
             "mode": max(set(values), key=values.count),
         }
 
-    def _get_stats_embed(self, dates: List[datetime], data: List[dict], embed: discord.Embed, type: str) -> Tuple[discord.Embed, discord.File]:
+    def _get_stats_embed(self, data: List[dict], embed: discord.Embed, type: str) -> Tuple[discord.Embed, discord.File]:
         """Creates an embed with the stats of the given type"""
-        type_list = [x[type] for x in data]
+        dates = [x["date"] for x in data if type in x]
+        type_list = [x[type] for x in data if type in x]
+
         buffer = self._create_graph(dates, type_list, type.replace("_", " ").title())
         file = discord.File(buffer, filename=f"{type}.png")
         add_data = self._calc_predictions(type_list)
@@ -243,10 +245,10 @@ class Dev(commands.Cog):
     async def publish_update(self, ctx: commands.Context, version: str, *, update: str):
         """Allows me to publish Killua updates in a handy formart"""
 
-        old = DB.updates.find_one({"_id": "current"})
-        old_version = old["version"] if "version" in old else "No version"
+        old = DB.const.find_one({"_id": "updates"})["updates"]
+        old_version = old[-1:]["version"] if "version" in old else "No version"
 
-        if version in [*[old_version],*[x["version"] for x in DB.updates.find_one({"_id": "log"})["past_updates"]]]:
+        if version in [x["version"] for x in old if "version" in x]:
             return await ctx.send("This is an already existing version")
 
         embed = discord.Embed.from_dict({
@@ -258,8 +260,7 @@ class Dev(commands.Cog):
         })
 
         data = {"version": version, "description": update, "published_on": datetime.now(), "published_by": ctx.author.id}
-        DB.updates.update_one({"_id": "current"}, {"$set": data})
-        DB.updates.update_one({"_id": "log"}, {"$push": {"past_updates": data}})
+        DB.const.update_one({"_id": "updates"}, {"$push": {"updates": data}})
         self.version_cache.append(version)
 
         await ctx.send("Published new update " + f"`{old_version}` -> `{version}`", ephemeral=True)
@@ -278,9 +279,9 @@ class Dev(commands.Cog):
     async def update(self, ctx: commands.Context, version: str = None):
         """Allows you to view current and past updates"""
         if version is None:
-            data = DB.updates.find_one({"_id": "current"})
+            data = DB.const.find_one({"_id": "updates"})["updates"][-1:]
         else:
-            d = [x for x in DB.updates.find_one({"_id": "log"})["past_updates"] if x["version"] == version]
+            d = [x for x in DB.const.find_one({"_id": "updates"})["updates"] if "version" in x and x["version"] == version]
             if len(d) == 0:
                 return await ctx.send("Invalid version!")
             data = d[0]
@@ -337,11 +338,11 @@ class Dev(commands.Cog):
         """Changes the presence of Killua. Owner restricted"""
 
         if text == "-rm":
-            DB.presence.update_many({}, {"$set": {"text": None, "activity": None, "presence": None}})
+            DB.const.update_many({"_id": "presence"}, {"$set": {"text": None, "activity": None, "presence": None}})
             await ctx.send("Done! reset Killua's presence", ephemeral=True)
             return await self.client.update_presence()
 
-        DB.presence.update_many({}, {"$set": {"text": text, "presence": presence.name if presence else None, "activity": activity.name if activity else None}})
+        DB.const.update_many({"_id": "presence"}, {"$set": {"text": text, "presence": presence.name if presence else None, "activity": activity.name if activity else None}})
         await self.client.update_presence()
         await ctx.send(f"Successfully changed Killua's status to `{text}`! (I hope people like it >-<)", ephemeral=True)
 
@@ -354,21 +355,20 @@ class Dev(commands.Cog):
             def make_embed(page, embed, _):
                 embed.clear_fields()
 
-                data = DB.stats.find_one({"_id": "growth"})["growth"]
-                dates = [x["date"] for x in data]
+                data = DB.const.find_one({"_id": "growth"})["growth"]
 
                 if page == 1:
                     # Guild growth
-                    return self._get_stats_embed(dates, data, embed, "guilds")
+                    return self._get_stats_embed(data, embed, "guilds")
                 elif page == 2:
                     # User growth
-                    return self._get_stats_embed(dates, data, embed, "users")
+                    return self._get_stats_embed(data, embed, "users")
                 elif page == 3:
                     # Registered user growth
-                    return self._get_stats_embed(dates, data, embed, "registered_users")
+                    return self._get_stats_embed(data, embed, "registered_users")
                 elif page == 4:
                     # Daily users
-                    return self._get_stats_embed(dates, data, embed, "daily_users")
+                    return self._get_stats_embed(data, embed, "daily_users")
 
             return await Paginator(ctx, func=make_embed, max_pages=4, has_file=True).start()
 

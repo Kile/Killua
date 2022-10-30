@@ -14,14 +14,22 @@ with open("config.json", "r") as config_file:
 
 CLUSTER = MongoClient(config["mongodb"])
 
+CONST_DEFAULT = [ # The default values for the const collection
+    {"_id": "migrate", "value": True},
+    {"_id": "usage", "command_usage": {}},
+    {"_id": "shop", "offers": [], "log": []},
+    {"_id": "presence", "text": None, "activity": None, "presence": None},
+    {"_id": "updates", "updates": []},
+]
+
 class DB:
     _DB = None
-    GDB = None
+    const = None
 
     def __init__(self):
         if not args.Args.test:
             self._DB = CLUSTER["Killua"]
-            self.GDB = CLUSTER["general"]
+            self.const = self._DB["const"]
 
     @property
     def teams(self) -> Union[collection.Collection, Database]:
@@ -36,28 +44,18 @@ class DB:
         return self._DB["guilds"] if not args.Args.test else Database("guilds")
 
     @property
-    def updates(self) -> Union[collection.Collection, Database]:
-        return self.GDB["updates"] if not args.Args.test else Database("updates")
-
-    @property
-    def shop(self) -> Union[collection.Collection, Database]:
-        return self.GDB["shop"] if not args.Args.test else Database("shop")
-
-    @property
-    def blacklist(self) -> Union[collection.Collection, Database]:
-        return self.GDB["blacklist"] if not args.Args.test else Database("blacklist")
-
-    @property
-    def presence(self) -> Union[collection.Collection, Database]:
-        return self.GDB["presence"] if not args.Args.test else Database("presence")
-
-    @property
-    def stats(self) -> Union[collection.Collection, Database]:
-        return self.GDB["stats"] if not args.Args.test else Database("stats")
-
-    @property
     def todo(self) -> Union[collection.Collection, Database]:
-        return self.GDB["todo"] if not args.Args.test else Database("todo")
+        return self._DB["todo"] if not args.Args.test else Database("todo")
+
+    @property
+    def const(self) -> Union[collection.Collection, Database]:
+        if args.Args.test:
+            db = Database("const")
+            db.insert_many(CONST_DEFAULT)
+
+            return db
+        else:
+            return self._DB["const"]
 
 DB = DB()
 

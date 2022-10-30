@@ -9,13 +9,14 @@ import math
 from typing import List
 from urllib.parse import quote
 
+
 from killua.bot import BaseBot
 from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, DB, WYR
 from killua.utils.interactions import View, Button
 from killua.utils.checks import check
 from killua.static.enums import Category
 
-class PollSetup(discord.ui.Modal): # lgtm [py/missing-call-to-init]
+class PollSetup(discord.ui.Modal): #lgtm [py/missing-call-to-init]
 
     def __init__(self, *args, **kwargs):
         super().__init__(title="Poll setup", *args, **kwargs)
@@ -43,7 +44,7 @@ class SmallCommands(commands.Cog):
         ))
         menus.append(discord.app_commands.ContextMenu(
             name='translate',
-            callback=self.client.callback_from_command(self.translate, message=True, source="auto", target="en"),
+            callback=self.client.callback_from_command(self.translate, message=True, source="auto"),
         ))
 
         for menu in menus:
@@ -241,12 +242,13 @@ class SmallCommands(commands.Cog):
         text="The text you want to translate"
     )
     @discord.app_commands.autocomplete(source=lang_autocomplete, target=lang_autocomplete)
-    async def translate(self, ctx: commands.Context, source: str, target: str, *, text: str):
+    async def translate(self, ctx: commands.Context, source: str, target: str = None, *, text: str):
         """Translate anything to 20+ languages with this command!"""
         if source.lower() in LANGS: source = LANGS[source.lower()]
-        if target.lower() in LANGS: target = LANGS[target.lower()]
+        if hasattr(ctx, "invoked_by_modal") or not target: target = (str(ctx.interaction.locale) if str(ctx.interaction.locale).startswith("zh") else str(ctx.interaction.locale).split("-")[0]) if ctx.interaction else target
+        elif target.lower() in LANGS: target = LANGS[target.lower()]
 
-        if not (target in LANGS.values()) or not (source in LANGS.values()):
+        if (not target in LANGS.values() and not hasattr(ctx, "invoked_by_modal")) or not (source in LANGS.values()):
             return await ctx.send("Invalid language! This is how to use the command: `" + ctx.command.usage + "`", ephemeral=True)
 
         if len(source) > 1800:
@@ -260,7 +262,9 @@ class SmallCommands(commands.Cog):
 
         translation = await res.json()
         if not "matches" in translation or len(translation["matches"]) < 1:
-            return await ctx.send("Translation failed!")
+            if source == "autodetect":
+                return await ctx.send("Unfortunately the translators language detection is currently malfunctioning, please try again later!", ephemeral=True)
+            return await ctx.send("Translation failed!", ephemeral=hasattr(ctx, "invoked_by_modal"))
 
         embed = discord.Embed.from_dict({ 
             "title": f"Translation Successfull",

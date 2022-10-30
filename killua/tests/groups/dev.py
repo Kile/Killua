@@ -39,19 +39,18 @@ class Publish_Update(TestingDev):
 
         @test
         async def publish_already_published_version(self) -> None:
-            DB.updates.db = {"updates": [{"_id": "log", "past_updates": []}, {"_id": "current", "version": "1.0.0"}]}
+            DB.const._collection = [{"_id": "updates", "updates": [{"version": "1.0"}]}]
             await self.command(self.cog, self.base_context, version="1.0", update="Test")
 
             assert self.base_context.result.message.content == "This is an already existing version", self.base_context.result.message.content
     
         @test
         async def publish_update(self) -> None:
-            DB.updates.db = {"updates": [{"_id": "log", "past_updates": []}]}
+            DB.const._collection = [{"_id": "updates", "past_updates": []}]
             await self.command(self.cog, self.base_context, version="1.0", update="test")
 
             assert self.base_context.result.message.content == "Published update", self.base_context.result.message.content
-            assert DB.updates.find_one({"_id": "current"}), DB.updates.find_one({"_id": "current"})
-            assert DB.updates.find_one({"_id": "current"})["version"] == "1.0", DB.updates.find_one({"_id": "current"})["version"]
+            assert DB.const.find_one({"_id": "updates"})["updates"][0]["version"], "1.0"
 
 class Update(TestingDev):
 

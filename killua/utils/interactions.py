@@ -37,7 +37,7 @@ class View(discord.ui.View):
         else:
             await msg.edit(view=self)
 
-class Modal(discord.ui.Modal):# lgtm [py/missing-call-to-init]
+class Modal(discord.ui.Modal): #lgtm [py/missing-call-to-init]
     """A modal for various usages"""
     def __init__(self, user_id:Union[int, List[int]], **kwargs):
         super().__init__(**kwargs)
