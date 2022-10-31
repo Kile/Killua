@@ -6,6 +6,7 @@ from html import escape
 from json import loads
 from typing import Union
 from pypxl import PxlClient
+from urllib.parse import unquote
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -188,7 +189,7 @@ class WebScraping(commands.Cog):
             })
             for i in range(4 if len(results) >= 4 else len(results)):
                 res = results[i-1]
-                embed.add_field(name="** **", value=f"**[__{res['title']}__]({res['url']})**\n{res['description'][:100]}..." if len(res["description"]) > 100 else res["description"], inline=False)
+                embed.add_field(name="** **", value=f"**[__{res['title']}__]({res['url']})**\n{unquote(res['description'][:100])}..." if len(res["description"]) > 100 else unquote(res["description"]), inline=False)
             return await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_context_menu"))
         return await ctx.send(":x: "+r.error, epheremal=True)
 

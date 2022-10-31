@@ -111,7 +111,9 @@ class SmallCommands(commands.Cog):
     @discord.app_commands.describe(text="The text to uwufy")
     async def uwufy(self, ctx: commands.Context, *, text: str):
         """Uwufy any sentence you want with dis command, have fun >_<"""
-        return await self.client.send_message(ctx, self.build_uwufy(text, stuttering=3, cuteness=3))
+        has_send_messages_perms = ctx.channel.permissions_for(ctx.author).send_messages
+        # Only do a non epehemeral response with a context menu if the user has send messages perms
+        return await self.client.send_message(ctx, self.build_uwufy(text, stuttering=3, cuteness=3), ephemeral=has_send_messages_perms if hasattr(ctx, "invoked_by_context_menu") else False)
 
     @check()
     @misc.command(extras={"category":Category.FUN}, usage="ping")

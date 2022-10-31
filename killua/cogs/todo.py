@@ -27,7 +27,7 @@ class TodoSystem(commands.Cog):
     def _init_menus(self) -> None:
         menus = []
         menus.append(discord.app_commands.ContextMenu(
-            name='todo add',
+            name='Add as todo',
             callback=self.client.callback_from_command(self.add, message=True)
         ))
 

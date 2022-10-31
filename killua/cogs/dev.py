@@ -388,8 +388,8 @@ class Dev(commands.Cog):
         else:
             n_of_commands = 0
 
-            for command in self.client.walk_commands():
-                if not command.hidden and not isinstance(command, commands.HybridGroup) and command.qualified_name.startswith("jishau"):
+            for command in self.client.tree.walk_commands():
+                if not isinstance(command, commands.HybridGroup) and not command.qualified_name.startswith("jishaku"):
                     n_of_commands += 1
 
             data = DB.const.find_one({"_id": "updates"})["updates"]
@@ -409,7 +409,7 @@ class Dev(commands.Cog):
                     {"name": "Bot commands", "value": str(n_of_commands), "inline": True},
                     {"name": "Owner id", "value": "606162661184372736", "inline": True},
                     {"name": "Latency", "value": f"{int(self.client.latency*100)} ms", "inline": True},
-                    {"name": "Shard", "value": f"{self.client.shard_id}/{self.client.shard_count}", "inline": True},
+                    {"name": "Shard", "value": f"{self.client.shard_id or 0}/{self.client.shard_count}", "inline": True},
                     {"name": "Bot version", "value": f"{bot_version}", "inline": True},
                 ],
                 "color": 0x1400ff,
