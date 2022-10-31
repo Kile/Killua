@@ -941,7 +941,7 @@ class TodoList:
         self.delete_done: bool = td_list["delete_done"]
         self.viewer: List[int] = td_list["viewer"]
         self.editor: List[int] = td_list["editor"]
-        self.created_at: str = td_list["created_at"]
+        self.created_at: Union[str, datetime] = td_list["created_at"]
         self.spots: int = td_list["spots"]
         self.views: int = td_list["views"]
         self.todos: List[dict] = td_list["todos"]
@@ -985,7 +985,7 @@ class TodoList:
     def create(owner: int, title: str, status: str, done_delete: bool, custom_id: str = None) -> TodoList:
         """Creates a todo list and returns a TodoList class"""
         list_id = TodoList._generate_id()
-        DB.todo.insert_one({"_id": list_id, "name": title, "owner": owner, "custom_id": custom_id, "status": status, "delete_done": done_delete, "viewer": [], "editor": [], "todos": [{"todo": "add todos", "marked": None, "added_by": 756206646396452975, "added_on": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "views":0, "assigned_to": [], "mark_log": []}], "marks": [], "created_at": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "spots": 10, "views": 0 })
+        DB.todo.insert_one({"_id": list_id, "name": title, "owner": owner, "custom_id": custom_id, "status": status, "delete_done": done_delete, "viewer": [], "editor": [], "todos": [{"todo": "add todos", "marked": None, "added_by": 756206646396452975, "added_on": datetime.now(), "views":0, "assigned_to": [], "mark_log": []}], "marks": [], "created_at": (datetime.now()).strftime("%b %d %Y %H:%M:%S"), "spots": 10, "views": 0 })
         return TodoList(list_id)
 
     def delete(self) -> None:
@@ -1022,6 +1022,12 @@ class TodoList:
         if not viewer == self.owner and not viewer in self.viewer and viewer in self.editor:
             self.views += 1
             self._update_val("views", 1, "$inc")
+
+    def add_task_view(self, viewer: int, task_id: int) -> None:
+        """Adds a view to a todo task"""
+        if not viewer == self.todos[task_id-1]["added_by"] and not viewer in self.todos[task_id-1]["assigned_to"]:
+            self.todos[task_id-1]["views"] += 1
+            self._update_val("todos", self.todos)
 
     def add_spots(self, spots: int) -> None:
         """Easy way to add max spots"""
@@ -1083,7 +1089,7 @@ class Todo(TodoList):
         cls.todo: str = task["todo"]
         cls.marked: str = task["marked"]
         cls.added_by: int = task["added_by"]
-        cls.added_on: str = task["added_on"]
+        cls.added_on: Union[str, datetime] = task["added_on"]
         cls.views: int = task["views"]
         cls.assigned_to: List[int] = task["assigned_to"]
         cls.mark_log: List[dict] = task["mark_log"]
