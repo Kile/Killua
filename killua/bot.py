@@ -98,12 +98,12 @@ class BaseBot(commands.AutoShardedBot):
 			async def callback(interaction: discord.Interaction, message: discord.Message):
 				ctx = await commands.Context.from_interaction(interaction)
 				ctx.message = message
-				ctx.invoked_by_modal = True # This is added so we can check inside of the command if it was invoked from a modal
+				ctx.invoked_by_context_menu = True # This is added so we can check inside of the command if it was invoked from a modal
 				await ctx.invoke(command, text=message.content, *args, **kwargs)
 		else:
 			async def callback(interaction: discord.Interaction, member: discord.Member):
 				ctx = await commands.Context.from_interaction(interaction)
-				ctx.invoked_by_modal = True
+				ctx.invoked_by_context_menu = True
 				await ctx.invoke(command, str(member.id), *args, **kwargs)
 		return callback
 
@@ -120,7 +120,7 @@ class BaseBot(commands.AutoShardedBot):
 		"""Gets a reponse from either a textinput UI or by waiting for a response"""
 
 		if (ctx.interaction and not ctx.interaction.response.is_done()) or interaction:
-			modal = Modal(ctx.author.id, title="Anser the question(s) and click submit", timeout=timeout)
+			modal = Modal(title="Anser the question(s) and click submit", timeout=timeout)
 			textinput = discord.ui.TextInput(label=text, *args, **kwargs)
 			modal.add_item(textinput)
 
@@ -134,6 +134,7 @@ class BaseBot(commands.AutoShardedBot):
 				if timeout_message:
 					await ctx.send(timeout_message, delete_after=5)
 				return
+			await modal.interaction.response.defer()
 
 			return textinput.value
 

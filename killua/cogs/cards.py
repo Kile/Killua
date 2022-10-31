@@ -359,7 +359,7 @@ class Cards(commands.Cog):
     @cards.command(aliases=["approach"], extras={"category":Category.CARDS}, usage="meet <user>")
     async def meet(self, ctx: commands.Context, user: discord.Member):
         """Meet a user who has recently send a message in this channel to enable certain effects"""
-        if hasattr(ctx, "invoked_by_modal"):
+        if hasattr(ctx, "invoked_by_context_menu"):
             user = await self.client.find_user(ctx, user)
 
         author = User(ctx.author.id)

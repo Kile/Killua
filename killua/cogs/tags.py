@@ -300,7 +300,7 @@ class Tags(commands.Cog):
     @discord.app_commands.describe(user="User you want to see tags of")
     async def user(self, ctx: commands.Context, user: discord.Member):
         """Get the tags a user own sorted by uses"""
-        if hasattr(ctx, "invoked_by_modal"): # user is a string if invoked by modal
+        if hasattr(ctx, "invoked_by_context_menu"): # user is a string if invoked by a context menu
             user = await self.client.find_user(ctx, user)
 
         member = Member(user.id, ctx.guild.id)
@@ -312,11 +312,11 @@ class Tags(commands.Cog):
             uses, name = i
             g.append(f"`{name}` with `{uses}` uses")
         if len(g) <= 10:
-            return await ctx.send(embed=self._build_embed(ctx, g, 1, user), ephemeral=hasattr(ctx, "invoked_by_modal"))
+            return await ctx.send(embed=self._build_embed(ctx, g, 1, user), ephemeral=hasattr(ctx, "invoked_by_context_menu"))
 
         def make_embed(page, _, pages):
             return self._build_embed(ctx, pages, page, user)
 
-        await Paginator(ctx, g, func=make_embed, max_pages=math.ceil(len(g)/10), ephemeral=hasattr(ctx, "invoked_by_modal")).start()
+        await Paginator(ctx, g, func=make_embed, max_pages=math.ceil(len(g)/10), ephemeral=hasattr(ctx, "invoked_by_context_menu")).start()
 
 Cog = Tags

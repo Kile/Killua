@@ -81,7 +81,7 @@ class Category(Enum):
 
     TAGS = {
         "name": "tags",
-        "description": "Tags if you want to save some text. `[PREMIUM ONLY]`",
+        "description": "Tags if you want to save some text.",
         "emoji": {
             "unicode": "\U0001f5c4",
             "normal": ":file_cabinet:"

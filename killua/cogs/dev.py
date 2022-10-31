@@ -11,7 +11,7 @@ from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 from killua.utils.classes import User, Guild #lgtm [py/unused-import]
-from killua.utils.interactions import View, Button
+from killua.utils.interactions import View, Button, Modal
 from killua.static.enums import Category, Activities, Presences, StatsOptions
 from killua.static.cards import Card #lgtm [py/unused-import]
 from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT, INFO
@@ -238,38 +238,44 @@ class Dev(commands.Cog):
     @commands.is_owner()
     @dev.command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
-    @discord.app_commands.describe(
-        version="The name of the version to publish",
-        update="The content of the update"
-    )
-    async def publish_update(self, ctx: commands.Context, version: str, *, update: str):
+    async def publish_update(self, ctx: commands.Context):
         """Allows me to publish Killua updates in a handy formart"""
+        if not ctx.interaction:
+            return await ctx.send("This command can only be used with slash commands")
+
+        modal = Modal(timeout=None)
+        version = discord.ui.TextInput(label="Version", placeholder="v1.0")
+        image = discord.ui.TextInput(label="Image", default="https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png", required=False)
+        description = discord.ui.TextInput(label="Description", placeholder="Killua is now open source!", max_length=4000)
+        modal.add_item(version).add_item(image).add_item(description)
+
+        await ctx.interaction.response.send_modal(modal)
+
+        await modal.wait()
 
         old = DB.const.find_one({"_id": "updates"})["updates"]
         old_version = old[-1:]["version"] if "version" in old else "No version"
 
-        if version in [x["version"] for x in old if "version" in x]:
-            return await ctx.send("This is an already existing version")
+        if version.value in [x["version"] for x in old if "version" in x]:
+            return await ctx.send("This is an already existing version", ephemeral=True)
 
         embed = discord.Embed.from_dict({
             "title": f"Killua Update `{old_version}` -> `{version}`",
-            "description": update,
+            "description": description.value,
             "color": 0x1400ff,
             "footer": {"text": f"Update by {ctx.author}", "icon_url": str(ctx.author.avatar.url)},
-            "image": {"url": "https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png"}
+            "image": {"url": image.value or "https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png"}
         })
 
-        data = {"version": version, "description": update, "published_on": datetime.now(), "published_by": ctx.author.id}
+        data = {"version": version, "description": description.value, "published_on": datetime.now(), "published_by": ctx.author.id, "image": image.value}
         DB.const.update_one({"_id": "updates"}, {"$push": {"updates": data}})
         self.version_cache.append(version)
 
-        await ctx.send("Published new update " + f"`{old_version}` -> `{version}`", ephemeral=True)
         if self.client.is_dev: # We do not want to accidentally publish a message when testing
             return
         channel = self.client.get_channel(UPDATE_CHANNEL)
         msg = await channel.send(content= "<@&795422783261114398>", embed=embed)
-        if not ctx.interaction:
-            await ctx.message.delete()
+        await ctx.send("Published new update " + f"`{old_version}` -> `{version}`", ephemeral=True)
         await msg.publish()
 
     @check()
@@ -291,6 +297,7 @@ class Dev(commands.Cog):
             "title": f"Infos about version `{data['version']}`",
             "description": str(data["description"]),
             "color": 0x1400ff,
+            "image": {"url": data["image"]},
             "footer": {"icon_url": str(author.avatar.url), "text": f"Published on {data['published_on'].strftime('%b %d %Y %H:%M:%S')}"}
         })
         await ctx.send(embed=embed)

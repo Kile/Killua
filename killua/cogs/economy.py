@@ -174,7 +174,7 @@ class Economy(commands.Cog):
                 return await ctx.send(f"Could not find user `{user}`", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
         embed = self._getmember(res)
-        return await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_modal"))
+        return await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_context_menu"))
 
     @check()
     @economy.command(aliases=["bal", "balance", "points"], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
@@ -191,7 +191,7 @@ class Economy(commands.Cog):
                 return await ctx.send("User not found", ephemeral=True)
 
         balance = User(res.id).jenny
-        return await ctx.send(f"{res}'s balance is {balance} Jenny", aphemeral=hasattr(ctx, "invoked_by_modal"))
+        return await ctx.send(f"{res}'s balance is {balance} Jenny", aphemeral=hasattr(ctx, "invoked_by_context_menu"))
         
     @check()
     @economy.command(extras={"category":Category.ECONOMY}, usage="daily")

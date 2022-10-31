@@ -102,19 +102,19 @@ class SmallCommands(commands.Cog):
         return cuteified_text
 
     @commands.hybrid_group()
-    async def miscillaneous(self, _: commands.Context):
-        """A collection of miscillaneous commands."""
+    async def misc(self, _: commands.Context):
+        """A collection of miscellaneous commands."""
         ...
 
     @check()
-    @miscillaneous.command(aliases=["uwu", "owo", "owofy"], extras={"category":Category.FUN}, usage="uwufy <text>")
+    @misc.command(aliases=["uwu", "owo", "owofy"], extras={"category":Category.FUN}, usage="uwufy <text>")
     @discord.app_commands.describe(text="The text to uwufy")
     async def uwufy(self, ctx: commands.Context, *, text: str):
         """Uwufy any sentence you want with dis command, have fun >_<"""
         return await self.client.send_message(ctx, self.build_uwufy(text, stuttering=3, cuteness=3))
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="ping")
+    @misc.command(extras={"category":Category.FUN}, usage="ping")
     async def ping(self, ctx: commands.Context):
         """Standart of seeing if the bot is working"""
         start = time.time()
@@ -123,19 +123,19 @@ class SmallCommands(commands.Cog):
         await msg.edit(content = str("Pong in `" + str(1000 * (end - start))) + "` ms")
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="topic")
+    @misc.command(extras={"category":Category.FUN}, usage="topic")
     async def topic(self, ctx: commands.Context):
         """From a constantly updating list of topics to talk about one is chosen here"""
         await ctx.send(choice(TOPICS))
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="hi")
+    @misc.command(extras={"category":Category.FUN}, usage="hi")
     async def hi(self, ctx: commands.Context):
         """This is just here because it was Killua's first command and I can't take that from him"""
         await ctx.send("Hello " + str(ctx.author))
 
     @check()
-    @miscillaneous.command(name="8ball", extras={"category":Category.FUN}, usage="8ball <question>")
+    @misc.command(name="8ball", extras={"category":Category.FUN}, usage="8ball <question>")
     @discord.app_commands.describe(question="The question to ask the magic 8 ball")
     async def _ball(self, ctx: commands.Context, *, question: str):
         """Ask Killua anything and he will answer"""
@@ -148,7 +148,7 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @miscillaneous.command(aliases=["av", "a"], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
+    @misc.command(aliases=["av", "a"], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
     @discord.app_commands.describe(user="The user to show the avatar of")
     async def avatar(self, ctx: commands.Context, user: str = None):
         """Shows the avatar of a user"""
@@ -170,7 +170,7 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="invite")
+    @misc.command(extras={"category":Category.FUN}, usage="invite")
     async def invite(self, ctx: commands.Context):
         """Allows you to invite Killua to any guild you have at least `manage server` permissions."""
         view = discord.ui.View()
@@ -183,7 +183,7 @@ class SmallCommands(commands.Cog):
         await ctx.send(embed=embed, view=view) 
 
     @check()
-    @miscillaneous.command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
+    @misc.command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
     async def permissions(self, ctx: commands.Context):
         """Displays the permissions Killua has and has not in the current channel"""
         permissions = "\n".join([f"{v} {n}" for n, v in ctx.me.guild_permissions])
@@ -200,7 +200,7 @@ class SmallCommands(commands.Cog):
             await ctx.send("__Bot permissions__\n\n"+prettier)
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="vote")
+    @misc.command(extras={"category":Category.FUN}, usage="vote")
     async def vote(self, ctx: commands.Context):
         """Gives you the links you need if you want vote for Killua, you will get sone Jenny as a reward"""
         view = discord.ui.View()
@@ -220,7 +220,7 @@ class SmallCommands(commands.Cog):
         ][:25]
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
+    @misc.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
     @discord.app_commands.describe(
         source="The language you want to translate from",
         target="The language you want to translate to",
@@ -230,10 +230,10 @@ class SmallCommands(commands.Cog):
     async def translate(self, ctx: commands.Context, source: str, target: str = None, *, text: str):
         """Translate anything to 20+ languages with this command!"""
         if source.lower() in LANGS: source = LANGS[source.lower()]
-        if hasattr(ctx, "invoked_by_modal") or not target: target = (str(ctx.interaction.locale) if str(ctx.interaction.locale).startswith("zh") else str(ctx.interaction.locale).split("-")[0]) if ctx.interaction else target
+        if hasattr(ctx, "invoked_by_context_menu") or not target: target = (str(ctx.interaction.locale) if str(ctx.interaction.locale).startswith("zh") else str(ctx.interaction.locale).split("-")[0]) if ctx.interaction else target
         elif target.lower() in LANGS: target = LANGS[target.lower()]
 
-        if (not target in LANGS.values() and not hasattr(ctx, "invoked_by_modal")) or not (source in LANGS.values()):
+        if (not target in LANGS.values() and not hasattr(ctx, "invoked_by_context_menu")) or not (source in LANGS.values()):
             return await ctx.send("Invalid language! This is how to use the command: `" + ctx.command.usage + "`", ephemeral=True)
 
         if len(source) > 1800:
@@ -249,7 +249,7 @@ class SmallCommands(commands.Cog):
         if not "matches" in translation or len(translation["matches"]) < 1:
             if source == "autodetect":
                 return await ctx.send("Unfortunately the translators language detection is currently malfunctioning, please try again later!", ephemeral=True)
-            return await ctx.send("Translation failed!", ephemeral=hasattr(ctx, "invoked_by_modal"))
+            return await ctx.send("Translation failed!", ephemeral=hasattr(ctx, "invoked_by_context_menu"))
 
         embed = discord.Embed.from_dict({ 
             "title": f"Translation Successfull",
@@ -258,10 +258,10 @@ class SmallCommands(commands.Cog):
             "footer": {"text": "Confidence: " + str(translation["matches"][0]["quality"]) + "%"}
         })
         
-        await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_modal"))
+        await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_context_menu"))
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="calc <math>")
+    @misc.command(extras={"category":Category.FUN}, usage="calc <math>")
     @discord.app_commands.describe(expression="The expression to calculate")
     async def calc(self, ctx: commands.Context, *, expression: str = None):
         """Calculates any equation you give it. Syntax: https://mathjs.org/docs/reference/functions.html"""
@@ -280,7 +280,7 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, "Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="poll")
+    @misc.command(extras={"category":Category.FUN}, usage="poll")
     async def poll(self, ctx: commands.Context):
         """Creates a poll"""
         if not ctx.interaction:
@@ -320,7 +320,7 @@ class SmallCommands(commands.Cog):
         await ctx.send(embed=embed, view=view)
 
     @check()
-    @miscillaneous.command(extras={"category":Category.FUN}, usage="wyr")
+    @misc.command(extras={"category":Category.FUN}, usage="wyr")
     async def wyr(self, ctx: commands.Context):
         """Asks a random would you rather question and allows you to vote."""
         

@@ -541,7 +541,7 @@ class TodoSystem(commands.Cog):
         todos.append({"todo": text, "marked": None, "added_by": ctx.author.id, "added_on": datetime.now(),"views": 0, "assigned_to": [], "mark_log": [], "due_at": (datetime.now() + due_in) if due_in else None, "notified": False if due_in else None})
         
         todo_list.set_property("todos", todos)
-        return await ctx.send(f"Great! Added \"{text}\" to your todo list!" + (f" I'll remind you and everyone assigned <t:{int((datetime.now() + due_in).timestamp())}:R>" if due_in else ""), allowed_mentions=discord.AllowedMentions.none(), ephemeral=hasattr(ctx, "invoked_by_modal"))
+        return await ctx.send(f"Great! Added \"{text}\" to your todo list!" + (f" I'll remind you and everyone assigned <t:{int((datetime.now() + due_in).timestamp())}:R>" if due_in else ""), allowed_mentions=discord.AllowedMentions.none(), ephemeral=hasattr(ctx, "invoked_by_context_menu"))
 
     @check(20)
     @todo.command(extras={"category":Category.TODO}, usage="kick <user>")
