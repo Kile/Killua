@@ -194,7 +194,7 @@ class Tags(commands.Cog):
     @discord.app_commands.describe(name="The name of the tag you want to edit")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
     async def edit(self, ctx: commands.Context, *, name: str):
-        """Chose wrong tag description? Edit a tag"s description with this command"""
+        """Chose wrong tag description? Edit a tag's description with this command"""
         tag = Tag(ctx.guild.id, name)
 
         if tag.found is False:

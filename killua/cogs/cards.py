@@ -358,7 +358,7 @@ class Cards(commands.Cog):
     @discord.app_commands.describe(user="The user to meet. Must have sent a mesage recently.")
     @cards.command(aliases=["approach"], extras={"category":Category.CARDS}, usage="meet <user>")
     async def meet(self, ctx: commands.Context, user: discord.Member):
-        """Meet a user who has recently send a message in this channel to enable certain effects"""
+        """Meet a user who has recently sent a message in this channel to enable certain effects"""
         if hasattr(ctx, "invoked_by_context_menu"):
             user = await self.client.find_user(ctx, user)
 
@@ -392,7 +392,7 @@ class Cards(commands.Cog):
     @discord.app_commands.describe(card="The card to discard")
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
     async def discard(self, ctx: commands.Context, card: str):
-        """Discard a card you want to get rid of with this command. Make sure it"s in the free slots"""
+        """Discard a card you want to get rid of with this command. Make sure it's in the free slots"""
         
         user = User(ctx.author.id)
         try:

@@ -213,7 +213,7 @@ class TodoSystem(commands.Cog):
         custom_id="A custom id for the todo list- Premium only",
     )
     async def create(self, ctx: commands.Context, name: str, status: TodoStatus, delete_when_done: TodoDeleteWhenDone, custom_id: Optional[str] = None):
-        """Let"s you create your todo list in an interactive menu"""
+        """Lets you create your todo list in an interactive menu"""
         
         user_todo_lists = [x for x in DB.todo.find({"owner": ctx.author.id})]
 

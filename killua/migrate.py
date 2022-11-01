@@ -4,6 +4,8 @@ an update is released. It can be run through the command line with `python3 -m k
 """
 import logging
 from typing import Type
+from datetime import datetime
+from json import loads
 from pymongo.collection import Collection
 from discord.ext.commands import AutoShardedBot, HybridGroup
 from killua.static.constants import DB, CLUSTER
@@ -76,7 +78,13 @@ def migrate():
     const.insert_one({"_id": "updates", "updates": []})
     logging.info("Migrated updates")
     # stats (growth)
-    const.insert_one({"_id": "growth", "growth": []}) 
+    with open("data.json", "r") as file: # Getting historic growth data
+        data = list(loads(file.read()))
+
+    dates = [datetime.fromtimestamp(int(item["timestamp"])) for item in data]
+    dates.sort()
+    new_list = [{"guilds": data[p]["guild"], "date": date} for p, date in enumerate(dates)]
+    const.insert_one({"_id": "growth", "growth": new_list})
     logging.info("Migrated growth")
     # blacklist
     const.insert_one({"_id": "blacklist", "blacklist": []})

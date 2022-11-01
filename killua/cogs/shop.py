@@ -399,7 +399,7 @@ class Shop(commands.Cog):
         amount="The amount of jenny to give"
     ) 
     async def jenny(self, ctx: commands.Context, other: discord.Member, amount: int):
-        """If you"re feeling generous give another user jenny"""
+        """If you're feeling generous give another user jenny"""
         
         if isinstance((val:=await self._validate(ctx, other)), discord.Message):
             return
@@ -441,7 +441,7 @@ class Shop(commands.Cog):
     )
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
     async def _card(self, ctx: commands.Context, other: discord.Member, card: str):
-        """If you"re feeling generous give another user a card"""
+        """If you're feeling generous give another user a card"""
 
         if isinstance((val:=await self._validate(ctx, other)), discord.Message):
             return
@@ -468,7 +468,7 @@ class Shop(commands.Cog):
         box="What lootbox to give"
     )
     async def _lootbox(self, ctx: commands.Context, other: discord.Member, box: str):
-        """If you"re feeling generous give another user a lootbox, maybe they have luck"""
+        """If you're feeling generous give another user a lootbox, maybe they'll get lucky'"""
 
         if isinstance((val:=await self._validate(ctx, other)), discord.Message):
             return

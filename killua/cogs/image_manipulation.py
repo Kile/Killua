@@ -108,7 +108,7 @@ class ImageManipulation(commands.Cog):
             else:
                 url = re.search(URL_REGEX, target) 
                 # Makes sure the url is valid.
-                # This check is not perfect but it works for most cases and if it"s a false positive itdoesn't matter too much
+                # This check is not perfect but it works for most cases and if it's a false positive itdoesn't matter too much
                 if not url:
                     pass
                 else:
@@ -301,7 +301,7 @@ class ImageManipulation(commands.Cog):
     @image.command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def spin(self, ctx: commands.Context, target: str = None):
-        """Spins an image "round and "round and "round and "round..."""
+        """Spins an image 'round and 'round and 'round and 'round..."""
         data = await self._validate_input(ctx, target)
         if not data:
             return await ctx.send(f"Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`", allowed_mentions=discord.AllowedMentions.none())

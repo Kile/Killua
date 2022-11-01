@@ -25,8 +25,23 @@ class Events(commands.Cog):
         self.client.startup_datetime = datetime.now()
 
     @property
+    def old_commands(self) -> List[str]:
+        return self._get_old_commands()
+
+    @property
     def log_channel(self):
         return self.client.get_guild(GUILD).get_channel(self.log_channel_id)
+
+    def _get_old_commands(self) -> List[str]:
+        """Gets a list of all commands names without and their aliases"""
+        cmds = []
+        for command in self.client.tree.walk_commands():
+            if not isinstance(command, discord.app_commands.Group) and not command.name == "help" and\
+                not command.qualified_name.startswith("jishaku") and \
+                    not command.qualified_name.startswith("todo") and \
+                        not command.qualified_name.startswith("tag"):
+                            cmds.append(command.name)
+        return cmds
 
     async def _post_guild_count(self) -> None:
         """Posts relevant stats to the botlists Killua is on"""
@@ -84,6 +99,13 @@ class Events(commands.Cog):
         else:
             await self._post_guild_count()
             await self._load_cards_cache()
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message) -> None:
+        prefix = "kil!" if self.client.is_dev else (Guild(message.guild.id).prefix if message.guild else "k!")
+        if message.content.startswith(prefix):
+            if message.content[len(prefix):].split(" ")[0] in self.old_commands:
+                return await message.reply("This command has been moved over to a command group, check `/help` to find the new command and `/update` to see what's changing with Killua.", allowed_mentions=discord.AllowedMentions.none())
 
     @commands.Cog.listener()
     async def on_ready(self):

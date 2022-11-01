@@ -192,6 +192,7 @@ class Premium(commands.Cog):
     @premium_member_only()
     @premium.command(extras={"category": Category.ECONOMY}, usage="weekly")
     async def weekly(self, ctx: commands.Context):
+        """Claim a weekly lootbox with this command"""
         user = User(ctx.author.id)
 
         if user.weekly_cooldown and user.weekly_cooldown > datetime.now():

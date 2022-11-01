@@ -64,7 +64,7 @@ def check(time: int = 0):
 
     def add_usage(command: Union[commands.Command, Type[commands.Command]]) -> None:
         """Adds one to the usage count of a command"""
-        if isinstance(command, commands.HybridGroup):
+        if isinstance(command, commands.HybridGroup) or isinstance(command, discord.app_commands.Group):
             return
 
         data = DB.const.find_one({"_id": "usage"})["command_usage"]

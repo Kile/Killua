@@ -195,7 +195,7 @@ class Actions(commands.Cog):
     @check()
     @action.command(extras={"category": Category.ACTIONS}, usage="dance")
     async def dance(self, ctx: commands.Context):
-        """Show off with your dance moves!"""
+        """Show off your dance moves!"""
         return await self.get_image(ctx)
 
     @check()

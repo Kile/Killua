@@ -118,7 +118,7 @@ class SmallCommands(commands.Cog):
     @check()
     @misc.command(extras={"category":Category.FUN}, usage="ping")
     async def ping(self, ctx: commands.Context):
-        """Standart of seeing if the bot is working"""
+        """Standard of seeing if the bot is working"""
         start = time.time()
         msg = await ctx.send("Pong!")
         end = time.time()
@@ -127,7 +127,7 @@ class SmallCommands(commands.Cog):
     @check()
     @misc.command(extras={"category":Category.FUN}, usage="topic")
     async def topic(self, ctx: commands.Context):
-        """From a constantly updating list of topics to talk about one is chosen here"""
+        """Sends a conversation starter"""
         await ctx.send(choice(TOPICS))
 
     @check()
@@ -204,7 +204,7 @@ class SmallCommands(commands.Cog):
     @check()
     @misc.command(extras={"category":Category.FUN}, usage="vote")
     async def vote(self, ctx: commands.Context):
-        """Gives you the links you need if you want vote for Killua, you will get sone Jenny as a reward"""
+        """Gives you the links you need if you want to vote for Killua, you will get sone Jenny as a reward"""
         view = discord.ui.View()
         view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://top.gg/bot/756206646396452975/vote", label="top.gg"))
         view.add_item(discord.ui.Button(style=discord.ButtonStyle.grey, url="https://discordbotlist.com/bots/killua/upvote", label="dbl"))

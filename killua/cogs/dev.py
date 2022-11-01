@@ -6,6 +6,7 @@ from typing import List, Tuple, Union
 from io import BytesIO
 from datetime import datetime, timedelta
 from matplotlib import pyplot as plt
+import numpy as np
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -74,11 +75,12 @@ class Dev(commands.Cog):
         plt.plot(dates, y_points, color="blue")
         plt.xlabel("Time")
         plt.ylabel(label)
-        # Plot the trend
-        avg_change_per_day = round(sum([y_points[i+1] - y_points[i] for i in range(len(y_points)-1)])/len(y_points), 2)
-        start = y_points[0]
-        trend = [start + avg_change_per_day * i for i in range(len(y_points))]
-        plt.plot(dates, trend, linestyle=":", color="grey")
+
+        # Plot the trend using a linear regression
+        x = np.array([x.timestamp() for x in dates])
+        y = np.array(y_points)
+        m, b = np.polyfit(x, y, 1)
+        plt.plot(dates, m*x + b, linestyle=":", color="grey")
 
         plt.tight_layout() # Making the actual graph a bit bigger
         buf = BytesIO()
@@ -94,7 +96,7 @@ class Dev(commands.Cog):
         #Calculates the average change between one value compared to the next one in the list
         change = [values[i+1] - values[i] for i in range(len(values)-1)]
         avg_change = round(sum(change)/len(values), 2)
-        # Calculates the standart deviation of the avergae change
+        # Calculates the standard deviation of the avergae change
         std_change = round(math.sqrt(sum([(x - avg_change)**2 for x in change])/len(values)), 2)
 
         recent_avg = round(sum(values[-10:]) / 10, 2)
@@ -113,6 +115,10 @@ class Dev(commands.Cog):
         """Creates an embed with the stats of the given type"""
         dates = [x["date"] for x in data if type in x]
         type_list = [x[type] for x in data if type in x]
+
+        if not dates:
+            embed.description = "No data available just yet"
+            return embed
 
         buffer = self._create_graph(dates, type_list, type.replace("_", " ").title())
         file = discord.File(buffer, filename=f"{type}.png")
@@ -220,7 +226,7 @@ class Dev(commands.Cog):
     @commands.command(aliases=["exec"], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True, with_app_command=False)
     @discord.app_commands.describe(code="The code to evaluate") # Since this is not an app command this won"t show up but is still added for consistency
     async def eval(self, ctx: commands.Context, *, code: str):
-        """Standart eval command, owner restricted"""
+        """Standard eval command, owner restricted"""
         try:
             await ctx.send(f"```py\n{eval(code)}```")
         except Exception as e:
@@ -230,7 +236,7 @@ class Dev(commands.Cog):
     @commands.command(extras={"category":Category.OTHER}, usage="say <text>", hidden=True, with_app_command=False)
     @discord.app_commands.describe(content="What to say") # Same thing as for the eval command
     async def say(self, ctx: commands.Context, *, content: str):
-        """Let"s Killua say what is specified with this command. Possible abuse leads to this being restricted"""
+        """Lets Killua say what is specified with this command. Possible abuse leads to this being restricted"""
 
         await ctx.message.delete()
         await ctx.send(content, reference=ctx.message.reference)
@@ -239,7 +245,7 @@ class Dev(commands.Cog):
     @dev.command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     async def publish_update(self, ctx: commands.Context):
-        """Allows me to publish Killua updates in a handy formart"""
+        """Allows me to publish Killua updates in a handy format"""
         if not ctx.interaction:
             return await ctx.send("This command can only be used with slash commands")
 
@@ -389,7 +395,7 @@ class Dev(commands.Cog):
             n_of_commands = 0
 
             for command in self.client.tree.walk_commands():
-                if not isinstance(command, commands.HybridGroup) and not command.qualified_name.startswith("jishaku"):
+                if not isinstance(command, discord.app_commands.Group) and not command.qualified_name.startswith("jishaku"):
                     n_of_commands += 1
 
             data = DB.const.find_one({"_id": "updates"})["updates"]

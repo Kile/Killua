@@ -173,7 +173,7 @@ class HelpCommand(commands.Cog):
 
             cmd = [c for c in all_commands if c.qualified_name == command.lower()][0]
 
-            if isinstance(cmd, commands.HybridGroup) or isinstance(cmd, discord.app_commands.ContextMenu) or cmd.hidden or cmd.qualified_name.startswith("jishaku") or cmd.name == "help": # not showing what it"s not supposed to. Hacky I know
+            if isinstance(cmd, commands.HybridGroup) or isinstance(cmd, discord.app_commands.ContextMenu) or cmd.hidden or cmd.qualified_name.startswith("jishaku") or cmd.name == "help": # not showing what it's not supposed to. Hacky I know
                 return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
 
             source_link = self.find_source(cmd)

@@ -526,7 +526,7 @@ class Games(commands.Cog):
     @games.command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
     @discord.app_commands.describe(difficulty="The difficulty of the question")
     async def trivia(self, ctx: commands.Context, difficulty: TriviaDifficulties = TriviaDifficulties.easy):
-        """Play trivial and earn some jenny if you"re right!"""
+        """Play trivia and earn some jenny if you get the answer right!"""
         await ctx.defer()
         game = Trivia(ctx, difficulty.name, self.client.session)
         await game.create()
