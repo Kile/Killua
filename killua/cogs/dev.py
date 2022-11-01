@@ -249,7 +249,7 @@ class Dev(commands.Cog):
         if not ctx.interaction:
             return await ctx.send("This command can only be used with slash commands")
 
-        modal = Modal(timeout=None)
+        modal = Modal(title="New update",timeout=None)
         version = discord.ui.TextInput(label="Version", placeholder="v1.0")
         image = discord.ui.TextInput(label="Image", default="https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png", required=False)
         description = discord.ui.TextInput(label="Description", placeholder="Killua is now open source!", max_length=4000)
@@ -273,15 +273,17 @@ class Dev(commands.Cog):
             "image": {"url": image.value or "https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png"}
         })
 
-        data = {"version": version, "description": description.value, "published_on": datetime.now(), "published_by": ctx.author.id, "image": image.value}
+        data = {"version": version.value, "description": description.value, "published_on": datetime.now(), "published_by": ctx.author.id, "image": image.value}
         DB.const.update_one({"_id": "updates"}, {"$push": {"updates": data}})
-        self.version_cache.append(version)
+        self.version_cache.append(version.value)
+
+        await modal.interaction.response.defer()
 
         if self.client.is_dev: # We do not want to accidentally publish a message when testing
             return
         channel = self.client.get_channel(UPDATE_CHANNEL)
         msg = await channel.send(content= "<@&795422783261114398>", embed=embed)
-        await ctx.send("Published new update " + f"`{old_version}` -> `{version}`", ephemeral=True)
+        await ctx.send("Published new update " + f"`{old_version}` -> `{version.value}`", ephemeral=True)
         await msg.publish()
 
     @check()

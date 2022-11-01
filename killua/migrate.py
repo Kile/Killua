@@ -33,7 +33,7 @@ def migrate_requiring_bot(bot: Type[AutoShardedBot]):
     del usage["ball"]
 
     # Handle edge case
-    usage["misicillaneous info"] = usage["info"]
+    usage["dev info"] = usage["info"]
     del usage["info"]
 
     usage["economy leaderboard"] = usage["leaderboard"]
@@ -81,9 +81,8 @@ def migrate():
     with open("data.json", "r") as file: # Getting historic growth data
         data = list(loads(file.read()))
 
-    dates = [datetime.fromtimestamp(int(item["timestamp"])) for item in data]
-    dates.sort()
-    new_list = [{"guilds": data[p]["guild"], "date": date} for p, date in enumerate(dates)]
+    new_list = [{"date": datetime.fromtimestamp(int(item["timestamp"])), "guilds": item["guild"]} for item in data]
+    new_list.sort(key=lambda x: x["date"])
     const.insert_one({"_id": "growth", "growth": new_list})
     logging.info("Migrated growth")
     # blacklist

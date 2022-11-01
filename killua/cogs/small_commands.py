@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 
 from killua.bot import BaseBot
-from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, DB, WYR
+from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, WYR
 from killua.utils.interactions import View, Button
 from killua.utils.checks import check
 from killua.static.enums import Category
