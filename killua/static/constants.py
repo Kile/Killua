@@ -88,19 +88,19 @@ URL_REGEX = r"(?i)\b((?:https?:(?:/{1,3}|[a-z0-9%])|[a-z0-9.\-]+[.](?:com|net|or
 # these are badges that grant premium benefits without being managed by the patreon class.
 # granted when someone pays for premium another way or gets benefits in some way
 PREMIUM_ALIASES = {
-    "tier_one": "6002629",
-    "tier_two": "6002630",
+    "tier_one": "6002630",
+    "tier_two": "6002629",
     "tier_three": "6002631",
     "tier_four": "6563669"
 }
 
 PATREON_TIERS = {
-    "6002629": {
+    "6002630": {
         "name": "tier_one",
         "id": 1,
         "premium_guilds": 1
     },
-    "6002630": {        
+    "6002629": {        
         "name": "tier_two",
         "id": 2,
         "premium_guilds": 2
