@@ -347,10 +347,10 @@ class Cards(commands.Cog):
             return await ctx.send(embed=embed)
             
         elif option == "end" and not has_effect: 
-            return await ctx.send(f"You aren't on a hunt yet! Start one with `{self.client.command_prefix(self.client, ctx.message)[2]}hunt`", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"You aren't on a hunt yet! Start one with `/cards hunt`", allowed_mentions=discord.AllowedMentions.none())
 
         if has_effect:
-            return await ctx.send(f"You are already on a hunt! Get the results with `{self.client.command_prefix(self.client, ctx.message)[2]}hunt end`", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"You are already on a hunt! Get the results with `/cards hunt end`", allowed_mentions=discord.AllowedMentions.none())
         user.add_effect("hunting", datetime.now())
         await ctx.send("You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get")
 
@@ -385,7 +385,7 @@ class Cards(commands.Cog):
             await ctx.message.delete()
         except discord.HTTPException:
             pass
-        return await ctx.send(f"Done {ctx.author.mention}! Successfully added `{user}` to the list of people you've met", delete_after=5, allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.send(f"Done {ctx.author.mention}! Successfully added `{user}` to the list of people you've met", delete_after=5, allowed_mentions=discord.AllowedMentions.none(), ephemeral=hasattr(ctx, "invoked_by_context_menu"))
             
     @check()
     @cards.command(extras={"category":Category.CARDS}, usage="discard <card_id>")

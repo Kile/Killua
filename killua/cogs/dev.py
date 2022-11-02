@@ -187,7 +187,7 @@ class Dev(commands.Cog):
                     await self.initial_top(ctx)
 
     async def initial_top(self, ctx: commands.Context) -> None:
-        s = DB.stats.find_one({"_id": "commands"})["command_usage"]
+        s = DB.const.find_one({"_id": "commands"})["command_usage"]
         top = sorted(s.items(), key=lambda x: x[1], reverse=True)
         rest = 0
         for x in top[-9:]:
@@ -293,7 +293,7 @@ class Dev(commands.Cog):
     async def update(self, ctx: commands.Context, version: str = None):
         """Allows you to view current and past updates"""
         if version is None:
-            data = DB.const.find_one({"_id": "updates"})["updates"][-1:]
+            data = DB.const.find_one({"_id": "updates"})["updates"][-1:][0]
         else:
             d = [x for x in DB.const.find_one({"_id": "updates"})["updates"] if "version" in x and x["version"] == version]
             if len(d) == 0:
@@ -401,7 +401,7 @@ class Dev(commands.Cog):
                     n_of_commands += 1
 
             data = DB.const.find_one({"_id": "updates"})["updates"]
-            bot_version = "`Development`" if self.client.is_dev else (data[:-1]["version"] if "version" in data[:-1] else "`Unknown`")
+            bot_version = "`Development`" if self.client.is_dev else (data[:-1][0]["version"] if "version" in data[:-1][0] else "`Unknown`")
 
             now = datetime.now()
             diff: timedelta = now - self.client.startup_datetime

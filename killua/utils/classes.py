@@ -1123,7 +1123,7 @@ class Guild:
             g = DB.guilds.find_one({"id": guild_id})
 
         self.id: int = guild_id
-        self.badges: List[str] = g["badges"]
+        self.badges: List[str] = g["badges"] if "badges" in g else []
         self.prefix: str = g["prefix"]
         self.commands: dict = {v for _, v in g["commands"].items()} if "commands" in g else {}
         
