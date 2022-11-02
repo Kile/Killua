@@ -153,7 +153,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         # Welcomes new member
-        if not self.client.is_dev: # In theory it would be cool if the dev bot welcomed you but it just isn't always online
+        if not self.client.is_dev and member.guild.id == GUILD: # In theory it would be cool if the dev bot welcomed you but it just isn't always online
             embed = discord.Embed.from_dict({
                 "title": "Welcome to the Killua support server a.k.a. Kile's dev!",
                 "description": "You joined. What now?\n\n**Where to go**\n" + \
