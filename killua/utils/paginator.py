@@ -31,7 +31,7 @@ class DefaultEmbed(discord.Embed):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.color = 0x1400ff
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = datetime.datetime.now()
         self.set_footer()
 
 class Buttons(View):
@@ -108,7 +108,7 @@ class Buttons(View):
     async def _edit_message(self, interaction: discord.Interaction) -> None:
         """Gets the new embed and edits the message"""
         self._disable_on_end()
-        self.message = interaction.message
+        self.message = interaction.message if hasattr(interaction, "message") else None
         if self.has_file:
             return await self._handle_file(interaction)
         if self.defer:
@@ -119,29 +119,29 @@ class Buttons(View):
             await self._get_embed()
             await interaction.response.edit_message(embed=self.embed, view=self)
 
-    @discord.ui.button(emoji=ButtonEmoji.FIRST_PAGE, style=Color.BLURPLE, disabled=True)
-    async def first_page(self, button: discord.ui.button, interaction: discord.Interaction):
+    @discord.ui.button(emoji=ButtonEmoji.FIRST_PAGE, style=Color.BLURPLE, disabled=True, custom_id="first")
+    async def first_page(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = 1
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=ButtonEmoji.BACKWARDS, style=Color.BLURPLE)
-    async def backwards(self, button: discord.ui.button, interaction: discord.Interaction):
+    @discord.ui.button(emoji=ButtonEmoji.BACKWARDS, style=Color.BLURPLE, custom_id="previous")
+    async def backwards(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.page - 1 if self.page > 1 else self.max_pages
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=ButtonEmoji.STOP, style=Color.RED)
-    async def delete(self, button: discord.ui.button, interaction: discord.Interaction):
+    @discord.ui.button(emoji=ButtonEmoji.STOP, style=Color.RED, custom_id="delete")
+    async def delete(self, interaction: discord.Interaction, _: discord.ui.button):
         await interaction.message.delete()
         self.ignore = True
         self.stop()
 
-    @discord.ui.button(emoji=ButtonEmoji.FORWARD, style=Color.BLURPLE)
-    async def forward(self, button: discord.ui.button, interaction: discord.Interaction):
+    @discord.ui.button(emoji=ButtonEmoji.FORWARD, style=Color.BLURPLE, custom_id="next")
+    async def forward(self, interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.page + 1 if not self.page >= self.max_pages else 1
         await self._edit_message(interaction)
 
-    @discord.ui.button(emoji=ButtonEmoji.LAST_PAGE, style=Color.BLURPLE)
-    async def last_page(self, button: discord.ui.button, interaction: discord.Interaction):
+    @discord.ui.button(emoji=ButtonEmoji.LAST_PAGE, style=Color.BLURPLE, custom_id="last")
+    async def last_page(self,interaction: discord.Interaction, _: discord.ui.button):
         self.page = self.max_pages
         await self._edit_message(interaction)
 
@@ -161,15 +161,16 @@ class Paginator:
     The paginator supports subclassing to for example modify buttons
     """
     def __init__(self,
-        ctx:commands.Context,
-        pages:Union[List[Union[str, int, dict]], None]=None,
-        timeout:Union[int, float]=200,
-        page:int=1, 
-        max_pages:Union[int, None]=None,
-        func:Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None]=None, 
-        embed:E=None,
-        defer:bool=False, # In case a pageturn can exceed 3 seconds this has to be set to True
-        has_file:bool=False,
+        ctx: commands.Context,
+        pages: Union[List[Union[str, int, dict]], None]=None,
+        timeout: Union[int, float]=200,
+        page: int = 1, 
+        max_pages: Union[int, None] = None,
+        func: Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None] = None, 
+        embed: E = None,
+        defer: bool = False, # In case a pageturn can exceed 3 seconds this has to be set to True
+        has_file: bool = False,
+        ephemeral: bool = False,
         **kwargs
         ):
 
@@ -182,6 +183,7 @@ class Paginator:
         self.defer = defer
         self.embed = embed or DefaultEmbed()
         self.has_file = has_file
+        self.ephemeral = ephemeral
         self.file = None
         self.user_id = self.ctx.author.id
         self.paginator = self
@@ -204,7 +206,7 @@ class Paginator:
     async def _start(self) -> View:
         """A seperate method so overwriting `start` can still use the logic of the normal paginator"""
         await self._get_first_embed()
-        self.view.message = (await self.ctx.bot.send_message(self.ctx, file=self.file, embed=self.embed, view=self.view)) if self.file else (await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view))
+        self.view.message = (await self.ctx.bot.send_message(self.ctx, file=self.file, embed=self.embed, view=self.view, ephemeral=self.ephemeral)) if self.file else (await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view))
         
         await self.view.wait()
 

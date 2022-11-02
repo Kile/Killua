@@ -9,30 +9,25 @@ Note: As the console says when running this program, you will need to add data f
 """
 from pymongo import errors, collection
 
+import logging
+from typing import List
 from killua.static.enums import PrintColors
 from killua.static.constants import (
-    shop,
-    stats,
-    presence,
-    updates
+    DB,
+    CONST_DEFAULT
 )
 
-def _try(coll: collection, args:dict):
+def _try(coll: collection, args: List[dict]):
     try:
-        coll.insert_one(args)
+        coll.insert_many(args)
     except errors.DuplicateKeyError:
-        print(f"{PrintColors.FAIL} \"{args['_id']}\" key already exists, skipped...{PrintColors.ENDC}")
+        logging.info(f"{PrintColors.FAIL} \"{args['_id']}\" key already exists, skipped...{PrintColors.ENDC}")
 
 def main():
     
-    _try(shop, {"_id": "daily_offers", "offers": [], "log": [], "reduced": None})
-    _try(stats, {"_id": "commands", "command_usage": {}})
-    _try(presence, {"_id": "status", "text": None, "activity": None, "presence": None})
-    _try(updates, {"_id": "current"})
-    _try(updates, {"_id": "log", "past_updates": []})
-    _try(stats, {"_id": "growth", "growth": []})
+    _try(DB.const, CONST_DEFAULT)
     
-    print(f"""
+    logging.info(f"""
     {PrintColors.OKGREEN} Successfully added all collections {PrintColors.WARNING}
 
      The "item" items have to be added manually. Structure:

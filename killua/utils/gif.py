@@ -24,7 +24,7 @@ class TransparentAnimatedGifConverter(object):
         """Set the transparent pixels to the color 0."""
         self._transparent_pixels = set(
             idx for idx, alpha in enumerate(
-                self._img_rgba.getchannel(channel='A').getdata())
+                self._img_rgba.getchannel(channel="A").getdata())
             if alpha <= self._alpha_threshold)
 
     def _set_parsed_palette(self):
@@ -58,8 +58,8 @@ class TransparentAnimatedGifConverter(object):
         new_idx = free_slots.pop() if free_slots else \
             self._get_similar_color_idx()
         self._img_p_used_palette_idxs.add(new_idx)
-        self._palette_replaces['idx_from'].append(0)
-        self._palette_replaces['idx_to'].append(new_idx)
+        self._palette_replaces["idx_from"].append(0)
+        self._palette_replaces["idx_to"].append(new_idx)
         self._img_p_parsedpalette[new_idx] = self._img_p_parsedpalette[0]
         del(self._img_p_parsedpalette[0])
 
@@ -81,10 +81,10 @@ class TransparentAnimatedGifConverter(object):
 
     def _adjust_pixels(self):
         """Convert the pixels into their new values."""
-        if self._palette_replaces['idx_from']:
+        if self._palette_replaces["idx_from"]:
             trans_table = bytearray.maketrans(
-                bytes(self._palette_replaces['idx_from']),
-                bytes(self._palette_replaces['idx_to']))
+                bytes(self._palette_replaces["idx_from"]),
+                bytes(self._palette_replaces["idx_to"]))
             self._img_p_data = self._img_p_data.translate(trans_table)
         for idx_pixel in self._transparent_pixels:
             self._img_p_data[idx_pixel] = 0
@@ -102,15 +102,15 @@ class TransparentAnimatedGifConverter(object):
 
     def process(self) -> Image:
         """Return the processed mode `P` `Image`."""
-        self._img_p = self._img_rgba.convert(mode='P')
+        self._img_p = self._img_rgba.convert(mode="P")
         self._img_p_data = bytearray(self._img_p.tobytes())
         self._palette_replaces = dict(idx_from=list(), idx_to=list())
         self._process_pixels()
         self._process_palette()
         self._adjust_pixels()
         self._adjust_palette()
-        self._img_p.info['transparency'] = 0
-        self._img_p.info['background'] = 0
+        self._img_p.info["transparency"] = 0
+        self._img_p.info["background"] = 0
         return self._img_p
 
 
@@ -121,7 +121,7 @@ def _create_animated_gif(images: List[Image], durations: Union[int, List[int]]) 
 
     for frame in images:
         thumbnail = frame.copy()  # type: Image
-        thumbnail_rgba = thumbnail.convert(mode='RGBA')
+        thumbnail_rgba = thumbnail.convert(mode="RGBA")
         thumbnail_rgba.thumbnail(size=frame.size, reducing_gap=3.0)
         converter = TransparentAnimatedGifConverter(img_rgba=thumbnail_rgba)
         thumbnail_p = converter.process()  # type: Image
@@ -129,7 +129,7 @@ def _create_animated_gif(images: List[Image], durations: Union[int, List[int]]) 
 
     output_image = new_images[0]
     save_kwargs.update(
-        format='GIF',
+        format="GIF",
         save_all=True,
         optimize=False,
         append_images=new_images[1:],
