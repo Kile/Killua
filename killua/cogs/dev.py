@@ -187,7 +187,7 @@ class Dev(commands.Cog):
                     await self.initial_top(ctx)
 
     async def initial_top(self, ctx: commands.Context) -> None:
-        s = DB.const.find_one({"_id": "commands"})["command_usage"]
+        s = DB.const.find_one({"_id": "usage"})["command_usage"]
         top = sorted(s.items(), key=lambda x: x[1], reverse=True)
         rest = 0
         for x in top[-9:]:
