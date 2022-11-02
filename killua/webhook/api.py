@@ -10,7 +10,8 @@ with open("config.json", "r") as config_file: # Needs to be read here again else
     config = json.loads(config_file.read())
 
 PASSWORD = config["password"]
-PORT = config["port"]
+# PORT = config["port"]
+IPC_TOKEN = config["ipc"]
 
 app = Quart(__name__)
 

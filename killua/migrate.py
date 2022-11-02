@@ -23,7 +23,7 @@ def migrate_requiring_bot(bot: Type[AutoShardedBot]):
         return
 
     # Migrate the current command usage statistics the const collecting, adjusting its values
-    coll: Collection = DB._DB["stats"]
+    coll: Collection = CLUSTER["general"]["stats"]
     usage = coll.find_one({"_id": "commands"})["command_usage"]
 
     new = {}
