@@ -252,7 +252,7 @@ class Dev(commands.Cog):
         modal = Modal(title="New update",timeout=None)
         version = discord.ui.TextInput(label="Version", placeholder="v1.0")
         image = discord.ui.TextInput(label="Image", default="https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png", required=False)
-        description = discord.ui.TextInput(label="Description", placeholder="Killua is now open source!", max_length=4000)
+        description = discord.ui.TextInput(label="Description", placeholder="Killua is now open source!", max_length=4000, style=discord.TextStyle.long)
         modal.add_item(version).add_item(image).add_item(description)
 
         await ctx.interaction.response.send_modal(modal)
