@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, json
 from quart import jsonify, Quart, request
 from zmq import REQ
 from zmq.asyncio import Context
@@ -6,7 +6,11 @@ from zmq.asyncio import Context
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) # This is a necessary hacky fix for importing issues
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from static.constants import PASSWORD, IPC_TOKEN
+with open("config.json", "r") as config_file: # Needs to be read here again else hypercorn will get mad
+    config = json.loads(config_file.read())
+
+PASSWORD = config["password"]
+PORT = config["port"]
 
 app = Quart(__name__)
 
