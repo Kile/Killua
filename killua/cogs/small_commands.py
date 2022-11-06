@@ -155,7 +155,7 @@ class SmallCommands(commands.Cog):
     async def avatar(self, ctx: commands.Context, user: str = None):
         """Shows the avatar of a user"""
         if user:
-            user = self.client.find_user(ctx, user)
+            user = await self.client.find_user(ctx, user)
             if not user:
                 return await ctx.send("User not found")
         else:
