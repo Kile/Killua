@@ -81,7 +81,6 @@ class Economy(commands.Cog):
                     {"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, 
                     {"name": "Jenny", "value": str(info.jenny), "inline": False}, 
                     {"name": "Account created at", "value": joined, "inline": False},
-                    {"name": "Rock Paper Scissors stats", "value": f"Wins: {info.rps_wins}\nLosses: {info.rps_losses}\nDraws: {info.rps_draws}", "inline": False},
                     {"name": "daily cooldown", "value": cooldown or "Never claimed `daily` before", "inline": False}
                 ],
                 "thumbnail": {"url": str(user.avatar.url) if user.avatar else None},
@@ -191,7 +190,7 @@ class Economy(commands.Cog):
                 return await ctx.send("User not found", ephemeral=True)
 
         balance = User(res.id).jenny
-        return await ctx.send(f"{res}'s balance is {balance} Jenny", aphemeral=hasattr(ctx, "invoked_by_context_menu"))
+        return await ctx.send(f"{res}'s balance is {balance} Jenny", ephemeral=hasattr(ctx, "invoked_by_context_menu"))
         
     @check()
     @economy.command(extras={"category":Category.ECONOMY}, usage="daily")

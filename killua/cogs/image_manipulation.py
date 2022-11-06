@@ -48,7 +48,8 @@ class ImageManipulation(commands.Cog):
     async def _create_spin_gif(self, url:str) -> io.BytesIO:
         """Takes in a url and returns io bytes of a spinning GIF"""
         image = Image.open(await self._get_image_bytes(url)).convert("RGB")
-
+        # Crops the image to a square in the middle with the smallest side being the size of the largest side
+        image = image.crop((image.width/2 - min(image.width, image.height)/2, image.height/2 - min(image.width, image.height)/2, image.width/2 + min(image.width, image.height)/2, image.height/2 + min(image.width, image.height)/2))
         new_image = self._crop_to_circle(image)
         image.close()
         frames = self._create_frames(new_image)
