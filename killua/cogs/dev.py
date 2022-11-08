@@ -293,7 +293,7 @@ class Dev(commands.Cog):
     async def update(self, ctx: commands.Context, version: str = None):
         """Allows you to view current and past updates"""
         if version is None:
-            data = DB.const.find_one({"_id": "updates"})["updates"][-1:][0]
+            data = DB.const.find_one({"_id": "updates"})["updates"][-1]
         else:
             d = [x for x in DB.const.find_one({"_id": "updates"})["updates"] if "version" in x and x["version"] == version]
             if len(d) == 0:
