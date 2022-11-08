@@ -17,7 +17,7 @@ from killua.static.cards import Card
 from killua.static.enums import Category, TriviaDifficulties, CountDifficulties, GameOptions
 from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, DB
 from killua.utils.checks import blcheck, check
-from killua.utils.interactions import Select
+from killua.utils.interactions import Select, Button
 
 leaderboard_options = [
     discord.app_commands.Choice(name="global", value="global"),
@@ -194,10 +194,10 @@ class Rps:
 
         await self.ctx.bot.send_message(self.ctx, embed=embed)
     
-    async def _timeout(self, players: list, data: List[Tuple[discord.Message, discord.ui.View]]) -> None:
+    async def _timeout(self, players: list, data: List[Tuple[discord.Message, View]]) -> None:
         """A way to handle a timeout of not responding to Killua in dms"""
         for x in players:
-            if x.id in [v.user.id for _, v in data]:
+            if x.id in [v.user.id for _, v in data if v.value is not None]:
                 await x.send("Sadly the other player has not responded in time")
             else:
                 await x.send("Too late, time to respond is up!")
@@ -293,7 +293,19 @@ class Rps:
 
         c2 = random.randint(-1, 1)
         winlose = self._result(resp[0].value, c2)
-        await self._eval_outcome(winlose, resp[0].value, c2, self.ctx.author, self.ctx.me)
+
+        view = View(user_id=self.ctx.author.id)
+        button = Button(label="Play again", style=discord.ButtonStyle.grey)
+        view.add_item(button)
+
+        msg =await self._eval_outcome(winlose, resp[0].value, c2, self.ctx.author, self.ctx.me, view)
+
+        await view.wait()
+        await view.disable(msg) 
+        if not view.value or view.timed_out:
+            pass
+        else:
+            await self.singleplayer()
 
     async def multiplayer(self, replay: bool = False) -> Union[None, discord.Message]:
         """Handles the case of the user playing against self.other user"""

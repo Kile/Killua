@@ -878,7 +878,7 @@ class User:
 
     def add_rps_stat(self, stat: Literal["won", "tied", "lost"], against_bot: bool, val: int = 1) -> None:
         """Adds a stat to the user's rps stats"""
-        if stat in self.rps_stats:
+        if stat in self.rps_stats["pvp" if not against_bot else "pve"]:
             self.rps_stats["pvp" if not against_bot else "pve"][stat] += val
         else:
             self.rps_stats["pvp" if not against_bot else "pve"][stat] = val
@@ -886,7 +886,7 @@ class User:
         
     def add_trivia_stat(self, stat: Literal["right", "wrong"], difficulty: Literal["easy", "medium", "hard"]) -> None:
         """Adds a stat to the user's trivia stats"""
-        if stat in self.trivia_stats:
+        if difficulty in self.trivia_stats and stat in self.trivia_stats[difficulty]:
             self.trivia_stats[difficulty][stat] += 1
         else:
             self.trivia_stats[difficulty][stat] = 1

@@ -155,6 +155,9 @@ def check(time: int = 0):
         return True
 
     async def predicate(ctx: commands.Context) -> bool:
+        if ctx.guild and not ctx.guild.chunked:
+            await ctx.guild.chunk()
+            
         if blcheck(ctx.author.id):
             return False
 

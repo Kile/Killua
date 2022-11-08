@@ -29,7 +29,7 @@ def get_prefix(bot, message):
 
 class BaseBot(commands.AutoShardedBot):
 	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+		super().__init__(chunk_guilds_at_startup=False, *args, **kwargs)
 
 		self.session: ClientSession = None
 		self.support_server_invite = "https://discord.gg/MKyWA5M"

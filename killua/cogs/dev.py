@@ -116,8 +116,7 @@ class Dev(commands.Cog):
         dates = [x["date"] for x in data if type in x]
         type_list = [x[type] for x in data if type in x]
 
-        type = type.replace("_", " ") # Because we don't want the _ of registered_users
-        embed.title = f"Statistics about {self.client.user.name}'s " + type.title()
+        embed.title = f"Statistics about {self.client.user.name}'s " + type.replace("_", " ").title()
 
         if not dates:
             embed.description = "No data available just yet"
@@ -403,7 +402,7 @@ class Dev(commands.Cog):
                     n_of_commands += 1
 
             data = DB.const.find_one({"_id": "updates"})["updates"]
-            bot_version = "`Development`" if self.client.is_dev else (data[:-1][0]["version"] if "version" in data[:-1][0] else "`Unknown`")
+            bot_version = "`Development`" if self.client.is_dev else (data[-1]["version"] if "version" in data[-1] else "`Unknown`")
 
             now = datetime.now()
             diff: timedelta = now - self.client.startup_datetime
