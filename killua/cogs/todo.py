@@ -275,7 +275,7 @@ class TodoSystem(commands.Cog):
         try:
             list_id = editing[ctx.author.id]
         except KeyError:
-            return await ctx.send("You have to be in the editor mode to use this command without providing an id! Use `k!todo edit <todo_list_id>`")
+            return await ctx.send("You have to be in the editor mode to use this command without providing an id! Use `/todo edit <todo_list_id>`")
 
         todo_list = TodoList(list_id)
         if not todo_list.has_edit_permission(ctx.author.id):

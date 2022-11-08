@@ -64,7 +64,7 @@ class IPCRoutes(commands.Cog):
 
         if reward < 100:
             user.add_lootbox(reward)
-            text = f"Thank you for voting for Killua! This time you get a :sparkles: special :sparkles: reward: the lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}. Open it with `k!open`"
+            text = f"Thank you for voting for Killua! This time you get a :sparkles: special :sparkles: reward: the lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}. Open it with `/economy open`"
         else:
             text = f"Thank you for voting for Killua! Here take {reward} Jenny as a sign of my gratitude. {5-user.votes%5} vote{'s' if 5-user.votes%5 > 1 else ''} away from a :sparkles: special :sparkles: reward"
             user.add_jenny(reward)
