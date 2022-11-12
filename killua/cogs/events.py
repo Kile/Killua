@@ -1,4 +1,4 @@
-import io
+import io, re
 import sys
 import discord
 
@@ -214,7 +214,7 @@ class Events(commands.Cog):
                     votes: Dict[int, list] = {}
 
                     for pos, field in enumerate(interaction.message.embeds[0].fields):
-                        votes[pos] = [int(v.replace("<@", "").replace(">", "")) for v in field.value.split("\n") if v.isdigit()]
+                        votes[pos] = [int(v.replace("<@", "").replace(">", "")) for v in field.value.split("\n") if re.match(r"<@!?([0-9]+)>", v)]
                         if interaction.user.id in votes[pos]:
                             if pos == option-1:
                                 return await interaction.response.send_message(f"You already {'voted for' if poll else 'chose'} this option!", ephemeral=True)
