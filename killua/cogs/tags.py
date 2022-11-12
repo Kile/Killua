@@ -27,7 +27,7 @@ class Tag():
             self.found = False
             return
 
-        indx: int = [r[0] for r in self.tags].index(tag_name.lower())
+        self.indx: int = [r[0] for r in self.tags].index(tag_name.lower())
         tag = self.tags[indx]
 
         self.guild_id = guild_id
