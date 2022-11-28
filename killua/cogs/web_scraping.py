@@ -142,7 +142,7 @@ class WebScraping(commands.Cog):
             token = re.search(r"vqd='(.*?)'", str(BeautifulSoup(await res.text(), "html.parser"))).group(1)
             return token
         except Exception:
-            return None
+            return
 
     @check(4)
     @web.command(aliases=["image", "i"], extras={"category":Category.FUN}, usage="img <query>")
@@ -159,12 +159,15 @@ class WebScraping(commands.Cog):
         url = base.format(escape(query), token)
 
         response = await self.client.session.get(url, headers=self.headers)
-        match = re.search(r"'results':\[{(.*?)}]", str(await response.text()))
-        if not match:
+
+        results = loads(await response.text())["results"]
+        
+        if not results:
             return await ctx.send("There were no images found matching your query")
-        results = loads("[{" + match.group(1) + "}]")
-        # An increadibly hacky way to get the list of results because the response is not in the correct format
-        # and just weird
+
+        # A hacky way to get the list of results because the response is not in the correct format
+        # as duckduckgo is not returning a json decodable response but a string
+
         links = [r["image"] for r in results if r["image"]]
 
         def make_embed(page, embed, pages):
