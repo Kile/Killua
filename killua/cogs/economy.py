@@ -108,9 +108,9 @@ class Economy(commands.Cog):
     ) -> List[discord.app_commands.Choice[str]]:
         """A function to autocomplete the lootbox name"""
         options = []
-        for lb in LOOTBOXES:
+        for id, lb in LOOTBOXES.items():
             if current in lb["name"]:
-                options.append(discord.app_commands.Choice(name=lb["name"], value=lb["id"]))
+                options.append(discord.app_commands.Choice(name=lb["name"], value=str(id)))
         return options
 
     @commands.hybrid_group()
