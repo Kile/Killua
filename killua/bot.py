@@ -191,3 +191,16 @@ class BaseBot(commands.AutoShardedBot):
 	def convert_to_timestamp(self, id: int, args: str = "f") -> str:
 		"""Turns a discord snowflake into a discord timestamp string"""
 		return f"<t:{int((id >> 22) / 1000) + 1420070400}:{args}>"
+
+	def _encrypt(self, n: int, b: int = 10000, smallest: bool = True) -> str:
+		"""Changes an integer into base 10000 but with my own characters resembling numbers. It only returns the last 2 characters as they are the most unique"""
+		chars = "".join([chr(i) for i in range(b+1)][::-1])
+		chars = chars.replace(":", "").replace(";", "").replace("-", "").replace(",", "") # These characters are indicators used in the ids so they should be not be available as characters
+
+		if n == 0:
+			return [0]
+		digits = []
+		while n:
+			digits.append(int(n % b))
+			n //= b
+		return "".join([chars[d] for d in digits[::-1]])[-2:] if smallest else "".join([chars[d] for d in digits[::-1]])

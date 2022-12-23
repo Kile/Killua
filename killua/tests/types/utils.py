@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from random import randrange
-from datetime import datetime
 INCREMENT = 0
 
 def random_date() -> int:

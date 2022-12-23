@@ -24,6 +24,8 @@ CONST_DEFAULT = [ # The default values for the const collection
     {"_id": "blacklist", "blacklist": []},
 ]
 
+MAX_VOTES_DISPLAYED = 5
+
 CARDS_URL = "https://json.extendsclass.com/bin/7d2c78bde0cd"
 
 class DB:
@@ -147,6 +149,7 @@ Premium guild <:premium_guild_badge:883473807292121149>
 <a:arrow:876801266381127710> halved cooldown for entire server (stacks with premium sub)
 <a:arrow:876801266381127710> access to premium server restricted commands
 <a:arrow:876801266381127710> doubled daily jenny for entire server (stacks with premium sub)
+<a:arrow:876801266381127710> unlimted poll votes
 """
 
 INFO = "This bot is themed after the character Killua from the anime [hunter x hunter](https://en.wikipedia.org/wiki/Hunter_×_Hunter)." + \
