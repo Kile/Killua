@@ -24,6 +24,8 @@ CONST_DEFAULT = [ # The default values for the const collection
     {"_id": "blacklist", "blacklist": []},
 ]
 
+MAX_VOTES_DISPLAYED = 1
+
 CARDS_URL = "https://json.extendsclass.com/bin/7d2c78bde0cd"
 
 class DB:
