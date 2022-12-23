@@ -282,7 +282,12 @@ class Events(commands.Cog):
                                 else: # If the number exists but with no votes
                                     interaction.message.components[0].children[-1].custom_id = interaction.message.components[0].children[-1].custom_id.replace(f";{option};",f";{option};{encrypted}")
                         else:
-                            return await interaction.response.send_message(f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached! Make this a premium server to allow more votes! Please that votes started before becomind a premium server will still not be able to recieve more votes.", ephemeral=True)
+                            view = discord.ui.View()
+                            view.add_item(discord.ui.Button(style=discord.ButtonStyle.link, label="Get Premium", url="https://patreon.com/kilealkuri"))
+                            if poll:
+                                return await interaction.response.send_message(f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached! Make this a premium server to allow more votes! Please that votes started before becomind a premium server will still not be able to recieve more votes.", ephemeral=True, view=view)
+                            else:
+                                return await interaction.response.send_message(f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached!", ephemeral=True)
                     else:
                         votes: Dict[int, list] = guild.polls[str(interaction.message.id)]["votes"]
 
