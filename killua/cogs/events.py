@@ -286,10 +286,11 @@ class Events(commands.Cog):
                         close_votes = re.findall(rf";{pos+1};(.*?)[;:]", interaction.message.components[0].children[-1].custom_id)
                         num_of_votes = len(votes[pos][0]) + len(votes[pos][1]) + (len([f for f in str(close_votes[0]).split(",") if f != ""]) if close_votes else 0)
                         new_name = field.name[:-self.find_counter_start(field.name)] + f"`[{num_of_votes} " + (f"vote{'s' if num_of_votes != 1 else ''}" if poll else f"{'people' if num_of_votes != 1 else 'person'}") + "]`"
-                        if len(votes[pos][0]) <= MAX_VOTES_DISPLAYED:
+                        if not votes[pos][1]:
                             value = "\n".join([f"<@{v}>" for v in votes[pos][0]]) if votes[pos][0] else ("No votes" if poll else "No takers")
                         else:
-                            additional_votes = len(votes[pos][1]) + len(re.findall(rf";{option};([^;:]*)", interaction.message.components[0].children[-1].custom_id).split(","))
+                            cancel_votes = re.findall(rf";{option};([^;:]*)", interaction.message.components[0].children[-1].custom_id)
+                            additional_votes = len(votes[pos][1]) + (len(cancel_votes[0].split(",")) if cancel_votes else 0)
                             value = "\n".join([f"<@{v}>" for v in votes[pos][0]]) + f"\n*+ {additional_votes} more...*"
                         new_embed.add_field(name=new_name, value=value, inline=False)
 
