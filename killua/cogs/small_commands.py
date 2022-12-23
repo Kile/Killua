@@ -3,7 +3,6 @@ from discord.ext import commands
 
 import json
 import time
-from datetime import datetime
 from random import randint, choice
 import math
 from typing import List
@@ -15,6 +14,7 @@ from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, WYR
 from killua.utils.interactions import View, Button
 from killua.utils.checks import check
 from killua.static.enums import Category
+from killua.utils.classes import Guild
 
 class PollSetup(discord.ui.Modal): #lgtm [py/missing-call-to-init]
 
@@ -319,7 +319,11 @@ class SmallCommands(commands.Cog):
         close_item = discord.ui.Button(style=discord.ButtonStyle.red, label="Close Poll", custom_id=f"poll:close:{self.client._encrypt(ctx.author.id, smallest=False)}:")
         view.add_item(close_item)
 
-        await ctx.send(embed=embed, view=view)
+        poll = await ctx.send(embed=embed, view=view)
+
+        if (guild := Guild(ctx.guild.id)).is_premium:
+            option_count = len([i for i in modal.children if i.value and i.label.startswith("Option")])
+            guild.add_poll(str(poll.id), {"author": ctx.author.id, "votes": {str(i): [] for i in range(option_count)}})
 
     @check()
     @misc.command(extras={"category":Category.FUN}, usage="wyr")
