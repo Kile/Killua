@@ -341,8 +341,8 @@ class SmallCommands(commands.Cog):
         embed.add_field(name="A) " + A + " `[0 people]`", value="No takers", inline=False)
         embed.add_field(name="B) " + B + " `[0 people]`", value="No takers", inline=False)
 
-        itemA = discord.ui.Button(style=discord.ButtonStyle.blurple, label="Option A", custom_id=f"wyr:opt-a:{self.client._encrypt(ctx.author.id, smallest=False)}")
-        itemB = discord.ui.Button(style=discord.ButtonStyle.blurple, label="Option B", custom_id=f"wyr:opt-b:{self.client._encrypt(ctx.author.id, smallest=False)}")
+        itemA = discord.ui.Button(style=discord.ButtonStyle.blurple, label="Option A", custom_id=f"wyr:opt-a:")
+        itemB = discord.ui.Button(style=discord.ButtonStyle.blurple, label="Option B", custom_id=f"wyr:opt-b:")
 
         view.add_item(itemA).add_item(itemB)
 
