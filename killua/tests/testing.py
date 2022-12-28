@@ -5,6 +5,7 @@ from discord.ext.commands.view import StringView
 
 import sys, traceback
 import logging
+from aiohttp import ClientSession
 from typing import TYPE_CHECKING, List, Coroutine, Optional
 
 if TYPE_CHECKING:
@@ -65,6 +66,8 @@ class Testing:
 
     async def run_tests(self, only_command: Optional[str] = None) -> TestResult:
         """The function that returns the test result for this group"""
+        from .types import Bot
+
         for test in self.all_tests:
             command = test()
 
@@ -73,7 +76,7 @@ class Testing:
             await command.test_command()
             self.result.add_result(command.result)
 
-        # await self.cog.client.session.close()
+        # await Bot.session.close()
         return self.result
 
     async def test_command(self) -> None:

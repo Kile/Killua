@@ -23,7 +23,9 @@ class TestingBot(BaseBot):
 
     def get_channel(self, channel: int):
         """Returns a channel object"""
-        return TestingTextChannel(channel)
+        channel = TestingTextChannel(channel)
+        channel.ctx = self.ctx
+        return channel
 
     def get_user(self, user: int) -> Any:
         return TestingUser(id=user)

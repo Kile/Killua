@@ -259,7 +259,7 @@ class Economy(commands.Cog):
         lootboxes = self._fieldify_lootboxes(user.lootboxes)
         embed = discord.Embed.from_dict({
             "title": "Lootbox inventory",
-            "description": f"open a lootbox with `{self.client.command_prefix(self.client, ctx.message)[2]}open`",
+            "description": f"open a lootbox with `/economy open`",
             "color": 0x1400ff,
             "fields": lootboxes
         })

@@ -262,9 +262,9 @@ class Book:
         if (res:= self._get_from_cache(types)):
             return res.convert("RGBA")
 
-        async with self.session.get(url[types]) as res: 
-            image_bytes = await res.read()
-            background = (img:= Image.open(io.BytesIO(image_bytes))).convert("RGBA") 
+        res = await self.session.get(url[types]) 
+        image_bytes = await res.read()
+        background = (img:= Image.open(io.BytesIO(image_bytes))).convert("RGBA") 
 
         self._set_cache(img, types == 0)
         return background

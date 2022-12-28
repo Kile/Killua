@@ -27,11 +27,11 @@ class ArgumentResponseInteraction:
         self._is_done = True
         # await self.interaction.message.edit(*args, **kwargs)
 
-    async def send_modal(self, *args, **kwargs) -> None:
+    async def send_modal(self, modal, *args, **kwargs) -> None:
         if self._is_done:
             raise Exception("Interaction can only be responded to once.")
         self._is_done = True
-        await self.interaction.context.send_modal(*args, **kwargs)
+        await self.interaction.context.send_modal(modal, *args, **kwargs)
 
     def is_done(self) -> bool:
         return self._is_done

@@ -10,11 +10,11 @@ from datetime import datetime
 class DevMod:
     def write(self, msg):
         for level in ["INFO:", "DEBUG:", "WARNING:", "ERROR:", "CRITICAL:"]:
-            if level in msg:
+            if level in msg and not "Unclosed" in msg: # Shush aiohttp random errors
                 sys.__stderr__.write(msg)
 
 async def run_tests(args) -> None:
-    # sys.stderr = DevMod()
+    sys.stderr = DevMod()
 
     Bot.command_prefix = lambda *_: ["mention1", "mention2", "k!"]
     await Bot.setup_hook()

@@ -6,6 +6,7 @@ from functools import partial
 from .message import TestingMessage as Message
 from .guild import TestingGuild as Guild
 from .testing_results import ResultData
+from .member import TestingMember as Member
 
 from discord import Guild, TextChannel, ui
 
@@ -52,7 +53,7 @@ class TestingTextChannel:
 
     async def send(self, content: str, *args, **kwargs) -> None:
         """Sends a message"""
-        message = Message(author=self.me, channel=self.channel, content=content, *args, **kwargs)
+        message = Message(author=Member(), channel=self, content=content, *args, **kwargs)
         self.result = ResultData(message=message)
         self.ctx.current_view: Union[ui.View, None] = kwargs.pop("view", None)
 

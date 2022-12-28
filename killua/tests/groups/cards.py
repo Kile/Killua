@@ -68,6 +68,7 @@ class Sell(TestingCards):
 
     @test
     async def selling_a_card_not_in_possession(self) -> None:
+        self.user.nuke_cards("all")
         self.user.add_card(6) #Add a card to avoid "You don't have any cards yet!" error
 
         await self.command(self.cog, self.base_context, "5")
@@ -76,6 +77,7 @@ class Sell(TestingCards):
 
     @test
     async def sell_single_valid_card(self) -> None:
+        self.user.nuke_cards("all")
         self.base_context.timeout_view = False
             
         self.base_context.respond_to_view = Testing.press_confirm
@@ -89,6 +91,7 @@ class Sell(TestingCards):
 
     @test
     async def sell_single_fake(self) -> None:
+        self.user.nuke_cards("all")
         card = randint(1, 99)
         self.user.add_card(card, fake=True)
         await self.command(self.cog, self.base_context, card=str(card))
@@ -97,6 +100,7 @@ class Sell(TestingCards):
 
     @test
     async def sell_more_cards_than_in_posession(self) -> None:
+        self.user.nuke_cards("all")
         card = randint(1, 99)
         self.user.add_card(card)
 
@@ -105,6 +109,7 @@ class Sell(TestingCards):
 
     @test
     async def selling_multiple_cards(self) -> None:
+        self.user.nuke_cards("all")
         self.base_context.timeout_view = False
             
         self.base_context.respond_to_view = Testing.press_confirm
@@ -118,6 +123,7 @@ class Sell(TestingCards):
 
     @test
     async def selling_multiple_cards_with_fake(self) -> None:
+        self.user.nuke_cards("all")
         card = randint(1, 99)
         self.user.add_card(card)
         self.user.add_card(card, fake=True)
@@ -130,6 +136,7 @@ class Sell(TestingCards):
 
     @test
     async def sell_all_of_category_when_owning_none(self) -> None:
+        self.user.nuke_cards("all")
         self.user.add_card(1) # So there won't be the generic "you have no cards" error message
         self.base_context.respond_to_view = self.press_confirm
         await self.command(self.cog, self.base_context, type=SellOptions.monsters)
@@ -138,6 +145,7 @@ class Sell(TestingCards):
 
     @test
     async def sell_all_of_category(self) -> None:
+        self.user.nuke_cards("all")
         self.user.add_card(572)
         self.user.add_card(697)
 
@@ -149,6 +157,7 @@ class Sell(TestingCards):
 
     @test
     async def sell_all_of_category_with_fake(self) -> None:
+        self.user.nuke_cards("all")
         self.user.add_card(572)
         self.user.add_card(697, fake=True)
 
@@ -253,7 +262,7 @@ class Hunt(TestingCards):
         self.user.nuke_cards("effects")
         await self.command(self.cog, self.base_context, option=HuntOptions.end)
 
-        assert self.base_context.result.message.content == f"You aren't on a hunt yet! Start one with `k!hunt`", self.base_context.result.message.content
+        assert self.base_context.result.message.content == f"You aren't on a hunt yet! Start one with `/cards hunt`", self.base_context.result.message.content
 
     @test
     async def end_hunt_below_12h(self) -> None:
@@ -290,7 +299,7 @@ class Hunt(TestingCards):
 
         await self.command(self.cog, self.base_context, option=HuntOptions.start)
 
-        assert self.base_context.result.message.content == f"You are already on a hunt! Get the results with `k!hunt end`", self.base_context.result.message.content
+        assert self.base_context.result.message.content == f"You are already on a hunt! Get the results with `/cards hunt end`", self.base_context.result.message.content
 
     @test
     async def start_hunting_correctly(self) -> None:

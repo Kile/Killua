@@ -39,17 +39,35 @@ class Publish_Update(TestingDev):
 
         @test
         async def publish_already_published_version(self) -> None:
-            DB.const._collection = [{"_id": "updates", "updates": [{"version": "1.0"}]}]
-            await self.command(self.cog, self.base_context, version="1.0", update="Test")
+            DB.const.db["const"] = [{"_id": "updates", "updates": [{"version": "1.0"}]}]
+
+            async def respond_to_modal(context: Context):
+                for child in context.modal.children:
+                    if child.label == "Version":
+                        child._value = "1.0"
+                    elif child.label == "Description":
+                        child._value = "test"
+
+            self.base_context.respond_to_modal = respond_to_modal
+            await self.command(self.cog, self.base_context)
 
             assert self.base_context.result.message.content == "This is an already existing version", self.base_context.result.message.content
     
         @test
         async def publish_update(self) -> None:
-            DB.const._collection = [{"_id": "updates", "past_updates": []}]
-            await self.command(self.cog, self.base_context, version="1.0", update="test")
+            DB.const.db["const"] = [{"_id": "updates", "updates": []}]
 
-            assert self.base_context.result.message.content == "Published update", self.base_context.result.message.content
+            async def respond_to_modal(context: Context):
+                for child in context.modal.children:
+                    if child.label == "Version":
+                        child._value = "1.0"
+                    elif child.label == "Description":
+                        child._value = "test"
+
+            self.base_context.respond_to_modal = respond_to_modal
+            await self.command(self.cog, self.base_context)
+
+            assert self.base_context.result.message.content == "Published new update `No version` -> `1.0`", self.base_context.result.message.content
             assert DB.const.find_one({"_id": "updates"})["updates"][0]["version"], "1.0"
 
 class Update(TestingDev):

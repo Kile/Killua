@@ -31,6 +31,7 @@ CARDS_URL = "https://json.extendsclass.com/bin/7d2c78bde0cd"
 class DB:
     _DB = None
     const = None
+    _cards = None
 
     def __init__(self):
         if not args.Args.test:
@@ -43,11 +44,14 @@ class DB:
     @property
     def items(self) -> Union[collection.Collection, Database]:
         if args.Args.test is not None:
-            if exists("cards.json"):
+            if self._cards:
+                return self._cards
+            elif exists("cards.json"):
                 with open("cards.json", "r") as file:
                     res = json.loads(file.read())
                     db = Database("items")
                     db.db["items"] = res["data"]
+                    self._cards = db
                     file.close()
                     return db
             else:
