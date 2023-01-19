@@ -254,7 +254,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         await modal.wait()
 
         old = DB.const.find_one({"_id": "updates"})["updates"]
-        old_version = old[-1:]["version"] if "version" in old else "No version"
+        old_version = old[-1]["version"] if len(old) > 0 and "version" in old[-1] else "No version"
 
         if version.value in [x["version"] for x in old if "version" in x]:
             return await ctx.send("This is an already existing version", ephemeral=True)
