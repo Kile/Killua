@@ -3,10 +3,10 @@ from discord.ext import commands, tasks
 from datetime import datetime
 import re
 import math
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Literal
 
 from killua.bot import BaseBot
-from killua.static.enums import Category, TodoDeleteWhenDone, TodoStatus, TodoPermissions
+from killua.static.enums import Category
 from killua.static.constants import DB, URL_REGEX, editing, REPORT_CHANNEL
 from killua.utils.checks import check, blcheck
 from killua.utils.classes import TodoList, Todo, User, TodoListNotFound
@@ -212,7 +212,7 @@ class TodoSystem(commands.Cog):
         delete_when_done="Wether a todo should be deleted when marked done",
         custom_id="A custom id for the todo list- Premium only",
     )
-    async def create(self, ctx: commands.Context, name: str, status: TodoStatus, delete_when_done: TodoDeleteWhenDone, custom_id: Optional[str] = None):
+    async def create(self, ctx: commands.Context, name: str, status: Literal["public", "private"], delete_when_done: Literal["yes", "no"], custom_id: Optional[str] = None):
         """Lets you create your todo list in an interactive menu"""
         
         user_todo_lists = [x for x in DB.todo.find({"owner": ctx.author.id})]
@@ -240,7 +240,7 @@ class TodoSystem(commands.Cog):
         else:
             return await ctx.send("This custom id is already taken", ephemeral=True)
         
-        l = TodoList.create(owner=ctx.author.id, title=name, status=status.name, done_delete=delete_when_done.name == "yes", custom_id=custom_id)
+        l = TodoList.create(owner=ctx.author.id, title=name, status=status, done_delete=delete_when_done == "yes", custom_id=custom_id)
         await ctx.send(f"Created the todo list with the name {name}. You can look at it and edit it through the id `{l.id}`" + (f" or through your custom id {custom_id}" if custom_id else ""), allowed_mentions=discord.AllowedMentions.none())
 
     @check()
@@ -337,8 +337,8 @@ class TodoSystem(commands.Cog):
         self, 
         ctx: commands.Context, 
         name: Optional[str] = None, 
-        status: Optional[TodoStatus] = None, 
-        delete_when_done: Optional[TodoDeleteWhenDone] = None, 
+        status: Optional[Literal["private", "public"]] = None, 
+        delete_when_done: Optional[Literal["yes", "no"]] = None, 
         custom_id: Optional[str] = None,
         color: Optional[str] = None,
         thumbnail: Optional[str] = None,
@@ -360,11 +360,11 @@ class TodoSystem(commands.Cog):
                 updated.append("title")
 
         if status:
-            res.set_property("status", status.name)
+            res.set_property("status", status)
             updated.append("status")
 
         if delete_when_done:
-            res.set_property("delete_when_done", delete_when_done.name == "yes")
+            res.set_property("delete_when_done", delete_when_done == "yes")
             updated.append("delete_when_done")
 
         if custom_id: 
@@ -582,7 +582,7 @@ class TodoSystem(commands.Cog):
         user="The user to give permissions to",
         role="The role to give the user"
     )
-    async def invite(self, ctx: commands.Context, user: discord.User, role: TodoPermissions):
+    async def invite(self, ctx: commands.Context, user: discord.User, role: Literal["editor", "viewer"]):
         """Wanna let your friend add more todos for you? Invite them! (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
         if not todo_list: return
@@ -593,18 +593,18 @@ class TodoSystem(commands.Cog):
         if blcheck(user.id):
             return await ctx.send("You can't invite a blacklisted user")
 
-        if role.name == "viewer" and todo_list.status == "public":
+        if role == "viewer" and todo_list.status == "public":
             return await ctx.send("You can't add viewers to a public todo list. Everyone has viewing permissions on this list", ephemeral=True)
 
-        if user.id in getattr(todo_list, role.name):
+        if user.id in getattr(todo_list, role):
             return await ctx.send("The specified user already has that role!")
 
-        if role.name == "viewer" and user.id in todo_list.editor:
+        if role == "viewer" and user.id in todo_list.editor:
             return await ctx.send("User already has editor permissions, you can't also add viewer permission", ephemeral=True)
 
         embed = discord.Embed.from_dict({
             "title": f"You were invited to to-do list {todo_list.name} (ID: {todo_list.id})",
-            "description": f"{ctx.author} invited you to be {role.name} in their to-do list. To accept, click \"confirm\", to deny click \"cancel\". If this invitation was inappropriate, click \"report\"",
+            "description": f"{ctx.author} invited you to be {role} in their to-do list. To accept, click \"confirm\", to deny click \"cancel\". If this invitation was inappropriate, click \"report\"",
             "color": todo_list.color or 0x1400ff,
             "footer": {"icon_url": str(ctx.author.avatar.url), "text": f"Requested by {ctx.author}"}
         })
@@ -645,15 +645,15 @@ class TodoSystem(commands.Cog):
             await ctx.author.send(f"{user} reported your invite to your todo list")
             return await user.send(f"Successfully reported {ctx.author.name}!")
 
-        if role.name == "viewer":
+        if role == "viewer":
             todo_list.add_viewer(user.id)
 
-        if role.name == "editor":
+        if role == "editor":
             if user.id in todo_list.viewer:
                 todo_list.kick_viewer(user.id) # handled like a promotion and exchanges viewer perms for edit perms
             todo_list.add_editor(user.id)
 
-        await user.send(f"Success! You have now {role.name} permissions in the todo list `{todo_list.name}`", allowed_mentions=discord.AllowedMentions.none())
+        await user.send(f"Success! You have now {role} permissions in the todo list `{todo_list.name}`", allowed_mentions=discord.AllowedMentions.none())
         return await ctx.author.send(f"{user} accepted your invitation to your todo list `{todo_list.name}`!", allowed_mentions=discord.AllowedMentions.none())
 
 

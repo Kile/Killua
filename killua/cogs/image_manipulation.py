@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import Union, Any, List, Coroutine, Optional
+from typing import Union, Any, List, Coroutine, Optional, Literal
 import re
 import io
 from PIL import Image, ImageDraw, ImageChops
@@ -10,10 +10,10 @@ from pypxl import PxlClient # My own library ✨
 from killua.bot import BaseBot
 from killua.utils.gif import save_transparent_gif
 from killua.utils.checks import check
-from killua.static.enums import Category, SnapOptions, EyesOptions #, FlagOptions
+from killua.static.enums import Category#, SnapOptions, EyesOptions, FlagOptions
 from killua.static.constants import NOKIA_CODE, PXLAPI, URL_REGEX
 
-class ImageManipulation(commands.Cog):
+class ImageManipulation(commands.GroupCog, group_name="image"):
 
     def __init__(self, client: BaseBot):
         self.client = client
@@ -163,15 +163,8 @@ class ImageManipulation(commands.Cog):
         """Returns a list of flags that match the current string since there are too many flags for it to use the options feature"""
         return [discord.app_commands.Choice(name=i, value=i) for i in self.pxl.flags if i.startswith(current)][:25]
 
-    @commands.hybrid_group()
-    async def image(self, _: commands.Context):
-        """
-        Image related commands
-        """
-        ...
-
     @check(120) # Big cooldown >_<
-    @image.command(aliases=["ej", "emojimosaic"], extras={"category":Category.FUN}, usage="emojaic <user/url>")
+    @commands.hybrid_command(aliases=["ej", "emojimosaic"], extras={"category":Category.FUN}, usage="emojaic <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def emojaic(self, ctx: commands.Context, target: str = None):
         """Emoji mosaic an image; let emojis recreate an image you gave Killua!"""
@@ -180,7 +173,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, target, func)
 
     @check(5)
-    @image.command(extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="flag <flag> <user/url>")
     @discord.app_commands.describe(
         flag="The flag to overlay the image with",
         target="A user, url or emoji to take the image from"
@@ -193,7 +186,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, target, func, flag)
 
     @check(5)
-    @image.command(extras={"category":Category.FUN}, usage="glitch <user/url>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="glitch <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def glitch(self, ctx: commands.Context, target: str = None):
         """Tranform a users pfp into a glitchy GIF!"""
@@ -202,7 +195,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, target, func)
 
     @check(10)
-    @image.command(extras={"category":Category.FUN}, usage="lego <user/url>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="lego <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def lego(self, ctx: commands.Context, target: str = None):
         """Legofies an image"""
@@ -211,31 +204,41 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, target, func)
 
     @check(3)
-    @image.command(aliases=["snap"], extras={"category":Category.FUN}, usage="snapchat <filter> <user/url>")
+    @commands.hybrid_command(aliases=["snap"], extras={"category":Category.FUN}, usage="snapchat <filter> <user/url>")
     @discord.app_commands.describe(
         filter="The snap filter to apply to the image",
         target="A user, url or emoji to take the image from"
     )
-    async def snapchat(self, ctx: commands.Context, filter: SnapOptions, target: str = None):
+    async def snapchat(
+        self, 
+        ctx: commands.Context,
+        filter: Literal["dog", "dog2", "dog3", "pig", "flowers", "random"], 
+        target: str = None
+        ):
         """Put a snapchat filter on an image with a face"""
         async def func(data, filter):
             return await self.pxl.snapchat(filter=filter, images=[data])
-        await self.handle_command(ctx, target, func, filter.name)
+        await self.handle_command(ctx, target, func, filter)
 
     @check(3)
-    @image.command(aliases=["eye"], extras={"category":Category.FUN}, usage="eyes <eye_type> <user/url>")
+    @commands.hybrid_command(aliases=["eye"], extras={"category":Category.FUN}, usage="eyes <eye_type> <user/url>")
     @discord.app_commands.describe(
         type="The type of eyes to put on the image",
         target="A user, url or emoji to take the image from"
     )
-    async def eyes(self, ctx: commands.Context, type: EyesOptions, target: str = None):
+    async def eyes(
+        self, 
+        ctx: commands.Context, 
+        type: Literal["big", "black", "bloodshot", "blue", "default", "googly", "green", "horror", "illuminati", "money", "pink", "red", "small", "spinner", "spongebob", "white", "yellow", "random"], 
+        target: str = None
+        ):
         """Put some crazy eyes on a person"""
         async def func(data, type):
             return await self.pxl.eyes(eyes=type, images=[data])
-        await self.handle_command(ctx, target, func, type.name)
+        await self.handle_command(ctx, target, func, type)
 
     @check(4)
-    @image.command(aliases=["8bit", "blurr"], extras={"category":Category.FUN}, usage="jpeg <user/url>")
+    @commands.hybrid_command(aliases=["8bit", "blurr"], extras={"category":Category.FUN}, usage="jpeg <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def jpeg(self, ctx: commands.Context, target: str = None):
         """Did you ever want to decrease image quality? Then this is the command for you!"""
@@ -244,7 +247,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, target, func)
 
     @check(4)
-    @image.command(extras={"category":Category.FUN}, usage="ajit <user/url>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="ajit <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def ajit(self, ctx: commands.Context, target: str = None):
         """  Overlays an image of Ajit Pai snacking on some popcorn!"""
@@ -253,7 +256,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, target, func)
 
     @check()
-    @image.command(extras={"category":Category.FUN}, usage="nokia <user/url>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="nokia <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def nokia(self, ctx: commands.Context, target: str = None):
         """Add the image onto a nokia display"""
@@ -263,7 +266,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, target, func)
 
     @check(4)
-    @image.command(extras={"category":Category.FUN}, usage="flash <user/url>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="flash <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def flash(self, ctx: commands.Context, target: str = None):
         """Greates a flashing GIF. WARNING FOR PEOPLE WITH EPILEPSY!"""
@@ -272,7 +275,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, target, func, censor=True)
 
     @check(3)
-    @image.command(extras={"category":Category.FUN}, usage="thonkify <text>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="thonkify <text>")
     @discord.app_commands.describe(text="The text to thonkify")
     async def thonkify(self, ctx: commands.Context, *, text: str):
         """Turn text into thonks!"""
@@ -281,7 +284,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, text, func, validate=False)
 
     @check(5)
-    @image.command(aliases=["screen"], extras={"category":Category.FUN}, usage="screenshot <url>")
+    @commands.hybrid_command(aliases=["screen"], extras={"category":Category.FUN}, usage="screenshot <url>")
     @discord.app_commands.describe(website="The url of the website to screenshot")
     async def screenshot(self, ctx: commands.Context, website:str):
         """Screenshot the specified webste!"""
@@ -290,7 +293,7 @@ class ImageManipulation(commands.Cog):
         await self.handle_command(ctx, website, func, validate=False)
 
     @check(2)
-    @image.command(extras={"category":Category.FUN}, usage="sonic <text>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="sonic <text>")
     @discord.app_commands.describe(text="The text to let sonic say")
     async def sonic(self, ctx: commands.Context, *, text: str):
         """Let sonic say anything you want"""
@@ -298,8 +301,8 @@ class ImageManipulation(commands.Cog):
             return await self.pxl.sonic(text=data)
         await self.handle_command(ctx, text, func, validate=False)
 
-    @check(30) # long check because this is exhausting for the poor computer
-    @image.command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")
+    @check(20) # long check because this is exhausting for the poor computer
+    @commands.hybrid_command(alises=["s"], extras={"category": Category.FUN}, usage="spin <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def spin(self, ctx: commands.Context, target: str = None):
         """Spins an image 'round and 'round and 'round and 'round..."""
@@ -313,7 +316,7 @@ class ImageManipulation(commands.Cog):
         await self.client.send_message(ctx, file=discord.File(fp=buffer, filename="spin.gif"), reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
 
     @check(10)
-    @image.command(extras= {"category": Category.FUN}, usage= "wtf <user/url>")
+    @commands.hybrid_command(extras= {"category": Category.FUN}, usage= "wtf <user/url>")
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def wtf(self, ctx: commands.Context, target: str = None):
         """Puts the wtf meme below the image provided"""

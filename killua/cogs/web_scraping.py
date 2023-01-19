@@ -16,7 +16,7 @@ from killua.static.constants import PXLAPI
 
 from typing import Any, Callable
 
-class WebScraping(commands.Cog):
+class WebScraping(commands.GroupCog, group_name="web"):
 
     def __init__(self, client: BaseBot):
         self.client = client
@@ -59,14 +59,14 @@ class WebScraping(commands.Cog):
             return False
         return True
 
-    def getBookCount(self, page) -> int:
+    def get_book_count(self, page: BeautifulSoup) -> int:
         """Gets the number of results for a book"""
         #This function gets the number of total book results by taking in the books name
         # get the web page (id only for this website)
         return len(page.find_all("div", class_="u-anchorTarget"))
 
 
-    async def getBook(self, nr: int, name: str, pages: BeautifulSoup) -> discord.Embed:
+    async def get_book(self, nr: int, name: str, pages: BeautifulSoup) -> discord.Embed:
         """Get result x of a book with title y"""
         #This is the essential function getting infos about a book by taking the name and the number of the result list
         # get the id of the book (id only for this website)
@@ -109,15 +109,10 @@ class WebScraping(commands.Cog):
             "color": 0x1400ff
         }) #returning the fresh crafted embed with all the information
 
-    @commands.hybrid_group()
-    async def web(self, _: commands.Context):
-        """Web search commands"""
-        pass
-
     @check(12)
-    @web.command(aliases=["n", "search-book", "sb"], extras={"category":Category.FUN}, usage="book <title>")
+    @commands.hybrid_command(aliases=["n", "search-book", "sb"], extras={"category":Category.FUN}, usage="book <title>")
     @discord.app_commands.describe(book="The name of the book to loock for")
-    async def book(self, ctx: commands.Context, *, book: str):
+    async def novel(self, ctx: commands.Context, *, book: str):
         """With this command you can search for books! Just say the book title and look through the results"""
         response = await self.client.session.get(f"https://www.goodreads.com/search?q={book}")
         content: str = await response.text()
@@ -127,9 +122,9 @@ class WebScraping(commands.Cog):
         await ctx.channel.typing()
         await ctx.send("Processing...", ephemeral=True)
         async def make_embed(page, _, pages):
-            return await self.getBook(page-1, book, pages)
+            return await self.get_book(page-1, book, pages)
 
-        await Paginator(ctx, p, max_pages=self.getBookCount(p), func=make_embed, defer=True).start()
+        await Paginator(ctx, p, max_pages=self.get_book_count(p), func=make_embed, defer=True).start()
 
     async def _get_token(self, query: str) -> Union[str, None]:
         """Gets a new token to be used in the image search"""
@@ -145,7 +140,7 @@ class WebScraping(commands.Cog):
             return
 
     @check(4)
-    @web.command(aliases=["image", "i"], extras={"category":Category.FUN}, usage="img <query>")
+    @commands.hybrid_command(aliases=["image", "i"], extras={"category":Category.FUN}, usage="img <query>")
     @discord.app_commands.describe(query="What image to look for")
     async def img(self, ctx: commands.Context, *, query: str):
         """Search for any image you want"""
@@ -178,7 +173,7 @@ class WebScraping(commands.Cog):
         return await Paginator(ctx, links, func=make_embed).start()
 
     @check(2)
-    @web.command(aliases=["g","search"], extras={"category":Category.FUN}, usage="google <query>")
+    @commands.hybrid_command(aliases=["g","search"], extras={"category":Category.FUN}, usage="google <query>")
     @discord.app_commands.describe(text="The query to search for")
     async def google(self, ctx: commands.Context, *, text: str):
         """Get the best results for a query the web has to offer"""

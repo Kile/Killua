@@ -48,10 +48,14 @@ class BaseBot(commands.AutoShardedBot):
 		await super().close()
 		await self.session.close()
 
-	def __format_command(self, res: Dict[str, list], cmd: commands.Command) -> dict:
+	def __format_command(self, res: Dict[str, list], cmd: discord.app_commands.Command) -> dict:
 		"""Adds a command to a dict of formatted commands"""
-		if cmd.name in ["jishaku", "help"] or cmd.hidden:
+		if "jishaku" in cmd.qualified_name or cmd.name == "help" or cmd.hidden:
 			return res
+
+		# message_command = self.get_command(cmd.qualified_name)
+		if cmd in res[cmd.extras["category"].value["name"]]["commands"]:
+			return res 
 
 		res[cmd.extras["category"].value["name"]]["commands"].append(cmd)
         
@@ -61,7 +65,7 @@ class BaseBot(commands.AutoShardedBot):
 		"""Gets a dictionary of formatted commands"""
 		res = {c.value["name"]: {"description": c.value["description"], "emoji": c.value["emoji"], "commands": []} for c in Category}
 
-		for cmd in self.commands:
+		for cmd in self.walk_commands():
 			if isinstance(cmd, commands.Group) and cmd.name != "jishaku":
 				for c in cmd.commands:
 					res = self.__format_command(res, c)

@@ -100,12 +100,12 @@ class Events(commands.Cog):
             await self._post_guild_count()
             await self._load_cards_cache()
 
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message) -> None:
-        prefix = "kil!" if self.client.is_dev else (Guild(message.guild.id).prefix if message.guild else "k!")
-        if message.content.startswith(prefix):
-            if message.content[len(prefix):].split(" ")[0] in self.old_commands:
-                return await message.reply("This command has been moved over to a command group, check `/help` to find the new command and `/dev update` to see what's changing with Killua.", allowed_mentions=discord.AllowedMentions.none())
+    # @commands.Cog.listener()
+    # async def on_message(self, message: discord.Message) -> None:
+    #     prefix = "kil!" if self.client.is_dev else (Guild(message.guild.id).prefix if message.guild else "k!")
+    #     if message.content.startswith(prefix):
+    #         if message.content[len(prefix):].split(" ")[0] in self.old_commands:
+    #             return await message.reply("This command has been moved over to a command group, check `/help` to find the new command and `/dev update` to see what's changing with Killua.", allowed_mentions=discord.AllowedMentions.none())
 
     @commands.Cog.listener()
     async def on_ready(self):

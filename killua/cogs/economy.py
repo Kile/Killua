@@ -6,13 +6,12 @@ from random import randint
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
-from killua.utils.interactions import View
-from killua.utils.interactions import Select
+from killua.utils.interactions import Select, View
 from killua.utils.classes import User, Guild, LootBox
 from killua.static.enums import Category
 from killua.static.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, LOOTBOXES, PREMIUM_ALIASES, DB
 
-class Economy(commands.Cog):
+class Economy(commands.GroupCog, group_name="econ"):
 
     def __init__(self, client: BaseBot):
         self.client = client
@@ -113,14 +112,9 @@ class Economy(commands.Cog):
                 options.append(discord.app_commands.Choice(name=lb["name"], value=str(id)))
         return options
 
-    @commands.hybrid_group()
-    async def economy(self, _: commands.Context):
-        """' commands resolving around jenny, lootboxes and the general economy"""
-        ...
-
     @check()
     @commands.guild_only()
-    @economy.command(aliases=["server"], extras={"category":Category.ECONOMY}, usage="guild")
+    @commands.hybrid_command(aliases=["server"], extras={"category":Category.ECONOMY}, usage="guild")
     async def guild(self, ctx: commands.Context):
         """Displays infos about the current guild"""
         top = self._lb(ctx, limit=1)
@@ -145,7 +139,7 @@ class Economy(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @economy.command(aliases=["lb", "top"], extras={"category":Category.ECONOMY}, usage="leaderboard")
+    @commands.hybrid_command(aliases=["lb", "top"], extras={"category":Category.ECONOMY}, usage="leaderboard")
     async def leaderboard(self, ctx: commands.Context):
         """Get a leaderboard of members with the most jenny"""
         top = self._lb(ctx)
@@ -160,7 +154,7 @@ class Economy(commands.Cog):
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @economy.command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
+    @commands.hybrid_command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY}, usage="profile <user(optional)>")
     @discord.app_commands.describe(user="The user to get infos about")
     async def profile(self, ctx, user: str = None):
         """Get infos about a certain discord user with ID or mention"""
@@ -176,7 +170,7 @@ class Economy(commands.Cog):
         return await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_context_menu"))
 
     @check()
-    @economy.command(aliases=["bal", "balance", "points"], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
+    @commands.hybrid_command(aliases=["bal", "balance", "points"], extras={"category":Category.ECONOMY}, usage="balance <user(optional)>")
     @discord.app_commands.describe(user="The user to see the number of jenny of")
     async def jenny(self, ctx: commands.Context, user: str = None):
         """Gives you a users balance"""
@@ -193,7 +187,7 @@ class Economy(commands.Cog):
         return await ctx.send(f"{res}'s balance is {balance} Jenny", ephemeral=hasattr(ctx, "invoked_by_context_menu"))
         
     @check()
-    @economy.command(extras={"category":Category.ECONOMY}, usage="daily")
+    @commands.hybrid_command(extras={"category":Category.ECONOMY}, usage="daily")
     async def daily(self, ctx: commands.Context):
         """Claim your daily Jenny with this command!"""
         now = datetime.now()
@@ -216,7 +210,7 @@ class Economy(commands.Cog):
         await ctx.send(f"You claimed your {daily} daily Jenny and hold now on to {user.jenny}")
 
     @check()
-    @economy.command(extras={"category": Category.ECONOMY}, usage="open")
+    @commands.hybrid_command(extras={"category": Category.ECONOMY}, usage="open")
     async def open(self, ctx: commands.Context):
         """Open a lootbox with an interactive UI"""
         if len((user:=User(ctx.author.id)).lootboxes) == 0:
@@ -250,7 +244,7 @@ class Economy(commands.Cog):
         return await box.open()
 
     @check()
-    @economy.command(aliases=["lootboxes", "inv"], extras={"category": Category.ECONOMY}, usage="inventory")
+    @commands.hybrid_command(aliases=["lootboxes", "inv"], extras={"category": Category.ECONOMY}, usage="inventory")
     async def inventory(self, ctx: commands.Context):
         """Displays the owned lootboxes"""
         if len((user:=User(ctx.author.id)).lootboxes) == 0:
@@ -267,7 +261,7 @@ class Economy(commands.Cog):
         await ctx.send(embed=embed)
 
     @check()
-    @economy.command(extras={"category": Category.ECONOMY}, usage="boxinfo <box_id>")
+    @commands.hybrid_command(extras={"category": Category.ECONOMY}, usage="boxinfo <box_id>")
     @discord.app_commands.autocomplete(box=lootbox_autocomplete)
     @discord.app_commands.describe(box="The box to get infos about")
     async def boxinfo(self, ctx: commands.Context, box: str):

@@ -10,11 +10,12 @@ from urllib.parse import quote
 
 
 from killua.bot import BaseBot
-from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, WYR
-from killua.utils.interactions import View, Button
-from killua.utils.checks import check
 from killua.static.enums import Category
+from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, WYR
+
+from killua.utils.checks import check
 from killua.utils.classes import Guild
+from killua.utils.interactions import View, Button
 
 class PollSetup(discord.ui.Modal): #lgtm [py/missing-call-to-init]
 
@@ -30,7 +31,7 @@ class PollSetup(discord.ui.Modal): #lgtm [py/missing-call-to-init]
         """Called when the modal is submitted"""
         await interaction.response.defer()
 
-class SmallCommands(commands.Cog):
+class SmallCommands(commands.GroupCog, group_name="misc"):
 
     def __init__(self, client: BaseBot):
         self.client = client
@@ -101,22 +102,17 @@ class SmallCommands(commands.Cog):
         cuteified_text= self.cuteify(stuttered_text, cuteness)
         return cuteified_text
 
-    @commands.hybrid_group()
-    async def misc(self, _: commands.Context):
-        """A collection of miscellaneous commands."""
-        ...
-
     @check()
-    @misc.command(aliases=["uwu", "owo", "owofy"], extras={"category":Category.FUN}, usage="uwufy <text>")
+    @commands.hybrid_command(aliases=["uwu", "owo", "owofy"], extras={"category":Category.FUN}, usage="uwufy <text>")
     @discord.app_commands.describe(text="The text to uwufy")
     async def uwufy(self, ctx: commands.Context, *, text: str):
         """Uwufy any sentence you want with dis command, have fun >_<"""
-        has_send_messages_perms = ctx.channel.permissions_for(ctx.author).send_messages
+        has_send_messages_perms = ctx.channel.permissions_for(ctx.author).send_messages if isinstance(ctx.author, discord.Member) else True # If the command is used in dms
         # Only do a non epehemeral response with a context menu if the user has send messages perms
         return await self.client.send_message(ctx, self.build_uwufy(text, stuttering=3, cuteness=3), ephemeral=has_send_messages_perms if hasattr(ctx, "invoked_by_context_menu") else False)
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="ping")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="ping")
     async def ping(self, ctx: commands.Context):
         """Standard of seeing if the bot is working"""
         start = time.time()
@@ -125,19 +121,19 @@ class SmallCommands(commands.Cog):
         await msg.edit(content = str("Pong in `" + str(1000 * (end - start))) + "` ms")
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="topic")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="topic")
     async def topic(self, ctx: commands.Context):
         """Sends a conversation starter"""
         await ctx.send(choice(TOPICS))
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="hi")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="hi")
     async def hi(self, ctx: commands.Context):
         """This is just here because it was Killua's first command and I can't take that from him"""
         await ctx.send("Hello " + str(ctx.author))
 
     @check()
-    @misc.command(name="8ball", extras={"category":Category.FUN}, usage="8ball <question>")
+    @commands.hybrid_command(name="8ball", extras={"category":Category.FUN}, usage="8ball <question>")
     @discord.app_commands.describe(question="The question to ask the magic 8 ball")
     async def _ball(self, ctx: commands.Context, *, question: str):
         """Ask Killua anything and he will answer"""
@@ -150,7 +146,7 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @misc.command(aliases=["av", "a"], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
+    @commands.hybrid_command(aliases=["av", "a"], extras={"category":Category.FUN}, usage="avatar <user(optional)>")
     @discord.app_commands.describe(user="The user to show the avatar of")
     async def avatar(self, ctx: commands.Context, user: str = None):
         """Shows the avatar of a user"""
@@ -172,7 +168,7 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="invite")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="invite")
     async def invite(self, ctx: commands.Context):
         """Allows you to invite Killua to any guild you have at least `manage server` permissions."""
         view = discord.ui.View()
@@ -185,7 +181,7 @@ class SmallCommands(commands.Cog):
         await ctx.send(embed=embed, view=view) 
 
     @check()
-    @misc.command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
+    @commands.hybrid_command(aliases=["perms"], extras={"category":Category.FUN}, usage="permissions")
     async def permissions(self, ctx: commands.Context):
         """Displays the permissions Killua has and has not in the current channel"""
         permissions = "\n".join([f"{v} {n}" for n, v in ctx.me.guild_permissions])
@@ -202,7 +198,7 @@ class SmallCommands(commands.Cog):
             await ctx.send("__Bot permissions__\n\n"+prettier)
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="vote")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="vote")
     async def vote(self, ctx: commands.Context):
         """Gives you the links you need if you want to vote for Killua, you will get sone Jenny as a reward"""
         view = discord.ui.View()
@@ -222,7 +218,7 @@ class SmallCommands(commands.Cog):
         ][:25]
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="translate <source_lang> <target_lang> <text>")
     @discord.app_commands.describe(
         source="The language you want to translate from",
         target="The language you want to translate to",
@@ -263,7 +259,7 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_context_menu"))
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="calc <math>")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="calc <math>")
     @discord.app_commands.describe(expression="The expression to calculate")
     async def calc(self, ctx: commands.Context, *, expression: str = None):
         """Calculates any equation you give it. Syntax: https://mathjs.org/docs/reference/functions.html"""
@@ -282,7 +278,7 @@ class SmallCommands(commands.Cog):
         await self.client.send_message(ctx, "Result{}:\n```\n{}\n```".format("s" if len(exprs) > 1 else "", "\n".join(answer["result"])))
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="poll")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="poll")
     async def poll(self, ctx: commands.Context):
         """Creates a poll"""
         if not ctx.interaction:
@@ -326,7 +322,7 @@ class SmallCommands(commands.Cog):
             guild.add_poll(str(poll.id), {"author": ctx.author.id, "votes": {str(i): [] for i in range(option_count)}})
 
     @check()
-    @misc.command(extras={"category":Category.FUN}, usage="wyr")
+    @commands.hybrid_command(extras={"category":Category.FUN}, usage="wyr")
     async def wyr(self, ctx: commands.Context):
         """Asks a random would you rather question and allows you to vote."""
         

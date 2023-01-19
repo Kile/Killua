@@ -89,59 +89,11 @@ class Category(Enum):
     }
 
 # the values are not important as only Enum.name is used
-class Activities(Enum):
-    playing = auto()
-    watching = auto()
-    listening = auto()
-    competing = auto()
-
-class Presences(Enum):
-    dnd = auto()
-    idle = auto()
-    online = auto()
-
-class HuntOptions(Enum):
-    end = auto()
-    time = auto()
-    start = auto()
-
-class Items(Enum):
-    jenny = auto()
-    card = auto()
-    lootbox = auto()
 
 class SellOptions(Enum):
     all = auto()
     spells = auto()
     monsters = auto()
-
-class TriviaDifficulties(Enum):
-    easy = auto()
-    medium = auto()
-    hard = auto()
-
-class CountDifficulties(Enum):
-    easy = auto()
-    hard = auto()
-
-class TodoStatus(Enum):
-    public = auto()
-    private = auto()
-
-class TodoDeleteWhenDone(Enum):
-    yes = auto()
-    no = auto()
-
-class TodoPermissions(Enum):
-    viewer = auto()
-    editor = auto()
-
-class TodoAddons(Enum):
-    thumbnail = auto()
-    space = auto()
-    color = auto()
-    description = auto()
-    timing = auto()
 
 # class FlagOptions(Enum):
 #     asexual = auto()
@@ -181,42 +133,38 @@ class TodoAddons(Enum):
 #     ukraine = auto()
 #     yemen = auto()
 
-class SnapOptions(Enum):
-    dog = auto()
-    dog2 = auto()
-    dog3 = auto()
-    pig = auto()
-    flowers = auto()
-    random = auto()
+# class SnapOptions(Enum):
+#     dog = auto()
+#     dog2 = auto()
+#     dog3 = auto()
+#     pig = auto()
+#     flowers = auto()
+#     random = auto()
 
-class EyesOptions(Enum):
-    big = auto()
-    black = auto()
-    bloodshot = auto()
-    blue = auto()
-    default = auto()
-    googly = auto()
-    green = auto()
-    horror = auto()
-    illuminati = auto()
-    money = auto()
-    pink = auto()
-    red = auto()
-    small = auto()
-    spinner = auto()
-    spongebob = auto()
-    white = auto()
-    yellow = auto()
-    random = auto()
+# class EyesOptions(Enum):
+#     big = auto()
+#     black = auto()
+#     bloodshot = auto()
+#     blue = auto()
+#     default = auto()
+#     googly = auto()
+#     green = auto()
+#     horror = auto()
+#     illuminati = auto()
+#     money = auto()
+#     pink = auto()
+#     red = auto()
+#     small = auto()
+#     spinner = auto()
+#     spongebob = auto()
+#     white = auto()
+#     yellow = auto()
+#     random = auto()
 
-class PremiumGuildOptions(Enum):
-    add = auto()
-    remove = auto()
-
-class StatsOptions(Enum):
-    usage = auto()
-    growth = auto()
-    general = auto()
+# class StatsOptions(Enum):
+#     usage = auto()
+#     growth = auto()
+#     general = auto()
 
 class GameOptions(Enum):
     rps = auto()

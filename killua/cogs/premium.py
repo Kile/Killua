@@ -1,14 +1,14 @@
 import discord
 from discord.ext import commands, tasks
 
-from typing import List, Union
+from typing import List, Union, Literal
 from aiohttp import ClientSession
 from datetime import datetime
 
 from killua.bot import BaseBot
 from killua.utils.checks import check, premium_member_only
 from killua.utils.classes import User, Guild, LootBox
-from killua.static.enums import Category, PremiumGuildOptions
+from killua.static.enums import Category
 from killua.static.constants import PATREON_TIERS, GUILD, BOOSTER_ROLE, PATREON, LOOTBOXES, PREMIUM_BENEFITS, DB
 
 class Patrons:
@@ -154,11 +154,11 @@ class Premium(commands.Cog):
 
     @commands.guild_only()
     @premium_member_only()
-    @premium.command(extras={"category": Category.OTHER}, usage="premium <add/remove>")
+    @premium.command(extras={"category": Category.OTHER}, usage="guild <add/remove>")
     @discord.app_commands.describe(action="Wether to add or remove the premium status of the current server")
-    async def guild(self, ctx: commands.Context, action: PremiumGuildOptions):
+    async def guild(self, ctx: commands.Context, action: Literal["add", "remove"]):
         """Add or remove the premium status of a guild with this command"""
-        if action.name == "add":
+        if action == "add":
 
             if not (user:= User(ctx.author.id)).is_premium:
                 return await ctx.send("Sadly you aren't a premium subscriber so you don't have premium guilds! Become a premium subscriber here: https://www.patreon.com/KileAlkuri")

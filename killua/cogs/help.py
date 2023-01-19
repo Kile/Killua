@@ -84,8 +84,10 @@ class HelpCommand(commands.Cog):
         if cooldown:
             embed.add_field(name="Cooldown", value=f"{cooldown} seconds")
 
-        usage = "```css\n/" + command.qualified_name.replace(command.name, "") + command.usage + "\n```"
-        embed.add_field(name="Usage", value=usage, inline=False)
+        # print(command, command.parent, command.qualified_name, type(command.parent), type(command.cog))
+        usage_slash = "```css\n/" + command.qualified_name.replace(command.name, "") + command.usage + "\n```" if not isinstance(command.cog, commands.GroupCog) else f"```css\n/" + command.cog.__cog_group_name__ + " " + command.usage + "\n```"
+        usage_message = f"```css\n{prefix}" + command.qualified_name.replace(command.name, "") + command.usage + "\n```" if not isinstance(command.cog, commands.GroupCog) else f"```css\n{prefix}" + command.usage + "\n```"
+        embed.add_field(name="Usage", value="Slash:\n" + usage_slash + "\nMessage:\n" + usage_message, inline=False)
 
         if len(prefix) < 100: # We don't want large prefixes to break the embed and make the help command unusable
             embed.set_footer(text=f"Message prefix: {prefix}")

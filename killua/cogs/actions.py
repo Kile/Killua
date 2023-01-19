@@ -36,7 +36,7 @@ class SettingsButton(discord.ui.Button):
         self.view.timed_out = False
         self.view.stop()
 
-class Actions(commands.Cog):
+class Actions(commands.GroupCog, group_name="action"):
 
     def __init__(self, client: BaseBot):
         self.client = client
@@ -145,79 +145,74 @@ class Actions(commands.Cog):
         else:
             return await ctx.bot.send_message(ctx, embed=embed)
 
-    @commands.hybrid_group()
-    async def action(self, _: commands.Context) -> None:
-        """A collection of commands to express feeling through images and gifs"""
-        ... 
-
     @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="hug <user>")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS}, usage="hug <user>")
     @discord.app_commands.describe(members="The people to hug")
     async def hug(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Hug a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @action.command(extras={"category":Category.ACTIONS}, usage="pat <user>")
+    @commands.hybrid_command(extras={"category":Category.ACTIONS}, usage="pat <user>")
     @discord.app_commands.describe(members="The people to pat")
     async def pat(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Pat a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @action.command(extras={"category":Category.ACTIONS}, usage="poke <user>")
+    @commands.hybrid_command(extras={"category":Category.ACTIONS}, usage="poke <user>")
     @discord.app_commands.describe(members="The people to poke")
     async def poke(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Poke a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @action.command(extras={"category":Category.ACTIONS}, usage="tickle <usage>")
+    @commands.hybrid_command(extras={"category":Category.ACTIONS}, usage="tickle <usage>")
     @discord.app_commands.describe(members="The people to tickle")
     async def tickle(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Tickle a user wi- ha- hahaha- stop- haha"""
         return await self.do_action(ctx, members)
 
     @check()
-    @action.command(extras={"category":Category.ACTIONS}, usage="slap <user>")
+    @commands.hybrid_command(extras={"category":Category.ACTIONS}, usage="slap <user>")
     @discord.app_commands.describe(members="The people to slap")
     async def slap(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Slap a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="cuddle")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS}, usage="cuddle")
     @discord.app_commands.describe(members="The people to cuddle with")
     async def cuddle(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Snuggle up to a user and cuddle them with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="dance")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS}, usage="dance")
     async def dance(self, ctx: commands.Context):
         """Show off your dance moves!"""
         return await self.get_image(ctx)
 
     @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="neko")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS}, usage="neko")
     async def neko(self, ctx: commands.Context):
         """uwu"""
         return await self.get_image(ctx)
 
     @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="smile")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS}, usage="smile")
     async def smile(self, ctx: commands.Context):
         """Show a bright smile with this command"""
         return await self.get_image(ctx)
 
     @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="blush")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS}, usage="blush")
     async def blush(self, ctx: commands.Context):
         """O-Oh! T-thank you for t-the compliment... You have beautiful fingernails too!"""
         return await self.get_image(ctx)
 
     @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="tail")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS}, usage="tail")
     async def tail(self, ctx: commands.Context):
         """Wag your tail when you're happy!"""
         return await self.get_image(ctx)
@@ -235,7 +230,7 @@ class Actions(commands.Cog):
         return view
 
     @check()
-    @action.command(extras={"category": Category.ACTIONS}, usage="settings")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS}, usage="settings")
     async def settings(self, ctx: commands.Context):
         """Change the settings that control who can use what action on you"""
 

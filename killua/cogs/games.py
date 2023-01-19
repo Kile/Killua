@@ -14,7 +14,7 @@ from killua.utils.paginator import View
 from killua.utils.classes import CardLimitReached, User
 from killua.utils.interactions import ConfirmButton
 from killua.static.cards import Card
-from killua.static.enums import Category, TriviaDifficulties, CountDifficulties, GameOptions
+from killua.static.enums import Category, GameOptions
 from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, DB
 from killua.utils.checks import blcheck, check
 from killua.utils.interactions import Select, Button
@@ -481,26 +481,21 @@ class CountGame:
         msg = await self._send_solutions()
         await self._handle_game(msg)
 
-class Games(commands.Cog):
+class Games(commands.GroupCog, group_name="games"):
 
     def __init__(self, client: BaseBot):
         self.client = client
 
-    @commands.hybrid_group()
-    async def games(self, _: commands.Context):
-        """A collection of games for Killua"""
-        ...
-
     @check(500)
-    @games.command(extras={"category": Category.GAMES}, usage="count <easy/hard>")
+    @commands.hybrid_command(extras={"category": Category.GAMES}, usage="count <easy/hard>")
     @discord.app_commands.describe(difficulty="The difficulty to play in")
-    async def count(self, ctx: commands.Context, difficulty: CountDifficulties = CountDifficulties.easy):
+    async def count(self, ctx: commands.Context, difficulty: Literal["easy", "hard"] = "easy"):
         """See how many numbers you can remember with this count game!"""
-        game = CountGame(ctx, difficulty.name)
+        game = CountGame(ctx, difficulty)
         await game.start()
 
     @check(30)
-    @games.command(extras={"category":Category.GAMES}, usage="rps <user> <points(optional)>")
+    @commands.hybrid_command(extras={"category":Category.GAMES}, usage="rps <user> <points(optional)>")
     @discord.app_commands.describe(
         member="The person to challenge",
         points="The points to play for"
@@ -535,23 +530,25 @@ class Games(commands.Cog):
         await game.start()
 
     @check(20)
-    @games.command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
+    @commands.hybrid_command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
     @discord.app_commands.describe(difficulty="The difficulty of the question")
-    async def trivia(self, ctx: commands.Context, difficulty: TriviaDifficulties = TriviaDifficulties.easy):
+    async def trivia(self, ctx: commands.Context, difficulty: Literal["easy", "medium", "hard"] = "easy"):
         """Play trivia and earn some jenny if you get the answer right!"""
         await ctx.defer()
-        game = Trivia(ctx, difficulty.name, self.client.session)
+        game = Trivia(ctx, difficulty, self.client.session)
         await game.create()
         await game.send()
         await game.send_result()
 
     @check()
-    @games.command(extras={"category": Category.GAMES}, usage="stats <game> <user(optional)>")
+    @commands.hybrid_command(extras={"category": Category.GAMES}, usage="stats <game> <user(optional)>")
     @discord.app_commands.describe(member="The person to check the stats of")
-    async def stats(self, ctx: commands.Context, game_type: GameOptions, member: discord.Member = None):
+    async def gstats(self, ctx: commands.Context, game_type: Literal["rps", "counting", "trivia"], member: discord.Member = None):
         """Check the game stats of yourself or another user"""
         if not member:
             member = ctx.author
+
+        game_type = getattr(GameOptions, game_type) # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
 
         user = User(member.id)
 
@@ -598,10 +595,11 @@ class Games(commands.Cog):
             ))
 
     @check()
-    @games.command(extras={"category": Category.GAMES}, usage="leaderboard <game> <global/server(optional)>")
+    @commands.hybrid_command(extras={"category": Category.GAMES}, usage="leaderboard <game> <global/server(optional)>", aliases=["glb"])
     @discord.app_commands.describe(game="The game to check the leaderboard of", where="Whether to show the global or server leaderboard")
-    async def leaderboard(self, ctx: commands.Context, game: GameOptions, where: Literal["global", "server"] = "global"):
+    async def gleaderboard(self, ctx: commands.Context, game: Literal["rps", "counting", "trivia"], where: Literal["global", "server"] = "global"):
         """Checks the top 10 players of a game, globally or on the server."""
+        game = getattr(GameOptions, game)  # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
         all: List[dict] = list(DB.teams.find({} if where == "global" else {"id": {"$in": [m.id for m in ctx.guild.members]}}))
 
         if game == GameOptions.rps:
@@ -684,11 +682,5 @@ class Games(commands.Cog):
                 embed.description += f"\n**{pos+1}.** <@{player['id']}> - {player.get('stats', {}).get('counting_highscore', {}).get('easy', 0)} high score"
 
             await ctx.send(embed=embed)
-
-
-d = [{"a": 1}, {"a": 2}, {"a": 3}, {"b": 1}]
-# sort dictionary d by the value of the key "a", then only use the first 2
-
-d.sort(key=lambda x: x.get("a", 0), reverse=True)
 
 Cog = Games

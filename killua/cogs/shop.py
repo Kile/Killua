@@ -1,19 +1,20 @@
 import discord
 import logging
-from random import randint, choice
-from discord.ext import commands, tasks
+
 from datetime import datetime
-from typing import Union, Tuple, List
+from discord.ext import commands, tasks
+from random import randint, choice
+from typing import Union, Tuple, List, Literal
 
 from killua.bot import BaseBot
 from killua.static.cards import Card
+from killua.static.enums import Category, PrintColors
 from killua.static.constants import FREE_SLOTS, ALLOWED_AMOUNT_MULTIPLE, PRICES, LOOTBOXES, DB, editing
-from killua.utils.classes import User, TodoList, CardNotFound, CardLimitReached
-from killua.static.enums import Category, PrintColors, TodoAddons
-from killua.utils.interactions import Button, ConfirmButton
+
 from killua.utils.checks import check
 from killua.utils.paginator import DefaultEmbed, Paginator
-from killua.utils.interactions import Select, View
+from killua.utils.interactions import Button, ConfirmButton, Select, View
+from killua.utils.classes import User, TodoList, CardNotFound, CardLimitReached
 
 class ShopPaginator(Paginator):
     """A normal paginator with a button that returns to the original shop select menu"""
@@ -328,7 +329,7 @@ class Shop(commands.Cog):
     @check(2)
     @buy.command(name="todo",extras={"category": Category.TODO}, usage="todo <item>")
     @discord.app_commands.describe(what="The todo addon to buy")
-    async def _todo(self, ctx: commands.Context, what: TodoAddons):
+    async def _todo(self, ctx: commands.Context, what: Literal["thumbnail", "space", "description", "timing", "color"]):
         """Buy cool stuff for your todo list with this command! (Only in editor mode)"""
         try:
             todo_list = TodoList(editing[ctx.author.id])
@@ -337,7 +338,7 @@ class Shop(commands.Cog):
 
         user = User(ctx.author.id)
 
-        if what.name == "space":
+        if what == "space":
             if user.jenny < (todo_list.spots * 100 * 0.5):
                 return await ctx.send(f"You don't have enough Jenny to buy more space for your todo list. You need {todo_list['spots']*100} Jenny")
 
@@ -358,7 +359,7 @@ class Shop(commands.Cog):
             user.remove_jenny(int(100*todo_list.spots*0.5))
             todo_list.add_spots(10)
             return await ctx.send("Congrats! You just bought 10 more todo spots for the current todo list!")
-        elif what.name == "timing":
+        elif what == "timing":
             if todo_list.has_addon("due_in"):
                 return await ctx.send("You already have this addon!")
             if user.jenny < 2000:
@@ -367,13 +368,13 @@ class Shop(commands.Cog):
             todo_list.enable_addon("due_in")
             return await ctx.send("Congrats! You just bought the timing addon for the current todo list! You can now specifiy the `due_in` parameter when adding a todo.")
         else:
-            if todo_list.has_addon(what.name):
+            if todo_list.has_addon(what):
                 return await ctx.send("You already have this addon!")
             if user.jenny < 1000:
                 return await ctx.send(f"You don't have enough Jenny to buy this item. You need 1000 Jenny while you currently have {user.jenny}")
             user.remove_jenny(1000)
-            todo_list.enable_addon(what.name)
-            return await ctx.send(f"Successfully bought {what.name} for 1000 Jenny! Customize it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo update {what.name}`")
+            todo_list.enable_addon(what)
+            return await ctx.send(f"Successfully bought {what} for 1000 Jenny! Customize it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo update {what}`")
 
 
 ################################################ Give commands ################################################

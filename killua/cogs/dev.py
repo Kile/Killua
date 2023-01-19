@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 
 import math
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Literal
 from io import BytesIO
 from datetime import datetime, timedelta
 from matplotlib import pyplot as plt
@@ -13,7 +13,7 @@ from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 from killua.utils.classes import User, Guild #lgtm [py/unused-import]
 from killua.utils.interactions import View, Button, Modal
-from killua.static.enums import Category, Activities, Presences, StatsOptions
+from killua.static.enums import Category# , StatsOptions
 from killua.static.cards import Card #lgtm [py/unused-import]
 from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT, INFO
 
@@ -32,9 +32,9 @@ class UsagePaginator(Paginator):
             return
         
         await self.view.message.delete()
-        await self.ctx.command.__call__(self.ctx, StatsOptions.usage)
+        await self.ctx.command.__call__(self.ctx, "usage")
 
-class Dev(commands.Cog):
+class Dev(commands.GroupCog, group_name="dev"):
 
     def __init__(self, client: BaseBot):
         self.client = client
@@ -215,12 +215,6 @@ class Dev(commands.Cog):
             elif view.value == "group":
                 await self.group_top(ctx, top, view.interaction)
 
-
-    @commands.hybrid_group()
-    async def dev(self, _: commands.Context):
-        """A collection of commands regarding the development side of Killua"""
-        ...
-
     #Eval command, unnecessary with the jsk extension but useful for database stuff
     @commands.is_owner()
     @commands.command(aliases=["exec"], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True, with_app_command=False)
@@ -242,7 +236,7 @@ class Dev(commands.Cog):
         await ctx.send(content, reference=ctx.message.reference)
 
     @commands.is_owner()
-    @dev.command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
+    @commands.hybrid_command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     async def publish_update(self, ctx: commands.Context):
         """Allows me to publish Killua updates in a handy format"""
@@ -287,7 +281,7 @@ class Dev(commands.Cog):
         await msg.publish()
 
     @check()
-    @dev.command(extras={"category":Category.OTHER}, usage="update <version(optional)>")
+    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="update <version(optional)>")
     @discord.app_commands.autocomplete(version=version_autocomplete)
     @discord.app_commands.describe(version="The version to get information about")
     async def update(self, ctx: commands.Context, version: str = None):
@@ -311,7 +305,7 @@ class Dev(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.is_owner() 
-    @dev.command(extras={"category":Category.OTHER}, usage="blacklist <user_id>", hidden=True)
+    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="blacklist <user_id>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     @discord.app_commands.describe(
         user="The user to blacklist",
@@ -327,7 +321,7 @@ class Dev(commands.Cog):
         await ctx.send(f"Blacklisted user `{user}` for reason: {reason}", ephermal=True)
         
     @commands.is_owner()
-    @dev.command(extras={"category":Category.OTHER}, usage="whitelist <user_id>", hidden=True)
+    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="whitelist <user_id>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     @discord.app_commands.describe(
         user="The user to whitelist"
@@ -347,14 +341,14 @@ class Dev(commands.Cog):
         await ctx.send(f"Successfully whitelisted `{user}`")
 
     @commands.is_owner()
-    @dev.command(aliases=["st", "pr", "status"], extras={"category":Category.OTHER}, usage="pr <text>", hidden=True)
+    @commands.hybrid_command(aliases=["st", "pr", "status"], extras={"category":Category.OTHER}, usage="pr <text>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     @discord.app_commands.describe(
         text="The text displayed as the status",
         activity="The activity Killua is doing",
         presence="Killua's presence"
     )
-    async def presence(self, ctx: commands.Context, text: str, activity: Activities = None, presence: Presences = None):
+    async def presence(self, ctx: commands.Context, text: str, activity: Literal["playing", "watching", "listening", "competing"] = None, presence: Literal["dnd", "idle", "online"] = None):
         """Changes the presence of Killua. Owner restricted"""
 
         if text == "-rm":
@@ -362,18 +356,19 @@ class Dev(commands.Cog):
             await ctx.send("Done! reset Killua's presence", ephemeral=True)
             return await self.client.update_presence()
 
-        DB.const.update_many({"_id": "presence"}, {"$set": {"text": text, "presence": presence.name if presence else None, "activity": activity.name if activity else None}})
+        DB.const.update_many({"_id": "presence"}, {"$set": {"text": text, "presence": presence if presence else None, "activity": activity if activity else None}})
         await self.client.update_presence()
         await ctx.send(f"Successfully changed Killua's status to `{text}`! (I hope people like it >-<)", ephemeral=True)
 
     @check()
-    @dev.command(extras={"category":Category.OTHER}, usage="stats <usage/growth/general>")
+    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="stats <usage/growth/general>")
     @discord.app_commands.describe(type="The type of stats you want to see")
-    async def stats(self, ctx: commands.Context, type: StatsOptions):
+    async def stats(self, ctx: commands.Context, type: Literal["growth", "usage", "general"]):
         """Shows some statistics about the bot such as growth and command usage"""
-        if type == type.usage:
+        if type == "usage":
             await self.initial_top(ctx)
-        elif type == StatsOptions.growth:
+
+        elif type == "growth":
             def make_embed(page, embed, _):
                 embed.clear_fields()
                 embed.description = ""
@@ -428,7 +423,7 @@ class Dev(commands.Cog):
             await ctx.send(embed=embed)
 
     @check()
-    @dev.command(extras={"category":Category.OTHER}, usage="info")
+    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="info")
     async def info(self, ctx: commands.Context):
         """Get some general information (lore) about the bot"""
         embed = discord.Embed(title="Infos about the bot", description=INFO)

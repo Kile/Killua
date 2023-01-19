@@ -5,7 +5,7 @@ from ...cogs.cards import Cards
 from ...static.cards import Card
 from ...utils.paginator import Buttons
 from ...static.constants import PRICES
-from killua.static.enums import  HuntOptions, SellOptions
+from killua.static.enums import  SellOptions
 
 from random import randint
 from math import ceil

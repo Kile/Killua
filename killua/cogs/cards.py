@@ -4,19 +4,18 @@ import random
 from discord.ext import commands
 from datetime import datetime
 
-from typing import Union, List, Optional, Tuple, Optional, Dict
+from typing import Union, List, Optional, Tuple, Optional, Dict, Literal
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches
-from killua.static.enums import Category, HuntOptions, Items, SellOptions
+from killua.static.enums import Category, SellOptions
 from killua.utils.interactions import ConfirmButton
-from killua.static.cards import Card
+from killua.static.cards import Card, CardNotFound
 from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, LOOTBOXES, DB
 
-
-class Cards(commands.Cog):
+class Cards(commands.GroupCog, group_name="cards"):
 
     def __init__(self, client: BaseBot):
         self.client = client
@@ -126,14 +125,9 @@ class Cards(commands.Cog):
 
         return formatted_rewards, formatted_text, maxed
 
-    @commands.hybrid_group()
-    async def cards(self, _: commands.Context):
-        """Commands mimicing the greed island arc of hxh"""
-        ...
-
     @check(3)
     @commands.bot_has_permissions(attach_files=True, embed_links=True)
-    @cards.command(extras={"category":Category.CARDS}, usage="book <page(optional)>")
+    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="book <page(optional)>")
     @discord.app_commands.describe(page="The page of the book to see")
     async def book(self, ctx: commands.Context, page: int = 1):
         """Allows you to take a look at your cards"""
@@ -151,15 +145,17 @@ class Cards(commands.Cog):
         return await Paginator(ctx, page=page, func=make_embed, max_pages=6+math.ceil(len(user.fs_cards)/18), has_file=True).start()
 
     @check(2)
-    @cards.command(extras={"category":Category.CARDS}, usage="sell <card_id> <amount(optional)>")
+    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="sell <card_id> <amount(optional)>")
     @discord.app_commands.describe(
         card="The card to sell",
         type="The type of card to bulk sell",
         amount="The amount of the specified card to sell"
     )
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
-    async def sell(self, ctx: commands.Context, card: str = None, type: SellOptions = None, amount: int = 1):
+    async def sell(self, ctx: commands.Context, card: str = None, amount: int = 1, type: Literal["all", "spells", "monsters"] = None):
         """Sell any amount of cards you own"""
+        if type:
+            type = getattr(type, SellOptions) # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
 
         user = User(ctx.author.id)
 
@@ -270,7 +266,7 @@ class Cards(commands.Cog):
         return [*[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_duplicates], *[discord.app_commands.Choice(name=str(i), value=str(i)) for i, _ in id_duplicates]]
 
     @check(20)
-    @cards.command(extras={"category":Category.CARDS}, usage="swap <card_id>")
+    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="swap <card_id>")
     @discord.app_commands.describe(card="The card to swap out")
     @discord.app_commands.autocomplete(card=swap_cards_autocomplete)
     async def swap(self, ctx: commands.Context, card: str):
@@ -295,11 +291,10 @@ class Cards(commands.Cog):
         await ctx.send(f"Successfully swapped out card {card.name}")
 
     @check()
-    @cards.command(extras={"category":Category.CARDS}, usage="hunt <end/time(optional)>")
+    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="hunt <end/time(optional)>")
     @discord.app_commands.describe(option="What to do with your hunt")
-    async def hunt(self, ctx: commands.Context, option: HuntOptions = HuntOptions.start):
+    async def hunt(self, ctx: commands.Context, option: Literal["end", "time", "start"] = "start"):
         """Go on a hunt! The longer you are on the hunt, the better the rewards!"""
-        option = option.name
 
         user = User(ctx.author.id)
         has_effect, value = user.has_effect("hunting")
@@ -358,7 +353,7 @@ class Cards(commands.Cog):
 
     @check(120)
     @discord.app_commands.describe(user="The user to meet. Must have sent a mesage recently.")
-    @cards.command(aliases=["approach"], extras={"category":Category.CARDS}, usage="meet <user>")
+    @commands.hybrid_command(aliases=["approach"], extras={"category":Category.CARDS}, usage="meet <user>")
     async def meet(self, ctx: commands.Context, user: discord.Member):
         """Meet a user who has recently sent a message in this channel to enable certain effects"""
         if hasattr(ctx, "invoked_by_context_menu"):
@@ -390,7 +385,7 @@ class Cards(commands.Cog):
         return await ctx.send(f"Done {ctx.author.mention}! Successfully added `{user}` to the list of people you've met", delete_after=5, allowed_mentions=discord.AllowedMentions.none(), ephemeral=hasattr(ctx, "invoked_by_context_menu"))
             
     @check()
-    @cards.command(extras={"category":Category.CARDS}, usage="discard <card_id>")
+    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="discard <card_id>")
     @discord.app_commands.describe(card="The card to discard")
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
     async def discard(self, ctx: commands.Context, card: str):
@@ -427,7 +422,7 @@ class Cards(commands.Cog):
         await ctx.send(f"Successfully thrown away card No. `{card.id}`")
 
     @check()
-    @cards.command(aliases=["read"], extras={"category": Category.CARDS}, usage="cardinfo <card_id>")
+    @commands.hybrid_command(aliases=["read"], extras={"category": Category.CARDS}, usage="cardinfo <card_id>")
     @discord.app_commands.describe(card="The card to get infos about")
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
     async def cardinfo(self, ctx: commands.Context, card: str):
@@ -450,7 +445,7 @@ class Cards(commands.Cog):
         await ctx.send(embed=embed)
 
     @check()
-    @cards.command(name="check", extras={"category": Category.CARDS}, usage="check <card_id>")
+    @commands.hybrid_command(name="check", extras={"category": Category.CARDS}, usage="check <card_id>")
     @discord.app_commands.describe(card="The card to see how many fakes you own of it")
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
     async def _check(self, ctx: commands.Context, card: str):
@@ -557,7 +552,7 @@ class Cards(commands.Cog):
         return res
 
     @check()
-    @cards.command(extras={"category":Category.CARDS}, usage="use <card_id> <required_arguments>")
+    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="use <card_id> <required_arguments>")
     @discord.app_commands.describe(
         item="The card or item to use",
         target="The target of the spell",
@@ -588,15 +583,14 @@ class Cards(commands.Cog):
         await self._use_core(ctx, item, *args)
 
     @commands.is_owner()
-    @cards.command(extras={"category":Category.CARDS}, usage="gain <type> <card_id/amount/lootbox>", hidden=True)
+    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="gain <type> <card_id/amount/lootbox>", hidden=True)
     @discord.app_commands.describe(
         type="The type of item to gain",
         item="The amount/id of the item to get"
     )
-    async def gain(self, ctx: commands.Context, type: Items, item: str):
+    async def gain(self, ctx: commands.Context, type: Literal["jenny" "card", "lootbox"], item: str):
         """An owner restricted command allowing the user to obtain any card or amount of jenny or any lootbox"""
         user = User(ctx.author.id)
-        type = type.name
 
         if type == "card":
             try:

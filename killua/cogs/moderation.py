@@ -11,12 +11,12 @@ from killua.static.enums import Category
 
 Choice = discord.app_commands.Choice
 
-class Moderation(commands.Cog):
+class Moderation(commands.GroupCog, group_name="mod"):
 
     def __init__(self, client: BaseBot):
         self.client = client
     
-    async def check_perms(self, ctx, member) -> Union[None, discord.Message]:
+    async def check_perms(self, ctx: commands.Context, member: discord.Member) -> Union[None, discord.Message]:
         if member == ctx.me:
             return await ctx.send("Hey!", ephemeral=True)
       
@@ -30,17 +30,10 @@ class Moderation(commands.Cog):
             return await ctx.send(f"My role needs to be moved higher up to grant me permission to {ctx.command.name} this person", ephemeral=True)
         return None
 
-    @commands.hybrid_group()
-    async def moderation(self, _: commands.Context):
-        """
-        Moderation commands
-        """
-        ...
-
     @check()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
-    @moderation.command(extras={"category":Category.MODERATION}, usage="ban <user> <reason>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="ban <user> <reason>")
     @discord.app_commands.describe(
         member= "The member to ban",
         delete_days="The number of days worth of messages to delete",
@@ -57,7 +50,7 @@ class Moderation(commands.Cog):
         ctx: commands.Context, 
         member: str, 
         delete_days: int = 1, 
-        config: Choice[int] = 1, 
+        config: Choice[int] = 1, # This is unusable with message commands either way so I am not making it compatible
         *, reason: str = None
         ):
         """Bans a user from the server."""
@@ -90,7 +83,7 @@ class Moderation(commands.Cog):
     @check()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
-    @moderation.command(extras={"category":Category.MODERATION}, usage="unban <user>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="unban <user>")
     @discord.app_commands.describe(member="The member to be unbanned")
     async def unban(self, ctx: commands.Context, *, member: str):
         """Unbans a user by ID or by tag, meaning `unban Kile#0606` will also work"""
@@ -126,7 +119,7 @@ class Moderation(commands.Cog):
     @check()
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
-    @moderation.command(extras={"category":Category.MODERATION}, usage="kick <user> <reason>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="kick <user> <reason>")
     @discord.app_commands.describe(
         member="The member to be kicked",
         reason="The reason for the kick"
@@ -139,7 +132,7 @@ class Moderation(commands.Cog):
     async def kick(
         self, ctx: commands.Context,
         member: discord.Member, 
-        config: Choice[int] = 1,
+        config: Choice[int] = 1, # This is unusable with message commands either way so I am not making it compatible
         *, reason: str = None
         ):
         """Kicks a user from the server."""
@@ -174,7 +167,7 @@ class Moderation(commands.Cog):
     @check()
     @commands.has_permissions(moderate_members=True)
     @commands.bot_has_permissions(moderate_members=True)
-    @moderation.command(extras={"category":Category.MODERATION}, usage="shush <time> <reason>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="shush <time> <reason>")
     @discord.app_commands.describe(
         member="The member to be shushed",
         time="The time until the shush expires",
@@ -192,7 +185,7 @@ class Moderation(commands.Cog):
         await ctx.send(f":pinching_hand: Timeouted {member} until <t:{int((datetime.now() + time).timestamp())}:R> for: ```\n{reason or 'No reason provided'}```Operating moderator: **{ctx.author}**")   
         
     @check()    
-    @moderation.command(extras={"category":Category.MODERATION}, usage="unshush <user> <reason(optional)>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="unshush <user> <reason(optional)>")
     @discord.app_commands.describe(
         member="The member to be unshushed",
         reason="The reason for the unshush"
@@ -212,7 +205,7 @@ class Moderation(commands.Cog):
         await ctx.send(f":lips: Removed the timeout from {member}")
 
     @check()
-    @moderation.command(extras={"category":Category.MODERATION}, usage="prefix <new_prefix(optional)>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="prefix <new_prefix(optional)>")
     @discord.app_commands.describe(prefix="The new message command prefix")
     async def prefix(self, ctx: commands.Context, prefix: str = None):
         """Change Killua's prefix with this command."""
