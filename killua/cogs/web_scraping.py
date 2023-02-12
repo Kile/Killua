@@ -4,17 +4,15 @@ from discord.ext import commands
 from bs4 import BeautifulSoup
 from html import escape
 from json import loads
-from typing import Union
+from typing import List, Union
 from pypxl import PxlClient
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
 from killua.static.enums import Category
 from killua.static.constants import PXLAPI
-
-from typing import Any, Callable
 
 class WebScraping(commands.GroupCog, group_name="web"):
 
@@ -43,97 +41,82 @@ class WebScraping(commands.GroupCog, group_name="web"):
         for menu in menus:
             self.client.tree.add_command(menu)
 
-    def _try_else(self, x: Any, f: Callable[[Any], str], e: str = None) -> str:
-        """Returns a book info it it exists, else "-" or e if provided"""
-        try:
-            return " ".join(f(x).split())
-        except Exception:
-            return e or "-" 
-
-    def _has_results(self, page: BeautifulSoup) -> bool:
-        """Checks if there are any results before activating the paginator"""
-        try:
-            page.find_all("div", class_="u-anchorTarget")[0].attrs["id"]
-            #If there are no results this will raise an error, in that case Killua will say so
-        except Exception: 
-            return False
-        return True
-
-    def get_book_count(self, page: BeautifulSoup) -> int:
-        """Gets the number of results for a book"""
-        #This function gets the number of total book results by taking in the books name
-        # get the web page (id only for this website)
-        return len(page.find_all("div", class_="u-anchorTarget"))
-
-
-    async def get_book(self, nr: int, name: str, pages: BeautifulSoup) -> discord.Embed:
-        """Get result x of a book with title y"""
-        #This is the essential function getting infos about a book by taking the name and the number of the result list
-        # get the id of the book (id only for this website)
-        bookNr = pages.find_all("div", class_="u-anchorTarget")[nr].attrs["id"]
-        # get the book
-        res = await self.client.session.get("https://www.goodreads.com/book/show/" + bookNr)
-        content = await res.text()
-        book = BeautifulSoup(content.encode(), "html.parser")
-        # get the book values
-
-        rating = self._try_else(book, lambda book: book.find("span", itemprop="ratingValue").text)
-        name = self._try_else(book, lambda book: book.find("div", class_="bookCoverPrimary").find("img").attrs["alt"])
-        language = self._try_else(book, lambda book: book.find("div", itemprop="inLanguage").text)
-        pages = self._try_else(book, lambda book: book.find("span", itemprop="numberOfPages").text)
-        author = self._try_else(book, lambda book: book.find("a", class_="authorName").find_all("span")[0].text)
-        img_url = self._try_else(book, lambda book: book.find("div", class_="bookCoverPrimary").find("img").attrs["src"], "https://upload.wikimedia.org/wikipedia/commons/f/fc/No_picture_available.png")
-        isbn = self._try_else(book, lambda book:  book.find_all("div", class_="infoBoxRowItem")[1].text)
-        description = self._try_else(book, lambda book: book.find("div", id="description").find(style="display:none").text)
-
-        # Special cases
-        if not isbn.isdigit():
-            isbn = "-"
-
-        if description.startswith("Alternate cover for this ISBN can be found here"):
-            description = description.replace("Alternate cover for this ISBN can be found here", "")
-
-        if len(description) > 1000:
-            description = description[:1000]+ "..."
-        #Making sure embed limit isn"t exceeded
-        
-        if len(name) > 256:
-            name = name[:253] + "..."
-        #Making sure title limit isn"t exceeded
-    
-        return discord.Embed.from_dict({
-            "title": name,
-            "thumbnail":{
-                "url": img_url},
-            "description": f"\n**Rating:** {rating}/5\n**Author:** {author}\n**Language:** {language}\n**Number of pages:** {pages}\n**Book description:**\n{description}\n**ISBN:**{isbn}",
-            "color": 0x1400ff
-        }) #returning the fresh crafted embed with all the information
-
     @check(12)
     @commands.hybrid_command(aliases=["n", "search-book", "sb"], extras={"category":Category.FUN}, usage="book <title>")
     @discord.app_commands.describe(book="The name of the book to loock for")
     async def novel(self, ctx: commands.Context, *, book: str):
         """With this command you can search for books! Just say the book title and look through the results"""
-        response = await self.client.session.get(f"https://www.goodreads.com/search?q={book}")
-        content: str = await response.text()
-        p = BeautifulSoup(content.encode(), "html.parser")
-        if not self._has_results(p):
-            return await ctx.send("No results found")
         await ctx.channel.typing()
-        await ctx.send("Processing...", ephemeral=True)
-        async def make_embed(page, _, pages):
-            return await self.get_book(page-1, book, pages)
+        if ctx.interaction:
+            await ctx.send("Processing...", ephemeral=True)
 
-        await Paginator(ctx, p, max_pages=self.get_book_count(p), func=make_embed, defer=True).start()
+        response = await self.client.session.get(f"https://openlibrary.org/search.json?q={quote(book)}")
+        if response.status != 200:
+            return await ctx.send("Something went wrong... If this keeps happening please contact the developer")
+
+        data = await response.json()
+        if not data["numFound"]:
+            return await ctx.send("No results found")
+
+        embeds = []
+        for book in data["docs"]:
+            embed = discord.Embed(title=book["title"] if len(book["title"]) < 256 else (book["title"][:253] + "..."), url=f"https://openlibrary.org{book['key']}", color=0x1400ff)
+            if "author_name" in book:
+                embed.add_field(name="Author", value=book["author_name"][0])
+            if "first_publish_year" in book:
+                embed.add_field(name="Published", value=book["first_publish_year"])
+            if "language" in book:
+                embed.add_field(name="Language", value=book["language"][0])
+            if "isbn" in book:
+                embed.add_field(name="ISBN", value=book["isbn"][0])
+            if "edition_count" in book:
+                embed.add_field(name="Editions", value=book["edition_count"])
+            # Find where the book is available to buy and give links
+            available_to_buy = []
+            if "ia" in book:
+                available_to_buy.append(f"[Internet Archive](https://archive.org/details/{book['ia'][0]})")
+            if "id_amazon" in book and [i for i in book['id_amazon'] if i]:
+                available_to_buy.append(f"[Amazon](https://www.amazon.com/dp/{[i for i in book['id_amazon'] if i][0]})")
+            if "worldcat" in book:
+                available_to_buy.append(f"[WorldCat](https://www.worldcat.org/title/{book['worldcat'][0]})")
+            if "id_goodreads" in book:
+                available_to_buy.append(f"[Goodreads](https://www.goodreads.com/book/show/{book['id_goodreads'][0]})")
+            if "id_librarything" in book:
+                available_to_buy.append(f"[LibraryThing](https://www.librarything.com/work/{book['id_librarything'][0]})")
+            if "id_overdrive" in book:
+                available_to_buy.append(f"[Overdrive](https://www.overdrive.com/media/{book['id_overdrive'][0]})")
+            if available_to_buy:
+                embed.add_field(name="Available to buy", value="\n".join(available_to_buy), inline=False)
+            if "cover_i" in book:
+                embed.set_image(url=f"https://covers.openlibrary.org/b/id/{book['cover_i']}-M.jpg")
+            embeds.append({"embed": embed, "key": book["key"]})
+
+        async def make_embed(page, embed: discord.Embed, pages):
+            embed = pages[page-1]["embed"]
+            key = pages[page-1]["key"]
+            response = await self.client.session.get(f"https://openlibrary.org{key}.json")
+            if response.status != 200:
+                embed.description = "No description found"
+                return embed
+            data = await response.json()
+            if "description" in data:
+                if isinstance(data["description"], dict):
+                    embed.description = data["description"]["value"] if len(data["description"]["value"]) < 2048 else (data["description"]["value"][:2045] + "...")
+                else:
+                    embed.description = data["description"] if len(data["description"]) < 2048 else (data["description"][:2045] + "...")
+            else:
+                embed.description = "No description found"
+            embed.set_footer(text=f"Page {page}/{len(pages)}")
+            return embed
+
+        return await Paginator(ctx, embeds, func=make_embed).start()
 
     async def _get_token(self, query: str) -> Union[str, None]:
         """Gets a new token to be used in the image search"""
         try:
             res = await self.client.session.get(f"https://duckduckgo.com/?q={escape(query)}")
-
             if not res.status == 200:
                 return
-
             token = re.search(r"vqd='(.*?)'", str(BeautifulSoup(await res.text(), "html.parser"))).group(1)
             return token
         except Exception:
@@ -165,7 +148,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         links = [r["image"] for r in results if r["image"]]
 
-        def make_embed(page, embed, pages):
+        def make_embed(page, embed: discord.Embed, pages):
             embed.title = "Results for query " + query
             embed.set_image(url=pages[page-1])
             return embed
