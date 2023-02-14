@@ -63,9 +63,10 @@ class IPCRoutes(commands.Cog):
         """
         # Edgecase where the user has no streak or a streak smaller than 5 which is when it would start in the middle
         if streak < 5:
-            path = " ".join([LOOTBOXES[self._get_reward(streak)]['emoji'] if self._get_reward(streak) < 100 else "-" for _ in range(1, 11)])
+            path_list = [LOOTBOXES[self._get_reward(i)]['emoji'] if self._get_reward(i) < 100 else "-" for i in range(1, 11)]
             # Replace the character position where the user currently is with a black circle
-            return path[:streak*2] + "⚫️" + path[streak*2+1:]
+            path_list[streak-1] = "⚫️"
+            return " ".join(path_list)
 
         # Create the path
         before = [LOOTBOXES[self._get_reward(streak-i)]['emoji'] if self._get_reward(streak-i) < 100 else "-" for i in range(1, 6)]
