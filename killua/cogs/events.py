@@ -4,14 +4,14 @@ import discord
 
 import logging
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from PIL import Image
 from typing import Dict, List, Tuple
 from matplotlib import pyplot as plt
 
 from killua.bot import BaseBot
-from killua.utils.classes import Guild, Book
+from killua.utils.classes import Guild, Book, User
 from killua.static.enums import PrintColors
 from killua.static.constants import TOPGG_TOKEN, DBL_TOKEN, PatreonBanner, DB, GUILD, MAX_VOTES_DISPLAYED
 
@@ -110,6 +110,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.save_guilds.start()
+        self.vote_reminders.start()
         if not self.status_started:
             self.status.start()
             self.status_started = True
@@ -126,6 +127,34 @@ class Events(commands.Cog):
     @status.before_loop
     async def before_status(self):
         await self.client.wait_until_ready()
+
+    def _date_helper(self, hour: int) -> int:
+        if hour > 11:
+            return hour - 12
+        return hour
+
+    @tasks.loop(hours=1)
+    async def vote_reminders(self):
+        enabled = DB.teams.find({"voting_reminder": True})
+        for user in enabled:
+            user = User(user["id"])
+            for site, data in  user.voting_streak.items():
+                if not data["last_vote"]:
+                    continue
+                if self._date_helper(data["last_vote"].hour) == self._date_helper(datetime.now().hour) and data["last_vote"].day != datetime.now().day:
+                    user = self.client.get_user(user.id) or await self.client.fetch_user(user.id)
+                    if not user:
+                        print("Not user")
+                        continue
+                    embed = discord.Embed.from_dict({
+                        "title": "Vote Reminder",
+                        "description": f"Hey {user.name}, it's been 12 hours since you last voted for Killua on {site}. Please consider voting for Killua so you can get your daily rewards and help the bot grow! You can toggle these reminders with `/dev voteremind`",
+                        "color": 0x1400ff
+                    })
+                    try:
+                        await user.send(embed=embed)
+                    except discord.Forbidden:
+                        continue
 
     @tasks.loop(hours=24)
     async def save_guilds(self):

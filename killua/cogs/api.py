@@ -8,7 +8,7 @@ from zmq.auth.asyncio import AsyncioAuthenticator
 
 from killua.bot import BaseBot
 from killua.utils.classes import User, Guild, LootBox
-from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN
+from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS
 
 from typing import List
 
@@ -45,34 +45,59 @@ class IPCRoutes(commands.Cog):
                 else:
                     socket.send_json({"status": "ok"})
 
-    def _get_reward(self, user: User, weekend: bool) -> int:
+    def _get_reward(self, streak: int, weekend: bool = False) -> int:
         """A pretty simple algorithm that adjusts the reward for voting"""
-        if user.votes % 5 == 0:
-            return LootBox.get_random_lootbox()
-        if user.votes*2 > 100:
-            reward = int((user.votes*2)/100)*(150 if weekend else 100)
-        else:
-            reward = 100
-        return reward
+        # First loop through all lootbox streak rwards from the back and find if any of them apply
+        for key, value in list(VOTE_STREAK_REWARDS.items())[::-1]:
+            if streak % key == 0:
+                return value
+
+        # If no streak reward applies, just return the base reward
+        return int((120 if weekend else 100) * float(f"1.{int(streak//5)}"))
+
+    def _create_path(self, streak: int) -> str:
+        """
+        Creates a path illustrating where the user currently is with vote rewards and what the next rewards are as well as already claimed ones like
+        --:boxemoji:--⚫️--:boxemoji:--
+        This string has a hard limit of 11 and puts where the user currently is at the center
+        """
+        # Edgecase where the user has no streak or a streak smaller than 5 which is when it would start in the middle
+        if streak < 5:
+            path = " ".join([LOOTBOXES[self._get_reward(streak)]['emoji'] if self._get_reward(streak) < 100 else "-" for _ in range(1, 11)])
+            # Replace the character position where the user currently is with a black circle
+            return path[:streak*2] + "⚫️" + path[streak*2+1:]
+
+        # Create the path
+        before = [LOOTBOXES[self._get_reward(streak-i)]['emoji'] if self._get_reward(streak-i) < 100 else "-" for i in range(1, 6)]
+        after = [LOOTBOXES[self._get_reward(streak+i)]['emoji'] if self._get_reward(streak+i) < 100 else "-" for i in range(1, 6)]
+        path = before[::-1] + ["⚫️"] + after
+
+        return " ".join(path)
+
 
     async def handle_vote(self, data: dict) -> None:
         user_id = data["user"] if "user" in data else data["id"]
 
         user = User(int(user_id))
-        user.add_vote()
-        reward = self._get_reward(user, data["isWeekend"] if hasattr(data, "isWeekend") else False)
+        user.add_vote("topgg" if "isWeekend" in data else "discordbotlist")
+        streak = user.voting_streak["topgg" if "isWeekend" in data else "discordbotlist"]["streak"]
+        reward = self._get_reward(streak, data["isWeekend"] if hasattr(data, "isWeekend") else False)
 
+        path = self._create_path(streak)
+        embed = discord.Embed.from_dict({
+            "title": "Thank you for voting!",
+            "description": (f"Well done for keeping your voting **streak** 🔥 of {streak} for {'top.gg' if 'isWeekend' in data else 'discordbotlist'}! " if streak > 1 else "") + "As a reward I am happy to award with " + (f"{reward} Jenny" if reward >= 100 else f"a lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}") + f"! You are **{5 - (streak % 5)}** votes away from the next reward! \n\n{path}",
+            "color": 0x1400ff
+        })
         if reward < 100:
             user.add_lootbox(reward)
-            text = f"Thank you for voting for Killua! This time you get a :sparkles: special :sparkles: reward: the lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}. Open it with `/economy open`"
         else:
-            text = f"Thank you for voting for Killua! Here take {reward} Jenny as a sign of my gratitude. {5-user.votes%5} vote{'s' if 5-user.votes%5 > 1 else ''} away from a :sparkles: special :sparkles: reward"
             user.add_jenny(reward)
         
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
 
         try:
-            await usr.send(text)
+            await usr.send(embed=embed)
         except discord.HTTPException:
             pass
 

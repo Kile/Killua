@@ -430,4 +430,22 @@ class Dev(commands.GroupCog, group_name="dev"):
         embed.color = 0x1400ff
         return await ctx.send(embed=embed, ephemeral=True)
 
+    @check()
+    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="voteremind <on/off>")
+    @discord.app_commands.describe(toggle="Toggle the voteremind on or off")
+    async def voteremind(self, ctx: commands.Context, toggle: Literal["on", "off"]):
+        """Toggle the voteremind on or off"""
+        user = User(ctx.author.id)
+        if toggle == "on":
+            if user.voting_reminder:
+                return await ctx.send("You already have the voteremind enabled!", ephemeral=True)
+            user._update_val("voting_reminder", True)
+            await ctx.send("Enabled the voteremind! You can turn it off any time with this command!", ephemeral=True)
+        else:
+            if not user.voting_reminder:
+                return await ctx.send("You already have the voteremind disabled!", ephemeral=True)
+            user._update_val("voting_reminder", False)
+            await ctx.send("Disabled the voteremind! You can turn it on any time with this command!", ephemeral=True)
+
+
 Cog = Dev

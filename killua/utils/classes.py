@@ -422,6 +422,8 @@ class User:
 
         self.achievements: List[str] = user["achievements"] if "achievements" in user else [] # A list of one time achivenments so track what was archived and what not
         self.votes: int = user["votes"] if "votes" in user else 0
+        self.voting_streak = user["voting_streak"] if "voting_streak" in user else {}
+        self.voting_reminder = user["voting_reminder"] if "voting_reminder" in user else False
         self.premium_guilds: dict = user["premium_guilds"] if "premium_guilds" in user else {}
         self.lootboxes: List[int] = user["lootboxes"] if "lootboxes" in user else []
         self.weekly_cooldown: Optional[datetime] = user["weekly_cooldown"] if "weekly_cooldown" in user else None
@@ -497,9 +499,24 @@ class User:
                 {"id": user_id, "points": 0, 
                 "badges": [], 
                 "cooldowndaily": "",
-                "cards": {"rs": [], "fs": [], "effects": {}}, 
+                "cards": {
+                    "rs": [], 
+                    "fs": [], 
+                    "effects": {}
+                }, 
                 "met_user": [], 
                 "votes": 0, 
+                "voting_streak": {
+                    "topgg": {
+                        "streak": 0,
+                        "last_vote": None
+                    },
+                    "discordbotlist": {
+                        "streak": 0,
+                        "last_vote": None
+                    }
+                },
+                "voting_reminder": False,
                 "premium_guilds": {}, 
                 "lootboxes": [], 
                 "weekly_cooldown": None, 
@@ -571,9 +588,21 @@ class User:
         self.premium_guilds = {}
         self._update_val("premium_guilds", {})
 
-    def add_vote(self) -> None:
+    def add_vote(self, site) -> None:
         """Keeps track of how many times a user has voted for Killua to increase the rewards over time"""
         self.votes += 1
+        if site not in self.voting_streak:
+            self.voting_streak[site] = {
+                "streak": 0,
+                "last_vote": None
+            }
+        self.voting_streak[site]["streak"] += 1
+        if site in self.voting_streak and self.voting_streak[site]["last_vote"] is not None:
+            if (datetime.now() - self.voting_streak[site]["last_vote"]).days > 1:
+                self.voting_streak[site]["streak"] = 1
+
+        self.voting_streak[site]["last_vote"] = datetime.now()
+        self._update_val("voting_streak", self.voting_streak)
         self._update_val("votes", 1, "$inc")
 
     def add_premium_guild(self, guild_id: int) -> None:
