@@ -66,6 +66,7 @@ class Shop(commands.Cog):
 
 
     async def cog_load(self):
+        print("1")
         self.cards_shop_update.start()
     
     @tasks.loop(hours=6)

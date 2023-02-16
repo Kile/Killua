@@ -99,8 +99,10 @@ class Premium(commands.Cog):
         self.client = client
         self.invalid = True # this is only `True` the first time the bot starts because the boosters of the support server are not cached at that point, so it avoids removing their badge
 
-    async def cog_load(self):
-        self.get_patrons.start()
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if self.invalid:
+            self.get_patrons.start()
 
     def _get_boosters(self) -> list:
         """Gets a list of all the boosters of the support server"""
@@ -146,6 +148,10 @@ class Premium(commands.Cog):
         diff = self._get_differences(current_patrons, saved_patrons)
         self._assign_badges(diff)
         self.invalid = False
+    
+    @get_patrons.before_loop
+    async def before_get_patrons(self) -> None:
+        await self.client.wait_until_ready()
 
     @commands.hybrid_group()
     async def premium(self, _: commands.Context):
