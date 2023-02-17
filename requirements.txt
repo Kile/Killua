@@ -46,7 +46,7 @@ six==1.16.0
 soupsieve==2.3.2.post1
 toml==0.10.2
 typing_extensions==4.4.0
-Werkzeug==2.2.2
+Werkzeug==2.2.3
 wsproto==1.2.0
 yarl==1.8.1
 zipp==3.10.0
