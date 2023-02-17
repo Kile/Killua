@@ -51,6 +51,9 @@ I started Killua as a way to learn python and different programming concepts. It
 *   [Invite link](https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands)
 *   [Patreon](https://patreon.com/kilealkuri)
 
+## Algorithms
+Killua contains a number of interesting algorithms which I have explained more and gone into detail in the [algorithms](./algorithms/README.md) folder.
+
 ## Programming concepts list
 
 As explained previously, I use Killua as a tool to learn more about python and programming. Here is a list of programming concepts Killua uses and which ones it is planned to use at some point in the future.
