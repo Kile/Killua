@@ -66,7 +66,6 @@ class Shop(commands.Cog):
 
 
     async def cog_load(self):
-        print("1")
         self.cards_shop_update.start()
     
     @tasks.loop(hours=6)
@@ -156,7 +155,7 @@ class Shop(commands.Cog):
             await ctx.invoke(subcommands[int(view.value)]) # calls a shop subcommand if a shop was specified
 
     @check()
-    @shop.command(name="cards", extras={"category":Category.CARDS}, usage="cards")
+    @shop.command(name="cards", extras={"category":Category.CARDS, "id": 70}, usage="cards")
     async def cards_shop(self, ctx: commands.Context):
         """Shows the current cards for sale"""
         
@@ -181,7 +180,7 @@ class Shop(commands.Cog):
         await self._shop_menu(ctx, msg, view)
 
     @check()
-    @shop.command(name="todo", extras={"category": Category.TODO}, usage="todo")
+    @shop.command(name="todo", extras={"category": Category.TODO, "id": 71}, usage="todo")
     async def todo_shop(self, ctx: commands.Context):
         """Get some info about what cool stuff you can buy for your todo list with this command"""
         prefix = self.client.command_prefix(self.client, ctx.message)[2]
@@ -210,7 +209,7 @@ class Shop(commands.Cog):
         await self._shop_menu(ctx, msg, view)
 
     @check()
-    @shop.command(name="lootboxes", aliases=["boxes"], extras={"category": Category.ECONOMY}, usage="lootboxes")
+    @shop.command(name="lootboxes", aliases=["boxes"], extras={"category": Category.ECONOMY, "id": 72}, usage="lootboxes")
     async def lootboxes_shop(self, ctx: commands.Context):
         """Get the current lootbox shop with this command"""
         prefix = self.client.command_prefix(self.client, ctx.message)[2]
@@ -246,7 +245,7 @@ class Shop(commands.Cog):
             return await ctx.send("You need to provide a valid subcommand! Subcommands are: `card`, `lootbox` and `todo`")
 
     @check(2)
-    @buy.command(extras={"category": Category.CARDS}, usage="card <card_id>")
+    @buy.command(extras={"category": Category.CARDS, "id": 73}, usage="card <card_id>")
     @discord.app_commands.describe(item="The card to buy")
     async def card(self, ctx: commands.Context, item: str):
         """Buy a card from the shop with this command"""
@@ -304,7 +303,7 @@ class Shop(commands.Cog):
         return options
 
     @check(2)
-    @buy.command(aliases=["box"], extras={"category": Category.ECONOMY}, usage="lootbox <item>")
+    @buy.command(aliases=["box"], extras={"category": Category.ECONOMY, "id": 74}, usage="lootbox <item>")
     @discord.app_commands.describe(box="The lootbox to buy")
     @discord.app_commands.autocomplete(box=lootbox_autocomplete)
     async def lootbox(self, ctx: commands.Context, box: str):
@@ -328,7 +327,7 @@ class Shop(commands.Cog):
 
 
     @check(2)
-    @buy.command(name="todo",extras={"category": Category.TODO}, usage="todo <item>")
+    @buy.command(name="todo",extras={"category": Category.TODO, "id": 75}, usage="todo <item>")
     @discord.app_commands.describe(what="The todo addon to buy")
     async def _todo(self, ctx: commands.Context, what: Literal["thumbnail", "space", "description", "timing", "color"]):
         """Buy cool stuff for your todo list with this command! (Only in editor mode)"""
@@ -395,7 +394,7 @@ class Shop(commands.Cog):
         return User(ctx.author.id), User(other.id)      
 
     @check()
-    @give.command(extras={"category":Category.ECONOMY}, usage="jenny <user> <amount>")
+    @give.command(extras={"category":Category.ECONOMY, "id": 76}, usage="jenny <user> <amount>")
     @discord.app_commands.describe(
         other="The user to give jenny to",
         amount="The amount of jenny to give"
@@ -436,7 +435,7 @@ class Shop(commands.Cog):
         return [*[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_cards], *[discord.app_commands.Choice(name=str(i), value=str(i)) for i, _ in id_cards]]
 
     @check()
-    @give.command(name="card", extras={"category":Category.CARDS}, usage="card <user> <card_id>")
+    @give.command(name="card", extras={"category":Category.CARDS, "id": 77}, usage="card <user> <card_id>")
     @discord.app_commands.describe(
         other="The user to give the card to",
         card="What card to give"
@@ -464,7 +463,7 @@ class Shop(commands.Cog):
         return await ctx.send(f"✉️ gave `{other}` card No. {item}!", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
-    @give.command(name="lootbox", aliases=["box"], extras={"category":Category.ECONOMY}, usage="lootbox <user> <box_id>")
+    @give.command(name="lootbox", aliases=["box"], extras={"category":Category.ECONOMY, "id": 78}, usage="lootbox <user> <box_id>")
     @discord.app_commands.describe(
         other="The user to give the lootbox to",
         box="What lootbox to give"

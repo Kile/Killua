@@ -43,6 +43,7 @@ class BaseBot(commands.AutoShardedBot):
 		await self.tree.sync()
 		if DB.const.find_one({"_id": "migrate"})["value"]:
 			migrate_requiring_bot(self)
+			DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
 
 	async def close(self):
 		await super().close()

@@ -33,7 +33,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
     @check()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
-    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="ban <user> <reason>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION, "id": 61}, usage="ban <user> <reason>")
     @discord.app_commands.describe(
         member= "The member to ban",
         delete_days="The number of days worth of messages to delete",
@@ -83,7 +83,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
     @check()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
-    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="unban <user>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION, "id": 62}, usage="unban <user>")
     @discord.app_commands.describe(member="The member to be unbanned")
     async def unban(self, ctx: commands.Context, *, member: str):
         """Unbans a user by ID or by tag, meaning `unban Kile#0606` will also work"""
@@ -119,7 +119,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
     @check()
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
-    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="kick <user> <reason>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION, "id": 63}, usage="kick <user> <reason>")
     @discord.app_commands.describe(
         member="The member to be kicked",
         reason="The reason for the kick"
@@ -167,7 +167,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
     @check()
     @commands.has_permissions(moderate_members=True)
     @commands.bot_has_permissions(moderate_members=True)
-    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="shush <time> <reason>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION, "id": 64}, usage="shush <time> <reason>")
     @discord.app_commands.describe(
         member="The member to be shushed",
         time="The time until the shush expires",
@@ -185,7 +185,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
         await ctx.send(f":pinching_hand: Timeouted {member} until <t:{int((datetime.now() + time).timestamp())}:R> for: ```\n{reason or 'No reason provided'}```Operating moderator: **{ctx.author}**")   
         
     @check()    
-    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="unshush <user> <reason(optional)>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION, "id": 65}, usage="unshush <user> <reason(optional)>")
     @discord.app_commands.describe(
         member="The member to be unshushed",
         reason="The reason for the unshush"
@@ -205,7 +205,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
         await ctx.send(f":lips: Removed the timeout from {member}")
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.MODERATION}, usage="prefix <new_prefix(optional)>")
+    @commands.hybrid_command(extras={"category":Category.MODERATION, "id": 66}, usage="prefix <new_prefix(optional)>")
     @discord.app_commands.describe(prefix="The new message command prefix")
     async def prefix(self, ctx: commands.Context, prefix: str = None):
         """Change Killua's prefix with this command."""

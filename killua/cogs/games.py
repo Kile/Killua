@@ -487,7 +487,7 @@ class Games(commands.GroupCog, group_name="games"):
         self.client = client
 
     @check(500)
-    @commands.hybrid_command(extras={"category": Category.GAMES}, usage="count <easy/hard>")
+    @commands.hybrid_command(extras={"category": Category.GAMES, "id": 40}, usage="count <easy/hard>")
     @discord.app_commands.describe(difficulty="The difficulty to play in")
     async def count(self, ctx: commands.Context, difficulty: Literal["easy", "hard"] = "easy"):
         """See how many numbers you can remember with this count game!"""
@@ -495,7 +495,7 @@ class Games(commands.GroupCog, group_name="games"):
         await game.start()
 
     @check(30)
-    @commands.hybrid_command(extras={"category":Category.GAMES}, usage="rps <user> <points(optional)>")
+    @commands.hybrid_command(extras={"category": Category.GAMES, "id": 41}, usage="rps <user> <points(optional)>")
     @discord.app_commands.describe(
         member="The person to challenge",
         points="The points to play for"
@@ -530,7 +530,7 @@ class Games(commands.GroupCog, group_name="games"):
         await game.start()
 
     @check(20)
-    @commands.hybrid_command(extras={"category": Category.GAMES}, usage="trivia <easy/medium/hard(optional)>")
+    @commands.hybrid_command(extras={"category": Category.GAMES, "id": 42}, usage="trivia <easy/medium/hard(optional)>")
     @discord.app_commands.describe(difficulty="The difficulty of the question")
     async def trivia(self, ctx: commands.Context, difficulty: Literal["easy", "medium", "hard"] = "easy"):
         """Play trivia and earn some jenny if you get the answer right!"""
@@ -541,7 +541,7 @@ class Games(commands.GroupCog, group_name="games"):
         await game.send_result()
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.GAMES}, usage="stats <game> <user(optional)>")
+    @commands.hybrid_command(extras={"category": Category.GAMES, "id": 43}, usage="stats <game> <user(optional)>")
     @discord.app_commands.describe(member="The person to check the stats of")
     async def gstats(self, ctx: commands.Context, game_type: Literal["rps", "counting", "trivia"], member: discord.Member = None):
         """Check the game stats of yourself or another user"""
@@ -595,7 +595,7 @@ class Games(commands.GroupCog, group_name="games"):
             ))
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.GAMES}, usage="leaderboard <game> <global/server(optional)>", aliases=["glb"])
+    @commands.hybrid_command(extras={"category": Category.GAMES, "id": 44}, usage="leaderboard <game> <global/server(optional)>", aliases=["glb"])
     @discord.app_commands.describe(game="The game to check the leaderboard of", where="Whether to show the global or server leaderboard")
     async def gleaderboard(self, ctx: commands.Context, game: Literal["rps", "counting", "trivia"], where: Literal["global", "server"] = "global"):
         """Checks the top 10 players of a game, globally or on the server."""

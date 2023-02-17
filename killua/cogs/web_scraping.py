@@ -42,7 +42,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
             self.client.tree.add_command(menu)
 
     @check(12)
-    @commands.hybrid_command(aliases=["n", "search-book", "sb"], extras={"category":Category.FUN}, usage="book <title>")
+    @commands.hybrid_command(aliases=["n", "search-book", "sb"], extras={"category":Category.FUN, "id": 116}, usage="book <title>")
     @discord.app_commands.describe(book="The name of the book to loock for")
     async def novel(self, ctx: commands.Context, *, book: str):
         """With this command you can search for books! Just say the book title and look through the results"""
@@ -123,7 +123,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
             return
 
     @check(4)
-    @commands.hybrid_command(aliases=["image", "i"], extras={"category":Category.FUN}, usage="img <query>")
+    @commands.hybrid_command(aliases=["image", "i"], extras={"category":Category.FUN, "id": 117}, usage="img <query>")
     @discord.app_commands.describe(query="What image to look for")
     async def img(self, ctx: commands.Context, *, query: str):
         """Search for any image you want"""
@@ -156,7 +156,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
         return await Paginator(ctx, links, func=make_embed).start()
 
     @check(2)
-    @commands.hybrid_command(aliases=["g","search"], extras={"category":Category.FUN}, usage="google <query>")
+    @commands.hybrid_command(aliases=["g","search"], extras={"category":Category.FUN, "id": 118}, usage="google <query>")
     @discord.app_commands.describe(text="The query to search for")
     async def google(self, ctx: commands.Context, *, text: str):
         """Get the best results for a query the web has to offer"""

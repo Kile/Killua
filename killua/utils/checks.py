@@ -68,7 +68,7 @@ def check(time: int = 0):
             return
 
         data = DB.const.find_one({"_id": "usage"})["command_usage"]
-        data[command.qualified_name] = data[command.qualified_name]+1 if command.qualified_name in data else 1
+        data[str(command.extras["id"])] = data[str(command.extras["id"])]+1 if str(command.extras["id"]) in data else 1
         DB.const.update_one({"_id": "usage"}, {"$set": {"command_usage": data}})
     
     async def custom_cooldown(ctx: commands.Context, time:int) -> bool:

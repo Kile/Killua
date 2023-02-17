@@ -126,7 +126,7 @@ class HelpCommand(commands.Cog):
         
         return [command.qualified_name for command in all_commands if current.lower() in command.qualified_name]
 
-    @commands.hybrid_command(usage="[group] [command]")
+    @commands.hybrid_command(usage="[group] [command]", extras={"id": 45})
     @discord.app_commands.describe(group="The group to get help for", command="The command to get help for")
     async def help(self, ctx: commands.Context, group: Category = None, command: str = None) -> None:
         """Displays helfpul information about a command, group, or the bot itself."""

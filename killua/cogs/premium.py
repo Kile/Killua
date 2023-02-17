@@ -151,6 +151,8 @@ class Premium(commands.Cog):
     
     @get_patrons.before_loop
     async def before_get_patrons(self) -> None:
+        # Chunk guild to be able to see who has the booster role
+        await self.client.get_guild(GUILD).chunk()
         await self.client.wait_until_ready()
 
     @commands.hybrid_group()
@@ -160,7 +162,7 @@ class Premium(commands.Cog):
 
     @commands.guild_only()
     @premium_member_only()
-    @premium.command(extras={"category": Category.OTHER}, usage="guild <add/remove>")
+    @premium.command(extras={"category": Category.OTHER, "id": 67}, usage="guild <add/remove>")
     @discord.app_commands.describe(action="Wether to add or remove the premium status of the current server")
     async def guild(self, ctx: commands.Context, action: Literal["add", "remove"]):
         """Add or remove the premium status of a guild with this command"""
@@ -196,7 +198,7 @@ class Premium(commands.Cog):
 
     @check()
     @premium_member_only()
-    @premium.command(extras={"category": Category.ECONOMY}, usage="weekly")
+    @premium.command(extras={"category": Category.ECONOMY, "id": 68}, usage="weekly")
     async def weekly(self, ctx: commands.Context):
         """Claim a weekly lootbox with this command"""
         user = User(ctx.author.id)
@@ -212,7 +214,7 @@ class Premium(commands.Cog):
         await ctx.send(f"Successfully claimed lootbox: {LOOTBOXES[lootbox]['name']}")
 
     @check()
-    @premium.command(aliases=["support"], extras={"category":Category.FUN}, usage="info")
+    @premium.command(aliases=["support"], extras={"category":Category.FUN, "id": 69}, usage="info")
     async def info(self, ctx: commands.Context):
         """List of all the premium perks that come along with being a patron!"""
         view = discord.ui.View()

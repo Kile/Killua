@@ -205,7 +205,7 @@ class TodoSystem(commands.Cog):
         ...
 
     @check(10)
-    @todo.command(extras={"category":Category.TODO}, usage="create")
+    @todo.command(extras={"category":Category.TODO, "id": 100}, usage="create")
     @discord.app_commands.describe(
         name="The name of the todo list",
         status="Wether a todo list is publicly viewable or not",
@@ -244,7 +244,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f"Created the todo list with the name {name}. You can look at it and edit it through the id `{l.id}`" + (f" or through your custom id {custom_id}" if custom_id else ""), allowed_mentions=discord.AllowedMentions.none())
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="view <list_id(optional)>")
+    @todo.command(extras={"category":Category.TODO, "id": 101}, usage="view <list_id(optional)>")
     @discord.app_commands.describe(todo_id="The id of the todo list you want to view")
     async def view(self, ctx: commands.Context, todo_id: str = None):
         """Allows you to view what is on any todo list- provided you have the permissions"""
@@ -269,7 +269,7 @@ class TodoSystem(commands.Cog):
         await Paginator(ctx, todo_list, max_pages=math.ceil(len(todo_list)/10),func=make_embed).start()
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="clear")
+    @todo.command(extras={"category":Category.TODO, "id": 102}, usage="clear")
     async def clear(self, ctx: commands.Context):
         """Clears all todos from a todo list"""
         try:
@@ -284,7 +284,7 @@ class TodoSystem(commands.Cog):
         await ctx.send("Done! Cleared all your todos")
 
     @check(1)
-    @todo.command(extras={"category":Category.TODO}, usage="info <list_id/task_id> <task_id(if list_id provided)>")
+    @todo.command(extras={"category":Category.TODO, "id": 103}, usage="info <list_id/task_id> <task_id(if list_id provided)>")
     @discord.app_commands.describe(
         todo_or_task_id="The task or todo list you want information about",
         task_id="The id of the tasks you want information about",
@@ -305,7 +305,7 @@ class TodoSystem(commands.Cog):
             return await self.single_todo_info_embed_generator(ctx, todo_or_task_id, int(task_id))
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="edit <list_id>")
+    @todo.command(extras={"category":Category.TODO, "id": 104}, usage="edit <list_id>")
     @discord.app_commands.describe(list_id="The id of the todo list you want to edit")
     async def edit(self, ctx: commands.Context, list_id: str):
         """The command with which you can change stuff on your todo list"""
@@ -323,7 +323,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f"You are now in editor mode for todo list '{todo_list.name}'", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="update <settings>")
+    @todo.command(extras={"category":Category.TODO, "id": 105}, usage="update <settings>")
     @discord.app_commands.describe(
         name="The name of the todo list you want to change",
         status="The status of the todo list you want to change",
@@ -428,7 +428,7 @@ class TodoSystem(commands.Cog):
         await ctx.send(f"Successfully updated {updated.join(', ')} of your todo list!", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="remove <task_id>")
+    @todo.command(extras={"category":Category.TODO, "id": 106}, usage="remove <task_id>")
     @discord.app_commands.describe(todo_numbers="The todo tasks you want to delete")
     async def remove(self, ctx: commands.Context, todo_numbers: commands.Greedy[int]):
         """Remove a todo with this command. YAY, GETTING THINGS DONE!! (Only in editor mode)"""
@@ -464,7 +464,7 @@ class TodoSystem(commands.Cog):
         ]
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="mark <task_id> <text>")
+    @todo.command(extras={"category":Category.TODO, "id": 107}, usage="mark <task_id> <text>")
     @discord.app_commands.describe(
         todo_number="The todo task you want to mark",
         marked_as="What you want to make the todo task as"
@@ -520,7 +520,7 @@ class TodoSystem(commands.Cog):
         ])
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="add <text>")
+    @todo.command(extras={"category":Category.TODO, "id": 108}, usage="add <text>")
     @discord.app_commands.describe(text="What to add to the todo list")
     @discord.app_commands.autocomplete(due_in=due_in_autocomplete)
     async def add(self, ctx: commands.Context, *, text: str, due_in: Optional[TimeConverter] = None):
@@ -544,7 +544,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(f"Great! Added \"{text}\" to your todo list!" + (f" I'll remind you and everyone assigned <t:{int((datetime.now() + due_in).timestamp())}:R>" if due_in else ""), allowed_mentions=discord.AllowedMentions.none(), ephemeral=hasattr(ctx, "invoked_by_context_menu"))
 
     @check(20)
-    @todo.command(extras={"category":Category.TODO}, usage="kick <user>")
+    @todo.command(extras={"category":Category.TODO, "id": 109}, usage="kick <user>")
     @discord.app_commands.describe(user="The user to kick from the todo list")
     async def kick(self, ctx: commands.Context, user: discord.User):
         """Take all permissions from someone from your todo list (Only in editor mode)"""
@@ -566,7 +566,7 @@ class TodoSystem(commands.Cog):
             await ctx.send(f"You have successfully taken the viewer permission from {user}", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="exit")
+    @todo.command(extras={"category":Category.TODO, "id": 110}, usage="exit")
     async def exit(self, ctx: commands.Context):
         """Exit editing mode with this. (Only in editor mode)"""
         # I"ve never used it because it is pointless because my code is so good you realistically never need to be out of editing mode but it is here so use it
@@ -577,7 +577,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send("Exiting editing mode!")
 
     @check(20)
-    @todo.command(extras={"category":Category.TODO}, usage="invite <user> <editor/viewer>")
+    @todo.command(extras={"category":Category.TODO, "id": 111}, usage="invite <user> <editor/viewer>")
     @discord.app_commands.describe(
         user="The user to give permissions to",
         role="The role to give the user"
@@ -658,7 +658,7 @@ class TodoSystem(commands.Cog):
 
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="assign <task_id> <user>")
+    @todo.command(extras={"category":Category.TODO, "id": 112}, usage="assign <task_id> <user>")
     @discord.app_commands.describe(
         todo_number="What todo to assign someone to",
         user="Who to assign the todo to"
@@ -709,7 +709,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(f"Successfully assigned the task with number {todo_number} to `{user}`", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="reorder <task_id> <position>")
+    @todo.command(extras={"category":Category.TODO, "id": 113}, usage="reorder <task_id> <position>")
     @discord.app_commands.describe(
         position="The position the todo is currently at",
         new_position="Where to put the todo"
@@ -733,7 +733,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(f"Successfully reordered todo task {position} to position {new_position}")
     
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="delete <list_id>")
+    @todo.command(extras={"category":Category.TODO, "id": 114}, usage="delete <list_id>")
     @discord.app_commands.describe(todo_id="The todo list to delete")
     async def delete(self, ctx: commands.Context, todo_id: str):
         """Use this command to delete your todo list. Make sure to say goodbye a last time"""
@@ -747,7 +747,7 @@ class TodoSystem(commands.Cog):
         return await ctx.send(f"Done! Deleted todo list {todo_list.name}", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
-    @todo.command(extras={"category":Category.TODO}, usage="lists")
+    @todo.command(extras={"category":Category.TODO, "id": 115}, usage="lists")
     async def lists(self, ctx: commands.Context):
         """This shows a list of todo lists you own or have access to"""
         lists_owning = DB.todo.find({"owner": ctx.author.id})

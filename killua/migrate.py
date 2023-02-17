@@ -4,11 +4,9 @@ an update is released. It can be run through the command line with `python3 -m k
 """
 import logging
 from typing import Type
-from datetime import datetime
-from json import loads
 from pymongo.collection import Collection
 from discord.ext.commands import AutoShardedBot, HybridGroup
-from killua.static.constants import DB, CLUSTER
+from killua.static.constants import DB
 
 def migrate_requiring_bot(bot: Type[AutoShardedBot]):
     """
@@ -17,85 +15,88 @@ def migrate_requiring_bot(bot: Type[AutoShardedBot]):
     logging.info("Migrating database...")
     const: Collection = DB._DB["const"]
 
-    if bot.is_dev:
-        const.insert_one({"_id": "usage", "command_usage": {}})
-        const.update_one({"_id": "migrate"}, {"$set": {"value": False}}) # Only migrate once
-        return
+    usage: dict = const.find_one({"_id": "usage"})["command_usage"]
 
-    # Migrate the current command usage statistics the const collecting, adjusting its values
-    coll: Collection = CLUSTER["general"]["stats"]
-    usage = coll.find_one({"_id": "commands"})["command_usage"]
+    logging.info("Attemping to migrate edge cases...")
+    usage["games gstats"] = usage.get("games stats", 0)
+    usage["games gstats"] += usage.get("gstats", 0)
+    usage.pop("games stats", None)
+    usage.pop("gstats", None)
 
-    new = {}
-
-    # First handle case of already corrupt data
-    usage["8ball"] += usage["ball"]
-    del usage["ball"]
+    usage["games gleaderboard"] = usage.get("games leaderboard", 0)
+    usage["games gleaderboard"] += usage.get("gleaderboard", 0)
+    usage.pop("games stats", None)
+    usage.pop("gstats", None)
 
     # Handle edge case
-    usage["dev info"] = usage["info"]
-    del usage["info"]
+    usage["web novel"] = usage.get("web book", 0)
+    usage["web novel"] += usage.get("novel", 0)
+    usage.pop("web book", None)
+    usage.pop("novel", None)
 
-    usage["economy leaderboard"] = usage["leaderboard"]
-    del usage["leaderboard"]
+    logging.info("Edge cases done, migrating different command group names...")
 
-    usage["economy guild"] = usage["guild"]
-    del usage["guild"]
+    def update(to_update: dict, _update: int, key: str) -> dict:
+        if key in to_update:
+            to_update[key] += _update
+        else:
+            to_update[key] = _update
+        return to_update
 
-    usage["shush"] = usage["mute"]
-    usage["unshush"] = usage["unmute"]
+    for item in usage.keys():
+        if "moderation" in item:
+            before = item
+            item.replace("moderation", "mod")
+            usage = update(usage, usage[before], item)
+            usage[before] = -1
+        elif "miscillaneous" in item:
+            before = item
+            item.replace("miscillaneous", "misc")
+            usage = update(usage, usage[before], item)
+            usage[before] = -1
+        elif "economy" in item:
+            before = item
+            item.replace("economy", "econ")
+            usage = update(usage, usage[before], item)
+            usage[before] = -1
+
+    usage = {k: v for k, v in usage.items() if v > -1}
+
+    logging.info("Fininished migrating different command group names, migrating command usage...")
 
     for command in bot.walk_commands():
-
         if "jishaku" in command.qualified_name:
             continue
-        for key, val in usage.items():
-            if key == command.qualified_name and not isinstance(command, HybridGroup):
-                new[command.qualified_name] = val
-            elif key == command.name and not isinstance(command, HybridGroup):
-                new[command.qualified_name] = val
+        if isinstance(command, HybridGroup):
+            continue
 
-    const.insert_one({"_id": "usage", "command_usage": new})
+        if command.name in usage:
+            if command.qualified_name in usage:
+                usage[command.qualified_name] += usage[command.name]
+            else:
+                usage[command.qualified_name] = usage[command.name]
+            del usage[command.name]
+
+    new = {}
+    for command in bot.tree.get_commands():
+        if hasattr(command, "commands"):
+            for sub in command.commands:
+                if sub.qualified_name in usage:
+                    cmd = bot.get_command(sub.qualified_name)
+                    if not cmd:
+                        cmd = bot.get_command(sub.name)
+                    extras = cmd.extras
+                    new[str(extras["id"])] = usage[sub.qualified_name]
+
+    logging.info("Finished migrating command usage, updating database...")
+
+    const.update_one({"_id": "usage"}, {"$set": {"command_usage": new}})
     logging.info("Sucessfully migrated command usage")
-    const.update_one({"_id": "migrate"}, {"$set": {"value": False}}) # Only migrate once
-    logging.info("Finished migrating database")
 
 def migrate():
     """
     Migrates the database from one version to another
     """
-    logging.info("Migrating database...")
-    # Migrate single item collection into a new "const" collection
-    const: Collection = DB._DB["const"]
-
-    # shop
-    const.insert_one({"_id": "shop", "offers": [], "log": []})
-    logging.info("Migrated shop")
-    # custom presence
-    const.insert_one({"_id": "presence", "text": None, "activity": None, "presence": None})
-    logging.info("Migrated presence")
-    # updates
-    const.insert_one({"_id": "updates", "updates": []})
-    logging.info("Migrated updates")
-    # stats (growth)
-    with open("data.json", "r") as file: # Getting historic growth data
-        data = list(loads(file.read()))
-
-    new_list = [{"date": datetime.fromtimestamp(int(item["timestamp"])), "guilds": item["guild"]} for item in data]
-    new_list.sort(key=lambda x: x["date"])
-    const.insert_one({"_id": "growth", "growth": new_list})
-    logging.info("Migrated growth")
-    # blacklist
-    const.insert_one({"_id": "blacklist", "blacklist": []})
-    logging.info("Migrated blacklist")
-
-    # Transfer all todo lists to another namespace
-    todo: Collection = DB._DB["todo"]
-    old_todo: Collection = CLUSTER["general"]["todo"]
-    for todo_list in old_todo.find():
-        todo.insert_one(todo_list)
-    logging.info("Migrated all todo lists")
-
-    # Ensure `migrate_requiring_bot` is called when the bot starts
-    const.insert_one({"_id": "migrate", "value": True})
-    logging.info("Completed database migration")
+    const = DB._DB["const"]
+    const.update_one({"_id": "migrate"}, {"$set": {"value": True}})
+    logging.info("Set migrate to True")

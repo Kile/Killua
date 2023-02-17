@@ -127,7 +127,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     @check(3)
     @commands.bot_has_permissions(attach_files=True, embed_links=True)
-    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="book <page(optional)>")
+    @commands.hybrid_command(extras={"category":Category.CARDS, "id": 13}, usage="book <page(optional)>")
     @discord.app_commands.describe(page="The page of the book to see")
     async def book(self, ctx: commands.Context, page: int = 1):
         """Allows you to take a look at your cards"""
@@ -145,7 +145,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         return await Paginator(ctx, page=page, func=make_embed, max_pages=6+math.ceil(len(user.fs_cards)/18), has_file=True).start()
 
     @check(2)
-    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="sell <card_id> <amount(optional)>")
+    @commands.hybrid_command(extras={"category":Category.CARDS, "id": 14}, usage="sell <card_id> <amount(optional)>")
     @discord.app_commands.describe(
         card="The card to sell",
         type="The type of card to bulk sell",
@@ -266,7 +266,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         return [*[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_duplicates], *[discord.app_commands.Choice(name=str(i), value=str(i)) for i, _ in id_duplicates]]
 
     @check(20)
-    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="swap <card_id>")
+    @commands.hybrid_command(extras={"category":Category.CARDS, "id": 15}, usage="swap <card_id>")
     @discord.app_commands.describe(card="The card to swap out")
     @discord.app_commands.autocomplete(card=swap_cards_autocomplete)
     async def swap(self, ctx: commands.Context, card: str):
@@ -291,7 +291,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         await ctx.send(f"Successfully swapped out card {card.name}")
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="hunt <end/time(optional)>")
+    @commands.hybrid_command(extras={"category":Category.CARDS, "id": 16}, usage="hunt <end/time(optional)>")
     @discord.app_commands.describe(option="What to do with your hunt")
     async def hunt(self, ctx: commands.Context, option: Literal["end", "time", "start"] = "start"):
         """Go on a hunt! The longer you are on the hunt, the better the rewards!"""
@@ -353,7 +353,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     @check(120)
     @discord.app_commands.describe(user="The user to meet. Must have sent a mesage recently.")
-    @commands.hybrid_command(aliases=["approach"], extras={"category":Category.CARDS}, usage="meet <user>")
+    @commands.hybrid_command(aliases=["approach"], extras={"category":Category.CARDS, "id": 17}, usage="meet <user>")
     async def meet(self, ctx: commands.Context, user: discord.Member):
         """Meet a user who has recently sent a message in this channel to enable certain effects"""
         if hasattr(ctx, "invoked_by_context_menu"):
@@ -385,7 +385,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         return await ctx.send(f"Done {ctx.author.mention}! Successfully added `{user}` to the list of people you've met", delete_after=5, allowed_mentions=discord.AllowedMentions.none(), ephemeral=hasattr(ctx, "invoked_by_context_menu"))
             
     @check()
-    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="discard <card_id>")
+    @commands.hybrid_command(extras={"category":Category.CARDS, "id": 18}, usage="discard <card_id>")
     @discord.app_commands.describe(card="The card to discard")
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
     async def discard(self, ctx: commands.Context, card: str):
@@ -422,7 +422,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         await ctx.send(f"Successfully thrown away card No. `{card.id}`")
 
     @check()
-    @commands.hybrid_command(aliases=["read"], extras={"category": Category.CARDS}, usage="cardinfo <card_id>")
+    @commands.hybrid_command(aliases=["read"], extras={"category": Category.CARDS, "id": 19}, usage="cardinfo <card_id>")
     @discord.app_commands.describe(card="The card to get infos about")
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
     async def cardinfo(self, ctx: commands.Context, card: str):
@@ -445,7 +445,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         await ctx.send(embed=embed)
 
     @check()
-    @commands.hybrid_command(name="check", extras={"category": Category.CARDS}, usage="check <card_id>")
+    @commands.hybrid_command(name="check", extras={"category": Category.CARDS, "id": 20}, usage="check <card_id>")
     @discord.app_commands.describe(card="The card to see how many fakes you own of it")
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
     async def _check(self, ctx: commands.Context, card: str):
@@ -552,7 +552,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         return res
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="use <card_id> <required_arguments>")
+    @commands.hybrid_command(extras={"category":Category.CARDS, "id": 21}, usage="use <card_id> <required_arguments>")
     @discord.app_commands.describe(
         item="The card or item to use",
         target="The target of the spell",
@@ -583,7 +583,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         await self._use_core(ctx, item, *args)
 
     @commands.is_owner()
-    @commands.hybrid_command(extras={"category":Category.CARDS}, usage="gain <type> <card_id/amount/lootbox>", hidden=True)
+    @commands.hybrid_command(extras={"category":Category.CARDS, "id": 22}, usage="gain <type> <card_id/amount/lootbox>", hidden=True)
     @discord.app_commands.describe(
         type="The type of item to gain",
         item="The amount/id of the item to get"

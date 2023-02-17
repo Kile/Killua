@@ -151,7 +151,7 @@ class Dev(commands.GroupCog, group_name="dev"):
     async def group_top(self, ctx: commands.Context, top: List[tuple], interaction: discord.Interaction) -> None:
         """Displays a pie chart of the top used commands in a group"""
         # A list of all valid groups as strings
-        possible_groups = [g.name for g in self.client.commands if not g.parent and g.name != "help"] # The only time a command doesn't have a parent is when it's a group
+        possible_groups = [g.name for g in self.client.tree.get_commands() if hasattr(g, "commands")] # Groups have an attribute of "commands" which includes all subcommands
         group = await self.client.get_text_response(ctx, "Please enter a command group", interaction=interaction, style=discord.TextStyle.short, placeholder=(", ".join(possible_groups))[:97] + "...")
         if not group: return
 
@@ -186,9 +186,28 @@ class Dev(commands.GroupCog, group_name="dev"):
                     await msg.delete()
                     await self.initial_top(ctx)
 
+    def get_command_extras(self, cmd: str):
+        c = self.client.get_command(cmd)
+        if not c:
+            c = self.client.get_command(cmd.split(" ")[-1])
+        return c.extras
+
     async def initial_top(self, ctx: commands.Context) -> None:
-        s = DB.const.find_one({"_id": "usage"})["command_usage"]
-        top = sorted(s.items(), key=lambda x: x[1], reverse=True)
+        s: dict = DB.const.find_one({"_id": "usage"})["command_usage"]
+        # Convert the ids to actualy command names
+        s_formatted = {}
+
+        # The way to convert the ids to actualy command names is currently very hacky as bot.tree.get_commands() does not includes 
+        # the "extras" attr and the bot.walk_commands() qualified name is incorrect for GroupCogs (of which there are a lot)
+        command_groups = [c.commands for c in self.client.tree.get_commands() if hasattr(c, "commands")]
+        commands = [item for sublist in command_groups for item in sublist]
+        for cmd in commands:
+            cmd_extras = self.get_command_extras(cmd.qualified_name)
+            if not cmd_extras or not str(cmd_extras["id"]) in s:
+                continue
+            s_formatted[cmd.qualified_name] = s[str(cmd_extras["id"])]
+
+        top = sorted(s_formatted.items(), key=lambda x: x[1], reverse=True)
         rest = 0
         for x in top[-9:]:
             rest += x[1]
@@ -217,7 +236,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
     #Eval command, unnecessary with the jsk extension but useful for database stuff
     @commands.is_owner()
-    @commands.command(aliases=["exec"], extras={"category":Category.OTHER}, usage="eval <code>", hidden=True, with_app_command=False)
+    @commands.command(aliases=["exec"], extras={"category":Category.OTHER, "id": 23}, usage="eval <code>", hidden=True, with_app_command=False)
     @discord.app_commands.describe(code="The code to evaluate") # Since this is not an app command this won"t show up but is still added for consistency
     async def eval(self, ctx: commands.Context, *, code: str):
         """Standard eval command, owner restricted"""
@@ -227,7 +246,7 @@ class Dev(commands.GroupCog, group_name="dev"):
             await ctx.send(str(e))
 
     @commands.is_owner()
-    @commands.command(extras={"category":Category.OTHER}, usage="say <text>", hidden=True, with_app_command=False)
+    @commands.command(extras={"category":Category.OTHER, "id": 24}, usage="say <text>", hidden=True, with_app_command=False)
     @discord.app_commands.describe(content="What to say") # Same thing as for the eval command
     async def say(self, ctx: commands.Context, *, content: str):
         """Lets Killua say what is specified with this command. Possible abuse leads to this being restricted"""
@@ -236,7 +255,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         await ctx.send(content, reference=ctx.message.reference)
 
     @commands.is_owner()
-    @commands.hybrid_command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER}, usage="publish_update <version> <text>", hidden=True)
+    @commands.hybrid_command(aliases=["publish-update", "pu"], extras={"category":Category.OTHER, "id": 25}, usage="publish_update <version> <text>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     async def publish_update(self, ctx: commands.Context):
         """Allows me to publish Killua updates in a handy format"""
@@ -281,7 +300,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         await msg.publish()
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="update <version(optional)>")
+    @commands.hybrid_command(extras={"category":Category.OTHER, "id": 26}, usage="update <version(optional)>")
     @discord.app_commands.autocomplete(version=version_autocomplete)
     @discord.app_commands.describe(version="The version to get information about")
     async def update(self, ctx: commands.Context, version: str = None):
@@ -305,7 +324,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         await ctx.send(embed=embed)
 
     @commands.is_owner() 
-    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="blacklist <user_id>", hidden=True)
+    @commands.hybrid_command(extras={"category":Category.OTHER, "id": 27}, usage="blacklist <user_id>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     @discord.app_commands.describe(
         user="The user to blacklist",
@@ -321,7 +340,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         await ctx.send(f"Blacklisted user `{user}` for reason: {reason}", ephermal=True)
         
     @commands.is_owner()
-    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="whitelist <user_id>", hidden=True)
+    @commands.hybrid_command(extras={"category":Category.OTHER, "id": 28}, usage="whitelist <user_id>", hidden=True)
     @discord.app_commands.guilds(GUILD_OBJECT)
     @discord.app_commands.describe(
         user="The user to whitelist"
@@ -341,7 +360,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         await ctx.send(f"Successfully whitelisted `{user}`")
 
     @commands.is_owner()
-    @commands.hybrid_command(aliases=["st", "pr", "status"], extras={"category":Category.OTHER}, usage="pr <text>", hidden=True)
+    @commands.hybrid_command(aliases=["st", "pr", "status"], extras={"category":Category.OTHER, "id": 119}, usage="pr <text>", hidden=True) # I messed up here with the numbers and did not want to have to increment all of them after this one
     @discord.app_commands.guilds(GUILD_OBJECT)
     @discord.app_commands.describe(
         text="The text displayed as the status",
@@ -361,7 +380,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         await ctx.send(f"Successfully changed Killua's status to `{text}`! (I hope people like it >-<)", ephemeral=True)
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="stats <usage/growth/general>")
+    @commands.hybrid_command(extras={"category":Category.OTHER, "id": 29}, usage="stats <usage/growth/general>")
     @discord.app_commands.describe(type="The type of stats you want to see")
     async def stats(self, ctx: commands.Context, type: Literal["growth", "usage", "general"]):
         """Shows some statistics about the bot such as growth and command usage"""
@@ -423,7 +442,7 @@ class Dev(commands.GroupCog, group_name="dev"):
             await ctx.send(embed=embed)
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="info")
+    @commands.hybrid_command(extras={"category":Category.OTHER, "id": 30}, usage="info")
     async def info(self, ctx: commands.Context):
         """Get some general information (lore) about the bot"""
         embed = discord.Embed(title="Infos about the bot", description=INFO)
@@ -431,7 +450,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         return await ctx.send(embed=embed, ephemeral=True)
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.OTHER}, usage="voteremind <on/off>")
+    @commands.hybrid_command(extras={"category":Category.OTHER, "id": 31}, usage="voteremind <on/off>")
     @discord.app_commands.describe(toggle="Toggle the voteremind on or off")
     async def voteremind(self, ctx: commands.Context, toggle: Literal["on", "off"]):
         """Toggle the voteremind on or off"""

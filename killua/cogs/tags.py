@@ -132,7 +132,7 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @tag.command(extras={"category":Category.TAGS}, usage="create <tag_name>")
+    @tag.command(extras={"category":Category.TAGS, "id": 92}, usage="create <tag_name>")
     @discord.app_commands.describe(name="The name of the tag you want to create")
     async def create(self, ctx: commands.Context, *, name: str):
         """Create a tag with this command"""
@@ -172,7 +172,7 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @tag.command(extras={"category":Category.TAGS}, usage="delete <tag_name>")
+    @tag.command(extras={"category":Category.TAGS, "id": 93}, usage="delete <tag_name>")
     @discord.app_commands.describe(name="The name of the tag you want to delete")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
     async def delete(self, ctx: commands.Context, *, name: str):
@@ -190,7 +190,7 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @tag.command(extras={"category":Category.TAGS}, usage="edit <tag_name>")
+    @tag.command(extras={"category":Category.TAGS, "id": 94}, usage="edit <tag_name>")
     @discord.app_commands.describe(name="The name of the tag you want to edit")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
     async def edit(self, ctx: commands.Context, *, name: str):
@@ -213,7 +213,7 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @tag.command(extras={"category":Category.TAGS}, usage="transfer <user> <tag_name>")
+    @tag.command(extras={"category":Category.TAGS, "id": 95}, usage="transfer <user> <tag_name>")
     @discord.app_commands.describe(user="The user to tranfer the tag ownership to", name="The name of the tag you want to transfer")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
     async def transfer(self, ctx: commands.Context, user: discord.Member, *, name: str):
@@ -231,7 +231,7 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @tag.command(extras={"category":Category.TAGS}, usage="get <tag_name>")
+    @tag.command(extras={"category":Category.TAGS, "id": 96}, usage="get <tag_name>")
     @discord.app_commands.describe(name="The name of the tag you want look at")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
     async def get(self, ctx: commands.Context, *, name: str):
@@ -244,7 +244,7 @@ class Tags(commands.Cog):
     
     @check()
     @commands.guild_only()
-    @tag.command(extras={"category":Category.TAGS}, usage="info <tag_name>")
+    @tag.command(extras={"category":Category.TAGS, "id": 97}, usage="info <tag_name>")
     @discord.app_commands.describe(name="The name of the tag to get info about")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
     async def info(self, ctx: commands.Context, *, name: str):
@@ -268,7 +268,7 @@ class Tags(commands.Cog):
     
     @check()
     @commands.guild_only()
-    @tag.command(aliases=["l"], extras={"category":Category.TAGS}, usage="list")
+    @tag.command(aliases=["l"], extras={"category":Category.TAGS, "id": 98}, usage="list")
     @discord.app_commands.describe(page="The page of the tag list you want to view")
     async def list(self, ctx: commands.Context, page: int = 1):
         """Get a list of tags on the current server sorted by uses"""
@@ -296,7 +296,7 @@ class Tags(commands.Cog):
 
     @check()
     @commands.guild_only()
-    @tag.command(extras={"category":Category.TAGS}, usage="user <user>")
+    @tag.command(extras={"category":Category.TAGS, "id": 99}, usage="user <user>")
     @discord.app_commands.describe(user="User you want to see tags of")
     async def user(self, ctx: commands.Context, user: discord.Member):
         """Get the tags a user own sorted by uses"""
