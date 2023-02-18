@@ -121,6 +121,10 @@ class Dev(commands.GroupCog, group_name="dev"):
         if not dates:
             embed.description = "No data available just yet"
             return embed
+        elif type == "users":
+            embed.description = "⚠️ This only displays the amount of cached users, it is rarely representative of the actual amount of users"
+        else:
+            embed.description = None
 
         buffer = self._create_graph(dates, type_list, type.replace("_", " ").title())
         file = discord.File(buffer, filename=f"{type}.png")
@@ -202,7 +206,10 @@ class Dev(commands.GroupCog, group_name="dev"):
         command_groups = [c.commands for c in self.client.tree.get_commands() if hasattr(c, "commands")]
         commands = [item for sublist in command_groups for item in sublist]
         for cmd in commands:
-            cmd_extras = self.get_command_extras(cmd.qualified_name)
+            if not cmd.qualified_name.startswith("image"):
+                cmd_extras = self.get_command_extras(cmd.qualified_name) # Edge case and possibly a lib bug. See https://github.com/Rapptz/discord.py/issues/9243
+            else:
+                cmd_extras = None
             if not cmd_extras or not str(cmd_extras["id"]) in s:
                 continue
             s_formatted[cmd.qualified_name] = s[str(cmd_extras["id"])]
