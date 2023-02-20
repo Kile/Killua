@@ -141,7 +141,7 @@ class Events(commands.Cog):
             for site, data in  user.voting_streak.items():
                 if not data["last_vote"]:
                     continue
-                if self._date_helper(data["last_vote"].hour) == self._date_helper(datetime.now().hour) and data["last_vote"].day != datetime.now().day:
+                if self._date_helper(data["last_vote"].hour) == self._date_helper(datetime.now().hour) and (data["last_vote"].day != datetime.now().day and data["last_vote"].hour < 12):
                     user = self.client.get_user(user.id) or await self.client.fetch_user(user.id)
                     if not user:
                         print("Not user")
