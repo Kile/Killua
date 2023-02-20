@@ -40,6 +40,7 @@ class Shop(commands.Cog):
 
     def __init__(self, client: BaseBot):
         self.client = client
+        self.cardname_cache = None
 
     def _format_offers(self, offers: list, reduced_item: int = None, reduced_by: int = None) -> list:
         """Formats the offers for the shop"""
