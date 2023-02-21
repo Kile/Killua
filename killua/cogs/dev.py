@@ -4,7 +4,7 @@ import discord
 import math
 from typing import List, Tuple, Union, Literal
 from io import BytesIO
-from datetime import datetime, timedelta
+from datetime import datetime
 from matplotlib import pyplot as plt
 import numpy as np
 
@@ -130,6 +130,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         file = discord.File(buffer, filename=f"{type}.png")
         add_data = self._calc_predictions(type_list)
 
+        type = type.replace("_", " ")
         embed.set_image(url=f"attachment://{type}.png")
         embed.add_field(name=f"Maximum {type} reached", value=add_data["max"]) # This is only really relevant for guilds and users as registered users cannot decrease
         embed.add_field(name=f"Average {type} last 10 days", value=add_data["recent_avg"])
@@ -425,15 +426,11 @@ class Dev(commands.GroupCog, group_name="dev"):
             data = DB.const.find_one({"_id": "updates"})["updates"]
             bot_version = "`Development`" if self.client.is_dev else (data[-1]["version"] if "version" in data[-1] else "`Unknown`")
 
-            now = datetime.now()
-            diff: timedelta = now - self.client.startup_datetime
-            time = f"{diff.days} days, {int((diff.seconds/60)/60)} hours, {int(diff.seconds/60)-(int((diff.seconds/60)/60)*60)} minutes and {int(diff.seconds)-(int(diff.seconds/60)*60)} seconds"
-
             embed = discord.Embed.from_dict({
                 "title": "General bot stats",
                 "fields": [
-                    {"name": "Bot uptime", "value": time, "inline": True},
-                    {"name": "Bot users", "value": str(len(self.client.users)), "inline": True},
+                    {"name": "Bot started at", "value": f"<t:{int(self.client.startup_datetime.timestamp())}:f>", "inline": True},
+                    {"name": "Cached bot users", "value": str(len(self.client.users)), "inline": True},
                     {"name": "Bot guilds", "value": str(len(self.client.guilds)), "inline": True},
                     {"name": "Registered users", "value": str(DB.teams.count_documents({})), "inline": True},
                     {"name": "Bot commands", "value": str(n_of_commands), "inline": True},

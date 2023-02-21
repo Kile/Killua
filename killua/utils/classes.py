@@ -398,7 +398,7 @@ class User:
             return 
 
         user = DB.teams.find_one({"id": user_id})
-        self.id: int = user_id
+        self.id: int = int(user_id)
 
         if user is None:
             self.add_empty(self.id, False)

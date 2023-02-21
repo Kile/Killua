@@ -4,5 +4,5 @@ This folder contains a collection of different interesting algorithms that are u
 ## Algorithms
  + [Compressing discord ids](./compression.md)
  + [Using a math forula for rps](./rps.md)
- + [Own OOP testing framework](../tests/README.md)
+ + [Own OOP testing framework](../killua/tests/README.md)
  + [Argument parser for command](./parser.md)

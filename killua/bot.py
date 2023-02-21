@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 import asyncio
+from datetime import datetime
 from aiohttp import ClientSession
 from random import randint, choice
 from discord.ext import commands
@@ -36,6 +37,7 @@ class BaseBot(commands.AutoShardedBot):
 		self.invite = "https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands"
 		# self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
 		self.is_dev = False
+		self.startup_datetime = datetime.now()
 
 	async def setup_hook(self):
 		await self.load_extension("jishaku")

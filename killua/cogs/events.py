@@ -4,7 +4,7 @@ import discord
 
 import logging
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 from discord.ext import commands, tasks
 from PIL import Image
 from typing import Dict, List, Tuple
@@ -22,7 +22,6 @@ class Events(commands.Cog):
         self.skipped_first = False
         self.status_started = False
         self.log_channel_id = 718818548524384310
-        self.client.startup_datetime = datetime.now()
 
     @property
     def old_commands(self) -> List[str]:
@@ -46,8 +45,7 @@ class Events(commands.Cog):
     async def _post_guild_count(self) -> None:
         """Posts relevant stats to the botlists Killua is on"""
         data = { # The data for discordbotlist
-            "guilds": len(self.client.guilds),
-            "users": len(self.client.users)
+            "guilds": len(self.client.guilds)
         }
 
         await self.client.session.post(f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats", headers={"Authorization": DBL_TOKEN}, data=data)
@@ -100,13 +98,6 @@ class Events(commands.Cog):
             await self._post_guild_count()
             await self._load_cards_cache()
 
-    # @commands.Cog.listener()
-    # async def on_message(self, message: discord.Message) -> None:
-    #     prefix = "kil!" if self.client.is_dev else (Guild(message.guild.id).prefix if message.guild else "k!")
-    #     if message.content.startswith(prefix):
-    #         if message.content[len(prefix):].split(" ")[0] in self.old_commands:
-    #             return await message.reply("This command has been moved over to a command group, check `/help` to find the new command and `/dev update` to see what's changing with Killua.", allowed_mentions=discord.AllowedMentions.none())
-
     @commands.Cog.listener()
     async def on_ready(self):
         self.save_guilds.start()
@@ -124,9 +115,9 @@ class Events(commands.Cog):
         if not self.client.is_dev:
             await self._post_guild_count()
 
-    @status.before_loop
-    async def before_status(self):
-        await self.client.wait_until_ready()
+    # @status.before_loop
+    # async def before_status(self):
+    #     await self.client.wait_until_ready()
 
     def _date_helper(self, hour: int) -> int:
         if hour > 11:
@@ -141,18 +132,23 @@ class Events(commands.Cog):
             for site, data in  user.voting_streak.items():
                 if not data["last_vote"]:
                     continue
-                if self._date_helper(data["last_vote"].hour) == self._date_helper(datetime.now().hour) and (data["last_vote"].day != datetime.now().day and data["last_vote"].hour < 12):
+                if self._date_helper(data["last_vote"].hour) == self._date_helper(datetime.now().hour) and not (data["last_vote"].day != datetime.now().day and data["last_vote"].hour < 12):
                     user = self.client.get_user(user.id) or await self.client.fetch_user(user.id)
                     if not user:
-                        print("Not user")
                         continue
                     embed = discord.Embed.from_dict({
                         "title": "Vote Reminder",
-                        "description": f"Hey {user.name}, it's been 12 hours since you last voted for Killua on {site}. Please consider voting for Killua so you can get your daily rewards and help the bot grow! You can toggle these reminders with `/dev voteremind`",
+                        "description": f"Hey {user.name}, it's been 12 hours since you last voted for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
                         "color": 0x1400ff
                     })
+                    view = discord.ui.View()
+                    if site == "topgg":
+                        view.add_item(discord.ui.Button(label="Vote on top.gg", url=f"https://top.gg/bot/{self.client.user.id}/vote", style=discord.ButtonStyle.link))
+                    elif site == "discordbotlist":
+                        view.add_item(discord.ui.Button(label="Vote on discordbotlist", url=f"https://discordbotlist.com/bots/killua/upvote", style=discord.ButtonStyle.link))
+
                     try:
-                        await user.send(embed=embed)
+                        await user.send(embed=embed, view=view)
                     except discord.Forbidden:
                         continue
 
