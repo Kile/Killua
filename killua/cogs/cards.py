@@ -310,7 +310,8 @@ class Cards(commands.GroupCog, group_name="cards"):
             if int(difference.seconds/60/60+difference.days*24*60*60) < 12: # I don't think timedelta has an hours or minutes property :c
                 return await ctx.send("You must be at least hunting for twelve hours!")
 
-            await ctx.interaction.response.defer() # The following part may take longer than 3 secons
+            if ctx.interaction:
+                await ctx.interaction.response.defer() # The following part may take longer than 3 secons
 
             minutes = int(difference.seconds/60+difference.days*24*60)
             score = minutes/10080 # There are 10080 minutes in a week if I'm not completely wrong
