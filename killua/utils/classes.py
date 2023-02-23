@@ -161,7 +161,7 @@ class LootBox:
         return res
 
     def _create_view(self) -> discord.ui.View:
-        l = [None for x in range(24)] # creating a list of no rewards as the base
+        l = [None for _ in range(24)] # creating a list of no rewards as the base
         for rew in self.rewards:
             l[self._assign_until_unique(l)] = rew
         
@@ -170,7 +170,7 @@ class LootBox:
         view.saved = False
         view.claimed = []
         for i in range(24):
-            view.add_item(_LootBoxButton(index=i, style=discord.ButtonStyle.grey, rewards=l, label=" "))
+            view.add_item(_LootBoxButton(index=i, style=discord.ButtonStyle.grey, rewards=l, label="\u200b"))
         view.add_item(_LootBoxButton(index=24, style=discord.ButtonStyle.blurple, rewards=l, label="Save rewards"))
 
         return view

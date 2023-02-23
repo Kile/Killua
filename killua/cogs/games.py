@@ -445,7 +445,7 @@ class CountGame:
         view = View(self.ctx.author.id, timeout=self.level*10*(0.5 if self.difficulty == "easy" else 1))
         view.stage = 1
         for i in range(25):
-            view.add_item(CountButtons(self.solutions, i+1, label=" ", custom_id=str(i+1)))
+            view.add_item(CountButtons(self.solutions, i+1, label="\u200b", custom_id=str(i+1)))
         await msg.edit(content="Can you remember?", view=view)
         await view.wait()
 

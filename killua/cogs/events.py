@@ -31,17 +31,6 @@ class Events(commands.Cog):
     def log_channel(self):
         return self.client.get_guild(GUILD).get_channel(self.log_channel_id)
 
-    def _get_old_commands(self) -> List[str]:
-        """Gets a list of all commands names without and their aliases"""
-        cmds = []
-        for command in self.client.tree.walk_commands():
-            if not isinstance(command, discord.app_commands.Group) and not command.name == "help" and\
-                not command.qualified_name.startswith("jishaku") and \
-                    not command.qualified_name.startswith("todo") and \
-                        not command.qualified_name.startswith("tag"):
-                            cmds.append(command.name)
-        return cmds
-
     async def _post_guild_count(self) -> None:
         """Posts relevant stats to the botlists Killua is on"""
         data = { # The data for discordbotlist
@@ -124,7 +113,7 @@ class Events(commands.Cog):
             return hour - 12
         return hour
 
-    @tasks.loop(hours=1)
+    @tasks.loop(minutes=1)
     async def vote_reminders(self):
         enabled = DB.teams.find({"voting_reminder": True})
         for user in enabled:
@@ -132,7 +121,10 @@ class Events(commands.Cog):
             for site, data in  user.voting_streak.items():
                 if not data["last_vote"]:
                     continue
-                if self._date_helper(data["last_vote"].hour) == self._date_helper(datetime.now().hour) and not (data["last_vote"].day != datetime.now().day and data["last_vote"].hour < 12):
+                if self._date_helper(data["last_vote"].hour) == self._date_helper(datetime.now().hour) and \
+                    data["last_vote"].minute == datetime.now().minute and \
+                        not (data["last_vote"].day != datetime.now().day and data["last_vote"].hour < 12):
+                        
                     user = self.client.get_user(user.id) or await self.client.fetch_user(user.id)
                     if not user:
                         continue
@@ -452,10 +444,6 @@ class Events(commands.Cog):
         if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.CheckFailure): # I don't care if this happens
             return 
 
-        view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Report bug", url=self.client.support_server_invite))
-        await ctx.send(":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.", view=view)
-
         if self.client.is_dev: # prints the full traceback in dev enviroment
             logging.error(PrintColors.FAIL + "Ignoring exception in command {}:".format(ctx.command))
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
@@ -467,5 +455,10 @@ class Events(commands.Cog):
             logging.error(f"{PrintColors.FAIL}------------------------------------------")
             logging.error(f"An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}")
             logging.error(f"------------------------------------------{PrintColors.ENDC}")
+
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Report bug", url=self.client.support_server_invite))
+        await ctx.send(":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.", view=view)
+
 
 Cog = Events

@@ -231,6 +231,9 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         if hasattr(ctx, "invoked_by_context_menu") or not target: target = (str(ctx.interaction.locale) if str(ctx.interaction.locale).startswith("zh") else str(ctx.interaction.locale).split("-")[0]) if ctx.interaction else target
         elif target.lower() in LANGS: target = LANGS[target.lower()]
 
+        if hasattr(ctx, "invoked_by_context_menu") and ctx.interaction:
+            await ctx.interaction.response.defer()
+
         if (not target in LANGS.values() and not hasattr(ctx, "invoked_by_context_menu")) or not (source in LANGS.values()):
             return await ctx.send("Invalid language! This is how to use the command: `" + ctx.command.usage + "`", ephemeral=True)
 
