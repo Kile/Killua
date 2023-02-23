@@ -236,7 +236,7 @@ class Economy(commands.GroupCog, group_name="econ"):
 
         await view.disable(msg)
         if view.timed_out:
-            await ctx.send("Timed out!", ephemeral=True)
+            return await ctx.send("Timed out!", ephemeral=True)
 
         user.remove_lootbox(view.value)
         values = LootBox.generate_rewards(view.value)
