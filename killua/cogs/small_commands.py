@@ -5,7 +5,7 @@ import json
 import time
 from random import randint, choice
 import math
-from typing import List
+from typing import List, Literal
 from urllib.parse import quote
 
 
@@ -148,23 +148,20 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
     @check()
     @commands.hybrid_command(aliases=["av", "a"], extras={"category":Category.FUN, "id": 84}, usage="avatar <user(optional)>")
     @discord.app_commands.describe(user="The user to show the avatar of")
-    async def avatar(self, ctx: commands.Context, user: str = None):
+    async def avatar(self, ctx: commands.Context, user: discord.User = None, guild_avatar: Literal["yes", "no"] = "no"):
         """Shows the avatar of a user"""
-        if user:
-            user = await self.client.find_user(ctx, user)
-            if not user:
-                return await ctx.send("User not found")
-        else:
-            user = ctx.author
+        user = user or ctx.author
+        avatar = user.avatar if guild_avatar == "no" else user.display_avatar
 
-        if not user.avatar:
+        if not avatar:
             return await ctx.send("User has no avatar")
 
         embed = discord.Embed.from_dict({
             "title": f"Avatar of {user}",
-            "image": {"url": str(user.avatar.url)},
-            "color": 0x1400ff
+            "image": {"url": str(avatar.url)},
+            "color": await self.client.find_dominant_color(avatar.url)
         })
+        print(embed.colour)
         await self.client.send_message(ctx, embed=embed)
 
     @check()

@@ -2,14 +2,14 @@ import discord
 from discord.ext import commands
 import random
 import asyncio
-from typing import List, Union
+from typing import List, Union, Optional
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.classes import User
 from killua.static.enums import Category
 from killua.utils.interactions import View
-from killua.static.constants import ACTIONS
+from killua.static.constants import ACTIONS, KILLUA_BADGES
 
 class SettingsSelect(discord.ui.Select):
     """Creates a select menu to change action settings"""
@@ -55,18 +55,23 @@ class Actions(commands.GroupCog, group_name="action"):
         else:
             return await r.text()
 
-    async def get_image(self, ctx) -> discord.Message: # for endpoints like /blush/gif where you don't want to mention a user
+    async def get_image(self, ctx: commands.Context) -> discord.Message: # for endpoints like /blush/gif where you don't want to mention a user
         image = await self.request_action(ctx.command.name)
         if isinstance(image, str):
             return await ctx.send(f':x: {image}')
         embed = discord.Embed.from_dict({
             "title": "",
             "image": {"url": image["link"]},
-            "color": 0x1400ff
+            "color": await self.client.find_dominant_color(image["link"])
         })
         return await ctx.send(embed=embed)
 
-    def generate_users(self, members: list, title: str) -> str:
+    def save_stat(self, member: discord.Member, endpoint: str, targetted: bool = False, amount: int = 1) -> Optional[str]:
+        user = User(member.id)
+        badge = user.add_action(endpoint, targetted, amount)
+        return badge
+
+    def generate_users(self, members: List[discord.Member], title: str) -> str:
         if isinstance(members, str):
             return members
         memberlist = ''
@@ -94,22 +99,22 @@ class Actions(commands.GroupCog, group_name="action"):
             if isinstance(image, str):
                 return f':x: {image}'
 
-        text = random.choice(ACTIONS[endpoint]["text"])
+        text: str = random.choice(ACTIONS[endpoint]["text"])
         text = text.replace("<author>", "**" + (author if isinstance(author, str) else author.name) + "**").replace("<user>",  "**" + self.generate_users(members, text) + "**")
 
         embed = discord.Embed.from_dict({
             "title": text,
             "image": {"url": image["link"]},
-            "color": 0x1400ff
+            "color": await self.client.find_dominant_color(image["link"])
         })
 
         if disabled > 0:
             embed.set_footer(text=f"{disabled} user{'s' if disabled > 1 else ''} disabled being targetted with this action")
         return embed
 
-    async def no_argument(self, ctx) -> Union[None, discord.Embed]:
+    async def no_argument(self, ctx: commands.Context) -> Union[None, discord.Embed]:
         await ctx.send(f'You provided no one to {ctx.command.name}.. Should- I {ctx.command.name} you?')
-        def check(m):
+        def check(m: discord.Message):
             return m.content.lower() == 'yes' and m.author == ctx.author
         try:
             await self.client.wait_for('message', check=check, timeout=60) 
@@ -118,7 +123,7 @@ class Actions(commands.GroupCog, group_name="action"):
         else:
             return await self.action_embed(ctx.command.name, 'Killua', ctx.author.name)
 
-    async def do_action(self, ctx, members: List[discord.Member] = None) -> Union[discord.Message, None]:
+    async def do_action(self, ctx: commands.Context, members: List[discord.Member] = None) -> Union[discord.Message, None]:
         if not members:
             embed = await self.no_argument(ctx)
             if not embed:
@@ -130,7 +135,7 @@ class Actions(commands.GroupCog, group_name="action"):
             if len(members) == 1 and (ctx.command.name in first.action_settings) and not first.action_settings[ctx.command.name]:
                 return await ctx.send(f"**{members[0].display_name}** has disabled this action", allowed_mentions=discord.AllowedMentions.none())
 
-            allowed = []
+            allowed: List[discord.Member] = []
             disabled = 0
             for member in members:
                 m = User(member.id)
@@ -138,12 +143,27 @@ class Actions(commands.GroupCog, group_name="action"):
                     disabled+=1
                 else:
                     allowed.append(member)
+
+            for member in allowed:
+                badge = self.save_stat(member, ctx.command.name, True)
+                if badge:
+                    try:
+                        await member.send(f"You got the **{badge}** {KILLUA_BADGES[badge]} badge for being {ctx.command.name}ed more than 100 times!")
+                    except discord.Forbidden:
+                        pass
+
+            badge = self.save_stat(ctx.author, ctx.command.name, False, len(allowed))
+            if badge:
+                try:
+                    await ctx.author.send(f"You got the **{badge}** {KILLUA_BADGES[badge]} badge for {ctx.command.name}ing more than 100 people!")
+                except discord.Forbidden:
+                    pass
             embed = await self.action_embed(ctx.command.name, ctx.author, members, disabled)
 
         if isinstance(embed, str):
             return await ctx.send(content=embed)
         else:
-            return await ctx.bot.send_message(ctx, embed=embed)
+            return await self.client.send_message(ctx, embed=embed)
 
     @check()
     @commands.hybrid_command(extras={"category": Category.ACTIONS, "id": 1}, usage="hug <user>")

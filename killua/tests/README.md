@@ -36,10 +36,10 @@ Views were harder to tackle as they are much more complex in what could be respo
 `respond_to_view` overwrites `View.wait()` if a `View` is supplied to a `send` method and so it will be called if the view requires a response, also avoiding the trouble of the tests taking much longer if the view had to be responded to from a separate asyncio loop. In code, this would simply look like this:
 ```py
 async  def  respond_to_view_no_settings_changed(context: Context):
-	for  child  in  context.current_view.children:
-		if  child.custom_id == "save":
-			await  child.callback(MockInteraction(context))
-			
+    for  child  in  context.current_view.children:
+        if  child.custom_id == "save":
+            await  child.callback(MockInteraction(context))
+            
 context.respond_to_view = respond_to_view_no_settings_changed
 await command(context)
 ```
@@ -78,13 +78,13 @@ from ..types  import * # Importing all mock classes
 from ..testing  import  Testing, test # Import base class and decorator
 
 class  TestingGroup(Testing):
-	def  __init__(self):
-		super().__init__(cog=Group)
+    def  __init__(self):
+        super().__init__(cog=Group)
 
 class Hello(TestingGroup):
-	def __init__(self):
-		super().__init__()
-		self.command = self.cog.hello # This is not required, handy for more dynamic subclasses
+    def __init__(self):
+        super().__init__()
+        self.command = self.cog.hello # This is not required, handy for more dynamic subclasses
 ```
 
 ### Writing a test
@@ -97,11 +97,11 @@ After that, the context object will contain whatever was sent back by the comman
 # This is inside the Hello class
 @test
 async def should_work(self):
-	await self.command(self.base_context)
+    await self.command(self.base_context)
 
-	assert self.base_context.result.message.content == "hello", self.base_context.result.message.content
-	# It is important to place whatever variable to test again after the comma so if it fails, 
-	# the actual value of that variable can be displayed in the logs 
+    assert self.base_context.result.message.content == "hello", self.base_context.result.message.content
+    # It is important to place whatever variable to test again after the comma so if it fails, 
+    # the actual value of that variable can be displayed in the logs 
 ```
 For writing tests including `Views`s or `Bot.wait_for` see [How `View`s and `Bot.wait_for` is handled](#how-views-and-bot.wait_for-is-handled)
 
