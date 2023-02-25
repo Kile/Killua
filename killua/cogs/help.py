@@ -32,7 +32,7 @@ class HelpEmbed(discord.Embed):
     def __init__(self, av: str, **kwargs):
         super().__init__(**kwargs)
         self.title = "Help menu"
-        self.color = 0x1400ff
+        self.color = 0x3e4a78
         self.set_thumbnail(url=av)
         self.timestamp = datetime.now()
 
@@ -60,7 +60,7 @@ class HelpCommand(commands.Cog):
         """Gets the help embed for a command"""
 
         embed = discord.Embed(title="Infos about command `" + command.qualified_name + "`", description=command.help or "No help found...")
-        embed.color = 0x1400ff
+        embed.color = 0x3e4a78
 
         embed.add_field(name="Category", value=command.extras["category"].value["name"])
 

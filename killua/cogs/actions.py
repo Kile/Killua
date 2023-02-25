@@ -257,7 +257,7 @@ class Actions(commands.GroupCog, group_name="action"):
         embed = discord.Embed.from_dict({
             "title": "Settings",
             "description": "By unticking a box users will no longer able to use that action on you",
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
 
         user = User(ctx.author.id)

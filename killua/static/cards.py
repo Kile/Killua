@@ -208,7 +208,7 @@ class Card:
         embed = discord.Embed.from_dict({
             "title": f"Info about card {card_id}",
             "thumbnail": {"url": card.image_url},
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "description": card.description,
             "fields": fields
         })
@@ -226,7 +226,7 @@ class Card:
             "title": f"Infos about card {card.name}",
             "description": f"**Total copies in circulation**: {len(card.owners)}\n\n**Total owners**: {len(real_owners)}",
             "image": {"url": card.image_url},
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
         return embed
 

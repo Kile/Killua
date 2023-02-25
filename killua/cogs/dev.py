@@ -174,7 +174,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                 real_top = top[:9]
 
             file = self._create_piechart(real_top)
-            embed = discord.Embed(title=f"Top 10 used commands of group {group}", color=0x1400ff)
+            embed = discord.Embed(title=f"Top 10 used commands of group {group}", color=0x3e4a78)
             embed.set_image(url="attachment://piechart.png")
 
             view = View(ctx.author.id)
@@ -222,7 +222,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
         # creates a piechart in an embed with the top 10 commands using _create_piechart
         file = self._create_piechart([*top[:9], ("other", rest)])
-        embed = discord.Embed(title="Top 10 used commands", color=0x1400ff)
+        embed = discord.Embed(title="Top 10 used commands", color=0x3e4a78)
         embed.set_image(url="attachment://piechart.png")
 
         view = View(ctx.author.id)
@@ -289,7 +289,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         embed = discord.Embed.from_dict({
             "title": f"Killua Update `{old_version}` -> `{version}`",
             "description": description.value,
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "footer": {"text": f"Update by {ctx.author}", "icon_url": str(ctx.author.avatar.url)},
             "image": {"url": image.value or "https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png"}
         })
@@ -325,7 +325,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         embed = discord.Embed.from_dict({
             "title": f"Infos about version `{data['version']}`",
             "description": str(data["description"]),
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "image": {"url": data["image"]},
             "footer": {"icon_url": str(author.avatar.url), "text": f"Published on {data['published_on'].strftime('%b %d %Y %H:%M:%S')}"}
         })
@@ -439,7 +439,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                     {"name": "Shard", "value": f"{self.client.shard_id or 0}/{self.client.shard_count}", "inline": True},
                     {"name": "Bot version", "value": f"{bot_version}", "inline": True},
                 ],
-                "color": 0x1400ff,
+                "color": 0x3e4a78,
                 "timestamp": datetime.utcnow().isoformat()
             })
 
@@ -450,7 +450,7 @@ class Dev(commands.GroupCog, group_name="dev"):
     async def info(self, ctx: commands.Context):
         """Get some general information (lore) about the bot"""
         embed = discord.Embed(title="Infos about the bot", description=INFO)
-        embed.color = 0x1400ff
+        embed.color = 0x3e4a78
         return await ctx.send(embed=embed, ephemeral=True)
 
     @check()

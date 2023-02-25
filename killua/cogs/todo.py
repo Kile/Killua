@@ -53,7 +53,7 @@ class TodoSystem(commands.Cog):
                                 embed = discord.Embed.from_dict({
                                     "title": "Todo due",
                                     "description": f"Your todo `{todo['todo']}` is due\nAdded <t:{int(todo['added_on'].timestamp())}:R>",
-                                    "color": todo_list.color or 0x1400ff,
+                                    "color": todo_list.color or 0x3e4a78,
                                     "footer": {"text": f"From todo list: {todo_list.name} (ID: {todo_list.id})", "icon_url": todo_list.thumbnail}
                                 })
                                 await user.send(embed=embed)
@@ -107,7 +107,7 @@ class TodoSystem(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": f"To-do list \"{todo_list.name}\" (ID: {todo_list.id})",
             "description": f"{f'*Page {page}/{max_pages}*' if page else ''}\n{desc}",
-            "color": todo_list.color or 0x1400ff,
+            "color": todo_list.color or 0x3e4a78,
             "footer": {"icon_url": str(owner.avatar.url), "text": f"Owned by {owner}"}
         })
 
@@ -140,7 +140,7 @@ class TodoSystem(commands.Cog):
             f"**Editors**: `{', '.join([str(await self._get_user(u)) for u in todo_list.editor]) if len(todo_list.editor) > 0 else 'Nobody has editor perissions'}`\n" +\
             f"**Viewers**: `{', '.join([str(await self._get_user(u)) for u in todo_list.viewer]) if len(todo_list.viewer) > 0 else 'Nobody has viewer permissions'}`\n\n" +\
             f"**Todos**: `{len(todo_list)}/{todo_list.spots}`",
-            "color": todo_list.color or 0x1400ff,
+            "color": todo_list.color or 0x3e4a78,
             "footer": {"text": f"{todo_list.views} view{'s' if todo_list.views != 1 else ''}"}
         })
         if todo_list.thumbnail:
@@ -182,7 +182,7 @@ class TodoSystem(commands.Cog):
             f"**Added on:** {added_on}\n{due}\n" +\
             f"**Latest changes marks**:\n" +\
             f"{mark_log}",
-            "color": todo_list.color or 0x1400ff,
+            "color": todo_list.color or 0x3e4a78,
             "footer": {"text": f"{todo_task.views} view{'s' if todo_task.views != 1 else ''}"}
         })
         if todo_list.thumbnail:
@@ -605,7 +605,7 @@ class TodoSystem(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": f"You were invited to to-do list {todo_list.name} (ID: {todo_list.id})",
             "description": f"{ctx.author} invited you to be {role} in their to-do list. To accept, click \"confirm\", to deny click \"cancel\". If this invitation was inappropriate, click \"report\"",
-            "color": todo_list.color or 0x1400ff,
+            "color": todo_list.color or 0x3e4a78,
             "footer": {"icon_url": str(ctx.author.avatar.url), "text": f"Requested by {ctx.author}"}
         })
 
@@ -681,7 +681,7 @@ class TodoSystem(commands.Cog):
                 embed = discord.Embed.from_dict({
                 "title": f"Removed assignment to todo on list {todo_list.name} (ID: {todo_list.id})",
                 "description": f"{ctx.author} removed assignment you to the todo {todos[todo_number-1]['todo']}",
-                "color": todo_list.color or 0x1400ff,
+                "color": todo_list.color or 0x3e4a78,
                 "footer": {"icon_url": str(ctx.author.avatar.url), "text": f"Requested by {ctx.author}"}
                 })
                 try:
@@ -699,7 +699,7 @@ class TodoSystem(commands.Cog):
             embed = discord.Embed.from_dict({
                 "title": f"Assigned to todo on list {todo_list.name} (ID: {todo_list.id})",
                 "description": f"{ctx.author} assigned you to the todo {todos[todo_number-1]['todo']}",
-                "color": todo_list.color or 0x1400ff,
+                "color": todo_list.color or 0x3e4a78,
                 "footer": {"icon_url": str(ctx.author.avatar.url), "text": f"Requested by {ctx.author}"}
             })
             try:
@@ -761,7 +761,7 @@ class TodoSystem(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": f"Your todo lists and permissions",
             "description": f"**todo lists you own**\n\n{l_o or 'No todo lists'}\n\n**todo lists you have viewing permissions**\n\n{l_v or 'No todo lists'}\n\n**todo lists you have editing permissions**\n\n{l_e or 'No todo lists'}",
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "footer": {"icon_url": str(ctx.author.avatar.url), "text": f"Requested by {ctx.author}"}
         })
         return await ctx.send(embed=embed)

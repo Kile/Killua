@@ -105,7 +105,7 @@ class BaseBot(commands.AutoShardedBot):
         #Get the most frequent color
         dominant_color = sorted_pixels[-1][1]
         # Return integer representation of color
-        return dominant_color[0] << 16 | dominant_color[1] << 8 | dominant_color[2] if isinstance(dominant_color, tuple) else 0x1400ff
+        return dominant_color[0] << 16 | dominant_color[1] << 8 | dominant_color[2] if isinstance(dominant_color, tuple) else 0x3e4a78
 
     async def find_user(self, ctx: commands.Context, user: str) -> Union[discord.Member, discord.User, None]:
         """Attempts to create a member or user object from the passed string"""

@@ -106,7 +106,7 @@ class Tags(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": f"Top tags owned by {user.name}" if user else f"Top tags of guild {ctx.guild.name}",
             "description": "\n".join(final_tags),
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "thumbnail": {"url": str(user.avatar.url) if user else str(ctx.guild.icon.url)}
             })
         return embed
@@ -261,7 +261,7 @@ class Tags(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": f"Information about tag \"{tag.name}\"",
             "description": f"**Tag owner:** `{str(owner)}`\n\n**Created on**: <t:{int(tag.created_at.timestamp())}>\n\n**Uses:** `{tag.uses}`\n\n**Tag rank:** `{rank}`",
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "thumbnail": {"url": str(owner.avatar.url)}
         })
         await ctx.send(embed=embed)

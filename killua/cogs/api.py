@@ -88,7 +88,7 @@ class IPCRoutes(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": "Thank you for voting!",
             "description": (f"Well done for keeping your voting **streak** 🔥 of {streak} for {'top.gg' if 'isWeekend' in data else 'discordbotlist'}! " if streak > 1 else "") + "As a reward I am happy to award with " + (f"{reward} Jenny" if reward >= 100 else f"a lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}") + f"! You are **{5 - (streak % 5)}** votes away from the next reward! \n\n{path}",
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
         if reward < 100:
             user.add_lootbox(reward)

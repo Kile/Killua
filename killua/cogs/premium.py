@@ -223,7 +223,7 @@ class Premium(commands.Cog):
             "title": "**Support Killua**",
             "thumbnail":{"url": "https://cdn.discordapp.com/avatars/758031913788375090/e44c0de4678c544e051be22e74bc502d.png?size=1024"},
             "description": PREMIUM_BENEFITS,
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
         await self.client.send_message(ctx, embed=embed, view=view)
 

@@ -60,7 +60,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         embeds = []
         for book in data["docs"]:
-            embed = discord.Embed(title=book["title"] if len(book["title"]) < 256 else (book["title"][:253] + "..."), url=f"https://openlibrary.org{book['key']}", color=0x1400ff)
+            embed = discord.Embed(title=book["title"] if len(book["title"]) < 256 else (book["title"][:253] + "..."), url=f"https://openlibrary.org{book['key']}", color=0x3e4a78)
             if "author_name" in book:
                 embed.add_field(name="Author", value=book["author_name"][0])
             if "first_publish_year" in book:
@@ -166,7 +166,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
             results = r.data["results"]
             embed = discord.Embed.from_dict({
                 "title": f"Results for query {text}",
-                "color": 0x1400ff,
+                "color": 0x3e4a78,
             })
             for i in range(4 if len(results) >= 4 else len(results)):
                 res = results[i-1]

@@ -337,7 +337,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             embed = discord.Embed.from_dict({
                 "title": "Hunt returned!",
                 "description": text + "\n".join(formatted_text),
-                "color": 0x1400ff
+                "color": 0x3e4a78
             })
             user.remove_effect("hunting")
             user.add_multi(*formatted_rewards)

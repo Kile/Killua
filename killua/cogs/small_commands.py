@@ -141,7 +141,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
             "title": f"8ball has spoken 🎱",
             "description": f"You asked:\n```\n{question}\n```\nMy answer is:\n```\n{choice(ANSWERS)}```",
             "footer": {"icon_url": str(ctx.author.avatar.url), "text": f"Asked by {ctx.author}"},
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
         await self.client.send_message(ctx, embed=embed)
 
@@ -161,7 +161,6 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
             "image": {"url": str(avatar.url)},
             "color": await self.client.find_dominant_color(avatar.url)
         })
-        print(embed.colour)
         await self.client.send_message(ctx, embed=embed)
 
     @check()
@@ -173,7 +172,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         embed = discord.Embed(
             title = "Invite",
             description = f"Invite the bot to your server by clicking on the button. Thank you a lot for supporting me!",
-            color = 0x1400ff
+            color = 0x3e4a78
         )
         await ctx.send(embed=embed, view=view) 
 
@@ -186,7 +185,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         embed = discord.Embed.from_dict({
             "title": "Bot permissions",
             "description": prettier,
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "thumbnail": {"url": str(ctx.me.avatar.url)}
         })
         try:
@@ -252,7 +251,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         embed = discord.Embed.from_dict({ 
             "title": f"Translation Successfull",
             "description": f"```\n{text}```\n`{source}` -> `{target}`\n\n```\n{translation['responseData']['translatedText']}```",
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "footer": {"text": "Confidence: " + str(translation["matches"][0]["quality"]) + "%"}
         })
         
@@ -303,7 +302,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
 
         view = discord.ui.View(timeout=None)
 
-        embed = discord.Embed(title="Poll", description=modal.children[0].value, color=0x1400ff)
+        embed = discord.Embed(title="Poll", description=modal.children[0].value, color=0x3e4a78)
         embed.set_footer(text=f"Poll by {ctx.author}", icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
 
         for pos, child in enumerate(modal.children):
@@ -328,7 +327,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         
         view = discord.ui.View(timeout=None)
 
-        embed = discord.Embed(title="Would you rather...", color=0x1400ff)
+        embed = discord.Embed(title="Would you rather...", color=0x3e4a78)
         embed.set_footer(text=f"Command ran by {ctx.author}", icon_url=ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url)
         embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/761621578458202122/1035249833335861308/unknown.png")
 

@@ -30,7 +30,7 @@ class DefaultEmbed(discord.Embed):
     """The default embed to use if no embed is provided"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.color = 0x1400ff
+        self.color = 0x3e4a78
         self.timestamp = datetime.datetime.now()
         self.set_footer()
 

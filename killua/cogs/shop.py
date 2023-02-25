@@ -143,7 +143,7 @@ class Shop(commands.Cog):
                 "title": "Shop menu",
                 "description": "Select the shop you want to visit",
                 "image": {"url": "https://cdn.discordapp.com/attachments/795448739258040341/885927080410361876/image0.png"},
-                "color": 0x1400ff
+                "color": 0x3e4a78
             })
             msg = await ctx.send(embed=embed, view=view)
             await view.wait()
@@ -172,7 +172,7 @@ class Shop(commands.Cog):
             formatted:list = self._format_offers(shop_items)
             embed = discord.Embed(title="Current Card shop")
 
-        embed.color = 0x1400ff
+        embed.color = 0x3e4a78
         embed.set_thumbnail(url="https://static.wikia.nocookie.net/hunterxhunter/images/0/08/Spell_Card_Store.png/revision/latest?cb=20130328063032")
         for item in formatted:
             embed.add_field(name=item["name"], value=item["value"], inline=True)
@@ -203,7 +203,7 @@ class Shop(commands.Cog):
 
 **Cost**: number of current spots * 50
 `space` buy 10 more spots for todo"s for your list""",
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
         view = self._get_view(ctx)
         msg = await self.client.send_message(ctx, embed=embed, view=view)

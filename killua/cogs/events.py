@@ -131,7 +131,7 @@ class Events(commands.Cog):
                     embed = discord.Embed.from_dict({
                         "title": "Vote Reminder",
                         "description": f"Hey {user.name}, it's been 12 hours since you last voted for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
-                        "color": 0x1400ff
+                        "color": 0x3e4a78
                     })
                     view = discord.ui.View()
                     if site == "topgg":
@@ -182,7 +182,7 @@ class Events(commands.Cog):
                     "┗ <#716357592493981707> Use bots in here\n" +\
                     "┗ <#811903366925516821> Check if there is any known outage/bug\n\n" +\
                     "Thanks for joining and don't forget to vote for Killua! :)",
-                "color": 0x1400ff,
+                "color": 0x3e4a78,
             })
             embed.set_thumbnail(url=self.client.user.avatar.url if self.client.user else None)
             embed.timestamp = datetime.now()

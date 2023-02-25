@@ -84,7 +84,7 @@ class Economy(commands.GroupCog, group_name="econ"):
                 ],
                 "thumbnail": {"url": str(user.avatar.url) if user.avatar else None},
                 "image": {"url": user.banner.url if user.banner else None},
-                "color": 0x1400ff
+                "color": 0x3e4a78
             })
 
     def _lb(self, ctx: commands.Context, limit: int = 10) -> dict:
@@ -133,7 +133,7 @@ class Economy(commands.GroupCog, group_name="econ"):
             ],
             "description": str(ctx.guild.id),
             "thumbnail": {"url": str(ctx.guild.icon.url)},
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
         await self.client.send_message(ctx, embed=embed)
 
@@ -148,7 +148,7 @@ class Economy(commands.GroupCog, group_name="econ"):
         embed = discord.Embed.from_dict({
             "title": f"Top users on guild {ctx.guild.name}",
             "description": "\n".join([f"#{p+1} `{x['name']}` with `{x['points']}` jenny" for p, x in enumerate(top["top"])]),
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "thumbnail": {"url": str(ctx.guild.icon.url)}
         })
         await self.client.send_message(ctx, embed=embed)
@@ -220,7 +220,7 @@ class Economy(commands.GroupCog, group_name="econ"):
         embed = discord.Embed.from_dict({
             "title": "Choose a lootbox to open!",
             "fields": lootboxes,
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
         lbs = []
         for l in user.lootboxes:
@@ -254,7 +254,7 @@ class Economy(commands.GroupCog, group_name="econ"):
         embed = discord.Embed.from_dict({
             "title": "Lootbox inventory",
             "description": f"open a lootbox with `{self.client.command_prefix(self.client, ctx.message)[2]}open`",
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "fields": lootboxes
         })
         embed.timestamp = datetime.now()
@@ -284,7 +284,7 @@ class Economy(commands.GroupCog, group_name="econ"):
                 {"name": "Price", "value": data["price"], "inline": False},
                 {"name": "Buyable", "value": "Yes" if data["available"] else "No"},
             ],
-            "color": 0x1400ff,
+            "color": 0x3e4a78,
             "image": {"url": data["image"]}
         })
         await ctx.send(embed=embed)

@@ -98,7 +98,7 @@ class Trivia:
         self.embed = discord.Embed.from_dict({
             "title": f"Trivia of category {self.data['category']}",
             "description": f"**difficulty:** {self.data['difficulty']}\n\n**Question:**\n{question}",
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
 
     def _create_view(self) -> None:
@@ -189,7 +189,7 @@ class Rps:
         embed = discord.Embed.from_dict({
             "title": f"{self.ctx.author.display_name} against {self.other.display_name or self.ctx.me.display_name}: **Rock... Paper... Scissors!**",
             "image": {"url": "https://media1.tenor.com/images/dc503adb8a708854089051c02112c465/tenor.gif?itemid=5264587"},
-            "color": 0x1400ff
+            "color": 0x3e4a78
         })
 
         await self.ctx.bot.send_message(self.ctx, embed=embed)
@@ -563,7 +563,7 @@ class Games(commands.GroupCog, group_name="games"):
                 title=f"{member.name}'s RPS stats",
                 description=f"**__PVE__**:\n:crown: Win rate: {pve_win_rate}%\n\n Wins: {user.rps_stats['pve']['won']}\nDraws: {user.rps_stats['pve']['tied']}\nLosses: {user.rps_stats['pve']['lost']}" + \
                     f"\n\n**__PVP__**:\n:crown: Win rate: {pvp_win_rate}%\n\n Wins: {user.rps_stats['pvp']['won']}\nDraws: {user.rps_stats['pvp']['tied']}\nLosses: {user.rps_stats['pvp']['lost']}",
-                color=0x1400ff
+                color=0x3e4a78
             ))
 
         elif game_type == GameOptions.trivia:
@@ -584,14 +584,14 @@ class Games(commands.GroupCog, group_name="games"):
             await ctx.send(embed=discord.Embed(
                 title=f"{member.name}'s Trivia stats",
                 description=f"__Overall correctness__: {win_rate_overall}%\n\n__Hard__:\nRight answers: {user.trivia_stats['hard']['right']}\nWrong answers: {user.trivia_stats['hard']['wrong']}\n{win_rate_hard}% correct\n\n__Medium__:\nRight answers: {user.trivia_stats['medium']['right']}\nWrong answers: {user.trivia_stats['medium']['wrong']}\n{win_rate_medium}% correct\n\n__Easy__:\nRight answers: {user.trivia_stats['easy']['right']}\nWrong answers: {user.trivia_stats['easy']['wrong']}\n{win_rate_easy}% correct",
-                color=0x1400ff
+                color=0x3e4a78
             ))
 
         elif game_type == GameOptions.counting:
             await ctx.send(embed=discord.Embed(
                 title=f"{member.name}'s Counting stats",
                 description=f"High score easy mode: {user.counting_highscore['easy']}\n\nHigh score hard mode: {user.counting_highscore['hard']}",
-                color=0x1400ff
+                color=0x3e4a78
             ))
 
     @check()
@@ -609,7 +609,7 @@ class Games(commands.GroupCog, group_name="games"):
             top_5_pvp: List[dict] = all
             top_5_pvp.sort(key=lambda x: dict(x).get("stats", {}).get("rps", {}).get("pvp", {}).get("won", 0), reverse=True)
 
-            embed = discord.Embed(title="Global RPS leaderboard", description="**PVE**", color=0x1400ff)
+            embed = discord.Embed(title="Global RPS leaderboard", description="**PVE**", color=0x3e4a78)
             for pos, player in enumerate(top_5_pve[:5]):
                 # user = self.client.get_user(player["_id"])
                 # if user:
@@ -636,7 +636,7 @@ class Games(commands.GroupCog, group_name="games"):
             top_5_easy = all
             top_5_easy.sort(key=lambda x: dict(x).get("stats", {}).get("trivia", {}).get("easy", {}).get("right", 0), reverse=True)
 
-            embed = discord.Embed(title="Global Trivia leaderboard", description="**Hard**", color=0x1400ff)
+            embed = discord.Embed(title="Global Trivia leaderboard", description="**Hard**", color=0x3e4a78)
             for pos, player in enumerate(top_5_hard[:5]):
                 # user = self.client.get_user(player["_id"])
                 # if user:
@@ -668,7 +668,7 @@ class Games(commands.GroupCog, group_name="games"):
             top_5_easy = all
             top_5_easy.sort(key=lambda x: dict(x).get("stats", {}).get("counting_highscore", {}).get("easy", 0), reverse=True)
 
-            embed = discord.Embed(title="Global Counting leaderboard", description="**Hard**", color=0x1400ff)
+            embed = discord.Embed(title="Global Counting leaderboard", description="**Hard**", color=0x3e4a78)
             for pos, player in enumerate(top_5_hard[:5]):
                 # user = self.client.get_user(player["_id"])
                 # if user:
