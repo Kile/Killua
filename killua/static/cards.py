@@ -159,7 +159,7 @@ class Card:
 
     def _has_cards_check(self, cards: List[list], card_type: str = "", is_self: bool = False, uses_up: bool = False) -> None:
         if len(cards) == 0:
-            raise CheckFailure((f"You do not have cards{card_type}!" if is_self else f"This user does not have any cards{card_type}!") + f" This information uses up card {self.name}." if uses_up else "")
+            raise CheckFailure((f"You do not have cards{card_type}!" if is_self else f"This user does not have any cards{card_type}!") + (f" This information uses up card {self.name}." if uses_up else ""))
 
     def _has_any_card(self, card_id:int, user:User) -> None:
         if not user.has_any_card(card_id):
@@ -232,9 +232,14 @@ class Card:
 
 class Card1001(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs) -> None:
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, member: discord.Member) -> None:
         author = User(self.ctx.author.id)
@@ -255,9 +260,14 @@ class Card1001(Card):
 
 class Card1002(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs) -> None:
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, member: discord.Member) -> None:
         author = User(self.ctx.author.id)
@@ -276,11 +286,16 @@ class Card1002(Card):
 
 class Card1007(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs) -> None:
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
-    async def exec(self, member:discord.Member):
+    async def exec(self, member: discord.Member):
         self._permission_check(self.ctx, member)
 
         author = User(self.ctx.author.id)
@@ -298,9 +313,14 @@ class Card1007(Card):
 
 class Card1008(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, member:discord.Member) -> None:
         self._permission_check(self.ctx, member)
@@ -324,9 +344,14 @@ class Card1008(Card):
 
 class Card1010(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, card_id:int) -> None:
         user = User(self.ctx.author.id)
@@ -342,9 +367,14 @@ class Card1010(Card):
 
 class Card1011(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, member:discord.Member) -> None:
         author = User(self.ctx.author.id)
@@ -360,9 +390,14 @@ class Card1011(Card):
 
 class Card1015(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, member:discord.Member) -> None:
         author = User(self.ctx.author.id)
@@ -381,9 +416,14 @@ class Card1015(Card):
 
 class Card1018(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self) -> None:
         author = User(self.ctx.author.id)
@@ -416,9 +456,14 @@ class Card1018(Card):
 
 class Card1020(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, card_id:int) -> None:
         self._is_valid_card_check(card_id)
@@ -434,11 +479,16 @@ class Card1020(Card):
 
 class Card1021(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
-    async def exec(self, member:discord.Member, card_id:int) -> None:
+    async def exec(self, member: discord.Member, card_id: int) -> None:
         self._permission_check(self.ctx, member)
 
         if card_id == 0:
@@ -457,9 +507,14 @@ class Card1021(Card):
 
 class Card1024(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, member:discord.Member) -> None:
         other = User(member.id)
@@ -485,9 +540,14 @@ class Card1024(Card):
 
 class Card1026(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self) -> None:
         author = User(self.ctx.author.id)
@@ -519,9 +579,14 @@ class Card1026(Card):
 
 class Card1028(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, member:discord.Member) -> None:
         self._permission_check(self.ctx, member)
@@ -539,9 +604,14 @@ class Card1028(Card):
 
 class Card1029(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, member:discord.Member) -> None:
         self._permission_check(self.ctx, member)
@@ -559,9 +629,14 @@ class Card1029(Card):
 
 class Card1031(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, card_id:int) -> None:
         self._is_valid_card_check(card_id)
@@ -573,9 +648,14 @@ class Card1031(Card):
 
 class Card1032(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self) -> None:
         author = User(self.ctx.author.id)
@@ -590,9 +670,14 @@ class Card1032(Card):
 
 class Card1035(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, page:int) -> None:
         author = User(self.ctx.author.id)
@@ -606,9 +691,14 @@ class Card1035(Card):
 
 class Card1036(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, effect:str, card_id:int) -> None:
         author = User(self.ctx.author.id)
@@ -631,9 +721,14 @@ class Card1036(Card):
 
 class Card1038(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, card_id:int) -> None:
         self._is_valid_card_check(card_id)

@@ -115,9 +115,14 @@ class Card:
  # Subclass
  class Card1010(Card):
 
-    def __init__(self, ctx: commands.Context, **kwargs):
+    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
-        super().__init__(**kwargs)
+        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
+        # Add all properties of base.__dict__ to self.__dict__
+        self.__dict__.update(base.__dict__)
+        
+    def __new__(cls, *args, **kwargs) -> None:
+        return object.__new__(cls)
 
     async def exec(self, card_id:int) -> None:
         user = User(self.ctx.author.id)

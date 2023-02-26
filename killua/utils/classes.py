@@ -151,7 +151,7 @@ class _LootBoxButton(discord.ui.Button):
     
 class LootBox:
     """A class which contains infos about a lootbox and can open one"""
-    def __init__(self, ctx:commands.Context, rewards: List[Union[None, PartialCard, int]]):
+    def __init__(self, ctx: commands.Context, rewards: List[Union[None, PartialCard, int]]):
         self.ctx = ctx
         self.rewards = rewards
 
@@ -660,13 +660,13 @@ class User:
         self._update_val("action_settings", self.action_stats)
 
         # Check if action of a certain type are more than x and if so, add a badge. TODO these are subject to change along with the requirements
-        if self.action_stats[action]["used"] >= 100:
-            self.add_badge("action_used_100")
-            return "action_used_100"
+        # if self.action_stats[action]["used"] >= 100:
+        #     self.add_badge("action_used_100")
+        #     return "action_used_100"
 
-        if self.action_stats[action]["targeted"] >= 100:
-            self.add_badge("action_targeted_100")
-            return "action_targeted_100"
+        # if self.action_stats[action]["targeted"] >= 100:
+        #     self.add_badge("action_targeted_100")
+        #     return "action_targeted_100"
         
     def _has_card(self, cards: List[list], card_id: int, fake_allowed: bool, only_allow_fakes: bool) -> bool:
         counter = 0

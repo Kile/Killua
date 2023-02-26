@@ -2,7 +2,7 @@ import discord
 import math
 import random
 from discord.ext import commands
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from typing import Union, List, Optional, Tuple, Optional, Dict, Literal
 
@@ -155,7 +155,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def sell(self, ctx: commands.Context, card: str = None, amount: int = 1, type: Literal["all", "spells", "monsters"] = None):
         """Sell any amount of cards you own"""
         if type:
-            type = getattr(type, SellOptions) # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
+            type: SellOptions = getattr(SellOptions, type) # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
 
         user = User(ctx.author.id)
 
@@ -164,13 +164,13 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         if type: # always prefers if a type argument was given. However if both a type argument and card argument was given,
             # both will be attempted to be executed.
-            if type.name == "all":
+            to_be_sold = []
+            if type == SellOptions.all:
                 to_be_sold = [x for x in user.fs_cards if not x[1]["clone"] and not x[1]["fake"]]
-            elif type.name == "spells":
+            elif type == SellOptions.spells:
                 to_be_sold = [x for x in user.fs_cards if Card(x[0]).type == "spell" and not x[1]["clone"] and not x[1]["fake"]]
-            elif type.name == "monsters":
-                to_be_sold = [x for x in user.fs_cards if Card(x[0]).type == "monster"and not x[1]["clone"] and not x[1]["fake"]]
-            else: to_be_sold = []
+            elif type == SellOptions.monsters:
+                to_be_sold = [x for x in user.fs_cards if Card(x[0]).type == "monster" and not x[1]["clone"] and not x[1]["fake"]]
 
             to_be_gained = 0
 
@@ -205,7 +205,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         if len(user.all_cards) == 0:
             return await ctx.send("You don't have any cards yet!")
         try:
-            card = Card(card)
+            card: Card = Card(card)
         except CardNotFound:
             return await ctx.send(f"A card with the id `{card}` does not exist", allowed_mentions=discord.AllowedMentions.none())
 
@@ -276,7 +276,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         if len(user.all_cards) == 0:
             return await ctx.send("You don't have any cards yet!")
         try:
-            card = Card(card)
+            card: Card = Card(card)
         except CardNotFound:
             return await ctx.send("Please use a valid card number!")
 
@@ -306,7 +306,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             return await ctx.send(f"You've started hunting <t:{int(value.timestamp())}:R>.")
 
         elif option == "end" and has_effect is True:
-            difference = datetime.now() - value
+            difference: timedelta = datetime.now() - value
             if int(difference.seconds/60/60+difference.days*24*60*60) < 12: # I don't think timedelta has an hours or minutes property :c
                 return await ctx.send("You must be at least hunting for twelve hours!")
 
@@ -394,7 +394,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         
         user = User(ctx.author.id)
         try:
-            card = Card(card)
+            card: Card = Card(card)
         except CardNotFound:
             return await ctx.send("This card does not exist!")
 
@@ -452,34 +452,44 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def _check(self, ctx: commands.Context, card: str):
         """Lets you see how many copies of the specified card are fakes"""
         try:
-            card_obj = Card(card)
+            card: Card = Card(card)
         except CardNotFound:
             return await ctx.send("Invalid card")
 
         author = User(ctx.author.id)
 
-        if not author.has_any_card(card_obj.id, only_allow_fakes=True):
+        if not author.has_any_card(card.id, only_allow_fakes=True):
             return await ctx.send("You don't own any copies of this card which are fake")
 
         text = ""
 
-        if len([x for x in author.rs_cards if x[1]["fake"] is True and x[0] == card_obj.id]) > 0:
+        if len([x for x in author.rs_cards if x[1]["fake"] is True and x[0] == card.id]) > 0:
             text += f"The card in your restricted slots is fake"
 
-        if (fs := len([x for x in author.fs_cards if x[1]["fake"] is True and x[0] == card_obj.id])) > 0:
+        if (fs := len([x for x in author.fs_cards if x[1]["fake"] is True and x[0] == card.id])) > 0:
             text += (" and " if len(text) > 0 else "") + f"{fs} cop{'ies' if fs > 1 else 'y'} of this card in your free slots {'are' if fs > 1 else 'is'} fake"
 
         await ctx.send(text)
+        
+    async def _member_converter(self, ctx: commands.Context, data: str) -> Optional[discord.Member]:
+        """Converts the data to a discord.Member if possible"""
+        try:
+            return await commands.MemberConverter().convert(ctx, data)
+        except commands.BadArgument:
+            return None
 
-    async def _use_converter(self, ctx: commands.Context, args: str) -> Union[discord.Member, int, str]:
-        if (m := await self.client.find_user(ctx, args)) and not isinstance(m, discord.User):
+    async def _use_converter(self, ctx: commands.Context, args: Union[int, str, None]) -> Union[discord.Member, int, str, None]:
+        """Converts the args to a discord.Member, int or str if possible"""
+        if not args:
+            return None
+        elif (m := await self._member_converter(ctx, args)):
             return m
         elif args.isdigit():
             return int(args)
         else:
             return args
 
-    def _use_check(self, ctx: commands.Context, card: str, args: Optional[Union[discord.Member, int, str]], add_args: Optional[int]) -> None:
+    def _use_check(self, ctx: commands.Context, card: str, args: Optional[Union[discord.Member, int, str]], add_args: Optional[int]) -> Card:
         """Makes sure the inputs are valid if they exist"""
         try:
             card: Card = Card(card)
@@ -509,10 +519,12 @@ class Cards(commands.GroupCog, group_name="cards"):
         if add_args:
             if add_args < 1:
                 raise CheckFailure("You can't use an integer less than 1")
+        
+        return card
 
-    async def _use_core(self, ctx: commands.Context, item: int, *args) -> None:
+    async def _use_core(self, ctx: commands.Context, card: Card, *args) -> None:
         """This passes the execution to the right class """
-        card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{item}"][0]
+        card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{card.id}"][0]
         
         l = []
         for p, (k, v) in enumerate([x for x in card_class.exec.__annotations__.items() if not str(x[0]) == "return"]):
@@ -522,11 +534,11 @@ class Cards(commands.GroupCog, group_name="cards"):
                 l.append(None)
 
         if None in l:
-            return await ctx.send(f"Invalid arguments provided! Usage: `{self.client.command_prefix(self.client, ctx.message)[2]}use {item} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"Invalid arguments provided! Usage: `{self.client.command_prefix(self.client, ctx.message)[2]}use {card.id} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`", allowed_mentions=discord.AllowedMentions.none())
         kwargs = {k: v for d in l for k, v in d.items()}
         try:
-            await card_class(ctx, name_or_id=item).exec(**kwargs)
-        except Exception as e:
+            await card_class(name_or_id=str(card.id), ctx=ctx).exec(**kwargs)
+        except CheckFailure as e:
             await ctx.send(e.message, allowed_mentions=discord.AllowedMentions.none())
 
     async def use_cards_autocomplete(
@@ -565,7 +577,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         
         if item.lower() == "booklet":
 
-            def make_embed(page, embed, pages):
+            def make_embed(page, embed: discord.Embed, pages):
                 embed.title = "Introduction booklet"
                 embed.description = pages[page-1]
                 embed.set_image(url="https://cdn.discordapp.com/attachments/759863805567565925/834794115148546058/image0.jpg")
@@ -574,14 +586,13 @@ class Cards(commands.GroupCog, group_name="cards"):
             return await Paginator(ctx, BOOK_PAGES, func=make_embed).start()
 
         try:
-            self._use_check(ctx, item, target, args)
+            card = self._use_check(ctx, item, target, args)
         except CheckFailure as e:
             return await ctx.send(e.message)
 
-        args = await self._use_converter(ctx, args)
-        args = [x for x in [target, args] if x]
+        args = [x for x in [await self._use_converter(ctx, target), await self._use_converter(ctx, args)] if x]
 
-        await self._use_core(ctx, item, *args)
+        await self._use_core(ctx, card, *args)
 
     @commands.is_owner()
     @commands.hybrid_command(extras={"category":Category.CARDS, "id": 22}, usage="gain <type> <card_id/amount/lootbox>", hidden=True)
@@ -589,7 +600,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         type="The type of item to gain",
         item="The amount/id of the item to get"
     )
-    async def gain(self, ctx: commands.Context, type: Literal["jenny" "card", "lootbox"], item: str):
+    async def gain(self, ctx: commands.Context, type: Literal["jenny", "card", "lootbox"], item: str):
         """An owner restricted command allowing the user to obtain any card or amount of jenny or any lootbox"""
         user = User(ctx.author.id)
 
@@ -602,7 +613,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 return await ctx.send("No")
             if len(card.owners) >= card.limit * ALLOWED_AMOUNT_MULTIPLE:
                 return await ctx.send("Sorry! Global card limit reached!")
-            if len(user.fs_cards) >= FREE_SLOTS and (item > 99 or item in [x[0] for x in user.rs_cards]):
+            if len(user.fs_cards) >= FREE_SLOTS and (card.id > 99 or card.id in [x[0] for x in user.rs_cards]):
                 return await ctx.send("Seems like you have no space left in your free slots!")
             user.add_card(card.id)
             return await ctx.send(f"Added card '{card.name}' to your inventory")
