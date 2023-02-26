@@ -113,7 +113,7 @@ class Events(commands.Cog):
             return hour - 12
         return hour
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(minute=1)
     async def vote_reminders(self):
         enabled = DB.teams.find({"voting_reminder": True})
         for user in enabled:
@@ -123,7 +123,7 @@ class Events(commands.Cog):
                     continue
                 if self._date_helper(data["last_vote"].hour) == self._date_helper(datetime.now().hour) and \
                     data["last_vote"].minute == datetime.now().minute and \
-                        not (data["last_vote"].day != datetime.now().day and data["last_vote"].hour < 12):
+                        not (int(int(datetime.now().timestamp())/60) == int(int(data["last_vote"].timestamp())/60)): # If they are the same amounts of minutes away from the unix epoch
                         
                     user = self.client.get_user(user.id) or await self.client.fetch_user(user.id)
                     if not user:
