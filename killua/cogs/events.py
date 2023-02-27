@@ -113,7 +113,7 @@ class Events(commands.Cog):
             return hour - 12
         return hour
 
-    @tasks.loop(minute=1)
+    @tasks.loop(minutes=1)
     async def vote_reminders(self):
         enabled = DB.teams.find({"voting_reminder": True})
         for user in enabled:
