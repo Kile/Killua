@@ -24,6 +24,7 @@ class SettingsSelect(discord.ui.Select):
         for opt in self.options:
             if opt.value in self.view.values:
                 opt.default = True
+        await interaction.response.defer()
 
 class SettingsButton(discord.ui.Button):
 
@@ -279,14 +280,11 @@ class Actions(commands.GroupCog, group_name="action"):
         if view.timed_out:
             return await view.disable(msg)
 
-        for val in view.values:
-            current[val] = True
-
         while True:
             embed.clear_fields()
 
             for action in ACTIONS.keys():
-                if action in view.values:
+                if action in view.values: # view.values contains a list of the remaining values in the select after the user has clicked save
                     current[action] = True
                     embed.add_field(name=action, value="✅", inline=False)
                 else:
@@ -294,6 +292,7 @@ class Actions(commands.GroupCog, group_name="action"):
                     embed.add_field(name=action, value="❌", inline=False)
 
             user.set_action_settings(current)
+            await view.interaction.response.defer() # Ideally I would use the response to edit the message, however as view HAS to be redefined above before editing this is impossible
             view = self._get_view(ctx.author.id, current)
 
             await msg.edit(embed=embed, view=view)
