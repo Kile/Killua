@@ -130,7 +130,7 @@ class Events(commands.Cog):
                         continue
                     embed = discord.Embed.from_dict({
                         "title": "Vote Reminder",
-                        "description": f"Hey {user.name}, it's been {(datetime.now() - data['last_vote']).hours} hours since you last voted for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
+                        "description": f"Hey {user.name}, it's been {int((datetime.now() - data['last_vote']).min/60)} hours since you last voted for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
                         "color": 0x3e4a78
                     })
                     view = discord.ui.View()
