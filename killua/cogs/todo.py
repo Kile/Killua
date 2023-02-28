@@ -133,7 +133,7 @@ class TodoSystem(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": f"Information for the todo list \"{todo_list.name}\" (ID: {todo_list.id})",
             "description": f"{todo_list.description if todo_list.description else ''}" +\
-            f"**Owner**: `{owner}`\n\n" +\
+            f"**Owner**: `\n\n{owner}`\n\n" +\
             f"**Created on:** {created_at}\n\n" +\
             f"**Custom ID**: `{todo_list.custom_id or 'No custom id'}`\n\n" +\
             f"**Status**: `{todo_list.status}`\n\n" +\
@@ -299,6 +299,8 @@ class TodoSystem(commands.Cog):
             try:
                 list_id = editing[ctx.author.id]
             except KeyError:
+                return await self.todo_info_embed_generator(ctx, todo_or_task_id)
+            if not todo_or_task_id.isdigit():
                 return await self.todo_info_embed_generator(ctx, todo_or_task_id)
             return await self.single_todo_info_embed_generator(ctx, list_id, int(todo_or_task_id))
         elif task_id:

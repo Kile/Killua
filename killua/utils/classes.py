@@ -657,7 +657,7 @@ class User:
             self.action_stats[action]["used"] += amount if not was_target else 0
             self.action_stats[action]["targeted"] += 1 if was_target else 0
 
-        self._update_val("action_settings", self.action_stats)
+        self._update_val("action_stats", self.action_stats)
 
         # Check if action of a certain type are more than x and if so, add a badge. TODO these are subject to change along with the requirements
         # if self.action_stats[action]["used"] >= 100:
