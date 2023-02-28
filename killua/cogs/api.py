@@ -10,7 +10,7 @@ from killua.bot import BaseBot
 from killua.utils.classes import User, Guild, LootBox
 from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS
 
-from typing import List
+from typing import List, Dict, Union
 
 class IPCRoutes(commands.Cog):
 
@@ -111,10 +111,64 @@ class IPCRoutes(commands.Cog):
             u = self.client.get_user(t["id"])
             res.append({"name": u.name, "tag": u.discriminator, "avatar": str(u.avatar.url), "jenny": t["points"]})
         return res
+    
+    def get_message_command(self, cmd: str):
+        c = self.client.get_command(cmd)
+        if not c:
+            c = self.client.get_command(cmd.split(" ")[-1])
+        return c
 
     async def commands(self, _) -> dict:
         """Returns all commands with descriptions etc"""
-        return self.client.get_formatted_commands()
+        command_groups = [c.commands for c in self.client.tree.get_commands() if hasattr(c, "commands")]
+        commands = [item for sublist in command_groups for item in sublist]
+        
+        to_be_returned: Dict[str, Dict[str, Union[str, list]]] = {}
+        for cmd in commands:
+            if not cmd.qualified_name.startswith("image"):
+                msg_cmd = self.get_message_command(cmd.qualified_name) # Edge case and possibly a lib bug. See https://github.com/Rapptz/discord.py/issues/9243
+            else:
+                msg_cmd = None
+                
+            if not msg_cmd: # Ignores groups, jishaku and anything else that doesn't have extras
+                continue
+            
+            cmd_extras = msg_cmd.extras
+            checks = cmd.checks
+
+            premium_guild, premium_user, cooldown = False, False, False
+
+            if [c for c in checks if hasattr(c, "premium_guild_only")]:
+                premium_guild = True
+
+            if [c for c in checks if hasattr(c, "premium_user_only")]:
+                premium_user = True
+
+            if (res := [c for c in checks if hasattr(c, "cooldown")]):
+                check = res[0]
+                cooldown = getattr(check, "cooldown", False)
+            
+            data = {
+                "name": cmd.name,
+                "slash_usage": cmd.qualified_name,
+                "description": cmd.description,
+                "usage": msg_cmd.usage,
+                "aliases": msg_cmd.aliases,
+                "cooldown": cooldown,
+                "premium_guild": premium_guild,
+                "premium_user": premium_user,
+                "message_usage": msg_cmd.qualified_name
+            }
+            if cmd_extras["category"].name in to_be_returned:
+                to_be_returned[cmd_extras["category"].name]["commands"].append(data)
+            else:
+                to_be_returned[cmd_extras["category"].name] = {"commands": [data], "description": cmd_extras["category"].value["description"], "name": cmd_extras["category"].value["name"], "emoji": cmd_extras["category"].value["emoji"]}
+
+        return to_be_returned
+    
+    async def stats(self, _) -> dict:
+        """Gets stats about the bot"""
+        return {"guilds": len(self.client.guilds), "shards": self.client.shard_count, "registered_users": DB.teams.count_documents({}), "last_restart": self.client.startup_datetime.timestamp()}
 
     async def save_user(self, data) -> None:
         """This functions purpose is not that much getting user data but saving a user in the database"""
@@ -124,11 +178,6 @@ class IPCRoutes(commands.Cog):
         """Getting additional info about a user with their id"""
         res =  self.client.get_user(data["user"])
         return {"name": res.name, "tag": res.discriminator, "avatar": str(res.avatar.url), "created_at": res.created_at.strftime('%Y-%m-%dT%H:%M:%SZ')}
-
-    async def get_guild_data(self, data) -> dict:
-        """Getting some info about guild roles and channels for black and whitelisting"""
-        res = self.client.get_guild(int(data["guild"]))
-        return {"roles": [{"name": r.name, "id": str(r.id), "color": r.color.value} for r in res.roles], "channels": [{"name": c.name, "id": c.id} for c in res.channels if isinstance(c, discord.TextChannel)]}
 
     async def update_guild_cache(self, data) -> None:
         """Makes sure the local cache is up to date with the db"""
