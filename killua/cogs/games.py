@@ -431,7 +431,7 @@ class CountGame:
         view = View(self.ctx.author.id)
         view.stage = 1
         for i in range(25):
-            view.add_item(discord.ui.Button(label=str([k for k, v in self.solutions.items() if v-1 == i][0]) if i+1 in list(self.solutions.values()) else " ", disabled=True, style=discord.ButtonStyle.grey))
+            view.add_item(discord.ui.Button(label=str([k for k, v in self.solutions.items() if v-1 == i][0]) if i+1 in list(self.solutions.values()) else "\u200b", disabled=True, style=discord.ButtonStyle.grey))
         if not msg:
             msg = await self.ctx.bot.send_message(self.ctx, content="Press the buttons in the order displayed as soon as the time starts. Good luck!", view=view)
         else:
