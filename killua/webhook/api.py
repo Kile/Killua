@@ -1,9 +1,10 @@
 import sys, os, json
 from quart import jsonify, Quart, request
-from zmq import REQ
-from zmq.asyncio import Context
+from zmq import DEALER, POLLIN
+from zmq.asyncio import Context, Poller
 from datetime import datetime
 from typing import List, Dict
+import uuid
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) # This is a necessary hacky fix for importing issues
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -24,15 +25,25 @@ app = Quart(__name__)
 
 # Create async IPC request maker
 async def make_request(route: str, data: dict) -> dict:
-    context = Context()
-    socket = context.socket(REQ)
-    # socket.setsockopt_string()
+    context = Context.instance()
+    socket = context.socket(DEALER)
+    socket.identity = uuid.uuid4().hex.encode('utf-8')
     socket.plain_username = b"killua"
     socket.plain_password = IPC_TOKEN.encode("UTF-8")
     socket.connect("tcp://localhost:5555")
 
-    await socket.send_json({"route": route, "data": data})
-    return socket.recv_json()
+    request = json.dumps({"route": route, "data": data}).encode('utf-8')
+    socket.send(request)
+
+    poller = Poller()
+    poller.register(socket, POLLIN)
+
+    while True:
+        events = dict(await poller.poll())
+        if socket in events and events[socket] == POLLIN:
+            multipart = json.loads((await socket.recv_multipart())[0].decode())
+            socket.close()
+            return multipart
 
 async def is_authorised(headers: dict) -> bool:
     if not "Authorization" in headers:
@@ -93,7 +104,7 @@ async def commands():
         return jsonify({"error": "You are ratelimited"}), 429
     
     if not commands_chache:
-        commands_chache = await (await make_request("commands", data = {}))
+        commands_chache = await make_request("commands", data = {})
 
     return jsonify(commands_chache), 200
 
@@ -104,7 +115,7 @@ async def stats():
     if not check_ratelimit(request.remote_addr) if request.remote_addr else check_ratelimit(request.headers["X-Forwarded-For"]):
         return jsonify({"error": "You are ratelimited"}), 429
         
-    return jsonify(await (await make_request("stats", data = {}))), 200
+    return jsonify(await make_request("stats", data = {})), 200
 
 @app.errorhandler(404)
 def page_not_found(_):

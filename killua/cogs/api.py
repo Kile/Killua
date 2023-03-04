@@ -1,13 +1,14 @@
 import discord
 from discord.ext import commands
 
+from json import loads, dumps
 from asyncio import create_task
-from zmq import REP, POLLIN, NOBLOCK
+from zmq import POLLIN, ROUTER
 from zmq.asyncio import Context, Poller
 from zmq.auth.asyncio import AsyncioAuthenticator
 
 from killua.bot import BaseBot
-from killua.utils.classes import User, Guild, LootBox
+from killua.utils.classes import User, Guild
 from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS
 
 from typing import List, Dict, Union
@@ -27,7 +28,7 @@ class IPCRoutes(commands.Cog):
         auth.configure_plain(domain="*", passwords={"killua": IPC_TOKEN})
         auth.allow("127.0.0.1")
 
-        socket = context.socket(REP)
+        socket = context.socket(ROUTER)
         socket.plain_server = True
         socket.bind("tcp://*:5555")
 
@@ -38,12 +39,14 @@ class IPCRoutes(commands.Cog):
             socks = dict(await poller.poll())
 
             if socket in socks and socks[socket] == POLLIN:
-                message = await socket.recv_json(NOBLOCK)
-                res = await getattr(self, message["route"])(message["data"])
+                message = await socket.recv_multipart()
+                identity, request = message
+                decoded = loads(request.decode())
+                res = await getattr(self, decoded["route"])(decoded["data"])
                 if res:
-                    socket.send_json(res)
+                    await socket.send_multipart([identity, dumps(res).encode()])
                 else:
-                    socket.send_json({"status": "ok"})
+                    await socket.send_multipart([identity, b'{"status":"ok"}'])
 
     def _get_reward(self, streak: int, weekend: bool = False) -> int:
         """A pretty simple algorithm that adjusts the reward for voting"""
@@ -188,6 +191,7 @@ class IPCRoutes(commands.Cog):
     async def vote(self, data) -> None:
         """Registers a vote from either topgg or dbl"""
         await self.handle_vote(data)
+        # Test: curl -L -X POST 127.0.0.1:port/vote -H 'Authorization: uwu' -d '{"user": 606162661184372736}' -H "Content-Type: application/json"
 
 
 Cog = IPCRoutes
