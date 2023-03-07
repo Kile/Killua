@@ -63,16 +63,15 @@ The outputs would be :
 `1` Player 2 wins
 
 And finally, the formula:
-$$
-f(p, q) = sin(pi/12*(q - p)*((q - p)^2 + 5)))
-$$
-p would be the numerical represntation of Player 1's choice, and q would be the numerical representation of Player 2's choice.
+
+$$\ f(p, q) = sin(\pi/12*(q - p)*((q - p)^2 + 5))) $$
+p would be the numerical representation of Player 1's choice, and q would be the numerical representation of Player 2's choice.
 
 Let's take an example:
 Player 1 chooses rock, so p = -1. Player 2 chooses paper, so q = 0.
-$$
-f(-1, 0) = sin(pi/12*(0 - (-1))*((0 - (-1))^2 + 5))) = sin(pi/12*(1)*(1 + 5)) = sin(pi/12*6) = sin(pi/2) = 1
-$$ 
+
+$$\ f(-1, 0) = sin(\pi/12*(0 - (-1))\*((0 - (-1))^2 + 5))) = sin(\pi/12*(1)*(1 + 5)) = sin({\pi/12}*6) = sin(\pi/2) = 1 $$
+
 So the function returns 1, which means that Player 2 wins which is... correct.
 
 #### Implementing it
