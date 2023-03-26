@@ -253,6 +253,7 @@ class Shop(commands.Cog):
         
         shop_data = DB.const.find_one({"_id": "shop"})
         shop_items: list = shop_data["offers"]
+        print(shop_items)
         user = User(ctx.author.id)
 
         try:
@@ -260,7 +261,7 @@ class Shop(commands.Cog):
         except CardNotFound:
             return await ctx.send(f"This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`", allowed_mentions=discord.AllowedMentions.none())
 
-        if not item in shop_items:
+        if not card.id in shop_items:
             return await ctx.send(f"This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`", allowed_mentions=discord.AllowedMentions.none())
 
         if not shop_data["reduced"] is None:
@@ -280,7 +281,7 @@ class Shop(commands.Cog):
         if user.jenny < price:
             return await ctx.send(f"I'm afraid you don't have enough Jenny to buy this card. Your balance is {user.jenny} while the card costs {price} Jenny")
         try:
-            user.add_card(item)
+            user.add_card(card.id)
         except Exception as e:
             if isinstance(e, CardLimitReached):
                 return await ctx.send(f"Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell <card>`", allowed_mentions=discord.AllowedMentions.none())
