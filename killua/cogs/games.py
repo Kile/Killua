@@ -468,6 +468,8 @@ class CountGame:
 
         if self.level == 26:
             reward = self._handle_reward()
+            self.user.add_jenny(reward)
+            self.user.set_counting_highscore(self.difficulty, self.level-1) # This is the last level, so the user has beaten or matched the highscore
             return await self.ctx.send("Well done, you completed the game! Your reward is " + str(reward) + " Jenny. Keep up the great work!")
 
         await asyncio.sleep(5)
