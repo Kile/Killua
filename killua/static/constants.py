@@ -304,9 +304,11 @@ LOOTBOXES = {
                 "rarities": [],
                 "types": []
             },
+            "boosters": (1, 2, 3)
         },
         "rewards_total": 20,
         "cards_total": (0, 0),
+        "boosters_total": (0, 2),
         "probability": 1000,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419628986398/image1.png"
@@ -322,10 +324,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": [],
                 "types": []
-            }
+            },
+            "boosters": (1, 2, 3)
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
+        "boosters_total": (0, 3),
         "probability": 100,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419884826644/image2.png"
@@ -341,10 +345,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["B", "C"],
                 "types": ["spell"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 10,
         "cards_total": (2, 6),
+        "boosters_total": (0, 0),
         "probability": 50,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419251474493/image0.png"
@@ -360,10 +366,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": [],
                 "types": []
-            }
+            },
+            "boosters": (2)
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
+        "boosters_total": (0, 1),
         "probability": 20,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420291682374/image3.png"
@@ -379,10 +387,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["D", "C", "B", "A"],
                 "types": ["spell"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 15,
         "cards_total": (15, 15),
+        "boosters_total": (0, 0),
         "probability": 20,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420576874536/image4.png"
@@ -398,10 +408,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["B", "A"],
                 "types": ["spell"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 10,
         "cards_total": (5, 8),
+        "boosters_total": (0, 0),
         "probability": 8,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420975358032/image5.png"
@@ -417,10 +429,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["SS"],
                 "types": ["spell", "normal"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 5,
         "cards_total": (0, 2),
+        "boosters_total": (0, 0),
         "probability": 3,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836331311134/image1.png"
@@ -436,10 +450,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["D", "C", "B", "A"],
                 "types": ["monster"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 15,
         "cards_total": (5, 8),
+        "boosters_total": (0, 0),
         "probability": 40,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882754729640345670/image0.png"
@@ -455,10 +471,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["B", "A", "S"],
                 "types": ["spell", "normal"]
-            }
+            },
+            "boosters": (2, 3)
         },
         "rewards_total": 15,
         "cards_total": (5, 8),
+        "boosters_total": (1, 3),
         "probability": 10,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836738166794/image2.png"
@@ -474,14 +492,64 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["S", "SS"],
                 "types": ["spell", "normal"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 10,
         "cards_total": (2, 4),
+        "boosters_total": (0, 0),
         "probability": 1,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836012556358/image0.png"
+    },
+    11: {
+        "name": "Booster box",
+        "price": 2500,
+        "emoji": "<:booster_box:1090978821592842280>",
+        "description": "This box was created by an unknwon hunter in an attempt to help fellow hunters opening lootboxes. It only contains boosters.",
+        "rewards": {
+            "guaranteed" : {},
+            "jenny": (0, 0),
+            "cards": {},
+            "boosters": (1, 2, 3)
+        },
+        "rewards_total": 15,
+        "cards_total": (0, 0),
+        "boosters_total": (15, 15),
+        "probability": 40,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090981726609752125/booster_box.png"
     }
+}
+
+BOOSTERS = {
+    1: {
+        "name": "Treasure map",
+        "emoji": "<:treasure_map:1090982167678566460>",
+        "description": "A map that leads right to the most valuable reward still hidden in a box. Pirates would kill for this.",
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985960411504751/treasure_map.png",
+        "probability": 10,
+        "available": True,
+        "stackable": True,
+    },
+    2: {
+        "name": "Double booster",
+        "emoji": "<:2x:1090982132324769885>",
+        "description": "Instantly doubles all jenny still hidden in the box.",
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985959782359063/2x.png",
+        "probability": 5,
+        "available": True,
+        "stackable": False,
+    },
+    3: {
+        "name": "Bomb detector",
+        "emoji": "<:bomb_detector:1090982152348368907>",
+        "description": "Reveals half of the bombs in the box.",
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985960084340776/bomb_detector.png",
+        "probability": 2,
+        "available": True,
+        "stackable": False,
+    },
 }
 
 # GREED ISLAND STUFF

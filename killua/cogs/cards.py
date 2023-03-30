@@ -13,7 +13,7 @@ from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatch
 from killua.static.enums import Category, SellOptions
 from killua.utils.interactions import ConfirmButton
 from killua.static.cards import Card, CardNotFound
-from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, LOOTBOXES, DB
+from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, LOOTBOXES, DB, BOOSTERS
 
 class Cards(commands.GroupCog, group_name="cards"):
 
@@ -600,9 +600,11 @@ class Cards(commands.GroupCog, group_name="cards"):
         type="The type of item to gain",
         item="The amount/id of the item to get"
     )
-    async def gain(self, ctx: commands.Context, type: Literal["jenny", "card", "lootbox"], item: str):
+    async def gain(self, ctx: commands.Context, type: Literal["jenny", "card", "lootbox", "booster"], item: str, amount: int = 1):
         """An owner restricted command allowing the user to obtain any card or amount of jenny or any lootbox"""
         user = User(ctx.author.id)
+        if amount < 1:
+            return await ctx.send("Invalid amount")
 
         if type == "card":
             try:
@@ -611,12 +613,12 @@ class Cards(commands.GroupCog, group_name="cards"):
                 return await ctx.send("Invalid card id")
             if card.id == 0:
                 return await ctx.send("No")
-            if len(card.owners) >= card.limit * ALLOWED_AMOUNT_MULTIPLE:
+            if len(card.owners) + amount > card.limit * ALLOWED_AMOUNT_MULTIPLE:
                 return await ctx.send("Sorry! Global card limit reached!")
-            if len(user.fs_cards) >= FREE_SLOTS and (card.id > 99 or card.id in [x[0] for x in user.rs_cards]):
+            if len(user.fs_cards) + amount > FREE_SLOTS and (card.id > 99 or card.id in [x[0] for x in user.rs_cards]):
                 return await ctx.send("Seems like you have no space left in your free slots!")
-            user.add_card(card.id)
-            return await ctx.send(f"Added card '{card.name}' to your inventory")
+            user.add_multi(*[(card.id, {"fake": False, "clone": False}) for _ in range(amount)])
+            return await ctx.send(f"Added card '{card.name}' to your inventory" + (f" {amount} times " if amount > 1 else ""))
 
         if type == "jenny":
             if not item.isdigit():
@@ -632,7 +634,15 @@ class Cards(commands.GroupCog, group_name="cards"):
         if type == "lootbox":
             if not item.isdigit() or not int(item) in list(LOOTBOXES.keys()):
                 return await ctx.send("Invalid lootbox!")
-            user.add_lootbox(int(item))
-            return await ctx.send(f"Done! Added lootbox \"{LOOTBOXES[int(item)]['name']}\" to your inventory")
+            for _ in range(amount):
+                user.add_lootbox(int(item))
+            return await ctx.send(f"Done! Added lootbox \"{LOOTBOXES[int(item)]['name']}\" to your inventory" + (f" {amount} times " if amount > 1 else ""))
+        
+        if type == "booster":
+            if not item.isdigit() or not int(item) in list(BOOSTERS.keys()):
+                return await ctx.send("Invalid booster!")
+            for _ in range(amount):
+                user.add_booster(int(item))
+            return await ctx.send(f"Done! Added booster \"{BOOSTERS[int(item)]['name']}\" to your inventory" + (f" {amount} times " if amount > 1 else ""))
 
 Cog = Cards

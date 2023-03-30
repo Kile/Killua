@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Dict
 from datetime import datetime
 from random import randint
 
@@ -9,7 +9,7 @@ from killua.utils.checks import check
 from killua.utils.interactions import Select, View
 from killua.utils.classes import User, Guild, LootBox
 from killua.static.enums import Category
-from killua.static.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, LOOTBOXES, PREMIUM_ALIASES, DB
+from killua.static.constants import USER_FLAGS, KILLUA_BADGES, GUILD_BADGES, LOOTBOXES, PREMIUM_ALIASES, DB, BOOSTERS
 
 class Economy(commands.GroupCog, group_name="econ"):
 
@@ -39,7 +39,7 @@ class Economy(commands.GroupCog, group_name="econ"):
             u = await self.client.fetch_user(user_id)
         return u
 
-    def _fieldify_lootboxes(self, lootboxes: List[int]):
+    def _fieldify_lootboxes(self, lootboxes: List[int]) -> List[dict]:
         """Creates a list of fields from the lootboxes in the passed list"""
         lbs: List[Tuple[int, int]] = [] # A list containing the a tuple with the amount and id of the lootboxes owned
         res: List[dict] = [] # The fields to be returned
@@ -57,6 +57,13 @@ class Economy(commands.GroupCog, group_name="econ"):
             res.append({"name": f"{n}x {data['emoji']} {data['name']} (id:{i})", "value": data["description"], "inline": False})
 
         return res
+    
+    def _fieldify_boosters(self, boosters: Dict[int, int]):
+        """Creates a string from the boosters in the passed dict"""
+        start = "You have the following boosters:\n" if boosters else "You don't have any boosters yet. You can get them by opening lootboxes\n"
+        for booster in boosters:
+            start += f"{BOOSTERS[int(booster)]['emoji']} {BOOSTERS[int(booster)]['name']} (id:{booster}) - {boosters[booster]}x\n"
+        return start
          
     def _getmember(self, user: Union[discord.Member, discord.User]) -> discord.Embed:
         """A function to handle getting infos about a user for less messy code """
@@ -246,16 +253,20 @@ class Economy(commands.GroupCog, group_name="econ"):
     @check()
     @commands.hybrid_command(aliases=["lootboxes", "inv"], extras={"category": Category.ECONOMY, "id": 38}, usage="inventory")
     async def inventory(self, ctx: commands.Context):
-        """Displays the owned lootboxes"""
+        """Displays the owned lootboxes and boosters"""
         if len((user:=User(ctx.author.id)).lootboxes) == 0:
             return await ctx.send("Sadly you don't have any lootboxes!")
 
+        boosters = self._fieldify_boosters(user.boosters)
         lootboxes = self._fieldify_lootboxes(user.lootboxes)
         embed = discord.Embed.from_dict({
             "title": "Lootbox inventory",
-            "description": f"open a lootbox with `{self.client.command_prefix(self.client, ctx.message)[2]}open`",
+            "description": boosters,
             "color": 0x3e4a78,
-            "fields": lootboxes
+            "fields": lootboxes,
+            "footer": {
+                "text": f"open a lootbox with {self.client.command_prefix(self.client, ctx.message)[2]}open"
+            }
         })
         embed.timestamp = datetime.now()
         await ctx.send(embed=embed)
@@ -275,7 +286,11 @@ class Economy(commands.GroupCog, group_name="econ"):
 
         c_min, c_max = data["cards_total"]
         j_min, j_max = data["rewards"]["jenny"]
-        contains = f"{data['rewards_total']} total rewards\n{f'{c_min}-{c_max}' if c_max != c_min else c_min} cards\n{j_min}-{j_max} jenny per field\n" + ('' if c_max == 0 else f"card rarities: {' or '.join(data['rewards']['cards']['rarities'])}\ncard types: {' or '.join(data['rewards']['cards']['types'])}")
+        b_min, b_max = data["boosters_total"]
+        contains = f"{data['rewards_total']} total rewards\n{f'{c_min}-{c_max}' if c_max != c_min else c_min} cards\n" + \
+        (f"{j_min}-{j_max} jenny per field\n" if j_max > 0 else "No jenny in this box\n") + \
+        ('' if c_max == 0 else f"card rarities: {' or '.join(data['rewards']['cards']['rarities'])}\ncard types: {' or '.join(data['rewards']['cards']['types'])}") + \
+        (((f"{b_min}" if b_min == b_max else f"\n{b_min}-{b_max}") + f" boosters\nAvailable boosters: {' '.join([BOOSTERS[int(x)]['emoji'] for x in data['rewards']['boosters']])}") if b_max != 0 else "")
         embed = discord.Embed.from_dict({
             "title": f"Infos about lootbox {data['emoji']} {data['name']}",
             "description": data["description"],
