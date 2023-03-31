@@ -596,7 +596,7 @@ class User:
     def badges(self) -> List[str]:
         badges = self._badges.copy() # We do not want the badges added to _badges every time we call this property else it would add the same badge multiple times
         
-        if self.action_stats.get("hug", {}).get("used", 0) >= 500:
+        if self.action_stats.get("hug", {}).get("used", 0) >= 1000:
             badges.append("pro_hugger")
             
         if self.action_stats.get("hug", {}).get("received", 0) >= 500:
@@ -845,13 +845,11 @@ class User:
         self._update_val("action_stats", self.action_stats)
 
         # Check if action of a certain type are more than x and if so, add a badge. TODO these are subject to change along with the requirements
-        if self.action_stats[action]["used"] >= 500 and not "pro_hugger" in self.badges:
-            if action == "hug":
-                return "pro_hugger"
+        if self.action_stats[action]["used"] - amount < 1000 and self.action_stats[action]["used"] >= 1000 and action == "hug":
+            return "pro_hugger"
 
-        if self.action_stats[action]["targeted"] >= 500 and not "pro_hugged" in self.badges:
-            if action == "hug":
-                return "pro_hugged"
+        if self.action_stats[action]["targeted"] == 500:
+            return "pro_hugged"
         
     def _has_card(self, cards: List[list], card_id: int, fake_allowed: bool, only_allow_fakes: bool) -> bool:
         counter = 0

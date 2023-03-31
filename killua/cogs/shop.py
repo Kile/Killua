@@ -253,7 +253,6 @@ class Shop(commands.Cog):
         
         shop_data = DB.const.find_one({"_id": "shop"})
         shop_items: list = shop_data["offers"]
-        print(shop_items)
         user = User(ctx.author.id)
 
         try:
