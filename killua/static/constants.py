@@ -173,7 +173,8 @@ If you're reading this that means you're using Killua, so I want to thank you fo
 """
 
 # Tips that can be added to any send message send with bot.send_message
-TIPS = ["Did you know you can choose to be reminded to vote for Killua for huge rewards? Just toggle the reminder with `/dev voteremind toggle:on`!","Do you own a big server? Chances are **you** qualify to become a partner, meaning your server will become a permanent premium server. For more infos & applying, join the support server.", "Got feedback? **We want to hear it!** Join the support server to let us know what you think about the bot.", "Killua is designed to have as little as possible paywalled, but if you enjoy the bot please enjoy becoming a Patreon.", "Join the support server to be the first to see new features!", "If you manage to beat Killua 25 times at rock paper scissors he will give you a present :)", "Need something to organise your tasks? Try **todo lists**. For more info, use `/help`", "If you have no one to play rps against, you can just play against me!", "Did you know you gain doubled jenny **every time** you collect jenny somehow with premium tier 3?", "With premium you can choose an *entire server* whose cooldowns will be halved", "Want to get started collecting cards and need a guide? Use `/cards use booklet`!", "Want to get lootboxes for free? You get a free lootbox every 5th time you vote for Killua!", "Get info on lootbox chances and lore by using `boxinfo`", "To invite Killua to your own server, use `invite`", "Did you know that you can search for books using `novel <book_name>`", "You can translate 20+ languages using the `translate` command!", "Not sure how to use a command? Use `/help <command>` to get more infos!", "Take a screenshot of any website using the `screenshot` command.", "Did you forget if a card you own is a fake? No problem, check it with `/cards check`"]
+TIPS = ["Did you know you can choose to be reminded to vote for Killua for huge rewards? Just toggle the reminder with `/dev voteremind toggle:on`!","Do you own a big server? Chances are **you** qualify to become a partner, meaning your server will become a permanent premium server. For more infos & applying, join the support server.", "Got feedback? **We want to hear it!** Join the support server to let us know what you think about the bot.", "Killua is designed to have as little as possible paywalled, but if you enjoy the bot please enjoy becoming a Patreon.", "Join the support server to be the first to see new features!", "If you manage to beat Killua 25 times at rock paper scissors he will give you a present :)", "Need something to organise your tasks? Try **todo lists**. For more info, use `/help`", "If you have no one to play rps against, you can just play against me!", "Did you know you gain doubled jenny **every time** you collect jenny somehow with premium tier 3?", "With premium you can choose an *entire server* whose cooldowns will be halved", "Want to get started collecting cards and need a guide? Use `/cards use booklet`!", "Want to get lootboxes for free? You get a free lootbox every 5th time you vote for Killua!", "Get info on lootbox chances and lore by using `boxinfo`", "To invite Killua to your own server, use `invite`", "Did you know that you can search for books using `novel <book_name>`", "You can translate 20+ languages using the `translate` command!", "Not sure how to use a command? Use `/help <command>` to get more infos!", "Take a screenshot of any website using the `screenshot` command.", "Did you forget if a card you own is a fake? No problem, check it with `/cards check`",
+"Did you know you can use boosters to make lootboxes much easier? Find out more about boosters with `/econ boosterinfo <booster>"]
 
 # TOPICS
 TOPICS = ["What's your least favorite genre of music?", "What's the most beautiful place youve ever been to?", "What's the best name for a pet dragon?", "What's the best name for a pet turtle?", "What's the best name for a pet snake?", "What do you enjoy doing most in your free time?", "Do you think technology will advance or ruin humanity?", "What's your favorite animal?", "What is your favorite TV show?", "If you could go anywhere in the world, where would you go?", "What did you used to do, stopped and wish you hadn't?", "What was the best day in your life?", "For what person are you the most thankful for?", "What is and has always been your least favorite subject?", "What always makes you laugh and/or smile when you think about it?", "Do you think there are aliens?", "What is your earliest memory?", "What's your favorite drink?", "Where do you like going most for vacation?", "What motivates you?", "What is the best thing about school/work?", "What's better, having high expectations or having low expectations?", "What was the last movie you saw?", "Have you read anything good recently?", "What is your favorite day of the year?", "What kind of music do you like to listen to?", "What things are you passionate about?", "What is your favorite childhood memory?", "If you could acquire any skill, what would you choose?", "What is the first thing that you think of in the morning?", "What was the biggest life change you have gone through?", "What is your favorite song of all time?", "If you won $1 million playing the lottery, what would you do?", "How would you know if you were in love?", "If you could choose to have any useless super power, what would you pick?",
@@ -212,8 +213,10 @@ CUDDLE_TEXTS = ["<author> snuggles up to <user> and cuddles them", "<author> cud
 # the todo editing cache, needs to be defined here so I can use it across files
 editing = {}
 
+class _DailyUsers:
+    users = []
 # The users who have ran a command in the last 24h
-daily_users = []
+daily_users = _DailyUsers()
 
 # ACTION DATA
 ACTIONS = {
@@ -281,7 +284,10 @@ KILLUA_BADGES = {
     "artist": "<:artist_badge:879391368076734464>",
     "greed_island_badge": "<:greed_island_badge:879391821938180116>",
     "early_supporter": "<:early_supporter_badge:882616073394987048>",
-    "developer": "<:dev_badge:882959565690384404>"
+    "developer": "<:dev_badge:882959565690384404>",
+    "pro_hugger": "<:loving:1091309530526261309>",
+    "pro_hugged": "<:loved:1091309567826215004>",
+    "rps_master": "<:rps_master:1091309946819321890>"
 }
 
 GUILD_BADGES = {
@@ -304,9 +310,11 @@ LOOTBOXES = {
                 "rarities": [],
                 "types": []
             },
+            "boosters": (1, 2, 3)
         },
         "rewards_total": 20,
         "cards_total": (0, 0),
+        "boosters_total": (0, 2),
         "probability": 1000,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419628986398/image1.png"
@@ -322,10 +330,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": [],
                 "types": []
-            }
+            },
+            "boosters": (1, 2, 3)
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
+        "boosters_total": (0, 3),
         "probability": 100,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419884826644/image2.png"
@@ -341,10 +351,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["B", "C"],
                 "types": ["spell"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 10,
         "cards_total": (2, 6),
+        "boosters_total": (0, 0),
         "probability": 50,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419251474493/image0.png"
@@ -360,10 +372,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": [],
                 "types": []
-            }
+            },
+            "boosters": (2)
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
+        "boosters_total": (0, 1),
         "probability": 20,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420291682374/image3.png"
@@ -379,10 +393,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["D", "C", "B", "A"],
                 "types": ["spell"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 15,
         "cards_total": (15, 15),
+        "boosters_total": (0, 0),
         "probability": 20,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420576874536/image4.png"
@@ -398,10 +414,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["B", "A"],
                 "types": ["spell"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 10,
         "cards_total": (5, 8),
+        "boosters_total": (0, 0),
         "probability": 8,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420975358032/image5.png"
@@ -417,10 +435,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["SS"],
                 "types": ["spell", "normal"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 5,
         "cards_total": (0, 2),
+        "boosters_total": (0, 0),
         "probability": 3,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836331311134/image1.png"
@@ -436,10 +456,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["D", "C", "B", "A"],
                 "types": ["monster"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 15,
         "cards_total": (5, 8),
+        "boosters_total": (0, 0),
         "probability": 40,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882754729640345670/image0.png"
@@ -455,10 +477,12 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["B", "A", "S"],
                 "types": ["spell", "normal"]
-            }
+            },
+            "boosters": (2, 3)
         },
         "rewards_total": 15,
         "cards_total": (5, 8),
+        "boosters_total": (1, 3),
         "probability": 10,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836738166794/image2.png"
@@ -474,14 +498,64 @@ LOOTBOXES = {
             "cards": {
                 "rarities": ["S", "SS"],
                 "types": ["spell", "normal"]
-            }
+            },
+            "boosters": ()
         },
         "rewards_total": 10,
         "cards_total": (2, 4),
+        "boosters_total": (0, 0),
         "probability": 1,
         "available": True,
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836012556358/image0.png"
+    },
+    11: {
+        "name": "Booster box",
+        "price": 2500,
+        "emoji": "<:booster_box:1090978821592842280>",
+        "description": "This box was created by an unknwon hunter in an attempt to help fellow hunters opening lootboxes. It only contains boosters.",
+        "rewards": {
+            "guaranteed" : {},
+            "jenny": (0, 0),
+            "cards": {},
+            "boosters": (1, 2, 3)
+        },
+        "rewards_total": 15,
+        "cards_total": (0, 0),
+        "boosters_total": (15, 15),
+        "probability": 40,
+        "available": True,
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090981726609752125/booster_box.png"
     }
+}
+
+BOOSTERS = {
+    1: {
+        "name": "Treasure map",
+        "emoji": "<:treasure_map:1090982167678566460>",
+        "description": "A map that leads right to the most valuable reward still hidden in a box. Pirates would kill for this.",
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985960411504751/treasure_map.png",
+        "probability": 10,
+        "available": True,
+        "stackable": True,
+    },
+    2: {
+        "name": "Double booster",
+        "emoji": "<:2x:1090982132324769885>",
+        "description": "Instantly doubles all jenny still hidden in the box.",
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985959782359063/2x.png",
+        "probability": 5,
+        "available": True,
+        "stackable": False,
+    },
+    3: {
+        "name": "Bomb detector",
+        "emoji": "<:bomb_detector:1090982152348368907>",
+        "description": "Reveals half of the bombs in the box.",
+        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985960084340776/bomb_detector.png",
+        "probability": 2,
+        "available": True,
+        "stackable": False,
+    },
 }
 
 # GREED ISLAND STUFF

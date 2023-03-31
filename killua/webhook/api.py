@@ -89,6 +89,9 @@ async def vote():
         return jsonify({"error": "Unauthorised"}), 401
         
     data = await request.get_json()
+    
+    if data is None:
+        return jsonify({"error": "No request body provided"}), 400
 
     await make_request("vote", data = dict(data))
 

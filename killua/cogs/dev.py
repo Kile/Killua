@@ -130,8 +130,8 @@ class Dev(commands.GroupCog, group_name="dev"):
         file = discord.File(buffer, filename=f"{type}.png")
         add_data = self._calc_predictions(type_list)
 
-        type = type.replace("_", " ")
         embed.set_image(url=f"attachment://{type}.png")
+        type = type.replace("_", " ")
         embed.add_field(name=f"Maximum {type} reached", value=add_data["max"]) # This is only really relevant for guilds and users as registered users cannot decrease
         embed.add_field(name=f"Average {type} last 10 days", value=add_data["recent_avg"])
         embed.add_field(name=f"Average {type} gained per day", value=add_data["avg_change"])

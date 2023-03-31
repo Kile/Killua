@@ -149,14 +149,14 @@ class Actions(commands.GroupCog, group_name="action"):
                 badge = self.save_stat(member, ctx.command.name, True)
                 if badge:
                     try:
-                        await member.send(f"You got the **{badge}** {KILLUA_BADGES[badge]} badge for being {ctx.command.name}ed more than 100 times!")
+                        await member.send(f"You got the {KILLUA_BADGES[badge]} badge for being {ctx.command.name}ed more than 500 times! Check it out with `k!pofile`!")
                     except discord.Forbidden:
                         pass
 
             badge = self.save_stat(ctx.author, ctx.command.name, False, len(allowed))
             if badge:
                 try:
-                    await ctx.author.send(f"You got the **{badge}** {KILLUA_BADGES[badge]} badge for {ctx.command.name}ing more than 100 people!")
+                    await ctx.author.send(f"You got the {KILLUA_BADGES[badge]} badge for {ctx.command.name}ing someone more than 500 times! Check it out with `k!pofile`!")
                 except discord.Forbidden:
                     pass
             embed = await self.action_embed(ctx.command.name, ctx.author, members, disabled)

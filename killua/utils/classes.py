@@ -12,10 +12,11 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw
-from typing import Union, Tuple, List, Any, Optional, Literal
+from typing import Union, Tuple, List, Any, Optional, Literal, Dict
 
 from .paginator import View
-from killua.static.constants import FREE_SLOTS, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES, DEF_SPELLS, DB
+from killua.static.enums import Booster
+from killua.static.constants import FREE_SLOTS, PATREON_TIERS, LOOTBOXES, PREMIUM_ALIASES, DEF_SPELLS, DB, BOOSTERS, PRICES
 
 class NotInPossesion(Exception):
     pass
@@ -33,7 +34,7 @@ class NoMatches(Exception):
     pass
 
 class CheckFailure(Exception):
-    def __init__(self, message:str, **kwargs):
+    def __init__(self, message: str, **kwargs):
         self.message = message
         super().__init__(**kwargs)
 
@@ -47,13 +48,14 @@ class PartialCard:
         if card is None:
             raise CardNotFound
         
-        self.id:int = card["_id"]
-        self.image_url:str = card["Image"]
-        self.owners:list = card["owners"]
-        self.emoji:str = card["emoji"]
-        self.limit:int = card["limit"]
+        self.id: int = card["_id"]
+        self.image_url: str = card["Image"]
+        self.owners: list = card["owners"]
+        self.emoji: str = card["emoji"]
+        self.limit: int = card["limit"]
+        self.rank: int = card["rank"]
         try:
-            self.type:str = card["type"]
+            self.type: str = card["type"]
         except KeyError:
             DB.items.update_one({"_id": self.id}, {"$set":{"type": "normal"}})
             self.type = "normal"
@@ -67,31 +69,126 @@ class PartialCard:
         """Removes an owner from a card entry in my db. Only used in User().remove_card()"""
         self.owners.remove(user_id)
         DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
+        
+class _BoosterSelect(discord.ui.Select):
+    """A class letting users pick an option when trying to use a booster"""
+    def __init__(self, used: List[int], inventory: Dict[str, int], **kwargs):
+        super().__init__(min_values=1, max_values=1, placeholder="Chose what booster to use", **kwargs)
+        for booster in [k for k, v in inventory.items() if v > 0]:
+            if int(booster) in used and not BOOSTERS[int(booster)]["stackable"]: # If the booster cannot be used multiple times on the same lootbox
+                continue
+            self.add_option(label=BOOSTERS[int(booster)]["name"] + f" (left: {inventory[str(booster)]})", value=str(booster), emoji=BOOSTERS[int(booster)]["emoji"])
+        self.booster = None
+            
+    async def callback(self, _: discord.Interaction) -> None:
+        """Callback for the select"""
+        # Add booster to view
+        booster = int(self.values[0])
+        self.booster = booster
+        self.view.stop()
+        
+class CancelButton(discord.ui.Button):
+    """A class letting users cancel the booster choosing"""
+    def __init__(self, **kwargs):
+        super().__init__(label="Cancel", style=discord.ButtonStyle.red, custom_id="cancel", **kwargs)
+        
+    async def callback(self, _: discord.Interaction) -> None:
+        """Callback for the button"""
+        self.view.value = "cancel"
+        self.view.stop()
+        
+class _OptionView(View):
+    def __init__(self, used: List[int], **kwargs):
+        self.used = used
+        super().__init__(**kwargs)
+        
+    @discord.ui.button(label="Save", style=discord.ButtonStyle.green)
+    async def save(self, interaction: discord.Interaction, _: discord.ui.Button) -> None:
+        """Saves the options"""
+        await interaction.message.delete()
+        self.value = "save"
+        self.stop()
+        
+    @discord.ui.button(label="Use booster", style=discord.ButtonStyle.blurple, emoji="<:powerup:1091112046210330724")
+    async def booster(self, interaction: discord.Interaction, _: discord.ui.Button) -> None:
+        """Lets the user pick a booster"""
+        user = User(self.user_id)
+        if not [v for v in user.boosters.values() if v > 0]:
+            return await interaction.response.edit_message(content="You don't have any remaining boosters! Please select an option.", view=_OptionView(self.used, user_id=self.user_id, timeout=None))
+
+        view = View(user_id=self.user_id, timeout=200)
+        select = _BoosterSelect(self.used, user.boosters)
+        cancel = CancelButton()
+        view.add_item(select).add_item(cancel)
+        await interaction.response.edit_message(view=view)
+        await view.wait()
+        
+        if view.value == "cancel":
+            await view.interaction.response.defer()
+            return await view.interaction.message.delete()
+        
+        elif view.timed_out:
+            return await view.disable()
+        
+        if select.booster in self.used and not BOOSTERS[select.booster]["stackable"]: # This should not be necessary as users should not be able to select a booster they already used in the first place
+            return await view.interaction.response.edit_message(content="You already used this booster on this booster. Please select an option.", view = _OptionView(self.used, user_id=self.user_id, timeout=None))
+        
+        await view.interaction.response.send_message(f"Sucessfully applied `{BOOSTERS[select.booster]['name']}` booster!", ephemeral=True)
+        await view.interaction.message.delete()
+        self.value = select.booster
+        self.stop()
+        
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, _: discord.ui.Button) -> None:
+        """Cancels the menu"""
+        await interaction.message.delete()
+        self.stop()
 
 class _LootBoxButton(discord.ui.Button):
     """A class used for lootbox buttons"""
-    def __init__(self, index: int, rewards: List[Union[PartialCard, int, None]], **kwargs):
+    def __init__(self, index: int, rewards: List[Union[PartialCard, Booster, int, None]] = None, **kwargs):
         super().__init__(**kwargs)
         self.index = index
         self.custom_id = str(index)
-        if self.index != 24:
-            self.reward = rewards[self.index]
-            self.has_reward = not not self.reward
+        self._rewards = rewards
+        # if self.index != 24:
+        #     self.reward = self.view.rewards[self.index]
+        #     self.has_reward = not not self.reward
+        self.bomb = "<:bomb:1091111339226824776>"
+        
+    @property
+    def rewards(self) -> List[Union[PartialCard, Booster, int, None]]:
+        """Returns the rewards"""
+        return self._rewards or self.view.rewards
+    
+    @property
+    def reward(self) -> Union[PartialCard, Booster, int, None]:
+        """Returns the reward of this button"""
+        if self.index == 24:
+            return None
+        return self.rewards[self.index]
+    
+    @property
+    def has_reward(self) -> bool:
+        """Returns if this button has a reward"""
+        if self.index == 24:    
+            return False
+        return not not self.reward
 
     def _create_view(self) -> View:
         """Creates a new view after the callback depending on if this button has a reward"""
         for c in self.view.children:
             if c.index == self.index and not c.index == 24:
                 c.disabled=True
-                c.label=("" if isinstance(self.reward, PartialCard) else str(self.reward)) if self.has_reward else ""
+                c.label=("" if isinstance(self.reward, PartialCard) else ("" if isinstance(self.reward, Booster) else str(self.reward))) if self.has_reward else ""
                 c.style=discord.ButtonStyle.success if self.has_reward else discord.ButtonStyle.red
-                c.emoji=(self.reward.emoji if isinstance(self.reward, PartialCard) else None) if self.has_reward else "\U0001f4a3"
+                c.emoji=(self.reward.emoji if isinstance(self.reward, PartialCard) else (BOOSTERS[int(self.reward.value)]["emoji"] if isinstance(self.reward, Booster) else None)) if self.has_reward else self.bomb
             elif c.index == 24:
                 c.disabled = not self.has_reward
             else:
                 c.disabled=c.disabled if self.has_reward else True
-                c.label=(("" if isinstance(c.reward, PartialCard) else str(c.reward)) if c.has_reward else "") if not self.has_reward else c.label
-                c.emoji=((c.reward.emoji if isinstance(c.reward, PartialCard) else None) if c.has_reward else "\U0001f4a3") if not self.has_reward else c.emoji
+                c.label=(("" if isinstance(c.reward, PartialCard) else ("" if isinstance(c.reward, Booster) else str(c.reward))) if c.has_reward else "") if not self.has_reward else c.label
+                c.emoji=((c.reward.emoji if isinstance(c.reward, PartialCard) else (BOOSTERS[int(c.reward.value)]["emoji"] if isinstance(c.reward, Booster) else None)) if c.has_reward else self.bomb) if not self.has_reward else c.emoji
             
         return self.view
 
@@ -111,20 +208,73 @@ class _LootBoxButton(discord.ui.Button):
             if isinstance(rew, int):
                 jenny += rew
 
-        rewards = ("cards " + ", ".join(cards)+(" and " if jenny > 0 else "") if len(cards:= [c.emoji for c in self.view.claimed if isinstance(c, PartialCard)]) > 0 else "") + (str(jenny) + " jenny" if jenny > 0 else "")
+        rewards = ("cards " + ", ".join(cards)+(" and " if jenny > 0 else "") if len(cards:= [c.emoji for c in self.view.claimed if isinstance(c, PartialCard)]) > 0 else "") + \
+        ("boosters " + ", ".join(boosters)+(" and " if jenny > 0 else "") if len(boosters:= [BOOSTERS[int(b.value)]["emoji"] for b in self.view.claimed if isinstance(b, Booster)]) > 0 else "") + \
+        (str(jenny) + " jenny" if jenny > 0 else "")
         return rewards
+    
+    def _use_booster(self, booster: int) -> None:
+        if booster == 1:
+            # Treasure map. Find most valuable reward and highlight it by looking in self.rewards
+            # and self.view.claimed
+            def _monetary_value(x: Union[PartialCard, Booster, int, None]) -> int:
+                """Returns the monetary value of a reward"""
+                if isinstance(x, PartialCard):
+                    return PRICES[x.rank]
+                elif isinstance(x, Booster):
+                    return (20 - BOOSTERS[x.value]["probability"]) * 100
+                elif isinstance(x, int):
+                    return x
+                else:
+                    return 0
 
-    async def _end_button(self, interaction: discord.Interaction) -> Union[None, discord.Message]:
-        """Handles the "save" button"""
-        if len(self.view.claimed) == 0: # User cannot click save not having clicked any button yet
-            return await interaction.response.send_message(content="You can't save with no rewards!", ephemeral=True)
+            # Get the most valuable and unclaimed reward
+            most_valuable = max([(p, _LootBoxButton(p, self.rewards)) for p, _ in enumerate(self.view.children) if p != 24 and _LootBoxButton(p, self.rewards).has_reward and not _LootBoxButton(p, self.rewards).disabled], key=lambda x: _monetary_value(x[1].reward))
+            # Highlight the most valuable reward
+            self.view.children[most_valuable[0]].style = discord.ButtonStyle.blurple
+            self.view.children[most_valuable[0]].emoji = "\U0000274c"
+            
+        elif booster == 2:
+            # 2x booster. Double all jenny rewards of hidden fields
+            self.view.rewards = [(r*2 if isinstance(r, int) else r) for r in self.rewards]
+                    
+        elif booster == 3:
+            # Highlight half of the bombs and disable those fields
+            bombs = [i for i, c in enumerate(self.view.children) if hasattr(c, "has_reward") and not c.has_reward and not c.disabled and i != 24] # Get list of all still active bombs
+            for i in random.sample(bombs, len(bombs)//2):
+                self.view.children[i].style = discord.ButtonStyle.blurple
+                self.view.children[i].emoji = "<:bomb_no:1091111155667324938>"
+                self.view.children[i].disabled = True
 
-        self.has_reward = False # important for _create_view
-        view = self._create_view()
-        self.view.saved = True
+    async def _options_button(self, interaction: discord.Interaction) -> Union[None, discord.Message]:
+        """Handles the "options" button"""
+        # Create a new view with options "save" and "use booster"
+        view = _OptionView(self.view.used, user_id=interaction.user.id, timeout=None)
+        await interaction.response.send_message(content="What do you want to do?", view=view)
+        await view.wait()
+        
+        # Handle the response
+        if not view.value:
+            return await view.interaction.response.defer()
+        
+        if view.value == "save":
+            if len(self.view.claimed) == 0: # User cannot click save not having clicked any button yet
+                return await view.interaction.response.send_message(content="You can't save with no rewards!", ephemeral=True)
 
-        await interaction.response.edit_message(content=f"Successfully claimed the following rewards from the box: {self._format_rewards()}", view=view)
-        self.view.stop()
+            # self.has_reward = False # important for _create_view
+            view = self._create_view()
+            self.view.saved = True
+
+            await interaction.message.edit(content=f"Successfully claimed the following rewards from the box: {self._format_rewards()}", view=view)
+            self.view.stop()
+            
+        elif isinstance(view.value, int):
+            user = User(interaction.user.id)
+
+            user.use_booster(view.value)
+            self._use_booster(view.value)
+            self.view.used.append(view.value)
+            await interaction.message.edit(view=self.view) # sketchy
 
     async def _handle_incorrect(self, interaction: discord.Interaction) -> None:
         """Handles an incorrect button click"""
@@ -141,7 +291,7 @@ class _LootBoxButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction) -> Union[None, discord.Message]:
         """The callback of the button which calls the right method depending on the reward and index"""        
         if self.index == 24:
-            return await self._end_button(interaction)
+            return await self._options_button(interaction)
 
         if not self.has_reward:
             await self._handle_incorrect(interaction)
@@ -169,9 +319,10 @@ class LootBox:
         view.rewards = l 
         view.saved = False
         view.claimed = []
+        view.used = []
         for i in range(24):
-            view.add_item(_LootBoxButton(index=i, style=discord.ButtonStyle.grey, rewards=l, label="\u200b"))
-        view.add_item(_LootBoxButton(index=24, style=discord.ButtonStyle.blurple, rewards=l, label="Save rewards"))
+            view.add_item(_LootBoxButton(index=i, style=discord.ButtonStyle.grey, label="\u200b"))
+        view.add_item(_LootBoxButton(index=24, style=discord.ButtonStyle.blurple, label="Options"))
 
         return view
 
@@ -186,7 +337,7 @@ class LootBox:
         data = LOOTBOXES[box]
         rew = []
 
-        for _ in range((cards:=random.choice(data["cards_total"]))):
+        for _ in range((cards:=random.randint(*data["cards_total"]))):
             skip = False
             if data["rewards"]["guaranteed"]: # if a card is guaranteed it is added here, it will count as one of the total_cards though
                 for card, amount in data["rewards"]["guaranteed"].items():
@@ -198,8 +349,14 @@ class LootBox:
             if skip: continue
             r = [x["_id"] for x in DB.items.find({"rank": {"$in": data["rewards"]["cards"]["rarities"]}, "type": {"$in": data["rewards"]["cards"]["types"]}, "available": True}) if x["_id"] != 0]
             rew.append(PartialCard(random.choice(r)))
+            
+        for _ in range(boosters:=random.randint(*data["boosters_total"])):
+            if isinstance(data["rewards"]["boosters"], int):
+                rew.append(Booster(data["rewards"]["boosters"]))
+            else:
+                rew.append(Booster(random.choices(data["rewards"]["boosters"], [BOOSTERS[int(x)]["probability"] for x in data["rewards"]["boosters"]])[0]))
 
-        for i in range(data["rewards_total"]-cards):
+        for _ in range(data["rewards_total"]-cards-boosters):
             rew.append(random.randint(*data["rewards"]["jenny"]))
 
         return rew
@@ -218,6 +375,8 @@ class LootBox:
         for r in view.claimed:
             if isinstance(r, PartialCard):
                 user.add_card(r.id)
+            elif isinstance(r, Booster):
+                user.add_booster(r.value)
             else:
                 if user.is_entitled_to_double_jenny:
                     r *= 2
@@ -414,7 +573,7 @@ class User:
         self.effects: dict = user["cards"]["effects"]
         self.rs_cards: List[list] = user["cards"]["rs"]
         self.fs_cards: List[list] = user["cards"]["fs"]
-        self.badges: List[str] = user["badges"]
+        self._badges: List[str] = user["badges"]
 
         self.rps_stats: dict = user["stats"]["rps"] if "stats" in user and "rps" in user["stats"] else {"pvp": {"won": 0, "lost": 0, "tied": 0}, "pve": {"won": 0, "lost": 0, "tied": 0}}
         self.counting_highscore: dict = user["stats"]["counting_highscore"] if "stats" in user and "counting_highscore" in user["stats"] else {"easy": 0, "hard": 0}
@@ -426,11 +585,27 @@ class User:
         self.voting_reminder = user["voting_reminder"] if "voting_reminder" in user else False
         self.premium_guilds: dict = user["premium_guilds"] if "premium_guilds" in user else {}
         self.lootboxes: List[int] = user["lootboxes"] if "lootboxes" in user else []
+        self.boosters: Dict[str, int] = user["boosters"] if "boosters" in user else {}
         self.weekly_cooldown: Optional[datetime] = user["weekly_cooldown"] if "weekly_cooldown" in user else None
         self.action_settings: dict = user["action_settings"] if "action_settings" in user else {}
         self.action_stats: dict = user["action_stats"] if "action_stats" in user else {}
 
         self.cache[self.id] = self
+        
+    @property
+    def badges(self) -> List[str]:
+        badges = self._badges.copy() # We do not want the badges added to _badges every time we call this property else it would add the same badge multiple times
+        
+        if self.action_stats.get("hug", {}).get("used", 0) >= 500:
+            badges.append("pro_hugger")
+            
+        if self.action_stats.get("hug", {}).get("received", 0) >= 500:
+            badges.append("pro_hugged")
+            
+        if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
+            badges.append("greed_island_badge")
+            
+        return badges
 
     @property
     def all_cards(self) -> List[int, dict]:
@@ -570,20 +745,20 @@ class User:
         if badge.lower() in self.badges:
             raise TypeError("Badge already in possesion of user")
 
-        self.badges.append(badge.lower())
+        self._badges.append(badge.lower())
         self._update_val("badges", badge.lower(), "$push")
 
     def remove_badge(self, badge: str) -> None:
         """Removes a badge from a user"""
         if not badge.lower() in self.badges:
             return # don't really care if that happens
-        self.badges.remove(badge.lower())
+        self._badges.remove(badge.lower())
         self._update_val("badges", badge.lower(), "$pull")
 
     def set_badges(self, badges: List[str]) -> None:
         """Sets badges to anything"""
-        self.badges = badges
-        self._update_val("badges", self.badges)
+        self._badges = badges
+        self._update_val("badges", self._badges)
 
     def clear_premium_guilds(self) -> None:
         """Removes all premium guilds from a user"""
@@ -640,6 +815,16 @@ class User:
         """Removes a lootbox from a user"""
         self.lootboxes.remove(box)
         self._update_val("lootboxes", self.lootboxes, "$set")
+        
+    def add_booster(self, booster: int) -> None:
+        """Adds a booster to a users inventory"""
+        self.boosters[str(booster)] = self.boosters.get(str(booster), 0) + 1
+        self._update_val("boosters", self.boosters, "$set")
+        
+    def use_booster(self, booster: int) -> None:
+        """Uses a booster from a users inventory"""
+        self.boosters[str(booster)] -= 1
+        self._update_val("boosters", self.boosters, "$set")
 
     def set_action_settings(self, settings: dict) -> None:
         """Sets the action settings for a user"""
@@ -660,13 +845,13 @@ class User:
         self._update_val("action_stats", self.action_stats)
 
         # Check if action of a certain type are more than x and if so, add a badge. TODO these are subject to change along with the requirements
-        # if self.action_stats[action]["used"] >= 100:
-        #     self.add_badge("action_used_100")
-        #     return "action_used_100"
+        if self.action_stats[action]["used"] >= 500 and not "pro_hugger" in self.badges:
+            if action == "hug":
+                return "pro_hugger"
 
-        # if self.action_stats[action]["targeted"] >= 100:
-        #     self.add_badge("action_targeted_100")
-        #     return "action_targeted_100"
+        if self.action_stats[action]["targeted"] >= 500 and not "pro_hugged" in self.badges:
+            if action == "hug":
+                return "pro_hugged"
         
     def _has_card(self, cards: List[list], card_id: int, fake_allowed: bool, only_allow_fakes: bool) -> bool:
         counter = 0
@@ -732,7 +917,6 @@ class User:
         """Called every time a card is removed it checks if it should remove card 0 and the badge and if it should, it does"""
         if len(self.rs_cards) == 99:
             self.remove_card(0)
-            self.remove_badge("greed_island_badge")
 
     def _remove_logic(self, card_type: str, card_id: int, remove_fake: bool, clone: bool, no_exception: bool = False) -> List[int, dict]:
         """Handles the logic of the remove_card method"""
@@ -797,7 +981,6 @@ class User:
                 self._update_val("cards.rs", data, "$push")
                 if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
                     self.add_card(0)
-                    self.add_badge("greed_island_badge")
                     self.add_achievement("full_house")
                 return
 
@@ -817,7 +1000,7 @@ class User:
         fs_cards = []
         rs_cards = []
 
-        def fs_append(item:list):
+        def fs_append(item: list):
             if len([*self.fs_cards, *fs_cards]) >= 40:
                 return fs_cards
             fs_cards.append(item)

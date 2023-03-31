@@ -27,7 +27,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         _bytes = await res.read()
         return io.BytesIO(_bytes)
 
-    def _crop_to_circle(self, im):
+    def _crop_to_circle(self, im: Image.Image) -> Image.Image:
         """Crops the given image to a circle"""
         bigsize = (im.size[0] * 3, im.size[1] * 3)
         mask = Image.new("L", bigsize, 0)

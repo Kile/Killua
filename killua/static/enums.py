@@ -10,6 +10,11 @@ class PrintColors:
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
+    
+class Booster(Enum):
+    TREASURE_MAP = 1
+    DOUBLE = 2
+    BOMB_DETECTOR = 3
 
 class Category(Enum):
 
