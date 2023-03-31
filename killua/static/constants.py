@@ -539,7 +539,7 @@ BOOSTERS = {
         "stackable": True,
     },
     2: {
-        "name": "Double booster",
+        "name": "Doubler",
         "emoji": "<:2x:1090982132324769885>",
         "description": "Instantly doubles all jenny still hidden in the box.",
         "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985959782359063/2x.png",
