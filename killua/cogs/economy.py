@@ -303,7 +303,53 @@ class Economy(commands.GroupCog, group_name="econ"):
             "image": {"url": data["image"]}
         })
         await ctx.send(embed=embed)
+        
+    def _booster_from_name(self, name: str):
+        for booster, value in BOOSTERS.items():
+            if value["name"].lower() == name.lower():
+                return booster
+        return None
+        
+    async def booster_autocomplete(self, _: commands.Context, booster: str):
+        if booster.isdigit():
+            return [discord.app_commands.Choice(name=str(x), value=str(x)) for x in BOOSTERS.keys() if str(x).startswith(booster)]
+        return [discord.app_commands.Choice(name=BOOSTERS[x]["name"], value=str(x)) for x in BOOSTERS.keys() if BOOSTERS[x]["name"].lower().startswith(booster.lower())]
 
+    @check()
+    @commands.hybrid_command(extras={"category": Category.ECONOMY, "id": 119}, usage="boosterinfo <booster_id>")
+    @discord.app_commands.autocomplete(booster=booster_autocomplete)
+    @discord.app_commands.describe(booster="The booster to get infos about")
+    async def boosterinfo(self, ctx: commands.Context, booster: str):
+        """Get infos about any booster you desire"""
+        if booster.isdigit() and not int(booster) in BOOSTERS.keys():
+            booster = self._booster_from_name(booster)
+            if not booster:
+                return await ctx.send("Invalid booster name or id", ephemeral=True)
+
+        data = BOOSTERS[int(booster)]
+        
+        rarities = {
+            0.1: "Extremely rate",
+            0.2: "Very rare",
+            0.3: "Rare",
+            0.5: "Uncommon",
+            0.7: "Common",
+            0.9: "Very common",
+        }
+
+        embed = discord.Embed.from_dict({
+            "title": f"Infos about booster {data['emoji']} {data['name']}",
+            "description": data["description"],
+            "fields": [
+                {
+                    "name": "rarity",
+                    "value": [v for k, v in rarities.items() if k >= (data["probability"]/sum([BOOSTERS[x]["probability"] for x in BOOSTERS.keys()])) ][0],
+                }
+            ],
+            "color": 0x3e4a78,
+            "image": {"url": data["image"]}
+        })
+        await ctx.send(embed=embed)
 
 Cog = Economy
 

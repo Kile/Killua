@@ -228,17 +228,18 @@ class Rps:
         user = User(player.id)
         if not "rps_master" in user.achievements and user.rps_stats["pve"]["won"] >= 25:
             user.add_achievement(["rps_master"])
+            user.add_badge("rps_master")
             card = Card(83)
             try:
                 if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
                     user.add_jenny(1000)
-                    await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly the normal reward, the card \"{card.name}\" {card.emoji}, is currently owned by too many people, so insead you get **1000 Jenny** as a reward!")
+                    await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly the normal reward, the card \"{card.name}\" {card.emoji}, is currently owned by too many people, so insead you get **1000 Jenny** as a reward! You also now own the **RPS Master** badge!")
                 else:
                     user.add_card(83)
-                    await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! As a reward you recieve the card \"{card.name}\" {card.emoji}")
+                    await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! As a reward you recieve the card \"{card.name}\" {card.emoji}. You also now own the **RPS Master** badge!")
             except CardLimitReached:
                 user.add_jenny(1000)
-                await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly you have no space in your book for the normal reward, the card \"{card.name}\" {card.emoji}, so insead you get **1000 Jenny** as a reward!")
+                await player.send(f"By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly you have no space in your book for the normal reward, the card \"{card.name}\" {card.emoji}, so insead you get **1000 Jenny** as a reward! You also now own the **RPS Master** badge!")
 
     async def _eval_outcome(self, winlose: int, choice1: int, choice2: int, player1:discord.Member, player2: discord.Member, view: View) -> discord.Message:
         """Evaluates the outcome, informs the players and handles the points """

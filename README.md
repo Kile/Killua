@@ -94,7 +94,7 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 > Helped to change the incredibly bad mess of everything in one file into an organised, dynamic system and helped out with git commands.
 
-*   [DerUSBStick](https://github.com/DerUSBstick)
+*   [DerUSBstick](https://github.com/DerUSBstick)
 
 > He contributed a lot to one of the best looking commands, `book` which uses image generation to make your collection book filled with cards!
 

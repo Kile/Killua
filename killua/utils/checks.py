@@ -59,8 +59,8 @@ def check(time: int = 0):
         """
         Adds a user who has run a command to the daily_users list if they are not already in it
         """
-        if userid not in daily_users:
-            daily_users.append(userid)
+        if userid not in daily_users.users:
+            daily_users.users.append(userid)
 
     def add_usage(command: Union[commands.Command, Type[commands.Command]]) -> None:
         """Adds one to the usage count of a command"""
@@ -167,11 +167,7 @@ def check(time: int = 0):
         except Exception: #If someone used the api and messed up the guilds data structure
             pass
 
-        if time == 0:
-            add_usage(ctx.command)
-            return True
-
-        if await custom_cooldown(ctx, time) is False:
+        if time > 0 and await custom_cooldown(ctx, time) is False:
             return False
 
         add_usage(ctx.command)

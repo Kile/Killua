@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 
+from random import choices
 from json import loads, dumps
 from asyncio import create_task
 from zmq import POLLIN, ROUTER
@@ -8,8 +9,9 @@ from zmq.asyncio import Context, Poller
 from zmq.auth.asyncio import AsyncioAuthenticator
 
 from killua.bot import BaseBot
+from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
-from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS
+from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS, BOOSTERS
 
 from typing import List, Dict, Union
 
@@ -54,6 +56,10 @@ class IPCRoutes(commands.Cog):
         for key, value in list(VOTE_STREAK_REWARDS.items())[::-1]:
             if streak % key == 0:
                 return value
+        
+        # Then follow the algorithm to find whether a "booster" reward applies
+        if streak % 7 == 0 or str(streak)[-1] == "7":
+            return Booster(choices(list(BOOSTERS.keys()), weights=[v["probability"] for v in BOOSTERS.values()])[0])
 
         # If no streak reward applies, just return the base reward
         return int((120 if weekend else 100) * float(f"1.{int(streak//5)}"))
@@ -64,16 +70,17 @@ class IPCRoutes(commands.Cog):
         --:boxemoji:--⚫️--:boxemoji:--
         This string has a hard limit of 11 and puts where the user currently is at the center
         """
+        booster = "<:powerup:1091112046210330724>"
         # Edgecase where the user has no streak or a streak smaller than 5 which is when it would start in the middle
         if streak < 5:
-            path_list = [LOOTBOXES[self._get_reward(i)]['emoji'] if self._get_reward(i) < 100 else "-" for i in range(1, 11)]
+            path_list = [LOOTBOXES[reward]['emoji'] if isinstance(reward := self._get_reward(i), int) and reward < 100 else (booster if isinstance(reward, Booster) else "-") for i in range(1, 11)]
             # Replace the character position where the user currently is with a black circle
             path_list[streak-1] = "⚫️"
             return " ".join(path_list)
 
         # Create the path
-        before = [LOOTBOXES[self._get_reward(streak-i)]['emoji'] if self._get_reward(streak-i) < 100 else "-" for i in range(1, 6)]
-        after = [LOOTBOXES[self._get_reward(streak+i)]['emoji'] if self._get_reward(streak+i) < 100 else "-" for i in range(1, 6)]
+        before = [LOOTBOXES[reward]['emoji'] if isinstance(reward := self._get_reward(streak-i), int) and reward < 100 else (booster if isinstance(reward, Booster) else "-") for i in range(1, 6)]
+        after = [LOOTBOXES[reward]['emoji'] if isinstance(reward := self._get_reward(streak+i), int) and reward < 100 else (booster if isinstance(reward, Booster) else "-") for i in range(1, 6)]
         path = before[::-1] + ["⚫️"] + after
 
         return " ".join(path)
@@ -85,15 +92,19 @@ class IPCRoutes(commands.Cog):
         user = User(int(user_id))
         user.add_vote("topgg" if "isWeekend" in data else "discordbotlist")
         streak = user.voting_streak["topgg" if "isWeekend" in data else "discordbotlist"]["streak"]
-        reward = self._get_reward(streak, data["isWeekend"] if hasattr(data, "isWeekend") else False)
+        reward: Union[int, Booster] = self._get_reward(streak, data["isWeekend"] if hasattr(data, "isWeekend") else False)
 
         path = self._create_path(streak)
         embed = discord.Embed.from_dict({
             "title": "Thank you for voting!",
-            "description": (f"Well done for keeping your voting **streak** 🔥 of {streak} for" if streak > 1 else "Thank you for voting on ") + f" {'top.gg' if 'isWeekend' in data else 'discordbotlist'}! As a reward I am happy to award with " + (f"{reward} Jenny" if reward >= 100 else f"a lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}") + f"! You are **{5 - (streak % 5)}** votes away from the next reward! \n\n{path}",
+            "description": (f"Well done for keeping your voting **streak** 🔥 of {streak} for" if streak > 1 else "Thank you for voting on ") + f" {'top.gg' if 'isWeekend' in data else 'discordbotlist'}! As a reward I am happy to award with " + \
+            ((f"{reward} Jenny" if reward >= 100 else f"a lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}") if isinstance(reward, int) else f"the {BOOSTERS[reward.value]['emoji']} `{BOOSTERS[reward.value]['name']}` booster") + \
+            f"! You are **{5 - (streak % 5)}** votes away from the next reward! \n\n{path}",
             "color": 0x3e4a78
         })
-        if reward < 100:
+        if isinstance(reward, Booster):
+            user.add_booster(reward)
+        elif reward < 100:
             user.add_lootbox(reward)
         else:
             user.add_jenny(reward)

@@ -382,7 +382,7 @@ class LootBox:
                     r *= 2
                 user.add_jenny(r)
 
-# pillow logic contributed by DerUSBStick (Thank you!)
+# pillow logic contributed by DerUSBstick (Thank you!)
 class Book:
 
     background_cache = {}
@@ -573,7 +573,7 @@ class User:
         self.effects: dict = user["cards"]["effects"]
         self.rs_cards: List[list] = user["cards"]["rs"]
         self.fs_cards: List[list] = user["cards"]["fs"]
-        self.badges: List[str] = user["badges"]
+        self._badges: List[str] = user["badges"]
 
         self.rps_stats: dict = user["stats"]["rps"] if "stats" in user and "rps" in user["stats"] else {"pvp": {"won": 0, "lost": 0, "tied": 0}, "pve": {"won": 0, "lost": 0, "tied": 0}}
         self.counting_highscore: dict = user["stats"]["counting_highscore"] if "stats" in user and "counting_highscore" in user["stats"] else {"easy": 0, "hard": 0}
@@ -591,6 +591,21 @@ class User:
         self.action_stats: dict = user["action_stats"] if "action_stats" in user else {}
 
         self.cache[self.id] = self
+        
+    @property
+    def badges(self) -> List[str]:
+        badges = self._badges.copy() # We do not want the badges added to _badges every time we call this property else it would add the same badge multiple times
+        
+        if self.action_stats.get("hug", {}).get("used", 0) >= 500:
+            badges.append("pro_hugger")
+            
+        if self.action_stats.get("hug", {}).get("received", 0) >= 500:
+            badges.append("pro_hugged")
+            
+        if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
+            badges.append("greed_island_badge")
+            
+        return badges
 
     @property
     def all_cards(self) -> List[int, dict]:
@@ -730,20 +745,20 @@ class User:
         if badge.lower() in self.badges:
             raise TypeError("Badge already in possesion of user")
 
-        self.badges.append(badge.lower())
+        self._badges.append(badge.lower())
         self._update_val("badges", badge.lower(), "$push")
 
     def remove_badge(self, badge: str) -> None:
         """Removes a badge from a user"""
         if not badge.lower() in self.badges:
             return # don't really care if that happens
-        self.badges.remove(badge.lower())
+        self._badges.remove(badge.lower())
         self._update_val("badges", badge.lower(), "$pull")
 
     def set_badges(self, badges: List[str]) -> None:
         """Sets badges to anything"""
-        self.badges = badges
-        self._update_val("badges", self.badges)
+        self._badges = badges
+        self._update_val("badges", self._badges)
 
     def clear_premium_guilds(self) -> None:
         """Removes all premium guilds from a user"""
@@ -830,13 +845,13 @@ class User:
         self._update_val("action_stats", self.action_stats)
 
         # Check if action of a certain type are more than x and if so, add a badge. TODO these are subject to change along with the requirements
-        # if self.action_stats[action]["used"] >= 100:
-        #     self.add_badge("action_used_100")
-        #     return "action_used_100"
+        if self.action_stats[action]["used"] >= 500 and not "pro_hugger" in self.badges:
+            if action == "hug":
+                return "pro_hugger"
 
-        # if self.action_stats[action]["targeted"] >= 100:
-        #     self.add_badge("action_targeted_100")
-        #     return "action_targeted_100"
+        if self.action_stats[action]["targeted"] >= 500 and not "pro_hugged" in self.badges:
+            if action == "hug":
+                return "pro_hugged"
         
     def _has_card(self, cards: List[list], card_id: int, fake_allowed: bool, only_allow_fakes: bool) -> bool:
         counter = 0
@@ -902,7 +917,6 @@ class User:
         """Called every time a card is removed it checks if it should remove card 0 and the badge and if it should, it does"""
         if len(self.rs_cards) == 99:
             self.remove_card(0)
-            self.remove_badge("greed_island_badge")
 
     def _remove_logic(self, card_type: str, card_id: int, remove_fake: bool, clone: bool, no_exception: bool = False) -> List[int, dict]:
         """Handles the logic of the remove_card method"""
@@ -967,7 +981,6 @@ class User:
                 self._update_val("cards.rs", data, "$push")
                 if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
                     self.add_card(0)
-                    self.add_badge("greed_island_badge")
                     self.add_achievement("full_house")
                 return
 
