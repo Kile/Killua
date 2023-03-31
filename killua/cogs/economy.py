@@ -201,7 +201,7 @@ class Economy(commands.GroupCog, group_name="econ"):
         user = User(ctx.author.id)
 
         if str(user.daily_cooldown) > str(now): # When the cooldown is still active
-            return await ctx.send(f"You can claim your daily Jenny the next time in <t:{int(user.daily_cooldown.timestamp())}:R>")
+            return await ctx.send(f"You can claim your daily Jenny the next time <t:{int(user.daily_cooldown.timestamp())}:R>")
 
         min, max = 50, 100
         if user.is_premium:
