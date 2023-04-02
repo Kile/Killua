@@ -221,11 +221,11 @@ class Shop(commands.Cog):
             embed.title = "Current lootbox shop"
             embed.description = f"To get infos about what a lootbox contains, use `{prefix}boxinfo <box_id>`\nTo buy a box, use `{prefix}buy lootbox <box_id>`"
             embed.clear_fields()
-            if len(pages)-page*10+10 > 10:
-                for x in pages[page*10-10:-(len(pages)-page*10)]:
+            if len(pages)-page*5+5 > 5:
+                for x in pages[page*5-5:-(len(pages)-page*5)]:
                     embed.add_field(name=x["name"], value=x["value"], inline=True)
-            elif len(pages)-page*10+10 <= 10:
-                for x in pages[-(len(pages)-page*10+10):]:
+            elif len(pages)-page*5+5 <= 5:
+                for x in pages[-(len(pages)-page*5+5):]:
                     embed.add_field(name=x["name"], value=x["value"], inline=True)
 
             return embed
@@ -236,7 +236,7 @@ class Shop(commands.Cog):
             msg = await self.client.send_message(ctx, embed=embed, view=view)
             return await self._shop_menu(ctx, msg, view)
 
-        await ShopPaginator(ctx, fields, func=make_embed, max_pages=(len(fields)/10)).start() # currently only 10 boxes exist so this is not necessary, but supports more than 10 if ever necessary
+        await ShopPaginator(ctx, fields, func=make_embed, max_pages=ceil(len(fields)/5)).start() # currently only 10 boxes exist so this is not necessary, but supports more than 10 if ever necessary
 
 ################################################ Buy commands ################################################
 

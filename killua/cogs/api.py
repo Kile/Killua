@@ -103,7 +103,7 @@ class IPCRoutes(commands.Cog):
             "color": 0x3e4a78
         })
         if isinstance(reward, Booster):
-            user.add_booster(reward)
+            user.add_booster(reward.value)
         elif reward < 100:
             user.add_lootbox(reward)
         else:
