@@ -37,16 +37,16 @@ class DefaultEmbed(discord.Embed):
 class Buttons(View):
     """The core of the paginator"""
     def __init__(self, 
-            user_id:int, 
-            pages:Union[List[Union[str, int, dict]], None], 
-            timeout:int,
-            page:int, 
-            max_pages:int,
-            func:Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None], 
-            embed:E,
-            defer:bool,
-            has_file:bool,
-            paginator:Paginator,
+            user_id: int, 
+            pages: Union[List[Union[str, int, dict]], None], 
+            timeout: int,
+            page: int, 
+            max_pages: int,
+            func: Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None], 
+            embed: E,
+            defer: bool,
+            has_file: bool,
+            paginator: Paginator,
             **kwargs
             ):
 
@@ -63,6 +63,9 @@ class Buttons(View):
         self.ignore = False
         self.messsage = None
         self._disable_on_end()
+        
+    async def on_timeout(self) -> None:
+        self.ignore = True
 
     def _disable_on_end(self) -> None:
         """
@@ -203,7 +206,7 @@ class Paginator:
         if isinstance(self.embed, DefaultEmbed):
             self.embed.set_footer(text=f"Page {self.page}/{self.max_pages}")
 
-    async def _start(self) -> View:
+    async def _start(self) -> Buttons:
         """A seperate method so overwriting `start` can still use the logic of the normal paginator"""
         await self._get_first_embed()
         self.view.message = (await self.ctx.bot.send_message(self.ctx, file=self.file, embed=self.embed, view=self.view, ephemeral=self.ephemeral)) if self.file else (await self.ctx.bot.send_message(self.ctx, embed=self.embed, view=self.view))

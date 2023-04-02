@@ -152,7 +152,7 @@ class Card:
 
         await self._wait_for_defense(ctx, other, effects)
 
-    def _permission_check(self, ctx:commands.Context, member:discord.Member) -> None:
+    def _permission_check(self, ctx: commands.Context, member: discord.Member) -> None:
         perms = ctx.channel.permissions_for(member)
         if not perms.send_messages or not perms.read_messages:
             raise CheckFailure(f"You can only attack a user in a channel they have read and write permissions to which isn't the case with {self.Member.display_name}") 
@@ -161,7 +161,7 @@ class Card:
         if len(cards) == 0:
             raise CheckFailure((f"You do not have cards{card_type}!" if is_self else f"This user does not have any cards{card_type}!") + (f" This information uses up card {self.name}." if uses_up else ""))
 
-    def _has_any_card(self, card_id:int, user:User) -> None:
+    def _has_any_card(self, card_id: int, user: User) -> None:
         if not user.has_any_card(card_id):
             raise CheckFailure("The specified user doesn't have this card")
 
@@ -429,7 +429,7 @@ class Card1018(Card):
         author = User(self.ctx.author.id)
         author.remove_card(self.id)
 
-        users = []
+        users: List[discord.Member] = []
         stolen_cards = []
 
         async for message in self.ctx.channel.history(limit=20):
@@ -449,7 +449,7 @@ class Card1018(Card):
                 continue
 
         if len(stolen_cards) > 0:
-            author.add_multi(stolen_cards)
+            author.add_multi(*stolen_cards)
             await self.ctx.send(f"Success! Stole the card{'s' if len(stolen_cards) > 1 else ''} {', '.join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} user{'s' if len(users) > 1 else ''}!")
         else:
             await self.ctx.send("All targetted users were able to defend themselves!")

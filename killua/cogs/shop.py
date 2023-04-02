@@ -1,6 +1,7 @@
 import discord
 import logging
 
+from math import ceil
 from datetime import datetime
 from discord.ext import commands, tasks
 from random import randint, choice
@@ -216,7 +217,7 @@ class Shop(commands.Cog):
         prefix = self.client.command_prefix(self.client, ctx.message)[2]
         fields = [{"name": data["emoji"] + " " + data["name"] + " (id: " + str(id) + ")", "value": f"{data['description']}\nPrice: {data['price']}"} for id, data in LOOTBOXES.items() if data["available"]]
 
-        def make_embed(page, embed, pages):
+        def make_embed(page, embed: discord.Embed, pages):
             embed.title = "Current lootbox shop"
             embed.description = f"To get infos about what a lootbox contains, use `{prefix}boxinfo <box_id>`\nTo buy a box, use `{prefix}buy lootbox <box_id>`"
             embed.clear_fields()
@@ -228,14 +229,14 @@ class Shop(commands.Cog):
                     embed.add_field(name=x["name"], value=x["value"], inline=True)
 
             return embed
-
+        
         if len(fields) <= 10:
             embed = make_embed(1, DefaultEmbed(), fields)
             view = self._get_view(ctx)
             msg = await self.client.send_message(ctx, embed=embed, view=view)
             return await self._shop_menu(ctx, msg, view)
 
-        await ShopPaginator(ctx, fields, func=make_embed).start() # currently only 10 boxes exist so this is not necessary, but supports more than 10 if ever necessary
+        await ShopPaginator(ctx, fields, func=make_embed, max_pages=(len(fields)/10)).start() # currently only 10 boxes exist so this is not necessary, but supports more than 10 if ever necessary
 
 ################################################ Buy commands ################################################
 
@@ -324,7 +325,7 @@ class Shop(commands.Cog):
 
         user.remove_jenny(price)
         user.add_lootbox(int(box))
-        return await ctx.send(f"Successfully bought lootbox {LOOTBOXES[int(box)]['emoji']} {LOOTBOXES[box]['name']}!")
+        return await ctx.send(f"Successfully bought lootbox {LOOTBOXES[int(box)]['emoji']} {LOOTBOXES[int(box)]['name']}!")
 
 
     @check(2)

@@ -628,7 +628,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 return await ctx.send("Please provide a valid amount of jenny!")
             if item > 69420:
                 return await ctx.send("Be reasonable.")
-            user.add_jenny()
+            user.add_jenny(int(item))
             return await ctx.send(f"Added {item} Jenny to your account")
 
         if type == "lootbox":

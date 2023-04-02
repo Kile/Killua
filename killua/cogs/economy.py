@@ -277,7 +277,7 @@ class Economy(commands.GroupCog, group_name="econ"):
     @discord.app_commands.describe(box="The box to get infos about")
     async def boxinfo(self, ctx: commands.Context, box: str):
         """Get infos about any box you desire"""
-        if box.isdigit() and not int(box) in LOOTBOXES.keys():
+        if box.isdigit() and not int(box) in LOOTBOXES.keys() or not box.isdigit():
             box = self.client.get_lootbox_from_name(box)
             if not box:
                 return await ctx.send("Invalid box name or id", ephemeral=True)

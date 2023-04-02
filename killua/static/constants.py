@@ -310,7 +310,7 @@ LOOTBOXES = {
                 "rarities": [],
                 "types": []
             },
-            "boosters": (1, 2, 3)
+            "boosters": [1, 2, 3]
         },
         "rewards_total": 20,
         "cards_total": (0, 0),
@@ -331,7 +331,7 @@ LOOTBOXES = {
                 "rarities": [],
                 "types": []
             },
-            "boosters": (1, 2, 3)
+            "boosters": [1, 2, 3]
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
@@ -352,7 +352,7 @@ LOOTBOXES = {
                 "rarities": ["B", "C"],
                 "types": ["spell"]
             },
-            "boosters": ()
+            "boosters": []
         },
         "rewards_total": 10,
         "cards_total": (2, 6),
@@ -373,7 +373,7 @@ LOOTBOXES = {
                 "rarities": [],
                 "types": []
             },
-            "boosters": (2)
+            "boosters": [2]
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
@@ -394,7 +394,7 @@ LOOTBOXES = {
                 "rarities": ["D", "C", "B", "A"],
                 "types": ["spell"]
             },
-            "boosters": ()
+            "boosters": []
         },
         "rewards_total": 15,
         "cards_total": (15, 15),
@@ -415,7 +415,7 @@ LOOTBOXES = {
                 "rarities": ["B", "A"],
                 "types": ["spell"]
             },
-            "boosters": ()
+            "boosters": []
         },
         "rewards_total": 10,
         "cards_total": (5, 8),
@@ -436,7 +436,7 @@ LOOTBOXES = {
                 "rarities": ["SS"],
                 "types": ["spell", "normal"]
             },
-            "boosters": ()
+            "boosters": []
         },
         "rewards_total": 5,
         "cards_total": (0, 2),
@@ -457,7 +457,7 @@ LOOTBOXES = {
                 "rarities": ["D", "C", "B", "A"],
                 "types": ["monster"]
             },
-            "boosters": ()
+            "boosters": []
         },
         "rewards_total": 15,
         "cards_total": (5, 8),
@@ -478,7 +478,7 @@ LOOTBOXES = {
                 "rarities": ["B", "A", "S"],
                 "types": ["spell", "normal"]
             },
-            "boosters": (2, 3)
+            "boosters": [2, 3]
         },
         "rewards_total": 15,
         "cards_total": (5, 8),
@@ -499,7 +499,7 @@ LOOTBOXES = {
                 "rarities": ["S", "SS"],
                 "types": ["spell", "normal"]
             },
-            "boosters": ()
+            "boosters": []
         },
         "rewards_total": 10,
         "cards_total": (2, 4),
@@ -517,7 +517,7 @@ LOOTBOXES = {
             "guaranteed" : {},
             "jenny": (0, 0),
             "cards": {},
-            "boosters": (1, 2, 3)
+            "boosters": [1, 2, 3]
         },
         "rewards_total": 15,
         "cards_total": (0, 0),
