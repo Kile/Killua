@@ -605,6 +605,9 @@ class User:
         if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
             badges.append("greed_island_badge")
             
+        if "rps_master" in self.achievements:
+            badges.append("rps_master")
+            
         return badges
 
     @property
