@@ -228,7 +228,6 @@ class Rps:
         user = User(player.id)
         if not "rps_master" in user.achievements and user.rps_stats["pve"]["won"] >= 25:
             user.add_achievement(["rps_master"])
-            user.add_badge("rps_master")
             card = Card(83)
             try:
                 if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
