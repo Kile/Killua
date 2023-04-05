@@ -96,11 +96,15 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 *   [DerUSBstick](https://github.com/DerUSBstick)
 
-> He contributed a lot to one of the best looking commands, `book` which uses image generation to make your collection book filled with cards!
+> He contributed a lot to one of the best looking commands, `book` which uses image generation to make your collection book filled with cards. More recently he also helped a lot with making voting confirmations look much better!
 
 *   [Scarf](https://odaibako.net/u/ano_furi)
 
 > Helped write some of the action texts, topics, 8ball responses and would you rather questions.
+
+*   [Vivany](https://instagram.com/vivany.art)
+
+> Found a lot of hug images and also tracked down most artists of previously used ones to give them credit making Killua a much more considerate bot.
 
 *   [Scientia](https://github.com/ScientiaEtVeritas)
 
