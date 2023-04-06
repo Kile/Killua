@@ -257,6 +257,9 @@ class _LootBoxButton(discord.ui.Button):
         if not view.value:
             return await view.interaction.response.defer()
         
+        if self.view.children[-1].disabled:
+            return await view.interaction.response.send_message(content="The box has already been opened!", ephemeral=True)
+        
         if view.value == "save":
             if len(self.view.claimed) == 0: # User cannot click save not having clicked any button yet
                 return await view.interaction.response.send_message(content="You can't save with no rewards!", ephemeral=True)

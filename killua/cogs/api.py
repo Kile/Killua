@@ -135,7 +135,7 @@ class IPCRoutes(commands.Cog):
         """A pretty simple algorithm that adjusts the reward for voting"""
         # First loop through all lootbox streak rwards from the back and find if any of them apply
         if streak == 0:
-            return 0
+            return 100
 
         for key, value in list(VOTE_STREAK_REWARDS.items())[::-1]:
             if streak % key == 0:
@@ -154,7 +154,6 @@ class IPCRoutes(commands.Cog):
         --:boxemoji:--⚫️--:boxemoji:--
         This string has a hard limit of 11 and puts where the user currently is at the center
         """
-        booster = "<:powerup:1091112046210330724>"
         # Edgecase where the user has no streak or a streak smaller than 5 which is when it would start in the middle
         if streak < 5:
             path_list = [LOOTBOXES[reward]["image"] if isinstance(reward := self._get_reward(i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 12)]
