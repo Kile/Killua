@@ -155,13 +155,13 @@ class Events(commands.Cog):
             self.skipped_first = True
 
     @commands.Cog.listener()
-    async def on_guild_join(self, guild):
+    async def on_guild_join(self, guild: discord.Guild):
         #Changing the status
         await self.client.update_presence()
         Guild.add_default(guild.id)
 
     @commands.Cog.listener()
-    async def on_guild_remove(self, guild):
+    async def on_guild_remove(self, guild: discord.Guild):
         #Changing Killua's status
         await self.client.update_presence()
         Guild(guild.id).delete()

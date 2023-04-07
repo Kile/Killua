@@ -105,8 +105,9 @@ class Actions(commands.GroupCog, group_name="action"):
 
         embed = discord.Embed.from_dict({
             "title": text,
-            "image": {"url": image["link"]},
-            "color": await self.client.find_dominant_color(image["link"])
+            "image": {"url": image["link"]["url"] if "url" in image["link"] else image["link"]},
+            "color": await self.client.find_dominant_color(image["link"]["url"] if "url" in image["link"] else image["link"]),
+            "description": (f"Art by [{image['link']['artist']['name']}](" + image["link"]["artist"]["link"] + ")" if "url" in image["link"] and image["link"]["artist"] else None)
         })
 
         if disabled > 0:

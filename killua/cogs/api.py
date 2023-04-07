@@ -8,10 +8,12 @@ from zmq import POLLIN, ROUTER
 from zmq.asyncio import Context, Poller
 from zmq.auth.asyncio import AsyncioAuthenticator
 
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageChops
 from killua.bot import BaseBot
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
-from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS, BOOSTERS
+from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS, BOOSTERS, BOOSTER_LOGO_IMG
 
 from typing import List, Dict, Union
 
@@ -50,9 +52,91 @@ class IPCRoutes(commands.Cog):
                 else:
                     await socket.send_multipart([identity, b'{"status":"ok"}'])
 
+    async def download(self, url: str) -> Image.Image:
+        """Downloads an image from the given url and returns it as a PIL Image"""
+        res = await self.client.session.get(url)
+
+        if res.status != 200:
+            raise Exception("Failed to download image")
+        
+        image_bytes = await res.read()
+        image = Image.open(BytesIO(image_bytes)).convert("RGBA")
+
+        return image
+
+    def make_grey(self, img_colored: Image.Image) -> Image.Image:
+        """Converts the given image to grayscale. Respects if the image is transparent"""
+        img_colored.load()
+        alpha = img_colored.split()[-1]
+        img_grey = img_colored.convert("L").convert("RGB")
+        img_grey.putalpha(alpha)
+        return img_grey
+    
+    async def get_background(self) -> ImageDraw.Image:
+        """Creates a transparent image to paste the user images on to"""
+        background = Image.new("RGBA", (1100, 100), (0, 0, 0, 0))
+        return background
+    
+    def crop_to_circle(self, im: Image.Image) -> Image.Image:
+        """Crops the given image to a circle"""
+        bigsize = (im.size[0] * 3, im.size[1] * 3)
+        mask = Image.new("L", bigsize, 0)
+        ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
+        mask = mask.resize(im.size, Image.ANTIALIAS)
+        mask = ImageChops.darker(mask, im.split()[-1])
+        im.putalpha(mask)
+        return im.copy()
+
+    async def streak_image(self, data: List[Union[discord.User, str]], reward: str = None) -> BytesIO:
+        """Creates an image of the streak path and returns it as a BytesIO"""
+        if len(data) != 11:
+            return Exception("Invalid Length")
+        
+        offset = 0 # Start with a 0 offset
+        user_index = [i for i, x in enumerate(data) if isinstance(x, discord.User)][0] # Find at what positon the user image is
+        background = await self.get_background()
+        drawn = ImageDraw.Draw(background)
+        for position, item in enumerate(data):
+            if item == "-":
+                # Thise code would be making the line before the user a straight line given that path is completed.
+                # However I did not like how this looked so I chose to keep it like the path after the user image.
+                # if position < user_index:
+                #     drawn.line((offset+5, 50, offset+105, 50), fill="white", width=5)
+                # else:
+                drawn.line((offset+5, 50, offset+95, 50), fill="white", width=5) # Draw normal path line
+
+            else:
+                image = await self.download((item.avatar.url if item.avatar else discord.DefaultAvatar.blurple) if isinstance(item, discord.User) else item) # Download the image
+                size = (100, 100)
+                image = image.resize(size)
+
+                if position == user_index:
+                    image = self.crop_to_circle(image) # If the image is the user avatar, make it a circle
+                elif position < user_index:
+                    image = self.make_grey(image) # Convert to grayscale if it was already "claimed"
+
+                background.paste(image, (offset, 0)) # Paste the image to the background
+
+                if reward and position == user_index: # If the user lands on a reward, paste the reward image to the bottom left of the user image
+                    reward_image = await self.download(reward)
+                    reward_image = reward_image.resize((50, 50))
+                    background.paste(reward_image, (offset-5, 60), mask=reward_image)
+
+            offset += 100 # Increase the offset by 100 for the next image
+
+        # Turn image into BytesIO
+        buffer = BytesIO()
+        background.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        return buffer
+
     def _get_reward(self, streak: int, weekend: bool = False) -> int:
         """A pretty simple algorithm that adjusts the reward for voting"""
         # First loop through all lootbox streak rwards from the back and find if any of them apply
+        if streak == 0:
+            return 100
+
         for key, value in list(VOTE_STREAK_REWARDS.items())[::-1]:
             if streak % key == 0:
                 return value
@@ -64,26 +148,25 @@ class IPCRoutes(commands.Cog):
         # If no streak reward applies, just return the base reward
         return int((120 if weekend else 100) * float(f"1.{int(streak//5)}"))
 
-    def _create_path(self, streak: int) -> str:
+    def _create_path(self, streak: int, user: discord.User) -> str:
         """
         Creates a path illustrating where the user currently is with vote rewards and what the next rewards are as well as already claimed ones like
         --:boxemoji:--⚫️--:boxemoji:--
         This string has a hard limit of 11 and puts where the user currently is at the center
         """
-        booster = "<:powerup:1091112046210330724>"
         # Edgecase where the user has no streak or a streak smaller than 5 which is when it would start in the middle
         if streak < 5:
-            path_list = [LOOTBOXES[reward]['emoji'] if isinstance(reward := self._get_reward(i), int) and reward < 100 else (booster if isinstance(reward, Booster) else "-") for i in range(1, 11)]
+            path_list = [LOOTBOXES[reward]["image"] if isinstance(reward := self._get_reward(i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 12)]
             # Replace the character position where the user currently is with a black circle
-            path_list[streak-1] = "⚫️"
-            return " ".join(path_list)
+            path_list[streak-1] = user
+            return path_list
 
         # Create the path
-        before = [LOOTBOXES[reward]['emoji'] if isinstance(reward := self._get_reward(streak-i), int) and reward < 100 else (booster if isinstance(reward, Booster) else "-") for i in range(1, 6)]
-        after = [LOOTBOXES[reward]['emoji'] if isinstance(reward := self._get_reward(streak+i), int) and reward < 100 else (booster if isinstance(reward, Booster) else "-") for i in range(1, 6)]
-        path = before[::-1] + ["⚫️"] + after
+        before = [LOOTBOXES[reward]["image"] if isinstance(reward := self._get_reward(streak-i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 6)]
+        after = [LOOTBOXES[reward]["image"] if isinstance(reward := self._get_reward(streak+i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 6)]
+        path = before[::-1] + [user] + after
 
-        return " ".join(path)
+        return path
 
 
     async def handle_vote(self, data: dict) -> None:
@@ -94,25 +177,30 @@ class IPCRoutes(commands.Cog):
         streak = user.voting_streak["topgg" if "isWeekend" in data else "discordbotlist"]["streak"]
         reward: Union[int, Booster] = self._get_reward(streak, data["isWeekend"] if hasattr(data, "isWeekend") else False)
 
-        path = self._create_path(streak)
+        usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
+
+        path = self._create_path(streak, usr)
+        image = await self.streak_image(path, (LOOTBOXES[reward]["image"] if isinstance(reward, int) and reward < 100 else (BOOSTERS[reward.value]["image"] if isinstance(reward, Booster) else None)))
+        file = discord.File(image, filename="streak.png")
+
         embed = discord.Embed.from_dict({
             "title": "Thank you for voting!",
             "description": (f"Well done for keeping your voting **streak** 🔥 of {streak} for" if streak > 1 else "Thank you for voting on ") + f" {'top.gg' if 'isWeekend' in data else 'discordbotlist'}! As a reward I am happy to award with " + \
             ((f"{reward} Jenny" if reward >= 100 else f"a lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}") if isinstance(reward, int) else f"the {BOOSTERS[reward.value]['emoji']} `{BOOSTERS[reward.value]['name']}` booster") + \
-            f"! You are **{5 - (streak % 5)}** votes away from the next reward! \n\n{path}",
+            f"! You are **{5 - (streak % 5)}** votes away from the next reward!",
             "color": 0x3e4a78
         })
+        embed.set_image(url="attachment://streak.png")
+
         if isinstance(reward, Booster):
             user.add_booster(reward.value)
         elif reward < 100:
             user.add_lootbox(reward)
         else:
             user.add_jenny(reward)
-        
-        usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
 
         try:
-            await usr.send(embed=embed)
+            await usr.send(embed=embed, file=file)
         except discord.HTTPException:
             pass
 

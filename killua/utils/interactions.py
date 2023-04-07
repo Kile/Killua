@@ -53,19 +53,24 @@ class Modal(discord.ui.Modal): #lgtm [py/missing-call-to-init]
 
 class Select(discord.ui.Select):
     """Creates a select menu to view the command groups"""
-    def __init__(self, options, **kwargs):
+    def __init__(self, options, disable: bool = False, **kwargs):
         super().__init__( 
             min_values=1, 
             max_values=1, 
             options=options,
             **kwargs
         )
+        self.disable = disable
 
     async def callback(self, interaction: discord.Interaction):
         self.view.value = int(interaction.data["values"][0])
         for opt in self.options:
             if opt.value == str(self.view.value):
                 opt.default = True
+                
+        if self.disable:
+            await self.view.disable(interaction.message)
+
         self.view.stop()
 
 class Button(discord.ui.Button):
