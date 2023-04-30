@@ -102,7 +102,7 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 > Helped write some of the action texts, topics, 8ball responses and would you rather questions.
 
-*   [Vivany](https://instagram.com/vivany.art)
+*   [Vivany](https://vivany.carrd.co/)
 
 > Found a lot of hug images and also tracked down most artists of previously used ones to give them credit making Killua a much more considerate bot.
 
