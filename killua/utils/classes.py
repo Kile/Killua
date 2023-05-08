@@ -602,7 +602,7 @@ class User:
         if self.action_stats.get("hug", {}).get("used", 0) >= 1000:
             badges.append("pro_hugger")
             
-        if self.action_stats.get("hug", {}).get("received", 0) >= 500:
+        if self.action_stats.get("hug", {}).get("targeted", 0) >= 500:
             badges.append("pro_hugged")
             
         if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
