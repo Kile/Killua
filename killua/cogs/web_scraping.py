@@ -138,6 +138,11 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         response = await self.client.session.get(url, headers=self.headers)
 
+        if not response.status == 200:
+            print(response.status)
+            print(await response.text())
+            return await ctx.send("Something went wrong... If this keeps happening please contact the developer")
+        
         results = loads(await response.text())["results"]
         
         if not results:
