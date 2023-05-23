@@ -117,7 +117,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
             res = await self.client.session.get(f"https://duckduckgo.com/?q={escape(query)}")
             if not res.status == 200:
                 return
-            token = re.search(r"vqd='(.*?)'", str(BeautifulSoup(await res.text(), "html.parser"))).group(1)
+            token = re.search(r'vqd="(.*?)",', str(BeautifulSoup(await res.text(), "html.parser"))).group(1)
             return token
         except Exception:
             return
