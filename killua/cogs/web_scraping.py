@@ -139,9 +139,10 @@ class WebScraping(commands.GroupCog, group_name="web"):
         response = await self.client.session.get(url, headers=self.headers)
 
         if not response.status == 200:
-            print(response.status)
-            print(await response.text())
-            return await ctx.send("Something went wrong... If this keeps happening please contact the developer")
+            if response.status == 403:
+                return await ctx.send("DuckDuckGo is blocking the bot from searching for images. Please try again later.")
+            
+            return await ctx.send("DuckDuckGo responded with error code " + str(response.status) + ". Please contact the developer.")
         
         results = loads(await response.text())["results"]
         
