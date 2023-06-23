@@ -121,17 +121,12 @@ class WebScraping(commands.GroupCog, group_name="web"):
             return token
         except Exception:
             return
-
-    @check(4)
-    @commands.hybrid_command(aliases=["image", "i"], extras={"category":Category.FUN, "id": 117}, usage="img <query>")
-    @discord.app_commands.describe(query="What image to look for")
-    async def img(self, ctx: commands.Context, *, query: str):
-        """Search for any image you want"""
-
+        
+    async def get_duckduckgo_images(self, query: str) -> Union[str, None]:
         token = await self._get_token(query)
 
         if not token:
-            return await ctx.send("Something went wrong... If this keeps happening please contact the developer")
+            return None
 
         base = "https://duckduckgo.com/i.js?l=wt-wt&o=json&q={}&vqd={}&f=,,,&p=1"
         url = base.format(escape(query), token)
@@ -140,19 +135,64 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         if not response.status == 200:
             if response.status == 403:
-                return await ctx.send("DuckDuckGo is blocking the bot from searching for images. Please try again later.")
+                return None
             
-            return await ctx.send("DuckDuckGo responded with error code " + str(response.status) + ". Please contact the developer.")
+            return None
         
         results = loads(await response.text())["results"]
         
         if not results:
-            return await ctx.send("There were no images found matching your query")
+            return None
 
         # A hacky way to get the list of results because the response is not in the correct format
         # as duckduckgo is not returning a json decodable response but a string
 
-        links = [r["image"] for r in results if r["image"]]
+        return [r["image"] for r in results if r["image"]]
+    
+    async def get_soup(self, url) -> Union[int, BeautifulSoup]:
+        """Make request and return BeatifulSoup object"""
+        header = {'User-Agent':"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36"}
+
+        response = await self.client.session.get(url, headers=header)
+
+        if not response.status == 200:
+            return response.status
+
+        return BeautifulSoup(await response.text(), "html.parser")
+    
+    async def get_bing_images(self, query: str) -> List[str]:
+        """Make the request format it correctly and return the list of images"""
+        BASE_URL = "http://www.bing.com/images/search?q={}&FORM=HDRSC2"
+        
+        response: BeautifulSoup = await self.get_soup(BASE_URL.format(query))
+
+        if isinstance(response, int):
+            return response
+        
+        images = [] # contains the link for large original images, type of  image
+        for a in response.find_all("a",{"class":"iusc"}):
+            try:
+                m = loads(a["m"])
+                image_url = m["murl"]
+
+                images.append(image_url)
+            except Exception: continue # Possible it errors, skip if so
+
+        return images
+
+    @check(4)
+    @commands.hybrid_command(aliases=["image", "i"], extras={"category":Category.FUN, "id": 117}, usage="img <query>")
+    @discord.app_commands.describe(query="What image to look for")
+    async def img(self, ctx: commands.Context, *, query: str):
+        """Search for any image you want"""
+
+        links = await self.get_bing_images(query)
+
+        if isinstance(links, int):
+            return await ctx.send(f"Something went wrong while searching for images, got status code {links}")
+        
+        if not links:
+            return await ctx.send("No results found")
 
         def make_embed(page, embed: discord.Embed, pages):
             embed.title = "Results for query " + query
