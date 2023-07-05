@@ -117,8 +117,11 @@ class Tags(commands.Cog):
         current: str,
         ) -> List[discord.app_commands.Choice[str]]:
         """Returns a list of tags that match the message. """
-        guild = Guild(interaction.guild.id)
-        tags: list = guild.tags
+        guild = DB.guilds.find_one({"id": interaction.guild.id})
+        if not "tags" in guild:
+            return []
+
+        tags = guild["tags"]
 
         return [
             discord.app_commands.Choice(name=t[1]["name"], value=t[1]["name"]) for t in tags 
