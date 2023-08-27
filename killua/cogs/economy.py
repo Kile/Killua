@@ -139,7 +139,7 @@ class Economy(commands.GroupCog, group_name="econ"):
                 {"name": "Members", "value": ctx.guild.member_count}
             ],
             "description": str(ctx.guild.id),
-            "thumbnail": {"url": str(ctx.guild.icon.url)},
+            "thumbnail": {"url": str(ctx.guild.icon.url if ctx.guild.icon else None)},
             "color": 0x3e4a78
         })
         await self.client.send_message(ctx, embed=embed)
