@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw, ImageChops
 from killua.bot import BaseBot
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
-from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS, BOOSTERS, BOOSTER_LOGO_IMG
+from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS, BOOSTERS, BOOSTER_LOGO_IMG, DEFAULT_AVATAR
 
 from typing import List, Dict, Union
 
@@ -106,7 +106,7 @@ class IPCRoutes(commands.Cog):
                 drawn.line((offset+5, 50, offset+95, 50), fill="white", width=5) # Draw normal path line
 
             else:
-                image = await self.download((item.avatar.url if item.avatar else discord.DefaultAvatar.blurple) if isinstance(item, discord.User) else item) # Download the image
+                image = await self.download((item.avatar.url if item.avatar else DEFAULT_AVATAR) if isinstance(item, discord.User) else item) # Download the image
                 size = (100, 100)
                 image = image.resize(size)
 
