@@ -5,6 +5,7 @@ from zmq.asyncio import Context, Poller
 from datetime import datetime
 from typing import List, Dict
 import uuid
+from quart_cors import cors
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) # This is a necessary hacky fix for importing issues
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -22,6 +23,8 @@ ratelimit_manager: Dict[str, List[datetime]] = {}
 ratelimited = {}
 
 app = Quart(__name__)
+
+app = cors(app, allow_origin="*")
 
 # Create async IPC request maker
 async def make_request(route: str, data: dict) -> dict:
