@@ -6,7 +6,7 @@ from aiohttp import ClientSession
 from datetime import datetime
 
 from killua.bot import BaseBot
-from killua.utils.checks import check, premium_member_only
+from killua.utils.checks import check, premium_user_only
 from killua.utils.classes import User, Guild, LootBox
 from killua.static.enums import Category
 from killua.static.constants import PATREON_TIERS, GUILD, BOOSTER_ROLE, PATREON, LOOTBOXES, PREMIUM_BENEFITS, DB
@@ -161,7 +161,7 @@ class Premium(commands.Cog):
         ...
 
     @commands.guild_only()
-    @premium_member_only()
+    @premium_user_only()
     @premium.command(extras={"category": Category.OTHER, "id": 67}, usage="guild <add/remove>")
     @discord.app_commands.describe(action="Wether to add or remove the premium status of the current server")
     async def guild(self, ctx: commands.Context, action: Literal["add", "remove"]):
@@ -197,7 +197,7 @@ class Premium(commands.Cog):
             await ctx.send("Successfully removed this servers premium status!")
 
     @check()
-    @premium_member_only()
+    @premium_user_only()
     @premium.command(extras={"category": Category.ECONOMY, "id": 68}, usage="weekly")
     async def weekly(self, ctx: commands.Context):
         """Claim a weekly lootbox with this command"""

@@ -22,6 +22,7 @@ class IPCRoutes(commands.Cog):
     def __init__(self, client: BaseBot):
         self.client = client
         create_task(self.start())
+        self.command_cache = {}
 
     async def start(self):
         """Starts the zmq server asyncronously and handles incoming requests"""
@@ -219,52 +220,52 @@ class IPCRoutes(commands.Cog):
         if not c:
             c = self.client.get_command(cmd.split(" ")[-1])
         return c
+    
+    def format_command(self, cmd: commands.HybridCommand) -> dict:
+        checks = cmd.checks
+
+        premium_guild, premium_user, cooldown = False, False, False
+
+        if [c for c in checks if hasattr(c, "premium_guild_only")]:
+                premium_guild = True
+
+        if [c for c in checks if hasattr(c, "premium_user_only")]:
+                premium_user = True
+
+        if (res := [c for c in checks if hasattr(c, "cooldown")]):
+            check = res[0]
+            cooldown = getattr(check, "cooldown", False)
+
+        usage_slash = (cmd.qualified_name.replace(cmd.name, "") + cmd.usage) if not isinstance(cmd.cog, commands.GroupCog) else cmd.cog.__cog_group_name__ + " " + cmd.usage
+        usage_message = (f"k!" + cmd.qualified_name.replace(cmd.name, "") + cmd.usage) if not isinstance(cmd.cog, commands.GroupCog) else f"k!" + cmd.usage
+
+            
+        return {
+            "name": cmd.name,
+            "slash_usage": usage_slash,
+            "description": cmd.help or "No help found...",
+            "aliases": cmd.aliases,
+            "cooldown": cooldown,
+            "premium_guild": premium_guild,
+            "premium_user": premium_user,
+            "message_usage": usage_message
+        }
 
     async def commands(self, _) -> dict:
         """Returns all commands with descriptions etc"""
-        command_groups = [c.commands for c in self.client.tree.get_commands() if hasattr(c, "commands")]
-        commands = [item for sublist in command_groups for item in sublist]
+        if not self.command_cache:
+            raw = [v["commands"] for v in self.client.get_formatted_commands().values() if "commands" in v]
+            self.command_cache = [item for sublist in raw for item in sublist]
         
         to_be_returned: Dict[str, Dict[str, Union[str, list]]] = {}
-        for cmd in commands:
-            if not cmd.qualified_name.startswith("image"):
-                msg_cmd = self.get_message_command(cmd.qualified_name) # Edge case and possibly a lib bug. See https://github.com/Rapptz/discord.py/issues/9243
+
+        for cmd in self.command_cache:
+            formatted = self.format_command(cmd)
+
+            if cmd.extras["category"].name in to_be_returned:
+                to_be_returned[cmd.extras["category"].name]["commands"].append(formatted)
             else:
-                msg_cmd = None
-                
-            if not msg_cmd: # Ignores groups, jishaku and anything else that doesn't have extras
-                continue
-            
-            cmd_extras = msg_cmd.extras
-            checks = cmd.checks
-
-            premium_guild, premium_user, cooldown = False, False, False
-
-            if [c for c in checks if hasattr(c, "premium_guild_only")]:
-                premium_guild = True
-
-            if [c for c in checks if hasattr(c, "premium_user_only")]:
-                premium_user = True
-
-            if (res := [c for c in checks if hasattr(c, "cooldown")]):
-                check = res[0]
-                cooldown = getattr(check, "cooldown", False)
-            
-            data = {
-                "name": cmd.name,
-                "slash_usage": cmd.qualified_name,
-                "description": cmd.description,
-                "usage": msg_cmd.usage,
-                "aliases": msg_cmd.aliases,
-                "cooldown": cooldown,
-                "premium_guild": premium_guild,
-                "premium_user": premium_user,
-                "message_usage": msg_cmd.qualified_name
-            }
-            if cmd_extras["category"].name in to_be_returned:
-                to_be_returned[cmd_extras["category"].name]["commands"].append(data)
-            else:
-                to_be_returned[cmd_extras["category"].name] = {"commands": [data], "description": cmd_extras["category"].value["description"], "name": cmd_extras["category"].value["name"], "emoji": cmd_extras["category"].value["emoji"]}
+                to_be_returned[cmd.extras["category"].name] = {"commands": [formatted], "description": cmd.extras["category"].value["description"], "name": cmd.extras["category"].value["name"], "emoji": cmd.extras["category"].value["emoji"]}
 
         return to_be_returned
     

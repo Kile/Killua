@@ -510,7 +510,7 @@ LOOTBOXES = {
     },
     11: {
         "name": "Booster box",
-        "price": 2500,
+        "price": 5000,
         "emoji": "<:booster_box:1090978821592842280>",
         "description": "This box was created by an unknwon hunter in an attempt to help fellow hunters opening lootboxes. It only contains boosters.",
         "rewards": {

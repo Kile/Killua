@@ -35,7 +35,7 @@ def premium_guild_only():
 
     return commands.check(predicate)
 
-def premium_member_only():
+def premium_user_only():
 
     async def predicate(ctx: commands.Context) -> bool:
             
@@ -46,7 +46,7 @@ def premium_member_only():
                 return False
             return True
 
-    predicate.premium_member_only = True
+    predicate.premium_user_only = True
 
     return commands.check(predicate)
 
