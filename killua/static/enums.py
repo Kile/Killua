@@ -36,7 +36,7 @@ class Category(Enum):
     }
     ECONOMY = {
         "name": "economy",
-        "description": "' economy with the currency Jenny",
+        "description": "Killua's economy with the currency Jenny including lootboxes, shops and more",
         "emoji": {
             "unicode": "\U0001f3c6",
             "normal": ":trophy:"
