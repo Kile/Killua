@@ -168,42 +168,42 @@ class Actions(commands.GroupCog, group_name="action"):
             return await self.client.send_message(ctx, embed=embed)
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.ACTIONS, "id": 1}, usage="hug <user>")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS, "id": 1}, usage="hug <user(s)>")
     @discord.app_commands.describe(members="The people to hug")
     async def hug(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Hug a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.ACTIONS, "id": 2}, usage="pat <user>")
+    @commands.hybrid_command(extras={"category":Category.ACTIONS, "id": 2}, usage="pat <user(s)>")
     @discord.app_commands.describe(members="The people to pat")
     async def pat(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Pat a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.ACTIONS, "id": 3}, usage="poke <user>")
+    @commands.hybrid_command(extras={"category":Category.ACTIONS, "id": 3}, usage="poke <user(s)>")
     @discord.app_commands.describe(members="The people to poke")
     async def poke(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Poke a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.ACTIONS, "id": 4}, usage="tickle <usage>")
+    @commands.hybrid_command(extras={"category":Category.ACTIONS, "id": 4}, usage="tickle <user(s)>")
     @discord.app_commands.describe(members="The people to tickle")
     async def tickle(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Tickle a user wi- ha- hahaha- stop- haha"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.hybrid_command(extras={"category":Category.ACTIONS, "id": 5}, usage="slap <user>")
+    @commands.hybrid_command(extras={"category":Category.ACTIONS, "id": 5}, usage="slap <user(s)>")
     @discord.app_commands.describe(members="The people to slap")
     async def slap(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Slap a user with this command"""
         return await self.do_action(ctx, members)
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.ACTIONS, "id": 6}, usage="cuddle")
+    @commands.hybrid_command(extras={"category": Category.ACTIONS, "id": 6}, usage="cuddle <user(s)>")
     @discord.app_commands.describe(members="The people to cuddle with")
     async def cuddle(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None):
         """Snuggle up to a user and cuddle them with this command"""
