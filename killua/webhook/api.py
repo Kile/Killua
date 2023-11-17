@@ -46,6 +46,7 @@ async def make_request(route: str, data: dict) -> dict:
         if socket in events and events[socket] == POLLIN:
             multipart = json.loads((await socket.recv_multipart())[0].decode())
             socket.close()
+            context.term()
             return multipart
 
 async def is_authorised(headers: dict) -> bool:
