@@ -436,7 +436,7 @@ class Book:
         async with self.session.get(url) as res:
             image_bytes = await res.read()
             image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
-            image_card = image_card.resize((84, 115), Image.ANTIALIAS)
+            image_card = image_card.resize((84, 115), Image.LANCZOS)
         # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp"s "Response payload is not completed" bug
         return image_card
 

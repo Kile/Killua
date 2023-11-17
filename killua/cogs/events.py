@@ -57,7 +57,7 @@ class Events(commands.Cog):
                 async with self.client.session.get(item["Image"]) as res:
                     image_bytes = await res.read()
                     image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
-                    image_card = image_card.resize((84, 115), Image.ANTIALIAS)
+                    image_card = image_card.resize((84, 115), Image.LANCZOS)
 
                 Book.card_cache[str(item["_id"])] = image_card
                 if len(percentages) >= 1 and (p/len(cards))*100 > (percent:= percentages[0]):
