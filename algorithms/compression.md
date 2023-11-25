@@ -37,7 +37,7 @@ So I needed to find a way to reduce the length of the ids while still being able
 
 ### The compression
 My first approach was using encryption. Specifically XOR encryption. My idea was to split the id in two half, XOR both half, then take the new result and repeat it long enough until I had a small string. However it was not unlikely for those end results to overlap, producing false positives. So I had to chose an end length reliable enough while also being as short as possible.
-In my tests I found our 4 characters had the best short to unique ratio, scoring an about 10% overlap in my tests while with its 4 characters would allow for much more votes.
+In my tests I found out 4 characters had the best short to unique ratio, scoring an about 10% overlap in my tests while with its 4 characters would allow for much more votes.
 
 ![](https://cdn.discordapp.com/attachments/861123833569345576/1055159832279257138/image.png)
 
