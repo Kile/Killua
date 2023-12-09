@@ -165,7 +165,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         else:
             top = [(x[0].split(" ")[1], x[1]) for x in top if x[0].startswith(group.lower()) and len(x[0].split(" ")) > 1]
             rest = 0
-            for x in top[-9:]:
+            for x in top[9:]:
                 rest += x[1]
 
             if len(top) > 9:
@@ -217,7 +217,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
         top = sorted(s_formatted.items(), key=lambda x: x[1], reverse=True)
         rest = 0
-        for x in top[-9:]:
+        for x in top[9:]:
             rest += x[1]
 
         # creates a piechart in an embed with the top 10 commands using _create_piechart
@@ -468,7 +468,7 @@ class Dev(commands.GroupCog, group_name="dev"):
             if not user.voting_reminder:
                 return await ctx.send("You already have the voteremind disabled!", ephemeral=True)
             user._update_val("voting_reminder", False)
-            await ctx.send("Disabled the voteremind! You can turn it on any time with this command!", ephemeral=True)
+            await ctx.send("Disabled the voteremind! You can turn it back on any time with this command!", ephemeral=True)
 
 
 Cog = Dev
