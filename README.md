@@ -69,8 +69,8 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] Python `typing` library
 *   [x] GitHub PRs, branches, issues, todo-lists, CLI
 *   [x] caching
-*   [ ] Website with backend
-*   [ ] CSS
+*   [x] Website with backend
+*   [x] CSS
 *   [ ] Threading
 *   [ ] Github workflows
 
