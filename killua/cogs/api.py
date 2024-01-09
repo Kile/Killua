@@ -45,10 +45,7 @@ class IPCRoutes(commands.Cog):
 
             if socket in socks and socks[socket] == POLLIN:
                 message = await socket.recv_multipart()
-                try:
-                    identity, _, request = message # Sometimes there may be an empty frame in the middle of the message
-                except ValueError:
-                    identity, request = message
+                identity, request = message
                 decoded = loads(request.decode())
                 res = await getattr(self, decoded["route"])(decoded["data"])
                 if res:

@@ -4,6 +4,9 @@
 # Downloaded cards
 /cards.json
 
+# API log
+/api.log
+
 #python stuff
 **/__pycache__
 

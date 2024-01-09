@@ -4,7 +4,7 @@ select opt in "${options[@]}"
 do
     case $REPLY in
         "1")
-            hypercorn killua/webhook/api:app --bind 127.0.0.1:$(python -c "from killua.static.constants import PORT; print(PORT)") --debug & python3 -m killua
+            hypercorn killua/webhook/api:app --bind 127.0.0.1:$(python -c "from killua.static.constants import PORT; print(PORT)") --debug --access-logfile "api.log" --log-file "api.log" --workers 8 & python3 -m killua
             break
             ;;
         "2")
