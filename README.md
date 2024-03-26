@@ -1,7 +1,7 @@
 ## Killua Discord Bot
 <p align="center">
   <a href"https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
-     <img src="https://cdn.discordapp.com/avatars/756206646396452975/30c2da6b0a777658021cbac239fa5e66.png?size=256">
+     <img src="https://i.imgur.com/diOmUcl.png">
   </a>
 </p>
 <p align="center">
@@ -147,6 +147,6 @@ If you have any further questions, join my discord server or dm me!
 
 <p align="center">
   <a href"https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
-     <img src="https://cdn.discordapp.com/attachments/759863805567565925/834794115148546058/image0.jpg">
+     <img src="https://i.imgur.com/pNGbm5a.png">
   </a>
 </p>

@@ -141,7 +141,7 @@ class Shop(commands.Cog):
             embed = discord.Embed.from_dict({
                 "title": "Shop menu",
                 "description": "Select the shop you want to visit",
-                "image": {"url": "https://cdn.discordapp.com/attachments/795448739258040341/885927080410361876/image0.png"},
+                "image": {"url": "https://i.imgur.com/r1ZId3n.png"},
                 "color": 0x3e4a78
             })
             msg = await ctx.send(embed=embed, view=view)

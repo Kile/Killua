@@ -208,7 +208,7 @@ POKE_TEXTS = ["<user> is needed here", "<author> needs something from <user>", "
 TICKLE_TEXTS = ["<author> is just wiggling their fingers, nothing going on here~", "<user> looks like they need a good laugh so they are tickled by <author>", "<author> has heard <user> likes to be tickled... so they tickle them", "<author> casts 'tickle' on <user> which adds the effect laughing 3 to them", "<user> looks sad so <author> tickles them", "<author> is too nice to slap but <user> still needs revenge, so they tickle them!", "<user> didn't let <author> eat cookies, so they get tickled!", "<author> couldn't resist their chance to tickle <author>","<author> tickles <user>", "<author> has no mercy; they tickle <user>", "<author> knows there is just one way, so they tickle <user>", "<author> attacks <user>!"]
 CUDDLE_TEXTS = ["<author> snuggles up to <user> and cuddles them", "<author> cuddles <user> aggressively", "<author> cannot resist <user>'s face, so they cuddle them", "<author> uses cuddle-attack on <user>. It is very effective", "<author> can't stop thinking about it... so they cuddle <user>"]
 
-DEFAULT_AVATAR = "https://cdn.discordapp.com/attachments/795448739258040341/1163134696411123823/7c8f476123d28d103efe381543274c25.png?ex=653e7899&is=652c0399&hm=b0c47815f56a19c76982ae3226a959f90a925d0118b550cb2db3d9b6e493132b&"
+DEFAULT_AVATAR = "https://i.imgur.com/fehQCjC.png"
 
 # the todo editing cache, needs to be defined here so I can use it across files
 editing = {}
@@ -248,7 +248,7 @@ ACTIONS = {
 
 # the patreon banner being a discord.File in the cache because it's unnecessary to fetch every time I need it. The current value is the url to be fetched
 class PatreonBanner: # using a normal var instead of a class did not work
-    URL = "https://cdn.discordapp.com/attachments/795448739258040341/882017244484345916/killua-logo-banners-patreon2.png"
+    URL = "https://i.imgur.com/iRz6Sf5.png"
     VALUE = None
 
     @classmethod
@@ -558,7 +558,7 @@ BOOSTERS = {
     },
 }
 
-BOOSTER_LOGO_IMG = "https://cdn.discordapp.com/attachments/882051752386523188/1093243335939981394/logo.png"
+BOOSTER_LOGO_IMG = "https://i.imgur.com/QAQFffJ.png"
 
 # GREED ISLAND STUFF
 
@@ -789,7 +789,7 @@ TRIVIA_TOPICS = {
 NOKIA_CODE = """
 let e = url.split(".").pop(); let ext = e.substring(0,e.length-(e.length-3)).replace("jpe", "jpeg");
 const mybuffer = await fetch(url).then(r => r.arrayBuffer());
-const mybuffer2 = await fetch("https://cdn.discordapp.com/attachments/762926280793784350/817847142668304444/1615060247537.png").then(r => r.arrayBuffer());
+const mybuffer2 = await fetch("https://i.imgur.com/Ebf7NmC.png").then(r => r.arrayBuffer());
 
 let canvas;
 if(ext == "gif") {
