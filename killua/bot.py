@@ -79,11 +79,13 @@ class BaseBot(commands.AutoShardedBot):
 
         return res
     
-    async def _get_bytes(self, image: Union[discord.Attachment, str]) -> BytesIO:
+    async def _get_bytes(self, image: Union[discord.Attachment, str]) -> Union[None, BytesIO]:
         if isinstance(image, discord.Attachment):
             return BytesIO(await image.read())
         else:
             res = await self.session.get(image)
+            if res.status != 200: # Likely ratelimited
+                return
             return BytesIO(await res.read())
     
     async def find_dominant_color(self, url: str) -> int:
@@ -91,6 +93,7 @@ class BaseBot(commands.AutoShardedBot):
         #Resizing parameters
         width, height = 150,150
         obj = await self._get_bytes(url)
+        if not obj: return 0x3e4a78
         image = Image.open(obj)
         # Handle if image is a GIF
         if hasattr(image, "is_animated"):
