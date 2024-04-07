@@ -4,7 +4,7 @@ select opt in "${options[@]}"
 do
     case $REPLY in
         "1")
-            hypercorn killua/webhook/api:app --bind 127.0.0.1:$(python -c "from killua.static.constants import PORT; print(PORT)") --debug --access-logfile "api.log" --log-file "api.log" --workers 8 & python3 -m killua
+            gunicorn --bind 127.0.0.1:$(python -c "from killua.static.constants import PORT; print(PORT)") --max-requests-jitter 100 --workers 2 --error-logfile "api.log" -k uvicorn.workers.UvicornWorker -D killua.webhook.api:app & python3 -m killua
             break
             ;;
         "2")
@@ -22,4 +22,4 @@ do
     esac
 done
 
-echo "Process terminated"
+echo "Process terminated, make sure you run cleanup.sh before re-running the bot in production."
