@@ -56,7 +56,7 @@ soupsieve==2.3.2.post1
 terminaltables==3.1.10
 toml==0.10.2
 typing_extensions==4.5.0
-urllib3==1.26.14
+urllib3==1.26.18
 uvicorn==0.29.0
 Werkzeug==2.3.8
 wsproto==1.2.0
