@@ -58,7 +58,7 @@ toml==0.10.2
 typing_extensions==4.5.0
 urllib3==1.26.14
 uvicorn==0.29.0
-Werkzeug==2.3.8
+Werkzeug==3.0.3
 wsproto==1.2.0
 yarl==1.8.2
 zipp==3.14.0
