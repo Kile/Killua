@@ -153,6 +153,8 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         if r.success:
             f = discord.File(r.convert_to_ioBytes(), filename=f"{ctx.command.name}.{r.file_type}", spoiler=censor)
             return await self.client.send_message(ctx, file=f, reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
+        if len(r.error) > 4000:
+            return await ctx.send(f":x: An error occured during this command. The API is likely down. Please try again later.", allowed_mentions=discord.AllowedMentions.none())
         return await ctx.send(f":x: "+r.error, allowed_mentions=discord.AllowedMentions.none())
 
     async def flag_autocomplete(

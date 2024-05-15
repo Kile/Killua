@@ -218,7 +218,7 @@ class TodoSystem(commands.Cog):
         user_todo_lists = [x for x in DB.todo.find({"owner": ctx.author.id})]
 
         if len(user_todo_lists) == 5:
-            return await ctx.send("You can currently not own more than 5 todo lists", ephermeral=True)
+            return await ctx.send("You can currently not own more than 5 todo lists", ephemeral=True)
 
         user = User(ctx.author.id)
         if len(name) > 30:
