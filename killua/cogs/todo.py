@@ -427,7 +427,7 @@ class TodoSystem(commands.Cog):
                 res.set_property("description", description)
                 updated.append("description")
         
-        await ctx.send(f"Successfully updated {updated.join(', ')} of your todo list!", allowed_mentions=discord.AllowedMentions.none())
+        await ctx.send(f"Successfully updated {', '.join(updated)} of your todo list!", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @todo.command(extras={"category":Category.TODO, "id": 106}, usage="remove <task_id>")
