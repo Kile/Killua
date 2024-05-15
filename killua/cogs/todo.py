@@ -612,7 +612,7 @@ class TodoSystem(commands.Cog):
         })
 
         try:
-            view = ConfirmButton(user.id, timeout=80)
+            view = ConfirmButton(user.id, timeout=60 * 60 * 24)
             view.add_item(Button(label="Report", custom_id="report", style=discord.ButtonStyle.red))
             msg = await user.send(embed=embed, view=view)
             await ctx.send("Successfully send the invitation to the specified user! They have 24 hours to accept or deny")
