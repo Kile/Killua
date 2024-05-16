@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 from datetime import datetime
 import re
 import math
-from typing import Union, Optional, List, Literal
+from typing import Union, Optional, List, Literal, cast
 
 from killua.bot import BaseBot
 from killua.static.enums import Category
@@ -56,7 +56,7 @@ class TodoSystem(commands.Cog):
                                     "color": todo_list.color or 0x3e4a78,
                                     "footer": {"text": f"From todo list: {todo_list.name} (ID: {todo_list.id})", "icon_url": todo_list.thumbnail}
                                 })
-                                await user.send(embed=embed)
+                                await cast(discord.User, user).send(embed=embed)
                             except discord.HTTPException:
                                 continue # If dms are closed we don't want to interrupt the loop
 
@@ -90,11 +90,11 @@ class TodoSystem(commands.Cog):
                 final_todos = l[-(len(l)-page*10+10):]
 
         async def assigned_users(t: Todo) -> str:
-            at = []
+            at: List[discord.User] = []
             for user in t.assigned_to:
                 person = await self._get_user(user)
                 at.append(person)
-            return f"\n`Assigned to: {', '.join([str(x) for x in at])}`"
+            return f"\n`Assigned to: {', '.join([x.display_name for x in at])}`"
 
         for n, t in enumerate(final_todos if page else l, page*10-10 if page else 0):
             t = Todo(n+1, todo_list.id)
@@ -108,7 +108,7 @@ class TodoSystem(commands.Cog):
             "title": f"To-do list \"{todo_list.name}\" (ID: {todo_list.id})",
             "description": f"{f'*Page {page}/{max_pages}*' if page else ''}\n{desc}",
             "color": todo_list.color or 0x3e4a78,
-            "footer": {"icon_url": str(owner.avatar.url), "text": f"Owned by {owner}"}
+            "footer": {"icon_url": str(owner.display_avatar.url), "text": f"Owned by {owner.display_name}"}
         })
 
         if todo_list.thumbnail:
@@ -133,12 +133,12 @@ class TodoSystem(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": f"Information for the todo list \"{todo_list.name}\" (ID: {todo_list.id})",
             "description": f"{todo_list.description if todo_list.description else ''}" +\
-            f"**Owner**: `\n\n{owner}`\n\n" +\
+            f"**Owner**: \n\n`{owner.display_name}`\n\n" +\
             f"**Created on:** {created_at}\n\n" +\
             f"**Custom ID**: `{todo_list.custom_id or 'No custom id'}`\n\n" +\
             f"**Status**: `{todo_list.status}`\n\n" +\
-            f"**Editors**: `{', '.join([str(await self._get_user(u)) for u in todo_list.editor]) if len(todo_list.editor) > 0 else 'Nobody has editor perissions'}`\n" +\
-            f"**Viewers**: `{', '.join([str(await self._get_user(u)) for u in todo_list.viewer]) if len(todo_list.viewer) > 0 else 'Nobody has viewer permissions'}`\n\n" +\
+            f"**Editors**: `{', '.join([(await self._get_user(u)).display_name for u in todo_list.editor]) if len(todo_list.editor) > 0 else 'Nobody has editor perissions'}`\n" +\
+            f"**Viewers**: `{', '.join([(await self._get_user(u)).display_name for u in todo_list.viewer]) if len(todo_list.viewer) > 0 else 'Nobody has viewer permissions'}`\n\n" +\
             f"**Todos**: `{len(todo_list)}/{todo_list.spots}`",
             "color": todo_list.color or 0x3e4a78,
             "footer": {"text": f"{todo_list.views} view{'s' if todo_list.views != 1 else ''}"}
@@ -167,7 +167,7 @@ class TodoSystem(commands.Cog):
         addist = await self._get_user(todo_task.added_by)
         added_on = f"<t:{int(todo_task.added_on.timestamp())}:f>" if isinstance(todo_task.added_on, datetime) else todo_task.added_on
 
-        mark_log = "\n".join([f"""Changed to: `{x["change"]}`\nBy `{await self._get_user(x["author"])}`\nOn""" + (f"<t:{int(x['date'].timestamp())}:f>" 
+        mark_log = "\n".join([f"""Changed to: `{x["change"]}`\nBy `{(await self._get_user(x["author"])).display_name}`\nOn""" + (f"<t:{int(x['date'].timestamp())}:f>" 
         if isinstance(x["date"], datetime) else f"`{x['date']}`") for x in todo_task.mark_log[3:]])
 
         mark_log = mark_log if len(mark_log) > 0 else "No recent changes"
@@ -175,10 +175,10 @@ class TodoSystem(commands.Cog):
         due = f"**Due** <t:{int(todo_task.due_at.timestamp())}:R>\n" if todo_task.due_at else ""
         embed = discord.Embed.from_dict({
             "title": f"Information for the todo task {task_id}",
-            "description": f"**Added by**: `{addist}`\n\n" +\
+            "description": f"**Added by**: `{addist.display_name}`\n\n" +\
             f"**Content**: {todo_task.todo}\n\n" +\
             f"**Currently marked as**: `{todo_task.marked or 'Not currently marked'}`\n\n" +\
-            f"**Assigned to**: `{', '.join([str(await self._get_user(u)) for u in todo_task.assigned_to]) if len(todo_task.assigned_to) > 0 else 'unassigned'}`\n\n" +\
+            f"**Assigned to**: `{', '.join([(await self._get_user(u)).display_name for u in todo_task.assigned_to]) if len(todo_task.assigned_to) > 0 else 'unassigned'}`\n\n" +\
             f"**Added on:** {added_on}\n{due}\n" +\
             f"**Latest changes marks**:\n" +\
             f"{mark_log}",

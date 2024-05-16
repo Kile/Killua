@@ -255,6 +255,8 @@ class Events(commands.Cog):
                     
                     if not saved: # Determines votes etc from custom ids
                         votes: Dict[int, Tuple[list, list]] = {}
+                        # Type infers as Dict[int, list] for some reason in python 3.9
+                        # This does not happen in 3.12 so I won't hotfix it
 
                         old_close = interaction.message.components[0].children[-1].custom_id # as this value is modified in the loop the original value needs to be saved to check it
                         for pos, field in enumerate(interaction.message.embeds[0].fields):

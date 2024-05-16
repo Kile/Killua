@@ -73,7 +73,7 @@ class Patreon:
 
     def _get_user_info(self, data: list, user: str) -> dict:
         """Finds the relevant info by comparing user ids"""
-        return [x for x in data if "user" in x["relationships"].keys() and x["relationships"]["user"]["data"]["id"] == user][0] # Think this is stupid? Thank Python and Patreon
+        return next((x for x in data if "user" in x["relationships"].keys() and x["relationships"]["user"]["data"]["id"] == user), None) # Think this is stupid? Thank Python and Patreon
 
     def _format_patrons(self, data: dict) -> List[dict]:
         res:List[dict] = []

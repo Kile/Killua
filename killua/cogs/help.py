@@ -1,5 +1,5 @@
 import discord, os
-from typing import List
+from typing import List, Union
 from discord.ext import commands
 from datetime import datetime
 from inspect import getsourcelines
@@ -97,7 +97,7 @@ class HelpCommand(commands.Cog):
     def get_group_help(self, ctx: commands.Context, group: Category, prefix: str) -> HelpPaginator:
         """Gets the help embed for a group"""
 
-        c = self.cache[group]["commands"]
+        c = self.cache[group.name.lower()]["commands"]
 
         def make_embed(page, embed, pages):
             embed = self.get_command_help(c[page-1], prefix)
@@ -110,6 +110,27 @@ class HelpCommand(commands.Cog):
             return embed
 
         return HelpPaginator(ctx, c, timeout=100, func=make_embed)
+    
+    async def handle_command(self, ctx: commands.Context, cmd: commands.Command, message_prefix: str):
+        """Handles a command help"""
+
+        if isinstance(cmd, commands.HybridGroup) or isinstance(cmd, discord.app_commands.ContextMenu) or cmd.hidden or cmd.qualified_name.startswith("jishaku") or cmd.name == "help": # not showing what it's not supposed to. Hacky I know
+            return await ctx.send(f"No command called \"{cmd.name}\" found.", ephemeral=True)
+
+        source_link = self.find_source(cmd)
+
+        embed = self.get_command_help(cmd, message_prefix)
+
+        source_view = View(user_id=ctx.author.id, timeout=None)
+        source_view.add_item(discord.ui.Button(url=source_link, label="Source code", style=discord.ButtonStyle.link))
+
+        return await ctx.send(embed=embed, view=source_view)
+    
+    def find_category(self, string: str) -> Union[Category, None]:
+        for cat in Category:
+            if cat.value["name"].lower() == string.lower():
+                return cat
+        return None
 
     async def help_autocomplete(
         self,
@@ -124,11 +145,12 @@ class HelpCommand(commands.Cog):
         # combine all individual lists in all_commands into one in one line
         all_commands: List[commands.Command] = [item for sublist in all_commands for item in sublist]
         
-        return [command.qualified_name for command in all_commands if current.lower() in command.qualified_name]
+        return [command.qualified_name for command in all_commands if current.lower() in command.qualified_name][0:25]
 
-    @commands.hybrid_command(usage="[group] [command]", extras={"id": 45})
+    @commands.hybrid_command(usage="help [group] [command]", extras={"id": 45})
     @discord.app_commands.describe(group="The group to get help for", command="The command to get help for")
-    async def help(self, ctx: commands.Context, group: Category = None, command: str = None) -> None:
+    @discord.app_commands.autocomplete(command=help_autocomplete)
+    async def help(self, ctx: commands.Context, group: str = None, command: str = None) -> None:
         """Displays helfpul information about a command, group, or the bot itself."""
         message_prefix = Guild(ctx.guild.id).prefix if ctx.guild else "k!"
 
@@ -163,7 +185,26 @@ class HelpCommand(commands.Cog):
                 paginator = self.get_group_help(ctx, list(self.cache.keys())[view.value], message_prefix)
                 return await paginator.start()
 
-        elif command: # if both command and group are specified, command takes priority
+        elif group and not command: # if group is specified, but not command
+            # Check if the group exists
+            if self.find_category(group):
+                paginator = self.get_group_help(ctx, self.find_category(group), message_prefix)
+                return await paginator.start()
+            
+            # If the group doesn't exist, check if the command exists
+            all_commands = [v["commands"] for v in self.cache.values()]
+            # combine all individual lists in all_commands into one in one line
+            all_commands: List[commands.Command] = [item for sublist in all_commands for item in sublist]
+
+            # if command not in [c.qualified_name for c in self.client.commands]:
+            #     return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
+            if not group.lower() in [c.qualified_name for c in all_commands]:
+                return await ctx.send(f"No command or group called \"{group}\" found.", ephemeral=True)
+
+            cmd = next(c for c in all_commands if c.qualified_name == group.lower())
+            return await self.handle_command(ctx, cmd, message_prefix)
+
+        elif command: # If both command and group exist, command takes priority
             all_commands = [v["commands"] for v in self.cache.values()]
             # combine all individual lists in all_commands into one in one line
             all_commands: List[commands.Command] = [item for sublist in all_commands for item in sublist]
@@ -173,25 +214,14 @@ class HelpCommand(commands.Cog):
             if not command.lower() in [c.qualified_name for c in all_commands]:
                 return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
 
-            cmd = [c for c in all_commands if c.qualified_name == command.lower()][0]
-
-            if isinstance(cmd, commands.HybridGroup) or isinstance(cmd, discord.app_commands.ContextMenu) or cmd.hidden or cmd.qualified_name.startswith("jishaku") or cmd.name == "help": # not showing what it's not supposed to. Hacky I know
-                return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
-
-            source_link = self.find_source(cmd)
-
-            embed = self.get_command_help(cmd, message_prefix)
-
-            source_view = View(user_id=ctx.author.id, timeout=None)
-            source_view.add_item(discord.ui.Button(url=source_link, label="Source code", style=discord.ButtonStyle.link))
-
-            return await ctx.send(embed=embed, view=source_view)
+            cmd = next(c for c in all_commands if c.qualified_name == command.lower())
+            return await self.handle_command(ctx, cmd, message_prefix)
 
         elif group:
-            if group.name not in self.cache:
-                return await ctx.send(f"No group called \"{group.name}\" found.", ephemeral=True)
+            if not self.find_category(group):
+                return await ctx.send(f"No group called \"{group}\" found.", ephemeral=True)
 
-            paginator = self.get_group_help(ctx, group.name, message_prefix)
+            paginator = self.get_group_help(ctx, self.find_category(group), message_prefix)
             return await paginator.start()
 
 Cog = HelpCommand

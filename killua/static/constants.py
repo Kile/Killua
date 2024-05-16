@@ -2,7 +2,7 @@ import json
 import io
 import discord
 from pymongo import MongoClient, collection
-from typing import Union
+from typing import Any, Callable, TypeVar, Generic, Union
 
 from os.path import exists
 from killua.utils.test_db import TestingDatabase as Database
@@ -28,6 +28,16 @@ MAX_VOTES_DISPLAYED = 5
 
 CARDS_URL = "https://json.extendsclass.com/bin/7d2c78bde0cd"
 
+T = TypeVar("T")
+
+class DBProperty(Generic[T]):
+    """Python's @property does not work with type hints, so this is a workaround to make it work."""
+    def __init__(self, getter: Callable[[Any], T]) -> None:
+        self.getter = getter
+
+    def __get__(self, obj, objtype=None) -> T:
+        return self.getter(obj)
+
 class DB:
     _DB = None
     const = None
@@ -36,11 +46,11 @@ class DB:
         if not args.Args.test:
             self._DB = CLUSTER["Killua"]
 
-    @property
+    @DBProperty
     def teams(self) -> Union[collection.Collection, Database]:
         return self._DB["teams"] if args.Args.test is None else Database("teams")
 
-    @property
+    @DBProperty 
     def items(self) -> Union[collection.Collection, Database]:
         if args.Args.test is not None:
             if exists("cards.json"):
@@ -55,15 +65,15 @@ class DB:
         else:
             return self._DB["items"]
 
-    @property
+    @DBProperty
     def guilds(self) -> Union[collection.Collection, Database]:
         return self._DB["guilds"] if args.Args.test is None else Database("guilds")
 
-    @property
+    @DBProperty
     def todo(self) -> Union[collection.Collection, Database]:
         return self._DB["todo"] if args.Args.test is None else Database("todo")
 
-    @property
+    @DBProperty
     def const(self) -> Union[collection.Collection, Database]:
         if args.Args.test is not None:
             db = Database("const")
@@ -251,6 +261,7 @@ ACTIONS = {
 class PatreonBanner: # using a normal var instead of a class did not work
     URL = "https://i.imgur.com/iRz6Sf5.png"
     VALUE = None
+    is_ok: bool = False
 
     @classmethod
     def file(cls) -> discord.File:# needs to be called each time else the bytesio object would be closed

@@ -1,6 +1,7 @@
 import math
 import random
 import discord
+from abc import ABC, abstractmethod
 from discord.ext import commands
 from datetime import datetime
 from typing import List, Union
@@ -229,8 +230,15 @@ class Card:
             "color": 0x3e4a78
         })
         return embed
+    
+class IndividualCard(ABC):
+    """A class purely for type purposes to requre subclasses to implement the exect method"""
 
-class Card1001(Card):
+    @abstractmethod
+    async def exec(self, *args, **kwargs) -> None:
+        ...
+
+class Card1001(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -258,7 +266,7 @@ class Card1001(Card):
 
         await Paginator(self.ctx, max_pages=math.ceil(len(other.fs_cards)/18), func=make_embed, has_file=True).start() 
 
-class Card1002(Card):
+class Card1002(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -284,7 +292,7 @@ class Card1002(Card):
 
         await Paginator(self.ctx, max_pages=6, func=make_embed, has_file=True).start() 
 
-class Card1007(Card):
+class Card1007(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -311,7 +319,7 @@ class Card1007(Card):
         author.add_card(target_card, removed_card[1]["fake"])
         await self.ctx.send(f"Successfully stole card number `{target_card}` from `{member}`!")
 
-class Card1008(Card):
+class Card1008(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -342,7 +350,7 @@ class Card1008(Card):
 
         await self.ctx.send(f"Successfully swapped cards! Gave {member} the card `{removed_card_author[0]}` and took card number `{removed_card_other[0]}` from them!")
 
-class Card1010(Card):
+class Card1010(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -365,7 +373,7 @@ class Card1010(Card):
 
         await self.ctx.send(f"Successfully added another copy of {card_id} to your book!") 
 
-class Card1011(Card):
+class Card1011(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -388,7 +396,7 @@ class Card1011(Card):
         author.add_card(card[0], card[1]["fake"], True)
         await self.ctx.send(f"Successfully added another copy of card No. {card[0]} to your book! This card is {'not' if card[1]['fake'] is False else ''} a fake!")
 
-class Card1015(Card):
+class Card1015(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -414,7 +422,7 @@ class Card1015(Card):
 
         return await Paginator(self.ctx, max_pages=6+math.ceil(len(other.fs_cards)/18), func=make_embed, has_file=True).start()
 
-class Card1018(Card):
+class Card1018(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -454,7 +462,7 @@ class Card1018(Card):
         else:
             await self.ctx.send("All targetted users were able to defend themselves!")
 
-class Card1020(Card):
+class Card1020(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -477,7 +485,7 @@ class Card1020(Card):
         author.add_card(card_id, True)
         await self.ctx.send(f"Created a fake of card No. {card_id}! Make sure to remember that it's a fake, fakes don't count towards completion of the album")
 
-class Card1021(Card):
+class Card1021(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -505,7 +513,7 @@ class Card1021(Card):
         author.add_card(stolen[0], stolen[1]["fake"])
         await self.ctx.send(f"Stole card number {card_id} successfully!")
 
-class Card1024(Card):
+class Card1024(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -538,7 +546,7 @@ class Card1024(Card):
         other._update_val("cards", {"rs": other.rs_cards, "fs": other.fs_cards, "effects": other.effects}) 
         await self.ctx.send(f"Successfully removed all cloned and fake cards from `{member}`. Cards removed in total: {len(tbr)}")
 
-class Card1026(Card):
+class Card1026(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -577,7 +585,7 @@ class Card1026(Card):
 
         await self.ctx.send("Done, you will be automatically protected from the next 10 attacks! You need to keep the card in your inventory until all 10 defenses are used up")
 
-class Card1028(Card):
+class Card1028(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -602,7 +610,7 @@ class Card1028(Card):
         other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=False, clone=target_card[1]["clone"])
         await self.ctx.send(f"Success, you destroyed card No. {target_card[0]}!")
 
-class Card1029(Card):
+class Card1029(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -627,7 +635,7 @@ class Card1029(Card):
         other.remove_card(target_card[0], remove_fake=target_card[1]["fake"], restricted_slot=True, clone=target_card[1]["clone"])
         await self.ctx.send(f"Success, you destroyed card No. {target_card[0]}!")
 
-class Card1031(Card):
+class Card1031(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -646,7 +654,7 @@ class Card1031(Card):
         embed = self._get_analysis_embed(card_id)
         await self.ctx.send(embed=embed)
 
-class Card1032(Card):
+class Card1032(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -668,7 +676,7 @@ class Card1032(Card):
 
         await self.ctx.send(f"Successfully added card No. {target} to your inventory")
 
-class Card1035(Card):
+class Card1035(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -689,7 +697,7 @@ class Card1035(Card):
         author.add_effect(f"page_protection_{page}", datetime.now()) # The valuedoesn't matter here
         await self.ctx.send(f"Success! Page {page} is now permanently protected")
 
-class Card1036(Card):
+class Card1036(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx
@@ -719,7 +727,7 @@ class Card1036(Card):
             embed = self._get_analysis_embed(card_id)
         await self.ctx.send(embed=embed)
 
-class Card1038(Card):
+class Card1038(Card, IndividualCard):
 
     def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
         self.ctx = ctx

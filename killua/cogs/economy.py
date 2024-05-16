@@ -81,7 +81,7 @@ class Economy(commands.GroupCog, group_name="econ"):
             cooldown = f"<t:{int(info.daily_cooldown.timestamp())}:R>"
 
         return discord.Embed.from_dict({
-                "title": f"Information about {user}",
+                "title": f"Information about {user.display_name}",
                 "description": f"{user.id}\n{' '.join(flags)}",
                 "fields": [
                     {"name": "Killua Badges", "value": " ".join(badges) if len(badges) > 0 else "No badges", "inline": False}, 
@@ -163,7 +163,7 @@ class Economy(commands.GroupCog, group_name="econ"):
     @check()
     @commands.hybrid_command(aliases=["whois", "p", "user"], extras={"category":Category.ECONOMY, "id": 34}, usage="profile <user(optional)>")
     @discord.app_commands.describe(user="The user to get infos about")
-    async def profile(self, ctx, user: str = None):
+    async def profile(self, ctx: commands.Context, user: str = None):
         """Get infos about a certain discord user with ID or mention"""
         if user is None:
             res = ctx.author
@@ -343,7 +343,14 @@ class Economy(commands.GroupCog, group_name="econ"):
             "fields": [
                 {
                     "name": "rarity",
-                    "value": [v for k, v in rarities.items() if k >= (data["probability"]/sum([BOOSTERS[x]["probability"] for x in BOOSTERS.keys()])) ][0],
+                    "value": next(
+                        (
+                            v for k, v in rarities.items() 
+                            if k >= (data["probability"]/sum([BOOSTERS[x]["probability"] 
+                            for x in BOOSTERS.keys()]))
+                        ), 
+                        None
+                    ),
                 }
             ],
             "color": 0x3e4a78,

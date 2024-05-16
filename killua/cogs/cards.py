@@ -4,7 +4,7 @@ import random
 from discord.ext import commands
 from datetime import datetime, timedelta
 
-from typing import Union, List, Optional, Tuple, Optional, Dict, Literal
+from typing import Union, List, Optional, Tuple, Optional, Dict, Literal, Any, cast
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -12,14 +12,14 @@ from killua.utils.paginator import Paginator
 from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches
 from killua.static.enums import Category, SellOptions
 from killua.utils.interactions import ConfirmButton
-from killua.static.cards import Card, CardNotFound
+from killua.static.cards import Card, CardNotFound, IndividualCard
 from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, FREE_SLOTS, DEF_SPELLS, VIEW_DEF_SPELLS, PRICES, BOOK_PAGES, LOOTBOXES, DB, BOOSTERS
 
 class Cards(commands.GroupCog, group_name="cards"):
 
     def __init__(self, client: BaseBot):
         self.client = client
-        self.cardname_cache = {}
+        self.cardname_cache: Dict[int, Tuple[str, str]] = {}
         self.reward_cache = {
             "item": [x["_id"] for x in DB.items.find({"type": "normal", "rank": { "$in": ["A", "B", "C"]}})],
             "spell": [x["_id"] for x in DB.items.find({"type": "spell", "rank": { "$in": ["B", "C"]}})],
@@ -60,8 +60,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         id_cards = list(dict.fromkeys(id_cards)) # removing all duplicates from the list
 
         if current == "": # No ids AND names if the user hasn"t typed anything yet
-            return [discord.app_commands.Choice(name=x[1], value=str(x[0])) for x in name_cards]
-        return [*[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_cards], *[discord.app_commands.Choice(name=str(i), value=str(i)) for i, _ in id_cards]]
+            return [discord.app_commands.Choice(name=x[1], value=str(x[0])) for x in name_cards][0:25]
+        return [*[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_cards], *[discord.app_commands.Choice(name=str(i), value=str(i)) for i, _ in id_cards]][0:25]
 
     def _get_single_reward(self, score:int) -> Tuple[int, int]:
             if score == 1:
@@ -297,6 +297,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         """Go on a hunt! The longer you are on the hunt, the better the rewards!"""
 
         user = User(ctx.author.id)
+        value: datetime # Typehint since type is Any
         has_effect, value = user.has_effect("hunting")
 
         if option == "time":
@@ -439,7 +440,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         embed = c._get_analysis_embed(c.id)
         if c.type == "spell" and c.id not in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
-            card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{card}"][0]
+            card_class = next((c for c in Card.__subclasses__() if c.__name__ == f"Card{card}"), None)
             usage = f"`{self.client.command_prefix(self.client, ctx.message)[2]}use {card} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`"
             embed.add_field(name="Usage", value=usage, inline=False)
 
@@ -524,9 +525,9 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     async def _use_core(self, ctx: commands.Context, card: Card, *args) -> None:
         """This passes the execution to the right class """
-        card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{card.id}"][0]
+        card_class: IndividualCard = next((c for c in Card.__subclasses__() if c.__name__ == f"Card{card.id}"))
         
-        l = []
+        l: List[Dict[str, Any]] = []
         for p, (k, v) in enumerate([x for x in card_class.exec.__annotations__.items() if not str(x[0]) == "return"]):
             if len(args) > p and isinstance(args[p], v):
                 l.append({k: args[p]})
@@ -537,7 +538,8 @@ class Cards(commands.GroupCog, group_name="cards"):
             return await ctx.send(f"Invalid arguments provided! Usage: `{self.client.command_prefix(self.client, ctx.message)[2]}use {card.id} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`", allowed_mentions=discord.AllowedMentions.none())
         kwargs = {k: v for d in l for k, v in d.items()}
         try:
-            await card_class(name_or_id=str(card.id), ctx=ctx).exec(**kwargs)
+            await cast(IndividualCard, card_class(name_or_id=str(card.id), ctx=ctx)).exec(**kwargs)
+            # It should be able to infert the type but for some reason it is not able to do so
         except CheckFailure as e:
             await ctx.send(e.message, allowed_mentions=discord.AllowedMentions.none())
 
@@ -550,8 +552,8 @@ class Cards(commands.GroupCog, group_name="cards"):
             for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
-        name_cards = [(x[0], self.cardname_cache[x[0]][0])for x in User(interaction.user.id).all_cards if self.cardname_cache[x[0]][0].lower().startswith(current.lower()) and self.cardname_cache[x[0]][1] == "spell"]
-        id_cards = [(x[0], self.cardname_cache[x[0]][0])for x in User(interaction.user.id).all_cards if str(x[0]).startswith(current) and self.cardname_cache[x[0]][1] == "spell"]
+        name_cards = [(x[0], self.cardname_cache[x[0]][0]) for x in User(interaction.user.id).all_cards if self.cardname_cache[x[0]][0].lower().startswith(current.lower()) and self.cardname_cache[x[0]][1] == "spell"]
+        id_cards = [(x[0], self.cardname_cache[x[0]][0]) for x in User(interaction.user.id).all_cards if str(x[0]).startswith(current) and self.cardname_cache[x[0]][1] == "spell"]
         name_cards = list(dict.fromkeys(name_cards)) 
         id_cards = list(dict.fromkeys(id_cards)) # removing all duplicates from the list
 

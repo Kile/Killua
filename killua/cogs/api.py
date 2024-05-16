@@ -94,7 +94,10 @@ class IPCRoutes(commands.Cog):
             return Exception("Invalid Length")
         
         offset = 0 # Start with a 0 offset
-        user_index = [i for i, x in enumerate(data) if isinstance(x, discord.User)][0] # Find at what positon the user image is
+        user_index = next(
+            (i for i, x in enumerate(data) if isinstance(x, discord.User)), 
+            None
+        ) # Find at what positon the user image is
         background = await self.get_background()
         drawn = ImageDraw.Draw(background)
         for position, item in enumerate(data):

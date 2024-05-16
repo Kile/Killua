@@ -5,7 +5,7 @@ import re
 import random
 import asyncio
 import math
-from copy import copy
+from copy import deepcopy
 from aiohttp import ClientSession
 from urllib.parse import unquote
 from typing import Union, List, Tuple, Literal, Callable
@@ -216,8 +216,8 @@ class Trivia(CompetitiveGame):
         if responses is None:
             return
         
-        author_response = [r.value for r in responses if r.user == self.ctx.author][0]
-        other_response = [r.value for r in responses if r.user == other][0]
+        author_response = next((r.value for r in responses if r.user == self.ctx.author), None)
+        other_response = next((r.value for r in responses if r.user == other), None)
         author = User(self.ctx.author.id)
         opponent = User(other.id)
 
@@ -259,7 +259,7 @@ class Trivia(CompetitiveGame):
             return await self.ctx.send("You have your dms closed. Please open them to play against someone else")
         
         view = ConfirmButton(other.id)
-        msg = await self.ctx.send(f"{other.mention}, {self.ctx.author.mention} wants to play a trivia against you. They chose the category `{[t for t, v in TRIVIA_TOPICS.items() if v == self.category][0] if self.category else 'Random category'}` with a difficulty of `{self.difficulty}`, playing for {jenny} jenny. Do you accept?", view=view)
+        msg = await self.ctx.send(f"{other.mention}, {self.ctx.author.mention} wants to play a trivia against you. They chose the category `{next((t for t, v in TRIVIA_TOPICS.items() if v == self.category)) if self.category else 'Random category'}` with a difficulty of `{self.difficulty}`, playing for {jenny} jenny. Do you accept?", view=view)
         await view.wait()
 
         if view.timed_out:
@@ -537,7 +537,7 @@ class CountGame:
         view = View(self.ctx.author.id)
         view.stage = 1
         for i in range(25):
-            view.add_item(discord.ui.Button(label=str([k for k, v in self.solutions.items() if v-1 == i][0]) if i+1 in list(self.solutions.values()) else "\u200b", disabled=True, style=discord.ButtonStyle.grey))
+            view.add_item(discord.ui.Button(label=str(next((k for k, v in self.solutions.items() if v-1 == i))) if i+1 in list(self.solutions.values()) else "\u200b", disabled=True, style=discord.ButtonStyle.grey))
         if not msg:
             msg = await self.ctx.bot.send_message(self.ctx, content="Press the buttons in the order displayed as soon as the time starts. Good luck!", view=view)
         else:
@@ -658,7 +658,7 @@ class Games(commands.GroupCog, group_name="games"):
             return await ctx.send("That is not a valid topic. Please choose from the following: " + ", ".join(TRIVIA_TOPICS))
         
         await ctx.defer()
-        topic = [v for k, v in TRIVIA_TOPICS.items() if topic.lower() == k.lower()][0] if topic else None
+        topic = next((v for k, v in TRIVIA_TOPICS.items() if topic.lower() == k.lower())) if topic else None
         game = Trivia(ctx, difficulty, self.client.session, topic if topic and topic > 0 else None)
 
         if opponent:
@@ -741,10 +741,12 @@ class Games(commands.GroupCog, group_name="games"):
     async def gleaderboard(self, ctx: commands.Context, game: Literal["rps", "counting", "trivia"], where: Literal["global", "server"] = "global"):
         """Checks the top 10 players of a game, globally or on the server."""
         game = getattr(GameOptions, game)  # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
-        all: List[dict] = list(DB.teams.find({} if where == "global" else {"id": {"$in": [m.id for m in ctx.guild.members]}}))
 
+        initial_response = await ctx.send(embed=discord.Embed(title="Loading...", description="Computing the leaderboard... <a:loading:1240664776095305879>", color=0x3e4a78))
+
+        all: List[dict] = list(DB.teams.find({} if where == "global" else {"id": {"$in": [m.id for m in ctx.guild.members]}}))
         if game == GameOptions.rps:
-            top_5_pve: List[dict] = all
+            top_5_pve: List[dict] = deepcopy(all) # Not get this resorted in the code below
             top_5_pve.sort(key=lambda x: dict(x).get("stats", {}).get("rps", {}).get("pve", {}).get("won", 0), reverse=True)
 
             top_5_pvp: List[dict] = all
@@ -765,13 +767,13 @@ class Games(commands.GroupCog, group_name="games"):
                 wins = player.get("stats", {}).get("rps", {}).get("pvp", {}).get("won", 0)
                 embed.description += f"\n**{pos+1}.** <@{player['id']}> - {wins} win{'s' if wins != 1 else ''}"
 
-            await ctx.send(embed=embed)
+            await initial_response.edit(embed=embed)
 
         elif game == GameOptions.trivia:
-            top_5_hard = all
+            top_5_hard = deepcopy(all) # Not get this resorted in the code below
             top_5_hard.sort(key=lambda x: dict(x).get("stats", {}).get("trivia", {}).get("hard", {}).get("right", 0), reverse=True)
 
-            top_5_medium = all
+            top_5_medium = deepcopy(all) # Not get this resorted in the code below
             top_5_medium.sort(key=lambda x: dict(x).get("stats", {}).get("trivia", {}).get("medium", {}).get("right", 0), reverse=True)
 
             top_5_easy = all
@@ -800,10 +802,10 @@ class Games(commands.GroupCog, group_name="games"):
                 right_answers = player.get("stats", {}).get("trivia", {}).get("easy", {}).get("right", 0)
                 embed.description += f"\n**{pos+1}.** <@{player['id']}> - {right_answers} right answer{'s' if right_answers != 1 else ''}"
 
-            await ctx.send(embed=embed)
+            await initial_response.edit(embed=embed)
 
         elif game == GameOptions.counting:
-            top_5_hard = all
+            top_5_hard = deepcopy(all) # Not get this resorted in the code below
             top_5_hard.sort(key=lambda x: dict(x).get("stats", {}).get("counting_highscore", {}).get("hard", 0), reverse=True)
 
             top_5_easy = all
@@ -822,6 +824,6 @@ class Games(commands.GroupCog, group_name="games"):
                 # if user:
                 embed.description += f"\n**{pos+1}.** <@{player['id']}> - {player.get('stats', {}).get('counting_highscore', {}).get('easy', 0)} high score"
 
-            await ctx.send(embed=embed)
+            await initial_response.edit(embed=embed)
 
 Cog = Games

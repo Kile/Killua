@@ -5,7 +5,7 @@ from math import ceil
 from datetime import datetime
 from discord.ext import commands, tasks
 from random import randint, choice
-from typing import Union, Tuple, List, Literal
+from typing import Union, Tuple, List, Literal, Dict
 
 from killua.bot import BaseBot
 from killua.static.cards import Card
@@ -41,7 +41,7 @@ class Shop(commands.Cog):
 
     def __init__(self, client: BaseBot):
         self.client = client
-        self.cardname_cache = None
+        self.cardname_cache: Dict[int, Tuple[str, str]] = None
 
     def _format_offers(self, offers: list, reduced_item: int = None, reduced_by: int = None) -> list:
         """Formats the offers for the shop"""

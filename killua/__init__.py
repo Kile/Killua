@@ -4,13 +4,15 @@ import aiohttp
 import asyncio
 import logging
 
+from threading import Timer
+
 from .tests import run_tests
 from .migrate import migrate
 from .download import download
 from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a seperate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
-from .webhook.api import app
+from .webhook.api import app, clear_ratelimit_manager
 from .static.constants import TOKEN, PORT
 
 import killua.args as args_file
@@ -55,6 +57,9 @@ async def main():
     # Setup cogs.
     for cog in cogs.all_cogs:
         await bot.add_cog(cog.Cog(bot))
+
+    # Spawn a thread to clear the ratelimit manager every 10 minutes
+    Timer(600, clear_ratelimit_manager).start()
 
     if bot.is_dev: # runs the api locally if the bot is in dev mode
         # loop = asyncio.get_event_loop()

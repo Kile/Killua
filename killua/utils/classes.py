@@ -627,7 +627,7 @@ class User:
     def premium_tier(self) -> Union[str, None]:
         if len((res := [x for x in self.badges if x in PREMIUM_ALIASES.keys()])) > 0:
             return PREMIUM_ALIASES[res]
-        return [x for x in self.badges if x in PATREON_TIERS.keys()][0] if self.is_premium else None
+        return next((x for x in self.badges if x in PATREON_TIERS.keys()), None) if self.is_premium else None
 
     @property
     def is_entitled_to_double_jenny(self) -> bool:
