@@ -9,7 +9,7 @@ from discord.ext import commands
 from datetime import date
 from PIL import Image
 from io import BytesIO
-from typing import Coroutine, Union, Dict
+from typing import Coroutine, Union, Dict, List
 
 from .migrate import migrate_requiring_bot
 from .static.enums import Category
@@ -40,11 +40,15 @@ class BaseBot(commands.AutoShardedBot):
         # self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
         self.is_dev = False
         self.startup_datetime = datetime.now()
+        self.cached_skus: List[discord.SKU] = []
+        self.cached_entitlements: List[discord.Entitlement] = []
 
     async def setup_hook(self):
         await self.load_extension("jishaku")
         # await self.ipc.start()
         await self.tree.sync()
+        self.cached_skus = await self.fetch_skus()
+        self.cached_entitlements = [entitlement async for entitlement in self.entitlements(limit=None)]
         if DB.const.find_one({"_id": "migrate"})["value"]:
             migrate_requiring_bot(self)
             DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})

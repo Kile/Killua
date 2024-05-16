@@ -6,8 +6,7 @@ from datetime import datetime
 from typing import List, Dict
 import uuid
 from quart_cors import cors
-from threading import Timer
-from logging import info
+from cachetools import TTLCache
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) # This is a necessary hacky fix for importing issues
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -21,21 +20,12 @@ IPC_TOKEN: str = config["ipc"]
 
 commands_chache = {}
 
-ratelimit_manager: Dict[str, List[datetime]] = {}
+ratelimit_manager: TTLCache[str, List[datetime]] = TTLCache(maxsize=100, ttl=600)
 ratelimited = {}
 
 app = Quart(__name__)
 
 app = cors(app, allow_origin="*")
-
-def clear_ratelimit_manager():
-    """Clears the ratelimit manager every 5 minutes"""
-    global ratelimit_manager
-    num = len(ratelimit_manager)
-    ratelimit_manager = {}
-    info(f"Cleaned up ratelimit manager, removed {num} entries.")
-    # Spawn a new thread to clear the ratelimit manager every 10 minutes
-    Timer(600, clear_ratelimit_manager).start()
 
 # Create async IPC request maker
 async def make_request(route: str, data: dict) -> dict:

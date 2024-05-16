@@ -133,7 +133,7 @@ class TodoSystem(commands.Cog):
         embed = discord.Embed.from_dict({
             "title": f"Information for the todo list \"{todo_list.name}\" (ID: {todo_list.id})",
             "description": f"{todo_list.description if todo_list.description else ''}" +\
-            f"**Owner**: \n\n`{owner.display_name}`\n\n" +\
+            f"\n\n**Owner**: `{owner.display_name}`\n\n" +\
             f"**Created on:** {created_at}\n\n" +\
             f"**Custom ID**: `{todo_list.custom_id or 'No custom id'}`\n\n" +\
             f"**Status**: `{todo_list.status}`\n\n" +\

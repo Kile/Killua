@@ -87,7 +87,7 @@ class Patreon:
 
         return res
 
-    async def get_patrons(self) -> List[dict]:
+    async def get_patrons(self) -> Patrons:
         res = await self._make_request(self.url)
         valid = await self._get(res)
         # return valid
@@ -140,10 +140,75 @@ class Premium(commands.Cog):
 
             user.set_badges(badges)
 
+    def _get_subscription_entitlements(self, all: List[discord.Entitlement]) -> List[discord.Entitlement]:
+        """Compares entitlement IDs to cached SKU IDs to determine which are subscriptions"""
+        entitlements = []
+        for sku in self.client.cached_skus:
+            if sku.type != discord.SKUType.subscription: continue # ignore non-subscription SKUs
+            if sku.flags.guild_subscription: continue # ignore guild subscriptions
+            entitlements.extend([entitlement for entitlement in all if entitlement.sku_id == sku.id and not entitlement.is_expired()])
+
+        return entitlements
+    
+    def _get_coresponding_consumable_sku(self, ent: discord.Entitlement) -> Union[discord.SKU, None]:
+        """Gets the consumable SKU that corresponds to the entitlement"""
+        for sku in self.client.cached_skus:
+            if sku.type != discord.SKUType.consumable: continue
+            if sku.id == ent.sku_id:
+                return sku
+    
+    @commands.Cog.listener()
+    async def on_entitlement_create(self, ent: discord.Entitlement):
+        self.client.cached_entitlements.append(ent)
+
+        # If the entitlement is a consumable, apply consumable and dm user
+        sku = self._get_coresponding_consumable_sku(ent)
+        if not sku: return # TODO if subbing for the first time, thank user
+
+        user = User(ent.user_id)
+        # Find lootbox
+        lootbox, amount = LootBox.get_lootbox_from_sku(sku)
+        for _ in range(amount):
+            user.add_lootbox(lootbox)
+
+        # DM user
+        try:
+            user = self.client.get_user(ent.user_id) or await self.client.fetch_user(ent.user_id)
+            await user.send(f"Thank you for supporting me! You have received {amount}x {LOOTBOXES[lootbox]['name']}{LOOTBOXES[lootbox]['emoji']}! Open it with `k!open`")
+        except discord.HTTPException:
+            pass # unable to dm
+
+        await ent.consume()
+
+    @commands.Cog.listener()
+    async def on_entitlement_delete(self, ent: discord.Entitlement):
+        self.client.cached_entitlements.remove(ent)
+
+    @commands.Cog.listener()
+    async def on_entitlement_update(self, ent: discord.Entitlement):
+        # Find entitlement by id
+        index = next((i for i, e in enumerate(self.client.cached_entitlements) if e.id == ent.id), None)
+        if index is None: return
+
+        self.client.cached_entitlements[index] = ent
+
+        # TODO if subscription renewal, thank user
+
     @tasks.loop(minutes=2)
     async def get_patrons(self):
-        current_patrons = await Patreon(self.client.session, PATREON, "5394117").get_patrons()
         saved_patrons = [x for x in DB.teams.find({"badges": {"$in": list(PATREON_TIERS.keys())}})]
+
+        current_patrons = await Patreon(self.client.session, PATREON, "5394117").get_patrons()
+        entitelments = self._get_subscription_entitlements(self.client.cached_entitlements)
+
+        # Currently I am only allowed to have one subscription so I don't need to check for the type
+        # This is a TODO to make smarter in the future once I am allowed more
+        tier_1 = next((k for k, v in PATREON_TIERS.items() if v["id"] == 1), None)
+
+        # Map the entitlements to the discord id
+        entitelment_ids = [{"tier": tier_1, "discord": e.user_id} for e in entitelments]
+
+        current_patrons.patrons.extend(entitelment_ids)
 
         diff = self._get_differences(current_patrons, saved_patrons)
         self._assign_badges(diff)

@@ -191,7 +191,7 @@ class Economy(commands.GroupCog, group_name="econ"):
                 return await ctx.send("User not found", ephemeral=True)
 
         balance = User(res.id).jenny
-        return await ctx.send(f"{res}'s balance is {balance} Jenny", ephemeral=hasattr(ctx, "invoked_by_context_menu"))
+        return await ctx.send(f"{res.display_name}'s balance is {balance} Jenny", ephemeral=hasattr(ctx, "invoked_by_context_menu"))
         
     @check()
     @commands.hybrid_command(extras={"category":Category.ECONOMY, "id": 36}, usage="daily")

@@ -328,6 +328,22 @@ class LootBox:
         view.add_item(_LootBoxButton(index=24, style=discord.ButtonStyle.blurple, label="Options"))
 
         return view
+    
+    @staticmethod
+    def get_lootbox_from_sku(sku: discord.SKU) -> Tuple[int, int]:
+        """Gets a lootbox from a sku"""
+        lootbox_amount = {
+            7: 3,
+            9: 3,
+            10: 2,
+        }
+        keywords = {
+            "titans": 7,
+            "diamond": 9,
+            "legends": 10
+        }
+        box_id = next((v for k, v in keywords.items() if k in sku.name.lower()), None)
+        return box_id, lootbox_amount[box_id]
 
     @staticmethod
     def get_random_lootbox() -> int:
