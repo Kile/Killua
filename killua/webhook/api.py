@@ -20,7 +20,7 @@ IPC_TOKEN: str = config["ipc"]
 
 commands_chache = {}
 
-ratelimit_manager: TTLCache[str, List[datetime]] = TTLCache(maxsize=100, ttl=600)
+ratelimit_manager: TTLCache= TTLCache(maxsize=100, ttl=600)
 ratelimited = {}
 
 app = Quart(__name__)
