@@ -220,6 +220,8 @@ class WebScraping(commands.GroupCog, group_name="web"):
                 res = results[i-1]
                 embed.add_field(name="** **", value=f"**[__{res['title']}__]({res['url']})**\n{unquote(res['description'][:100])}..." if len(res["description"]) > 100 else unquote(res["description"]), inline=False)
             return await self.client.send_message(ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_context_menu"))
+        if len(r.error) > 2000:
+            return await ctx.send(f":x: An error occured with the API this command is using. The API is likely down. Please try again later.")
         return await ctx.send(":x: "+r.error, ephemeral=True)
 
 Cog = WebScraping

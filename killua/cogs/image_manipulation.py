@@ -5,7 +5,7 @@ import re
 import io
 from PIL import Image, ImageDraw, ImageChops
 
-from pypxl import PxlClient # My own library ✨
+from pypxl import PxlClient, pxl_object # My own library ✨
 
 from killua.bot import BaseBot
 from killua.utils.gif import save_transparent_gif
@@ -149,12 +149,12 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
 
         await ctx.channel.typing()
         await ctx.send(f"Processing...", ephemeral=True)
-        r = await function(data, t)
+        r: pxl_object.PxlObject = await function(data, t)
         if r.success:
             f = discord.File(r.convert_to_ioBytes(), filename=f"{ctx.command.name}.{r.file_type}", spoiler=censor)
             return await self.client.send_message(ctx, file=f, reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
-        if len(r.error) > 4000:
-            return await ctx.send(f":x: An error occured with the API this command is using. The API is likely down. Please try again later.", allowed_mentions=discord.AllowedMentions.none())
+        if len(r.error) > 2000:
+            return await ctx.send(f":x: An error occured with the API this command is using. The API is likely down. Please try again later.")
         return await ctx.send(f":x: "+r.error, allowed_mentions=discord.AllowedMentions.none())
 
     async def flag_autocomplete(

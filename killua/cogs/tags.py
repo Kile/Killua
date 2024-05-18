@@ -92,7 +92,7 @@ class Tags(commands.Cog):
             name='tags',
             callback=self.client.callback_from_command(self.user, message=False),
             allowed_installs=discord.AppInstallationType.all(),
-            allowed_contexts=discord.AppCommandContext.all()
+            allowed_contexts=discord.AppCommandContext.guild
         ))
 
         for menu in menus:
