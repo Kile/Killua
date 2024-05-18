@@ -6,6 +6,7 @@ from html import escape
 from json import loads
 from typing import List, Union
 from pypxl import PxlClient
+from asyncio import wait_for, TimeoutError
 from urllib.parse import unquote, quote
 
 from killua.bot import BaseBot
@@ -208,8 +209,12 @@ class WebScraping(commands.GroupCog, group_name="web"):
     @discord.app_commands.describe(text="The query to search for")
     async def google(self, ctx: commands.Context, *, text: str):
         """Get the best results for a query the web has to offer"""
+
+        try:
+            r = await wait_for(self.pxl.web_search(query=text), 2) # 2 second timeout so the interaction does not fail
+        except TimeoutError:
+            return await ctx.send("The API is taking too long to respond, please try again later (it is likely down)")
         
-        r = await self.pxl.web_search(query=text)
         if r.success:
             results = r.data["results"]
             embed = discord.Embed.from_dict({

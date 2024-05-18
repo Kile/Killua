@@ -1,9 +1,11 @@
 import discord
 from discord.ext import commands
-from typing import Union, Any, List, Coroutine, Optional, Literal
+
 import re
 import io
+from typing import Union, Any, List, Coroutine, Optional, Literal
 from PIL import Image, ImageDraw, ImageChops
+from asyncio import wait_for, TimeoutError
 
 from pypxl import PxlClient, pxl_object # My own library ✨
 
@@ -131,13 +133,13 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         return str(ctx.author.avatar.url) # if all else fails, return the author"s avatar
 
     async def handle_command(
-        self, 
-        ctx: commands.Context, 
-        target: Union[discord.Member, discord.Emoji, str], 
-        function: Coroutine, 
-        t: Any = None, 
-        censor: bool = False, 
-        validate: bool = True
+            self, 
+            ctx: commands.Context, 
+            target: Union[discord.Member, discord.Emoji, str], 
+            function: Coroutine, 
+            t: Any = None, 
+            censor: bool = False, 
+            validate: bool = True
         ) -> discord.Message:
         """Handles the command and returns the message"""
         if validate:
@@ -148,8 +150,11 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
             data = target
 
         await ctx.channel.typing()
-        await ctx.send(f"Processing...", ephemeral=True)
-        r: pxl_object.PxlObject = await function(data, t)
+        try:
+            r: pxl_object.PxlObject = await wait_for(function(data, t))
+        except TimeoutError:
+            return await ctx.send("The API took too long to respond. Please try again later (It is likely down).")
+        
         if r.success:
             f = discord.File(r.convert_to_ioBytes(), filename=f"{ctx.command.name}.{r.file_type}", spoiler=censor)
             return await self.client.send_message(ctx, file=f, reference=ctx.message, allowed_mentions=discord.AllowedMentions.none())
