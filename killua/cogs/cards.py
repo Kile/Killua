@@ -35,7 +35,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         menus = []
         menus.append(discord.app_commands.ContextMenu(
             name='meet',
-            callback=self.client.callback_from_command(self.meet, message=False)
+            callback=self.client.callback_from_command(self.meet, message=False),
+            allowed_installs=discord.AppInstallationType(guild=True)
         ))
 
         for menu in menus:
