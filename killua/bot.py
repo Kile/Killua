@@ -248,3 +248,13 @@ class BaseBot(commands.AutoShardedBot):
             digits.append(int(n % b))
             n //= b
         return "".join([chars[d] for d in digits[::-1]])[-2:] if smallest else "".join([chars[d] for d in digits[::-1]])
+    
+    def is_user_installed(self, ctx: commands.Context) -> bool:
+        if not ctx.interaction: return False
+        if not ctx.guild: return True
+        if len(ctx.guild.members) == ctx.guild.member_count: return False # Best indicator I found
+        # if not self.user.id in [m.id for m in ctx.guild.members]: return True
+        # ^ Does not work for some reason. That is really dumb. May be an issue with how
+        # dpy caches members (assuming they are members when the command is executed 
+        # on a guild)
+        return True

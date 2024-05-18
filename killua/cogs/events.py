@@ -416,7 +416,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):
 
-        if ctx.channel.permissions_for(ctx.me).send_messages is False and not self.client.is_dev: # we don't want to raise an error inside the error handler when Killua ' send the error because that does not trigger `on_command_error`
+        if not self.client.is_user_installed(ctx) and ctx.channel.permissions_for(ctx.me).send_messages is False and not self.client.is_dev: 
+            # we don't want to raise an error inside the error handler when Killua ' send the error because that does not trigger `on_command_error`
             return
 
         if ctx.command:

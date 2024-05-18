@@ -8,7 +8,7 @@ import math
 from copy import deepcopy
 from aiohttp import ClientSession
 from urllib.parse import unquote
-from typing import Union, List, Tuple, Literal, Callable
+from typing import Union, List, Tuple, Literal, Callable, cast
 
 from killua.bot import BaseBot
 from killua.utils.paginator import View
@@ -70,26 +70,27 @@ class PlayAgainButton(discord.ui.Button):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.label = "Play Again"
-        self.__clicked = None
+        self.__clicked = []
         self.custom_id = "play_again"
 
+    @property
+    def num_required(self) -> int: # Not accessible on instantiation so needs to be a property
+        return len(cast(View, self.view).user_id)
+
     async def callback(self, interaction: discord.Interaction):
-
-        if not self.__clicked:
-            self.label = "[1/2] Play Again"
-            self.__clicked = interaction.user
-            await interaction.response.edit_message(view=self.view)
-
+        if interaction.user in self.__clicked:
+            self.__clicked.remove(interaction.user)
         else:
-            if self.__clicked == interaction.user:
-                self.label = "Play Again"
-                self.__clicked = None
-                await interaction.response.edit_message(view=self.view)
-            else:
-                self.label = "[2/2] Play Again"
-                self.view.value = True
-                await interaction.response.edit_message(view=self.view)
-                self.view.stop()
+            self.__clicked.append(interaction.user)
+
+        if len(self.__clicked) < self.num_required:
+            self.label = "Play Again" if len(self.__clicked) == 0 else f"[{len(self.__clicked)}/{self.num_required}] Play Again"
+            await interaction.response.edit_message(view=self.view)
+        else:
+            self.label = f"[{len(self.__clicked)}/{self.num_required}] Play Again"
+            self.view.value = True
+            await interaction.response.edit_message(view=self.view)
+            self.view.stop()
 
 
 class RpsSelect(discord.ui.Select):
@@ -179,7 +180,7 @@ class Trivia(CompetitiveGame):
         else:
             self.result = self.view.value
 
-    async def send_result_single(self) -> None:
+    async def send_result_single(self, view = None) -> Union[None, discord.Message]:
         """Sends the result of the trivia and hands out jenny as rewards"""
         user = User(self.ctx.author.id)
 
@@ -188,10 +189,11 @@ class Trivia(CompetitiveGame):
 
         elif self.timed_out:
             await self.ctx.send("Timed out!", reference=self.msg)
+            return
 
         elif self.result != self.correct_index:
             user.add_trivia_stat("wrong", self.difficulty)
-            await self.ctx.send(f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}")
+            return await self.ctx.send(f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}", view=view)
 
         else:
             rew = random.randint(*self.rewards[self.difficulty])
@@ -199,15 +201,30 @@ class Trivia(CompetitiveGame):
                 rew *= 2
             user.add_jenny(rew)
             user.add_trivia_stat("right", self.difficulty)
-            await self.ctx.send(f"Correct! Here are {rew} Jenny as a reward!")
+            return await self.ctx.send(f"Correct! Here are {rew} Jenny as a reward!", view=view)
+
+    def _play_again_view(self, players: List[discord.Member]) -> View:
+        """Creates a button that, if clicked by both players, automatically launches another game"""
+        view = View(user_id=[x.id for x in players])
+        button = PlayAgainButton()
+        view.add_item(button)
+        return view
 
     async def play_single(self) -> None:
         """Plays a single trivia game"""
         await self.create()
         await self.send_single()
-        await self.send_result_single()
+        view = self._play_again_view([self.ctx.author])
+        msg = await self.send_result_single(view)
+        if msg:
+            await view.wait()
+            await view.disable(msg) 
+            if not view.value or view.timed_out:
+                pass
+            else:
+                await self.play_single()
 
-    async def send_multi(self, other: discord.Member, jenny: int) -> None:
+    async def send_multi(self, other: discord.Member, jenny: int, view: View) -> None:
         """Sends the questions in players dms"""
         self.other = other
 
@@ -225,11 +242,11 @@ class Trivia(CompetitiveGame):
             if author_response == self.correct_index:
                 author.add_trivia_stat("right", self.difficulty)
                 opponent.add_trivia_stat("right", self.difficulty)
-                await self.ctx.send(f"Both players got the right answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg)
+                return await self.ctx.send(f"Both players got the right answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg, view=view)
             else:
                 author.add_trivia_stat("wrong", self.difficulty)
                 opponent.add_trivia_stat("wrong", self.difficulty)
-                await self.ctx.send(f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg)
+                return await self.ctx.send(f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg, view=view)
 
         elif author_response == self.correct_index:
             author.add_jenny(jenny)
@@ -237,7 +254,7 @@ class Trivia(CompetitiveGame):
             opponent.remove_jenny(jenny)
             opponent.add_trivia_stat("wrong", self.difficulty)
 
-            await self.ctx.send(f"{self.ctx.author.mention} got the right answer! {other.mention} lost **{jenny}** Jenny to {self.ctx.author.name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg)
+            return await self.ctx.send(f"{self.ctx.author.mention} got the right answer! {other.mention} lost **{jenny}** Jenny to {self.ctx.author.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg, view=view)
 
         elif other_response == self.correct_index:
             author.remove_jenny(jenny)
@@ -245,12 +262,12 @@ class Trivia(CompetitiveGame):
             opponent.add_jenny(jenny)
             opponent.add_trivia_stat("right", self.difficulty)
 
-            await self.ctx.send(f"{other.mention} got the right answer! {self.ctx.author.mention} lost **{jenny}** Jenny to {other.name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg)
+            return await self.ctx.send(f"{other.mention} got the right answer! {self.ctx.author.mention} lost **{jenny}** Jenny to {other.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg, view=view)
 
         else:
-            await self.ctx.send(f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg)
+         return await self.ctx.send(f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}", reference=self.msg, view=view)
 
-    async def play_against(self, other: discord.Member, jenny: int) -> None:
+    async def play_against(self, other: discord.Member, jenny: int, replay=False) -> None:
         """Plays a trivia game against another user"""
         if not await self._dmcheck(other):
             return await self.ctx.send(f"{other.mention} has their dms closed. Please tell them open them to play against them")
@@ -258,24 +275,36 @@ class Trivia(CompetitiveGame):
         if not await self._dmcheck(self.ctx.author):
             return await self.ctx.send("You have your dms closed. Please open them to play against someone else")
         
-        view = ConfirmButton(other.id)
-        msg = await self.ctx.send(f"{other.mention}, {self.ctx.author.mention} wants to play a trivia against you. They chose the category `{next((t for t, v in TRIVIA_TOPICS.items() if v == self.category)) if self.category else 'Random category'}` with a difficulty of `{self.difficulty}`, playing for {jenny} jenny. Do you accept?", view=view)
-        await view.wait()
+        if not replay:
+            view = ConfirmButton(other.id)
+            msg = await self.ctx.send(f"{other.mention}, {self.ctx.author.mention} wants to play a trivia against you. They chose the category `{next((t for t, v in TRIVIA_TOPICS.items() if v == self.category)) if self.category else 'Random category'}` with a difficulty of `{self.difficulty}`, playing for {jenny} jenny. Do you accept?", view=view)
+            await view.wait()
 
-        if view.timed_out:
+            if view.timed_out:
+                await view.disable(msg)
+                await self.ctx.send("Timed out!")
+                return
+
+            elif view.value is False:
+                await view.disable(msg)
+                await self.ctx.send("Game declined!")
+                return
+
             await view.disable(msg)
-            await self.ctx.send("Timed out!")
-            return
+        else:
+            msg = None
 
-        elif view.value is False:
-            await view.disable(msg)
-            await self.ctx.send("Game declined!")
-            return
-
-        await view.disable(msg)
         await self.create()
         self.msg = await self.ctx.send(f"{self.ctx.author.mention} and {other.mention} are playing a trivia against each other! The winner gets {jenny} Jenny from the loser! Please answer the question in dms.", reference=msg, embed=self.embed)
-        await self.send_multi(other, jenny)
+        view = self._play_again_view([self.ctx.author, other])
+        msg = await self.send_multi(other, jenny, view=view)
+
+        await view.wait()
+        await view.disable(msg) 
+        if not view.value or view.timed_out:
+            pass
+        else:
+            await self.play_against(other, jenny, replay=True)
 
 class Rps(CompetitiveGame):
     """A class handling someone playing rps alone or with someone else"""
@@ -316,7 +345,7 @@ class Rps(CompetitiveGame):
             "color": 0x3e4a78
         })
 
-        await self.ctx.bot.send_message(self.ctx, embed=embed)
+        await cast(BaseBot, self.ctx.bot).send_message(self.ctx, embed=embed)
 
     async def check_for_achivement(self, player: discord.User) -> None:
         """Checks wether someone has earend the "rps master" achivement"""
@@ -395,12 +424,10 @@ class Rps(CompetitiveGame):
         c2 = random.randint(-1, 1)
         winlose = self._result(resp[0].value, c2)
 
-        view = View(user_id=self.ctx.author.id)
-        button = Button(label="Play again", style=discord.ButtonStyle.grey)
-        view.add_item(button)
+        view = self._play_again_view([self.ctx.author])
 
         msg = await self._eval_outcome(winlose, resp[0].value, c2, self.ctx.author, self.ctx.me, view)
-
+        
         await view.wait()
         await view.disable(msg) 
         if not view.value or view.timed_out:
@@ -589,6 +616,8 @@ class CountGame:
         msg = await self._send_solutions()
         await self._handle_game(msg)
 
+@discord.app_commands.allowed_installs(guilds=True, users=True)
+@discord.app_commands.allowed_contexts(discord.AppCommandContext.all())
 class Games(commands.GroupCog, group_name="games"):
 
     def __init__(self, client: BaseBot):
@@ -604,12 +633,16 @@ class Games(commands.GroupCog, group_name="games"):
 
     @check(30)
     @commands.hybrid_command(extras={"category": Category.GAMES, "id": 41}, usage="rps <user> <points(optional)>")
+    @discord.app_commands.allowed_installs(guilds=True, users=False)
     @discord.app_commands.describe(
         member="The person to challenge",
         points="The points to play for"
     )
     async def rps(self, ctx: commands.Context, member: discord.Member, points: int = None):
         """Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun."""
+
+        if self.client.is_user_installed(ctx):
+            return await ctx.send("You cannot play this game without the bot being on the server :c", ephemeral=True)
         
         if member.id == ctx.author.id:
             return await ctx.send("Baka! You can't play against yourself")
@@ -662,6 +695,9 @@ class Games(commands.GroupCog, group_name="games"):
         game = Trivia(ctx, difficulty, self.client.session, topic if topic and topic > 0 else None)
 
         if opponent:
+            if self.client.is_user_installed(ctx): 
+                return await ctx.send("You cannot play against someone else in a user integration", ephemeral=True)
+
             if jenny < 0:
                 return await ctx.send("You cannot play for a negative amount of Jenny")
             

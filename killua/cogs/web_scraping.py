@@ -35,7 +35,9 @@ class WebScraping(commands.GroupCog, group_name="web"):
         menus = []
         menus.append(discord.app_commands.ContextMenu(
             name='google',
-            callback=self.client.callback_from_command(self.google, message=True)
+            callback=self.client.callback_from_command(self.google, message=True),
+            allowed_installs=discord.AppInstallationType.all(),
+            allowed_contexts=discord.AppCommandContext.all()
         ))
 
         for menu in menus:

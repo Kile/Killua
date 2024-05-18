@@ -90,7 +90,9 @@ class Tags(commands.Cog):
         menus = []
         menus.append(discord.app_commands.ContextMenu(
             name='tags',
-            callback=self.client.callback_from_command(self.user, message=False)
+            callback=self.client.callback_from_command(self.user, message=False),
+            allowed_installs=discord.AppInstallationType.all(),
+            allowed_contexts=discord.AppCommandContext.all()
         ))
 
         for menu in menus:

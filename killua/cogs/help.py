@@ -1,5 +1,5 @@
 import discord, os
-from typing import List, Union
+from typing import List, Union, cast
 from discord.ext import commands
 from datetime import datetime
 from inspect import getsourcelines
@@ -24,7 +24,14 @@ class HelpPaginator(Paginator):
         if view.ignore or view.timed_out:
             return
         
-        await self.view.message.delete()
+        try:
+            await self.view.message.delete()
+        except discord.errors.Forbidden:
+            pass 
+        # Happens sometimes when invoked with a user installation.
+        # Idk why but since that means the response is likely ephemeral,
+        # we don't need to declutter the channel as badly. The command
+        # failing would be worse.
         await self.ctx.command.__call__(self.ctx)
 
 
@@ -62,7 +69,7 @@ class HelpCommand(commands.Cog):
         embed = discord.Embed(title="Infos about command `" + command.qualified_name + "`", description=command.help or "No help found...")
         embed.color = 0x3e4a78
 
-        embed.add_field(name="Category", value=command.extras["category"].value["name"])
+        embed.add_field(name="Category", value=cast(Category, command.extras["category"]).value["name"])
 
         checks = command.checks
 
@@ -83,6 +90,18 @@ class HelpCommand(commands.Cog):
 
         if cooldown:
             embed.add_field(name="Cooldown", value=f"{cooldown} seconds")
+
+        # Get the app command type parent of this command
+        embed.add_field(
+            name="User installable", 
+            value=(
+                "Yes" if 
+                command.parent and 
+                cast(commands.HybridCommand, command).app_command.parent.allowed_installs and
+                cast(commands.HybridCommand, command).app_command.parent.allowed_installs.user
+                else "No"
+            )
+        )
 
         # print(command, command.parent, command.qualified_name, type(command.parent), type(command.cog))
         usage_slash = "```css\n/" + command.qualified_name.replace(command.name, "") + command.usage + "\n```" if not isinstance(command.cog, commands.GroupCog) else f"```css\n/" + command.cog.__cog_group_name__ + " " + command.usage + "\n```"
@@ -128,7 +147,7 @@ class HelpCommand(commands.Cog):
     
     def find_category(self, string: str) -> Union[Category, None]:
         for cat in Category:
-            if cat.value["name"].lower() == string.lower():
+            if cast(str, cat.value["name"]).lower() == string.lower():
                 return cat
         return None
 
@@ -150,6 +169,8 @@ class HelpCommand(commands.Cog):
     @commands.hybrid_command(usage="help [group] [command]", extras={"id": 45})
     @discord.app_commands.describe(group="The group to get help for", command="The command to get help for")
     @discord.app_commands.autocomplete(command=help_autocomplete)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+    @discord.app_commands.allowed_installs(users=True, guilds=True)
     async def help(self, ctx: commands.Context, group: str = None, command: str = None) -> None:
         """Displays helfpul information about a command, group, or the bot itself."""
         message_prefix = Guild(ctx.guild.id).prefix if ctx.guild else "k!"
@@ -182,7 +203,7 @@ class HelpCommand(commands.Cog):
             else:
                 #await msg.edit(embed=msg.embeds[0], view=discord.ui.View())
                 await msg.delete()
-                paginator = self.get_group_help(ctx, list(self.cache.keys())[view.value], message_prefix)
+                paginator = self.get_group_help(ctx, self.find_category(list(self.cache.keys())[view.value]), message_prefix)
                 return await paginator.start()
 
         elif group and not command: # if group is specified, but not command

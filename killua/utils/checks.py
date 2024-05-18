@@ -2,7 +2,7 @@
 import discord
 from discord.ext import commands
 from typing import Union, Type
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from killua.static.constants import DB, PatreonBanner, daily_users
 from .classes import User, Guild
@@ -85,7 +85,7 @@ def check(time: int = 0):
                 cooldowndict[ctx.author.id][ctx.command.name] = now
                 return True
 
-        cd = now-cdwn 
+        cd: timedelta = now-cdwn 
         diff = cd.seconds
         
         user = User(ctx.author.id)
@@ -102,8 +102,19 @@ def check(time: int = 0):
         if diff > time:
             cooldowndict[ctx.author.id][ctx.command.name] = now
             return True 
-                    
-        await ctx.send(f":x: Command on cooldown! Try again  after `{time-diff}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon",file=PatreonBanner.file(), view=view, delete_after=10)
+
+        timestamp = f"<t:{int((now + timedelta(seconds=time)).timestamp())}:R>"
+        
+        embed = discord.Embed(
+            title="Cooldown", 
+            description=f":x: Command on cooldown! Try again {timestamp}\n\nHalf your cooldown by clicking on the button and becoming a Patreon", 
+            color=discord.Color.red()
+        )
+        embed.set_image(url=PatreonBanner.URL)
+        await ctx.send(embed=embed, view=view, delete_after=10)
+        # The one below currently does not work because imgur does not
+        # not like my server's IP so I cannot download the banner.
+        # await ctx.send(f":x: Command on cooldown! Try again  after `{time-diff}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon",file=PatreonBanner.file(), view=view, delete_after=10)
         return False
 
     async def settings_check(ctx: commands.Context) -> bool:

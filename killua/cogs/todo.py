@@ -28,7 +28,9 @@ class TodoSystem(commands.Cog):
         menus = []
         menus.append(discord.app_commands.ContextMenu(
             name='Add as todo',
-            callback=self.client.callback_from_command(self.add, message=True)
+            callback=self.client.callback_from_command(self.add, message=True),
+            allowed_installs=discord.AppInstallationType.all(),
+            allowed_contexts=discord.AppCommandContext.all()
         ))
 
         for menu in menus:
@@ -199,13 +201,16 @@ class TodoSystem(commands.Cog):
             todo_list = TodoList(list_id)
             return todo_list
 
-    @commands.hybrid_group(hidden=True, extras={"category":Category.TODO})
+    @commands.hybrid_group(hidden=True, extras={"category": Category.TODO})
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
     async def todo(self, _: commands.Context):
         """All commands relating to todo lists"""
         ...
 
     @check(10)
     @todo.command(extras={"category":Category.TODO, "id": 100}, usage="create")
+    @discord.app_commands.allowed_installs(discord.AppInstallationType.all())
+    @discord.app_commands.allowed_contexts(discord.AppCommandContext.all())
     @discord.app_commands.describe(
         name="The name of the todo list",
         status="Wether a todo list is publicly viewable or not",

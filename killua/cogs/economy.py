@@ -22,11 +22,15 @@ class Economy(commands.GroupCog, group_name="econ"):
         menus.append(discord.app_commands.ContextMenu(
             name='profile',
             callback=self.client.callback_from_command(self.profile, message=False),
+            allowed_installs=discord.AppInstallationType.all(),
+            allowed_contexts=discord.AppCommandContext.all()
             # guild_ids=[...],
         ))
         menus.append(discord.app_commands.ContextMenu(
             name='balance',
             callback=self.client.callback_from_command(self.jenny, message=False),
+            allowed_installs=discord.AppInstallationType.all(),
+            allowed_contexts=discord.AppCommandContext.all()
         ))
 
         for menu in menus:

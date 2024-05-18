@@ -42,10 +42,18 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         menus.append(discord.app_commands.ContextMenu(
             name='uwufy',
             callback=self.client.callback_from_command(self.uwufy, message=True),
+            allowed_installs=discord.AppInstallationType.all(),
+            allowed_contexts=discord.AppCommandContext.all()
         ))
         menus.append(discord.app_commands.ContextMenu(
             name='translate',
-            callback=self.client.callback_from_command(self.translate, message=True, source="auto"),
+            callback=self.client.callback_from_command(
+                self.translate, 
+                message=True, 
+                source="auto"
+            ),
+            allowed_installs=discord.AppInstallationType.all(),
+            allowed_contexts=discord.AppCommandContext.all()
         ))
 
         for menu in menus:
