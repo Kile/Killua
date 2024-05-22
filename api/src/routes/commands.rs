@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use serde_json::{from_str, Value};
 use std::error::Error;
 
-use crate::routes::common::make_request;
+use crate::routes::common::{make_request, NoData};
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(crate = "rocket::serde")]
@@ -44,7 +44,7 @@ fn deserialize_categories(obj: HashMap<String, Value>) -> Result<HashMap<String,
                 // Deserialize the nested Value into Category
                 ..Deserialize::deserialize(value)?
             };
-            Ok((key.clone(), category)) // Move ownership of the String
+            Ok((key.clone(), category)) 
         })
         .collect()
 }
@@ -56,7 +56,7 @@ pub async fn get_commands() -> Json<HashMap<String, Category>> {
     let mut cache = CACHE.lock().unwrap();
     
     if cache.is_none() {
-        let commands = make_request("commands", None);
+        let commands = make_request("commands", NoData {});
         if commands.is_err() {
             return Json(HashMap::new());
         }

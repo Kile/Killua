@@ -1,15 +1,18 @@
-use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use zmq::{Context, REQ};
 use rand::{Rng, thread_rng};
 
 #[derive(Serialize, Deserialize)]
-struct RequestData {
+struct RequestData<T>
+{
     route: String,
-    data: HashMap<String, String>,
+    data: T,
 }
 
-pub fn make_request(route: &str, data: Option<HashMap<String, String>>) -> Result<String, zmq::Error> {
+#[derive(Serialize, Deserialize)]
+pub struct NoData {}
+
+pub fn make_request<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) -> Result<String, zmq::Error> {
     let ctx = Context::new();
     let socket = ctx.socket(REQ).unwrap();
 
@@ -21,7 +24,7 @@ pub fn make_request(route: &str, data: Option<HashMap<String, String>>) -> Resul
 
      let request_data = RequestData {
          route: route.to_owned(),
-         data: data.unwrap_or_default(),
+         data,
     };
 
     let mut msg = zmq::Message::new();
@@ -29,6 +32,9 @@ pub fn make_request(route: &str, data: Option<HashMap<String, String>>) -> Resul
 
     socket.send(request_json.as_bytes(), 0).unwrap();
     let result = socket.recv(&mut msg, 0);
+
+    // Close the socket
+    assert!(socket.disconnect("ipc:///tmp/killua.ipc").is_ok());
     if result.is_err() {
         return Err(result.err().unwrap());
     }

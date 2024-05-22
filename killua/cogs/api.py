@@ -52,7 +52,13 @@ class IPCRoutes(commands.Cog):
                 #identity, message = message
                 #print(identity)
             decoded = loads(message.decode())
-            res = await getattr(self, decoded["route"])(decoded["data"])
+            print(decoded)
+            try:
+                res = await getattr(self, decoded["route"])(decoded["data"])
+            except Exception as e:
+                await socket.send(dumps({"error": str(e)}).encode())
+                continue
+            
             if res:
                 await socket.send(dumps(res).encode())
             else:
