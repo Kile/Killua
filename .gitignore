@@ -10,6 +10,11 @@
 #python stuff
 **/__pycache__
 
+# Rust build
+**/target
+
 **/env
 
 **/.DS_Store
+
+Rocket.toml

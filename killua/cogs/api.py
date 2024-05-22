@@ -4,9 +4,8 @@ from discord.ext import commands
 from random import choices
 from json import loads, dumps
 from asyncio import create_task
-from zmq import POLLIN, ROUTER
-from zmq.asyncio import Context, Poller
-from zmq.auth.asyncio import AsyncioAuthenticator
+from zmq import REP, Poller, POLLIN
+from zmq.asyncio import Context
 
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageChops
@@ -27,31 +26,70 @@ class IPCRoutes(commands.Cog):
     async def start(self):
         """Starts the zmq server asyncronously and handles incoming requests"""
         context = Context()
-
-        auth = AsyncioAuthenticator(context)
-        auth.start()
-        auth.configure_plain(domain="*", passwords={"killua": IPC_TOKEN})
-        auth.allow("127.0.0.1")
-
-        socket = context.socket(ROUTER)
-        socket.plain_server = True
-        socket.bind("tcp://*:5555")
+        socket = context.socket(REP)
+        socket.bind("ipc:///tmp/killua.ipc")
 
         poller = Poller()
         poller.register(socket, POLLIN)
 
         while True:
-            socks = dict(await poller.poll())
+            # socks = dict(await poller.poll())
+            # print(socks)
+            # if socket in socks and socks[socket] == POLLIN:
+            #     message = await socket.recv_multipart()
+            #     identity, request = message
+            #     decoded = loads(request.decode())
+            #     print(identity, decoded)
+            #     res = await getattr(self, decoded["route"])(decoded["data"])
+            #     if res:
+            #         await socket.send_multipart([identity, dumps(res).encode()])
+            #     else:
+            #         await socket.send_multipart([identity, b'{"status":"ok"}'])
+            message = await socket.recv()
+            # for message in messages:
+            #     print(messages)
+            #     print(message)
+                #identity, message = message
+                #print(identity)
+            decoded = loads(message.decode())
+            res = await getattr(self, decoded["route"])(decoded["data"])
+            if res:
+                await socket.send(dumps(res).encode())
+            else:
+                await socket.send(b'{"status":"ok"}')
+        # context = Context()
 
-            if socket in socks and socks[socket] == POLLIN:
-                message = await socket.recv_multipart()
-                identity, request = message
-                decoded = loads(request.decode())
-                res = await getattr(self, decoded["route"])(decoded["data"])
-                if res:
-                    await socket.send_multipart([identity, dumps(res).encode()])
-                else:
-                    await socket.send_multipart([identity, b'{"status":"ok"}'])
+        # auth = AsyncioAuthenticator(context)
+        # auth.start()
+        # auth.configure_plain(domain="*", passwords={"killua": IPC_TOKEN})
+        # auth.allow("127.0.0.1")
+
+        # socket = context.socket(REP)
+        # socket.plain_server = True
+        # socket.bind("tcp://localhost:5555")
+
+        # poller = Poller()
+        # # poller.register(socket, POLLIN)
+
+        # while True:
+        #     from asyncio import wait_for, TimeoutError
+        #     print("Loop")
+        #     try:
+        #         print(await wait_for(socket.recv_multipart(), timeout=5))
+        #     except TimeoutError:
+        #         continue
+            # socks = dict(await poller.poll(1000))
+            # print(socks)
+            # if socket in socks and socks[socket] == POLLIN:
+            #     message = await socket.recv_multipart()
+            #     identity, request = message
+            #     decoded = loads(request.decode())
+            #     res = await getattr(self, decoded["route"])(decoded["data"])
+            #     print(f"Received request: {decoded['route']} with data: {decoded['data']} and returned: {res}")
+            #     if res:
+            #         await socket.send_multipart([identity, dumps(res).encode()])
+            #     else:
+            #         await socket.send_multipart([identity, b'{"status":"ok"}'])
 
     async def download(self, url: str) -> Image.Image:
         """Downloads an image from the given url and returns it as a PIL Image"""
@@ -248,7 +286,7 @@ class IPCRoutes(commands.Cog):
             "slash_usage": usage_slash,
             "description": cmd.help or "No help found...",
             "aliases": cmd.aliases,
-            "cooldown": cooldown,
+            "cooldown": cooldown or 0,
             "premium_guild": premium_guild,
             "premium_user": premium_user,
             "message_usage": usage_message
