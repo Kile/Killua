@@ -329,7 +329,7 @@ LOOTBOXES = {
         "boosters_total": (0, 2),
         "probability": 1000,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419628986398/image1.png"
+        "image": "{}/image/boxes/standard_box.png"
     },
     2: {
         "name": "Big box",
@@ -350,7 +350,7 @@ LOOTBOXES = {
         "boosters_total": (0, 3),
         "probability": 100,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419884826644/image2.png"
+        "image": "{}/image/boxes/big_box.png"
     },
     3: {
         "name": "Fancy box",
@@ -371,7 +371,7 @@ LOOTBOXES = {
         "boosters_total": (0, 0),
         "probability": 50,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052419251474493/image0.png"
+        "image": "{}/image/boxes/fancy_box.png"
     },
     4: {
         "name": "Golden box",
@@ -392,7 +392,7 @@ LOOTBOXES = {
         "boosters_total": (0, 1),
         "probability": 20,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420291682374/image3.png"
+        "image": "{}/image/boxes/golden_box.png"
     },
     5: {
         "name": "Mysterious box",
@@ -413,7 +413,7 @@ LOOTBOXES = {
         "boosters_total": (0, 0),
         "probability": 20,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420576874536/image4.png"
+        "image": "{}/image/boxes/mysterious_box.png"
     },
     6: {
         "name": "Advanced spell box",
@@ -434,7 +434,7 @@ LOOTBOXES = {
         "boosters_total": (0, 0),
         "probability": 8,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882052420975358032/image5.png"
+        "image": "{}/image/boxes/advanced_spell_box.png"
     },
     7: {
         "name": "Box of titans",
@@ -455,7 +455,7 @@ LOOTBOXES = {
         "boosters_total": (0, 0),
         "probability": 3,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836331311134/image1.png"
+        "image": "{}/image/boxes/box_of_titans.png"
     },
     8: {
         "name": "Haunted box",
@@ -476,7 +476,7 @@ LOOTBOXES = {
         "boosters_total": (0, 0),
         "probability": 40,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882754729640345670/image0.png"
+        "image": "{}/image/boxes/haunted_box.png"
     },
     9: {
         "name": "Diamond box",
@@ -497,7 +497,7 @@ LOOTBOXES = {
         "boosters_total": (1, 3),
         "probability": 10,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836738166794/image2.png"
+        "image": "{}/image/boxes/diamond_box.png"
     },
     10: {
         "name": "Box of legends",
@@ -518,7 +518,7 @@ LOOTBOXES = {
         "boosters_total": (0, 0),
         "probability": 1,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/882367836012556358/image0.png"
+        "image": "{}/image/boxes/box_of_legends.png"
     },
     11: {
         "name": "Booster box",
@@ -536,7 +536,7 @@ LOOTBOXES = {
         "boosters_total": (15, 15),
         "probability": 40,
         "available": True,
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090981726609752125/booster_box.png"
+        "image": "{}/image/boxes/booster_box.png"
     }
 }
 
@@ -545,7 +545,7 @@ BOOSTERS = {
         "name": "Treasure map",
         "emoji": "<:treasure_map:1090982167678566460>",
         "description": "A map that leads right to the most valuable reward still hidden in a box. Pirates would kill for this.",
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985960411504751/treasure_map.png",
+        "image": "{}/image/powerups/treasure_map.png",
         "probability": 10,
         "available": True,
         "stackable": True,
@@ -554,7 +554,7 @@ BOOSTERS = {
         "name": "Doubler",
         "emoji": "<:2x:1090982132324769885>",
         "description": "Instantly doubles all jenny still hidden in the box.",
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985959782359063/2x.png",
+        "image": "{}/image/powerups/2x.png",
         "probability": 5,
         "available": True,
         "stackable": False,
@@ -563,7 +563,7 @@ BOOSTERS = {
         "name": "Bomb detector",
         "emoji": "<:bomb_detector:1090982152348368907>",
         "description": "Reveals half of the bombs in the box.",
-        "image": "https://cdn.discordapp.com/attachments/882051752386523188/1090985960084340776/bomb_detector.png",
+        "image": "{}/image/powerups/bomb_detector.png",
         "probability": 2,
         "available": True,
         "stackable": False,

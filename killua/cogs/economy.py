@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import Union, List, Tuple, Dict
+from typing import Union, List, Tuple, Dict, cast
 from datetime import datetime
 from random import randint
 
@@ -287,6 +287,7 @@ class Economy(commands.GroupCog, group_name="econ"):
                 return await ctx.send("Invalid box name or id", ephemeral=True)
 
         data = LOOTBOXES[int(box)]
+        data["image"] = cast(str, data["image"]).format(f"http://0.0.0.0:{self.client.dev_port}" if self.client.is_dev else self.client.url)
 
         c_min, c_max = data["cards_total"]
         j_min, j_max = data["rewards"]["jenny"]

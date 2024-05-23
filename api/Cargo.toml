@@ -10,5 +10,6 @@ rand = "0.8.5"
 rocket = { version = "0.5.0", features = ["json"] }
 serde = "1.0.202"
 serde_json = "1.0.117"
+tokio = "1.37.0"
 uuid = "1.8.0"
 zmq = "0.10.0"

@@ -1,10 +1,8 @@
 use serde::{Serialize, Deserialize};
 use zmq::{Context, REQ};
-use rand::{Rng, thread_rng};
 
 #[derive(Serialize, Deserialize)]
-struct RequestData<T>
-{
+struct RequestData<T> {
     route: String,
     data: T,
 }
@@ -15,14 +13,33 @@ pub struct NoData {}
 pub fn make_request<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) -> Result<String, zmq::Error> {
     let ctx = Context::new();
     let socket = ctx.socket(REQ).unwrap();
+    
+    assert!(socket.set_linger(0).is_ok());
+    // Omg this function...
+    // I have spent EIGHT MONTHS trying to first
+    // trouble shoot why i need this function, then
+    // when rewriting the API what it is called.
+    // Without this, the memory will not get dropped
+    // when the client is killed (in rust when an error happens), 
+    // leading to the API requesting it never responding
+    // and silently timing out without error. 
+    // What a nightmare to debug.
+    // I am so glad I am done with this. (thanks y21)
 
-    // timeout after 5 seconds
+    // Here are the docs why this happens
+    // https://libzmq.readthedocs.io/en/zeromq3-x/zmq_setsockopt.html
+
+    // timeout
     assert!(socket.set_rcvtimeo(5000).is_ok());
+    assert!(socket.set_sndtimeo(1000).is_ok());
+    assert!(socket.set_connect_timeout(5000).is_ok());
     assert!(socket.connect("ipc:///tmp/killua.ipc").is_ok());
-    let random_identity: [u8; 32] = thread_rng().gen();
-    assert!(socket.set_identity(&random_identity).is_ok());
+    
+    // let random_identity: [u8; 32] = thread_rng().gen();
+    // assert!(socket.set_identity(&random_identity).is_ok());
+    // Need to do this and send_multipart and recv_multipart
 
-     let request_data = RequestData {
+    let request_data = RequestData {
          route: route.to_owned(),
          data,
     };
@@ -35,9 +52,7 @@ pub fn make_request<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) ->
 
     // Close the socket
     assert!(socket.disconnect("ipc:///tmp/killua.ipc").is_ok());
-    if result.is_err() {
-        return Err(result.err().unwrap());
-    }
 
+    result?; // Return error if error (Rust is cool)
     Ok(msg.as_str().unwrap().to_string())
 }

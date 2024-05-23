@@ -14,7 +14,7 @@ from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
 from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS, BOOSTERS, BOOSTER_LOGO_IMG, DEFAULT_AVATAR
 
-from typing import List, Dict, Union
+from typing import List, Dict, Union, cast
 
 class IPCRoutes(commands.Cog):
 
@@ -52,13 +52,12 @@ class IPCRoutes(commands.Cog):
                 #identity, message = message
                 #print(identity)
             decoded = loads(message.decode())
-            print(decoded)
             try:
                 res = await getattr(self, decoded["route"])(decoded["data"])
             except Exception as e:
                 await socket.send(dumps({"error": str(e)}).encode())
                 continue
-            
+
             if res:
                 await socket.send(dumps(res).encode())
             else:
@@ -196,7 +195,7 @@ class IPCRoutes(commands.Cog):
         # If no streak reward applies, just return the base reward
         return int((120 if weekend else 100) * float(f"1.{int(streak//5)}"))
 
-    def _create_path(self, streak: int, user: discord.User) -> str:
+    def _create_path(self, streak: int, user: discord.User, url: str) -> str:
         """
         Creates a path illustrating where the user currently is with vote rewards and what the next rewards are as well as already claimed ones like
         --:boxemoji:--⚫️--:boxemoji:--
@@ -204,14 +203,27 @@ class IPCRoutes(commands.Cog):
         """
         # Edgecase where the user has no streak or a streak smaller than 5 which is when it would start in the middle
         if streak < 5:
-            path_list = [LOOTBOXES[reward]["image"] if isinstance(reward := self._get_reward(i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 12)]
+            path_list = [cast(str, LOOTBOXES[reward]["image"]).format(url) if isinstance(reward := self._get_reward(i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 12)]
             # Replace the character position where the user currently is with a black circle
             path_list[streak-1] = user
             return path_list
 
         # Create the path
-        before = [LOOTBOXES[reward]["image"] if isinstance(reward := self._get_reward(streak-i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 6)]
-        after = [LOOTBOXES[reward]["image"] if isinstance(reward := self._get_reward(streak+i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 6)]
+        before = [
+            cast(str, LOOTBOXES[reward]["image"]).format(url) 
+            if isinstance(reward := self._get_reward(streak-i), int) and reward < 100 
+            else (
+                BOOSTER_LOGO_IMG 
+                if isinstance(reward, Booster) else "-"
+            ) for i in range(1, 6)
+        ]
+        after = [
+            cast(str, LOOTBOXES[reward]["image"]).format(url) 
+            if isinstance(reward := self._get_reward(streak+i), int) and reward < 100 
+            else (
+                BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-"
+            ) for i in range(1, 6)
+        ]
         path = before[::-1] + [user] + after
 
         return path
@@ -226,9 +238,21 @@ class IPCRoutes(commands.Cog):
         reward: Union[int, Booster] = self._get_reward(streak, data["isWeekend"] if hasattr(data, "isWeekend") else False)
 
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
+        url = f"http://0.0.0.0:{self.client.dev_port}" if self.client.is_dev else self.client.url
 
-        path = self._create_path(streak, usr)
-        image = await self.streak_image(path, (LOOTBOXES[reward]["image"] if isinstance(reward, int) and reward < 100 else (BOOSTERS[reward.value]["image"] if isinstance(reward, Booster) else None)))
+        path = self._create_path(streak, usr, url)
+        image = await self.streak_image(
+            path, 
+            (
+                cast(str, LOOTBOXES[reward]["image"]).format(url)
+                if isinstance(reward, int) and reward < 100 else 
+                (
+                    cast(str, BOOSTERS[reward.value]["image"]).format(url)
+                    if isinstance(reward, Booster) 
+                    else None
+                )
+            )
+        )
         file = discord.File(image, filename="streak.png")
 
         embed = discord.Embed.from_dict({

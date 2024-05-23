@@ -9,6 +9,7 @@ from discord.ext import commands
 from datetime import date
 from PIL import Image
 from io import BytesIO
+from toml import load
 from typing import Coroutine, Union, Dict, List
 
 from .migrate import migrate_requiring_bot
@@ -37,11 +38,16 @@ class BaseBot(commands.AutoShardedBot):
         self.session: ClientSession = None
         self.support_server_invite = "https://discord.gg/MKyWA5M"
         self.invite = "https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands"
+        self.url = "https://killua.dev"
         # self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
         self.is_dev = False
         self.startup_datetime = datetime.now()
         self.cached_skus: List[discord.SKU] = []
         self.cached_entitlements: List[discord.Entitlement] = []
+
+        # Load ../api/Rocket.toml to get port under [debug]
+        with open("api/Rocket.toml") as f:
+            self.dev_port = load(f)["debug"]["port"]
 
     async def setup_hook(self):
         await self.load_extension("jishaku")

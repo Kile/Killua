@@ -1,9 +1,10 @@
 use rocket::serde::{Serialize, Deserialize};
 use rocket::serde::json::Json;
 use std::collections::HashMap;
-use std::sync::Mutex;
 use serde_json::{from_str, Value};
-use std::error::Error;
+use rocket::response::status::BadRequest;
+use tokio::sync::OnceCell;
+use rocket::tokio::task;
 
 use crate::routes::common::{make_request, NoData};
 
@@ -36,38 +37,23 @@ pub struct Category{
     emoji: Emoji,
 }
 
-fn deserialize_categories(obj: HashMap<String, Value>) -> Result<HashMap<String, Category>, Box<dyn Error>> {
-    obj.into_iter()
-        .map(|(key, value)| {
-            let category = Category {
-                name: key.clone(), // Move ownership of the String
-                // Deserialize the nested Value into Category
-                ..Deserialize::deserialize(value)?
-            };
-            Ok((key.clone(), category)) 
-        })
-        .collect()
-}
-
-static CACHE: Mutex<Option<HashMap<String, Category>>> = Mutex::new(None);
+static CACHE: OnceCell<HashMap<String, Category>> = OnceCell::const_new();
 
 #[get("/commands")]
-pub async fn get_commands() -> Json<HashMap<String, Category>> {
-    let mut cache = CACHE.lock().unwrap();
+pub async fn get_commands() ->Result<Json<HashMap<String, Category>>, BadRequest<Json<Value>>> {
+   let commands = CACHE.get_or_try_init(|| async {
+        let Ok(Ok(commands)) = task::spawn_blocking(move || {
+          make_request("commands", NoData {})
+        }).await else {
+            return Err(BadRequest(Json(serde_json::json!({"error": "Failed to get commands"}))));
+        };
     
-    if cache.is_none() {
-        let commands = make_request("commands", NoData {});
-        if commands.is_err() {
-            return Json(HashMap::new());
-        }
-        let commands = commands.unwrap();
-
         // Parse the commands into a HashMap using the defined structs and rocket
-        let commands = (from_str::<HashMap<String, Value>>(&commands).unwrap()).clone();
-        let commands = deserialize_categories(commands).unwrap();
-        *cache = Some(commands);
-    }
-    // Get cache out of Mutex
-    let cache = cache.as_ref().unwrap();
-    Json(cache.clone())
+        let commands = from_str::<HashMap<String, Category>>(&commands).unwrap();
+    
+        // the final deserialized categories to store
+        Ok(commands)
+    }).await;
+    
+    Ok(Json(commands?.clone()))
 }

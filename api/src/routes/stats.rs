@@ -1,5 +1,7 @@
 use rocket::serde::{Serialize, Deserialize};
-use rocket::serde::json::Json;
+use rocket::serde::json::{Json, Value};
+use rocket::response::status::BadRequest;
+use rocket::tokio::task;
 
 use crate::routes::common::{make_request, NoData};
 
@@ -13,19 +15,13 @@ pub struct Stats {
 }
 
 #[get("/stats")]
-pub async fn get_stats() -> Json<Stats> {
-    let stats = make_request("stats", NoData {});
-    if stats.is_err() {
-        return Json(Stats {
-            guilds: 0,
-            shards: 0,
-            registered_users: 0,
-            last_restart: 0.0,
-        });
-    }
+pub async fn get_stats() -> Result<Json<Stats>, BadRequest<Json<Value>>> {
+    let Ok(Ok(stats)) = task::spawn_blocking(move || {
+        make_request("stats", NoData {})
+    }).await else {
+        return Err(BadRequest(Json(serde_json::json!({"error": "Failed to get stats"}))));
+    };
     
-    let stats = stats.unwrap();
     let stats: Stats = serde_json::from_str(&stats).unwrap();
-
-    Json(stats)
+    Ok(Json(stats))
 }
