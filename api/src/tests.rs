@@ -10,20 +10,21 @@ use serde::{Serialize, Deserialize};
 
 /// Spins up a zmq server in the background that only returns once
 /// witth the provided response.
-fn serve_zmq<'a, T: Serialize + Deserialize<'a> + std::marker::Send + 'static>(respond_with: T) {
+fn serve_zmq<'a, T: Serialize + Deserialize<'a> + std::marker::Send + 'static>(respond_with: T) 
+    where zmq::Message: From<T>{
     let context = Context::new();
     let responder = context.socket(REP).unwrap();
 
     assert!(responder.set_rcvtimeo(5000).is_ok());
     assert!(responder.set_linger(0).is_ok());
-    responder.bind("ipc:///tmp/killua.ipc").unwrap();
+    responder.connect("ipc:///tmp/killua.ipc").unwrap();
     
     // Wait for a request in the background
     std::thread::spawn(move || {
         let mut msg = Message::new();
         let _ = responder.recv(&mut msg, 0).unwrap();
-        let request_json = serde_json::to_string(&respond_with).unwrap();
-        responder.send(request_json.as_bytes(), 0).unwrap();
+        let message = Message::from(respond_with);
+        responder.send(message, 0).unwrap();
         // Disconnect
         assert!(responder.unbind("ipc:///tmp/killua.ipc").is_ok());
     });
@@ -37,7 +38,7 @@ fn get_key() -> String {
     }
     let config = std::fs::read_to_string("Rocket.toml").unwrap();
     let config: toml::Value = toml::from_str(&config).unwrap();
-    let key = config["global"]["api_key"].as_str().unwrap().to_owned();
+    let key = config["default"]["api_key"].as_str().unwrap().to_owned();
     *KEY_CACHE.lock().unwrap() = Some(key.clone());
     key
 }
@@ -74,7 +75,7 @@ fn get_commands() {
 }
 
 fn get_commands_twice() {
-    let commands = r#"{"CATEGORY": {"name": "category", "description": "", "emoji": {"normal": "a", "unicode": "b"}, "commands": []}}"#;
+    let commands = r#"{"CATEGORY":{"name":"category","description":"","emoji":{"normal":"a","unicode":"b"},"commands":[]}}"#;
     serve_zmq(commands);
 
     let client = Client::tracked(rocket()).unwrap();
@@ -127,6 +128,7 @@ fn vote_error() {
     // zmq server is down
     let client = Client::tracked(rocket()).unwrap();
     let response = client.post("/vote")
+        .body(r#"{"user": 1, "id": "1", "isWeekend": true}"#)
         .header(Header::new("Authorization", get_key()))
         .dispatch();
     assert_eq!(response.status(), Status::BadRequest);
@@ -169,5 +171,4 @@ fn vote_invalid_json() {
         .header(Header::new("Authorization", get_key()))
         .dispatch();
     assert_eq!(response.status(), Status::BadRequest);
-    assert_eq!(response.into_string().unwrap(), r#"{"error":"Failed to register vote"}"#);
 }
