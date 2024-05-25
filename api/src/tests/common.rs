@@ -4,7 +4,7 @@ use std::sync::Once;
 pub static INIT: Once = Once::new();
 
 #[derive(serde::Deserialize)]
-pub struct Request {
+struct Request {
     route: String,
 }
 
