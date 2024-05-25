@@ -8,10 +8,10 @@ use crate::routes::common::{make_request, NoData};
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(crate = "rocket::serde")]
 pub struct Stats {
-    guilds: u32,
-    shards: u8,
-    registered_users: u32,
-    last_restart: f64,
+    pub guilds: u32,
+    pub shards: u8,
+    pub registered_users: u32,
+    pub last_restart: f64,
 }
 
 #[get("/stats")]

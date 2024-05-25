@@ -18,7 +18,7 @@ pub fn make_request<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) ->
     // Omg this function...
     // I have spent EIGHT MONTHS trying to first
     // trouble shoot why i need this function, then
-    // when rewriting the API what it is called.
+    // when rewriting the API finding what it is called.
     // Without this, the memory will not get dropped
     // when the client is killed (in rust when an error happens), 
     // leading to the API requesting it never responding

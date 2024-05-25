@@ -10,7 +10,6 @@ from .download import download
 from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a seperate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
-from .webhook.api import app
 from .static.constants import TOKEN, PORT
 
 import killua.args as args_file
@@ -55,12 +54,5 @@ async def main():
     # Setup cogs.
     for cog in cogs.all_cogs:
         await bot.add_cog(cog.Cog(bot))
-
-    if bot.is_dev: # runs the api locally if the bot is in dev mode
-        # loop = asyncio.get_event_loop()
-        await asyncio.wait([bot.start(TOKEN), app.run_task(host="0.0.0.0", port=PORT)], return_when=asyncio.FIRST_COMPLETED)
-        # loop.run_forever()
-        # Thread(target=loop.run_forever).start()
-    else:
-        # Start the bot.        
-        await bot.start(TOKEN)
+       
+    await bot.start(TOKEN)
