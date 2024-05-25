@@ -21,11 +21,10 @@ pub struct Vote {
     id: Option<String>,
     is_weekend: Option<bool>,
 }
-
-struct ApiKey(());
+pub struct ApiKey(());
 
 #[derive(Debug)]
-enum ApiKeyError {
+pub enum ApiKeyError {
     Missing,
     Invalid,
 }

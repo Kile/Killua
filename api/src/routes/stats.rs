@@ -21,7 +21,6 @@ pub async fn get_stats() -> Result<Json<Stats>, BadRequest<Json<Value>>> {
     }).await else {
         return Err(BadRequest(Json(serde_json::json!({"error": "Failed to get stats"}))));
     };
-    
     let stats: Stats = serde_json::from_str(&stats).unwrap();
     Ok(Json(stats))
 }
