@@ -15,16 +15,11 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Check for changes in api folder
+      - name: Check for changes in api folder (assuming backwards compatibility)
         uses: dorny/paths-filter@v2
         id: api_changes
         with:
-          paths: 'api/**'  # Include changes within the api folder (and subfolders)
-          filter: include
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+          filters: 'api/**
       - name: Run tests
         run: cd api; mv RocketTemplate.toml Rocket.toml; cargo test -- --test-threads=1
         if: steps.api_changes.outputs.changed == 'true'
