@@ -151,7 +151,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
 
         await ctx.channel.typing()
         try:
-            r: pxl_object.PxlObject = await wait_for(function(data, t))
+            r: pxl_object.PxlObject = await wait_for(function(data, t), timeout=2)
         except TimeoutError:
             return await ctx.send("The API took too long to respond. Please try again later (It is likely down).")
         
