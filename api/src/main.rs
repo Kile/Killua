@@ -2,11 +2,11 @@
 use rocket::{routes, fairing::AdHoc};
 use rocket::serde::Deserialize;
 
-// add our routes module
+// add routes module
 mod routes;
 #[cfg(test)] mod tests;
 
-// import our routes
+// import routes
 use routes::commands::get_commands;
 use routes::vote::register_vote;
 use routes::stats::get_stats;
