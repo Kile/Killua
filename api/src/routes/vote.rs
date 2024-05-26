@@ -13,7 +13,7 @@ use super::common::utils::{make_request, ResultExt};
 // converts JSON keys to camelCase (needed for isWeekend)
 #[serde(crate = "rocket::serde")]
 pub struct Vote {
-    user: Option<u64>,
+    user: Option<String>,
     id: Option<String>,
     is_weekend: Option<bool>,
 }
