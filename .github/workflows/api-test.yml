@@ -14,7 +14,5 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Change working directory to api folder
-        run: cd api
       - name: Run tests
-        run: cargo test -- --test-threads=1
+        run: cd api; cargo test -- --test-threads=1
