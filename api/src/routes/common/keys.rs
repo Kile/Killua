@@ -1,5 +1,5 @@
-use rocket::request::{Request, Outcome, FromRequest};
 use rocket::http::Status;
+use rocket::request::{FromRequest, Outcome, Request};
 use rocket::State;
 
 use crate::Config;

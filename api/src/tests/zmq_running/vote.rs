@@ -1,8 +1,8 @@
 use crate::rocket;
+use rocket::http::{Header, Status};
 use rocket::local::blocking::Client;
-use rocket::http::{Status, Header};
 
-use crate::tests::common::{get_key, INIT, test_zmq_server};
+use crate::tests::common::{get_key, test_zmq_server, INIT};
 
 #[test]
 fn vote() {
@@ -11,7 +11,8 @@ fn vote() {
     });
 
     let client = Client::tracked(rocket()).unwrap();
-    let response = client.post("/vote")
+    let response = client
+        .post("/vote")
         .body(r#"{"user": 1, "id": "1", "isWeekend": true}"#)
         .header(Header::new("Authorization", get_key()))
         .dispatch();
@@ -26,7 +27,8 @@ fn vote_invalid_key() {
     });
 
     let client = Client::tracked(rocket()).unwrap();
-    let response = client.post("/vote")
+    let response = client
+        .post("/vote")
         .body(r#"{"user": 1, "id": "1", "isWeekend": true}"#)
         .header(Header::new("Authorization", "invalid"))
         .dispatch();
@@ -40,19 +42,21 @@ fn vote_missing_key() {
     });
 
     let client = Client::tracked(rocket()).unwrap();
-    let response = client.post("/vote")
+    let response = client
+        .post("/vote")
         .body(r#"{"user": 1, "id": "1", "isWeekend": true}"#)
         .dispatch();
     assert_eq!(response.status(), Status::Forbidden);
 }
 
 #[test]
-fn vote_invalid_json() {    
+fn vote_invalid_json() {
     INIT.call_once(|| {
         test_zmq_server();
     });
     let client = Client::tracked(rocket()).unwrap();
-    let response = client.post("/vote")
+    let response = client
+        .post("/vote")
         .body(r#"{"user": 1, "id": "1", "isWeekend": true"#)
         .header(Header::new("Authorization", get_key()))
         .dispatch();

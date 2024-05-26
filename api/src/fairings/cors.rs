@@ -1,5 +1,4 @@
 /// Adapted from https://github.com/TaeyoonKwon/rust-rocket-sample/blob/main/src/fairings/cors.rs
-
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
 use rocket::{Request, Response};

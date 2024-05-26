@@ -1,6 +1,6 @@
 pub mod commands;
 pub mod common;
-pub mod vote;
-pub mod stats;
-pub mod image;
 pub mod diagnostics;
+pub mod image;
+pub mod stats;
+pub mod vote;

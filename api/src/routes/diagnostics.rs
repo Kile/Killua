@@ -1,15 +1,15 @@
 use std::collections::HashMap;
-use std::time::SystemTime;
 use std::sync::Arc;
+use std::time::SystemTime;
 
-use rocket::serde::{Serialize, Deserialize};
-use rocket::serde::json::{Json, Value};
 use rocket::response::status::BadRequest;
+use rocket::serde::json::{Json, Value};
+use rocket::serde::{Deserialize, Serialize};
 use rocket::State;
 
-use crate::fairings::counter::{Counter, Endpoint};
-use super::common::utils::{make_request, NoData};
 use super::common::keys::ApiKey;
+use super::common::utils::{make_request, NoData};
+use crate::fairings::counter::{Counter, Endpoint};
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct IPCData {
@@ -20,11 +20,14 @@ pub struct IPCData {
 #[derive(Serialize, Deserialize, Default)]
 pub struct DiagnosticsResonse {
     pub usage: HashMap<String, Endpoint>,
-    pub ipc: IPCData
+    pub ipc: IPCData,
 }
 
 #[get("/diagnostics")]
-pub async fn get_diagnostics(_key: ApiKey, diag: &State<Arc<Counter>>) -> Result<Json<DiagnosticsResonse>, BadRequest<Json<Value>>> {
+pub async fn get_diagnostics(
+    _key: ApiKey,
+    diag: &State<Arc<Counter>>,
+) -> Result<Json<DiagnosticsResonse>, BadRequest<Json<Value>>> {
     let mut stats = diag.inner().stats.lock().unwrap().clone();
 
     // Add 1 to /diagnostics successful_responses since it is not yet incremented
@@ -43,8 +46,8 @@ pub async fn get_diagnostics(_key: ApiKey, diag: &State<Arc<Counter>>) -> Result
         usage: stats,
         ipc: IPCData {
             success,
-            response_time
-        }
+            response_time,
+        },
     };
 
     Ok(Json(data))

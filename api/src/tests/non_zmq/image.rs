@@ -1,6 +1,6 @@
 use crate::rocket;
+use rocket::http::{ContentType, Status};
 use rocket::local::blocking::Client;
-use rocket::http::{Status, ContentType};
 
 #[test]
 fn get_image() {

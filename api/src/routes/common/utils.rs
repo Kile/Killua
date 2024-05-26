@@ -1,19 +1,19 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use zmq::{Context, REQ};
 use tokio::task;
+use zmq::{Context, REQ};
 
 use rocket::response::status::BadRequest;
 use rocket::serde::json::Json;
 
 pub trait ResultExt<T> {
     fn context(self, message: &str) -> Result<T, BadRequest<Json<Value>>>;
-  }
-  impl<T, E> ResultExt<T> for Result<T, E> {
+}
+impl<T, E> ResultExt<T> for Result<T, E> {
     fn context(self, message: &str) -> Result<T, BadRequest<Json<Value>>> {
-      self.map_err(|_| BadRequest(Json(json!({ "error": message }))))
+        self.map_err(|_| BadRequest(Json(json!({ "error": message }))))
     }
-  }
+}
 
 #[derive(Serialize, Deserialize)]
 struct RequestData<T> {
@@ -24,19 +24,22 @@ struct RequestData<T> {
 #[derive(Serialize, Deserialize)]
 pub struct NoData {}
 
-pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) -> Result<String, zmq::Error> {
+pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
+    route: &str,
+    data: T,
+) -> Result<String, zmq::Error> {
     let ctx = Context::new();
     let socket = ctx.socket(REQ).unwrap();
-    
+
     assert!(socket.set_linger(0).is_ok());
     // Omg this function...
     // I have spent EIGHT MONTHS trying to first
     // trouble shoot why i need this function, then
     // when rewriting the API finding what it is called.
     // Without this, the memory will not get dropped
-    // when the client is killed (in rust when an error happens), 
+    // when the client is killed (in rust when an error happens),
     // leading to the API requesting it never responding
-    // and silently timing out without error. 
+    // and silently timing out without error.
     // What a nightmare to debug.
     // I am so glad I am done with this. (thanks y21)
 
@@ -50,8 +53,8 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(route: &str, data:
     assert!(socket.connect("ipc:///tmp/killua.ipc").is_ok());
 
     let request_data = RequestData {
-         route: route.to_owned(),
-         data,
+        route: route.to_owned(),
+        data,
     };
 
     let mut msg = zmq::Message::new();
@@ -67,6 +70,11 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(route: &str, data:
     Ok(msg.as_str().unwrap().to_string())
 }
 
-pub async fn make_request<'b, T: Serialize + std::marker::Send + Deserialize<'static> + 'static>(route: &'static str, data: T) -> Result<String, zmq::Error> {
-    task::spawn_blocking(move || {make_request_inner(route, data)}).await.unwrap()
+pub async fn make_request<'b, T: Serialize + std::marker::Send + Deserialize<'static> + 'static>(
+    route: &'static str,
+    data: T,
+) -> Result<String, zmq::Error> {
+    task::spawn_blocking(move || make_request_inner(route, data))
+        .await
+        .unwrap()
 }

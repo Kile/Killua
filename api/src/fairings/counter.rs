@@ -1,10 +1,10 @@
-use std::sync::Mutex;
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Mutex;
 
-use rocket::{Request, Data, Response};
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Status;
+use rocket::{Data, Request, Response};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Default)]
 pub struct Endpoint {
@@ -22,7 +22,7 @@ impl Fairing for Counter {
     fn info(&self) -> Info {
         Info {
             name: "GET/POST Counter",
-            kind: Kind::Request | Kind::Response
+            kind: Kind::Request | Kind::Response,
         }
     }
 
@@ -39,7 +39,6 @@ impl Fairing for Counter {
                 eprintln!("Poisoned lock: {:?}", poisoned);
             }
         }
-        
     }
 
     async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {
