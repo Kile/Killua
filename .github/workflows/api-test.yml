@@ -20,6 +20,6 @@ jobs:
               - 'api/**'
 
         # run only if some file in 'src' folder was changed
-      - if: steps.changes.outputs.src == 'true'
+      - if: steps.changes.outputs.api == 'true'
       # - name: Run tests
         run: cd api; mv RocketTemplate.toml Rocket.toml; cargo test -- --test-threads=1
