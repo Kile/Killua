@@ -27,6 +27,7 @@ pub fn test_zmq_server() {
                 "commands" => r#"{"CATEGORY": {"name": "category", "description": "", "emoji": {"normal": "a", "unicode": "b"}, "commands": []}}"#,
                 "stats" => r#"{"guilds": 1, "shards": 1, "registered_users": 1, "last_restart": 1.0}"#,
                 "vote" => r#"{"success": "true"}"#,
+                "heartbeat" => r#"{"success": "true"}"#,
                 _ => r#"{}"#,
             };
             let message = Message::from(respond_with);

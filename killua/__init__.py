@@ -1,7 +1,6 @@
 from . import cogs
 import discord
 import aiohttp
-import asyncio
 import logging
 
 from .tests import run_tests
@@ -10,7 +9,7 @@ from .download import download
 from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a seperate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
-from .static.constants import TOKEN, PORT
+from .static.constants import TOKEN
 
 import killua.args as args_file
 

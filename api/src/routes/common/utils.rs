@@ -1,5 +1,19 @@
 use serde::{Serialize, Deserialize};
+use serde_json::{json, Value};
 use zmq::{Context, REQ};
+use tokio::task;
+
+use rocket::response::status::BadRequest;
+use rocket::serde::json::Json;
+
+pub trait ResultExt<T> {
+    fn context(self, message: &str) -> Result<T, BadRequest<Json<Value>>>;
+  }
+  impl<T, E> ResultExt<T> for Result<T, E> {
+    fn context(self, message: &str) -> Result<T, BadRequest<Json<Value>>> {
+      self.map_err(|_| BadRequest(Json(json!({ "error": message }))))
+    }
+  }
 
 #[derive(Serialize, Deserialize)]
 struct RequestData<T> {
@@ -10,7 +24,7 @@ struct RequestData<T> {
 #[derive(Serialize, Deserialize)]
 pub struct NoData {}
 
-pub fn make_request<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) -> Result<String, zmq::Error> {
+pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) -> Result<String, zmq::Error> {
     let ctx = Context::new();
     let socket = ctx.socket(REQ).unwrap();
     
@@ -51,4 +65,8 @@ pub fn make_request<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) ->
 
     result?; // Return error if error (Rust is cool)
     Ok(msg.as_str().unwrap().to_string())
+}
+
+pub async fn make_request<'b, T: Serialize + std::marker::Send + Deserialize<'static> + 'static>(route: &'static str, data: T) -> Result<String, zmq::Error> {
+    task::spawn_blocking(move || {make_request_inner(route, data)}).await.unwrap()
 }

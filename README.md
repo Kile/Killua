@@ -72,11 +72,14 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] Website with backend
 *   [x] CSS
 *   [ ] Threading
-*   [ ] Github workflows
+*   [x] Github workflows
 
 ## Contributors
 
 I would like to give a big thank you to everyone who has helped me on this journey, each in their different way.
+
+*   [y21](https://github.com/y21)
+> Helped me a lot with the Rust API rewrite, spotting an issue that took me8 months to track down as well as helping my code to be much cleaner.
 
 *   [WhoAmI](https://github.com/WhoAmI1000)
 

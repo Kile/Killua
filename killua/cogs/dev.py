@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 
 import math
-from typing import List, Tuple, Union, Literal
+from typing import List, Tuple, Union, Literal, cast
 from io import BytesIO
 from datetime import datetime
 from matplotlib import pyplot as plt
@@ -366,6 +366,42 @@ class Dev(commands.GroupCog, group_name="dev"):
 
         DB.const.update_one({"_id": "blacklist"}, {"$pull": {"blacklist": to_pull[0]}})
         await ctx.send(f"Successfully whitelisted `{user}`")
+
+    @commands.is_owner()
+    @commands.hybrid_command(extras={"category":Category.OTHER, "id": 119}, usage="api <user_id>", hidden=True)
+    async def api(self, ctx: commands.Context):
+        """Gets statistics about the Killua API"""
+        url = f"http://0.0.0.0:{self.client.dev_port}" if self.client.is_dev else self.client.url
+
+        data = await self.client.session.get(url + "/diagnostics", headers={"Authorization": self.client.secret_api_key})
+        if data.status != 200:
+            return await ctx.send("An error occured while fetching the data")
+        
+        json = await data.json()
+        response_time = data.headers.get("X-Response-Time")
+
+        embed = discord.Embed(
+            title="Killua API statistics", 
+            description=
+                "IPC connection: " + ("✅ Ok" if json["ipc"]["success"] else "❌ Down") + "\n" + \
+                (
+                    ("IPC latency: " + str(round(json["ipc"]["response_time"], 2)) + "ms\n")
+                    if json["ipc"]["success"] else ""
+                ) + \
+                "API latency: " + response_time,
+            color=0x3e4a78
+        )
+        for key, val in cast(dict, json["usage"]).items():
+            reqs = cast(dict, val).get("requests")
+            successful_res = cast(dict, val).get("successful_responses")
+
+            embed.add_field(
+                name=key, 
+                value="Requests: " + str(reqs) + "\n" + \
+                    "Successful responses: " + str(successful_res) + f" ({round(successful_res/reqs, 3)*100}%)" + "\n",
+            )
+
+        await ctx.send(embed=embed)
 
     @commands.is_owner()
     @commands.hybrid_command(aliases=["st", "pr", "status"], extras={"category":Category.OTHER, "id": 119}, usage="pr <text>", hidden=True) # I messed up here with the numbers and did not want to have to increment all of them after this one

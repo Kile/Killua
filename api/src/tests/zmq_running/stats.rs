@@ -1,7 +1,8 @@
 use crate::rocket;
 use rocket::local::blocking::Client;
 use rocket::http::Status;
-use super::super::common::{INIT, test_zmq_server};
+
+use crate::tests::common::{INIT, test_zmq_server};
 
 
 #[test]

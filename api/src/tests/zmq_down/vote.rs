@@ -1,7 +1,8 @@
 use crate::rocket;
 use rocket::local::blocking::Client;
 use rocket::http::{Status, Header};
-use super::super::common::get_key;
+
+use crate::tests::common::get_key;
 
 #[test]
 fn vote_error() {

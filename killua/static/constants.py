@@ -89,8 +89,6 @@ IPC_TOKEN: str = config["ipc"]
 TOKEN = config["token"]
 PATREON = config["patreon"]
 PXLAPI = config["pxlapi"]
-PASSWORD = config["password"]
-PORT = config["port"]
 TOPGG_TOKEN = config["topgg_token"]
 DBL_TOKEN = config["dbl_token"]
 

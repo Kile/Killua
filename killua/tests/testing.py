@@ -102,7 +102,7 @@ class test(object):
         try:
             logging.debug(f"Running test {self._method.__name__} of command {obj.__class__.__name__}")
             await self._method(obj, *args, **kwargs)
-            logging.debug("Sucessfully passed test")
+            logging.debug("successfully passed test")
             obj.result.completed_test(self._method, Result.passed)
         except Exception as e:
             _, _, var = sys.exc_info()

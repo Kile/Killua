@@ -133,7 +133,7 @@ class _OptionView(View):
         if select.booster in self.used and not BOOSTERS[select.booster]["stackable"]: # This should not be necessary as users should not be able to select a booster they already used in the first place
             return await view.interaction.response.edit_message(content="You already used this booster on this booster. Please select an option.", view = _OptionView(self.used, user_id=self.user_id, timeout=None))
         
-        await view.interaction.response.send_message(f"Sucessfully applied `{BOOSTERS[select.booster]['name']}` booster!", ephemeral=True)
+        await view.interaction.response.send_message(f"successfully applied `{BOOSTERS[select.booster]['name']}` booster!", ephemeral=True)
         await view.interaction.message.delete()
         self.value = select.booster
         self.stop()

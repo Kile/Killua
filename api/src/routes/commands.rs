@@ -1,12 +1,12 @@
-use rocket::serde::{Serialize, Deserialize};
-use rocket::serde::json::Json;
 use std::collections::HashMap;
 use serde_json::{from_str, Value};
-use rocket::response::status::BadRequest;
 use tokio::sync::OnceCell;
-use rocket::tokio::task;
 
-use crate::routes::common::{make_request, NoData};
+use rocket::serde::{Serialize, Deserialize};
+use rocket::serde::json::Json;
+use rocket::response::status::BadRequest;
+
+use super::common::utils::{make_request, NoData, ResultExt};
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(crate = "rocket::serde")]
@@ -42,15 +42,9 @@ static CACHE: OnceCell<HashMap<String, Category>> = OnceCell::const_new();
 #[get("/commands")]
 pub async fn get_commands() ->Result<Json<HashMap<String, Category>>, BadRequest<Json<Value>>> {
    let commands = CACHE.get_or_try_init(|| async {
-        let Ok(Ok(commands)) = task::spawn_blocking(move || {
-          make_request("commands", NoData {})
-        }).await else {
-            return Err(BadRequest(Json(serde_json::json!({"error": "Failed to get commands"}))));
-        };
-    
+        let commands = make_request("commands", NoData {}).await.context("Failed to get commands")?;
         // Parse the commands into a HashMap using the defined structs and rocket
         let commands = from_str::<HashMap<String, Category>>(&commands).unwrap();
-    
         // the final deserialized categories to store
         Ok(commands)
     }).await;

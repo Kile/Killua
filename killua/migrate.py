@@ -91,7 +91,7 @@ def migrate_requiring_bot(bot: Type[AutoShardedBot]):
     logging.info("Finished migrating command usage, updating database...")
 
     const.update_one({"_id": "usage"}, {"$set": {"command_usage": new}})
-    logging.info("Sucessfully migrated command usage")
+    logging.info("successfully migrated command usage")
 
 def migrate():
     """

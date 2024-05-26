@@ -364,5 +364,9 @@ class IPCRoutes(commands.Cog):
         await self.handle_vote(data)
         # Test: curl -L -X POST 127.0.0.1:port/vote -H 'Authorization: uwu' -d '{"user": 606162661184372736}' -H "Content-Type: application/json"
 
+    async def heartbeat(self, _) -> None:
+        """Just a simple heartbeat to see if the bot and IPC connection is alive"""
+        return {"status": "ok"}
+
 
 Cog = IPCRoutes
