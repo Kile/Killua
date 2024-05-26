@@ -68,7 +68,7 @@ fn diagnostics_plus_one_success() {
     INIT.call_once(|| {
         test_zmq_server();
     });
-    
+
     let client = Client::tracked(rocket()).unwrap();
     // Get initial stats
     let response = client.get("/diagnostics")
@@ -94,8 +94,6 @@ fn diagnostics_plus_one_success() {
     let parsed_response = serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
     let new_values = parsed_response.usage.clone();
 
-    dbg!(&initial_values);
-    dbg!(&new_values);
     // Check that the values have increased by one
     assert!(initial_values.get("/stats").unwrap_or(&Endpoint::default()).requests + 1 == new_values.get("/stats").unwrap().requests);
     assert!(initial_values.get("/stats").unwrap_or(&Endpoint::default()).successful_responses + 1 == new_values.get("/stats").unwrap().successful_responses);

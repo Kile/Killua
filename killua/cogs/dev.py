@@ -371,6 +371,7 @@ class Dev(commands.GroupCog, group_name="dev"):
     @commands.hybrid_command(extras={"category":Category.OTHER, "id": 119}, usage="api <user_id>", hidden=True)
     async def api(self, ctx: commands.Context):
         """Gets statistics about the Killua API"""
+        valid_routes = ["/diagnostics", "/commands", "/stats", "/image"]
         url = f"http://0.0.0.0:{self.client.dev_port}" if self.client.is_dev else self.client.url
 
         data = await self.client.session.get(url + "/diagnostics", headers={"Authorization": self.client.secret_api_key})
@@ -392,6 +393,8 @@ class Dev(commands.GroupCog, group_name="dev"):
             color=0x3e4a78
         )
         for key, val in cast(dict, json["usage"]).items():
+            if not any([x.startswith("/"+key.split("/")[0]) for x in valid_routes]):
+                continue
             reqs = cast(dict, val).get("requests")
             successful_res = cast(dict, val).get("successful_responses")
 

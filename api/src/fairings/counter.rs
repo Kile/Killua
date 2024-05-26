@@ -29,13 +29,11 @@ impl Fairing for Counter {
     async fn on_request(&self, req: &mut Request<'_>, _: &mut Data<'_>) {
         match self.stats.lock() {
             Ok(mut stats) => {
-                dbg!(req.uri().to_string());
                 let endpoint = stats.entry(req.uri().to_string()).or_insert(Endpoint {
                     requests: 0,
                     successful_responses: 0,
                 });
                 endpoint.requests += 1;
-                dbg!(endpoint.requests);
             }
             Err(poisoned) => {
                 eprintln!("Poisoned lock: {:?}", poisoned);

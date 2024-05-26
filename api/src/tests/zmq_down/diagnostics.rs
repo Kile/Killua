@@ -48,8 +48,6 @@ fn diagnostics_plus_one_success() {
     let parsed_response = serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
     let new_values = parsed_response.usage.clone();
 
-    dbg!(&initial_values);
-    dbg!(&new_values);
     // Check that the values have increased by one
     assert!(initial_values.get("/stats").unwrap_or(&Endpoint::default()).requests + 1 == new_values.get("/stats").unwrap().requests);
     // Request fails so the successful_responses should be the same
