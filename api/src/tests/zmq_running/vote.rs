@@ -13,7 +13,7 @@ fn vote() {
     let client = Client::tracked(rocket()).unwrap();
     let response = client
         .post("/vote")
-        .body(r#"{"user": 1, "id": "1", "isWeekend": true}"#)
+        .body(r#"{"user": "1", "id": "1", "isWeekend": true}"#)
         .header(Header::new("Authorization", get_key()))
         .dispatch();
     assert_eq!(response.status(), Status::Ok);
@@ -29,7 +29,7 @@ fn vote_invalid_key() {
     let client = Client::tracked(rocket()).unwrap();
     let response = client
         .post("/vote")
-        .body(r#"{"user": 1, "id": "1", "isWeekend": true}"#)
+        .body(r#"{"user": "1", "id": "1", "isWeekend": true}"#)
         .header(Header::new("Authorization", "invalid"))
         .dispatch();
     assert_eq!(response.status(), Status::Forbidden);
@@ -44,7 +44,7 @@ fn vote_missing_key() {
     let client = Client::tracked(rocket()).unwrap();
     let response = client
         .post("/vote")
-        .body(r#"{"user": 1, "id": "1", "isWeekend": true}"#)
+        .body(r#"{"user": "1", "id": "1", "isWeekend": true}"#)
         .dispatch();
     assert_eq!(response.status(), Status::Forbidden);
 }
@@ -57,7 +57,7 @@ fn vote_invalid_json() {
     let client = Client::tracked(rocket()).unwrap();
     let response = client
         .post("/vote")
-        .body(r#"{"user": 1, "id": "1", "isWeekend": true"#)
+        .body(r#"{"user": "1", "id": "1", "isWeekend": true"#)
         .header(Header::new("Authorization", get_key()))
         .dispatch();
     assert_eq!(response.status(), Status::BadRequest);
