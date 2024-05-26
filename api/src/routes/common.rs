@@ -34,10 +34,6 @@ pub fn make_request<'a, T: Serialize + Deserialize<'a>>(route: &str, data: T) ->
     assert!(socket.set_sndtimeo(1000).is_ok());
     assert!(socket.set_connect_timeout(5000).is_ok());
     assert!(socket.connect("ipc:///tmp/killua.ipc").is_ok());
-    
-    // let random_identity: [u8; 32] = thread_rng().gen();
-    // assert!(socket.set_identity(&random_identity).is_ok());
-    // Need to do this and send_multipart and recv_multipart
 
     let request_data = RequestData {
          route: route.to_owned(),
