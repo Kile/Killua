@@ -2,9 +2,10 @@ name: Run API Tests
 
 on:
   push:
+      - 'api/**'
   pull_request:
-    # paths:
-    #   - 'api'  # Run tests only on changes directly in the api folder
+    paths:
+      - 'api/**'  # Run tests only on changes directly in the api folder
 
 jobs:
   test-api:
