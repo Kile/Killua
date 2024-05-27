@@ -29,10 +29,10 @@ jobs:
       with:
         toolchain: stable
     - name: Setup
-      run: cd api; mv RocketTemplate.toml Rocket.toml;
+      run: mv RocketTemplate.toml Rocket.toml;
     - name: Run tests
-      run: cargo test -- --test-threads=1
+      run: cd api; cargo test -- --test-threads=1
     - name: Run clippy
-      run: cargo clippy --all --all-features --tests -- -D warnings
+      run: cd api; cargo clippy --all --all-features --tests -- -D warnings
     - name: Run cargo fmt
-      run: cargo fmt --all -- --check
+      run: cd api; cargo fmt --all -- --check
