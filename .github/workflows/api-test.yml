@@ -8,7 +8,7 @@ jobs:
   test-api:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -21,5 +21,12 @@ jobs:
 
         # run only if some file in 'src' folder was changed
       - if: steps.changes.outputs.api == 'true'
-      # - name: Run tests
-        run: cd api; mv RocketTemplate.toml Rocket.toml; cargo test -- --test-threads=1
+        steps:
+          - name: Setup
+            run: cd api; mv RocketTemplate.toml Rocket.toml;
+          - name: Run tests
+            run: cargo test -- --test-threads=1
+          - name: Run clippy
+            run: cargo clippy --all --all-features --tests -- -D warnings
+          - name: Run cargo fmt
+            run: cargo fmt --all -- --check

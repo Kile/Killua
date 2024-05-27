@@ -18,7 +18,7 @@ fn diagnostics_when_down() {
     assert_eq!(response.status(), Status::Ok);
     // Check the json body ipc.success is false, ignore other fields which may not be empty
     let parsed_response = from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
-    assert_eq!(parsed_response.ipc.success, false);
+    assert!(!parsed_response.ipc.success);
     assert_eq!(parsed_response.ipc.response_time, None);
 }
 

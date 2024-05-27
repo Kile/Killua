@@ -35,7 +35,7 @@ fn get_diagnostics() {
     assert_eq!(response.status(), Status::Ok);
     let parsed_response =
         serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
-    assert_eq!(parsed_response.ipc.success, true);
+    assert!(parsed_response.ipc.success);
 }
 
 #[test]
@@ -55,7 +55,7 @@ fn self_success_is_accurate() {
     let parsed_response =
         serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
 
-    let before = parsed_response.usage.get("/diagnostics").unwrap().clone();
+    let before = *parsed_response.usage.get("/diagnostics").unwrap();
 
     let response = client
         .get("/diagnostics")
@@ -65,7 +65,7 @@ fn self_success_is_accurate() {
     let parsed_response =
         serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
 
-    let after = parsed_response.usage.get("/diagnostics").unwrap().clone();
+    let after = *parsed_response.usage.get("/diagnostics").unwrap();
 
     assert_eq!(before.successful_responses + 1, after.successful_responses);
 }

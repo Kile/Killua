@@ -21,7 +21,7 @@ pub fn test_zmq_server() {
     // Wait for a request in the background
     std::thread::spawn(move || loop {
         let mut msg = Message::new();
-        let _ = responder.recv(&mut msg, 0).unwrap();
+        responder.recv(&mut msg, 0).unwrap();
         let respond_with = match serde_json::from_str::<Request>(msg.as_str().unwrap())
             .unwrap()
             .route
