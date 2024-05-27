@@ -153,7 +153,13 @@ class IPCRoutes(commands.Cog):
         """
         # Edgecase where the user has no streak or a streak smaller than 5 which is when it would start in the middle
         if streak < 5:
-            path_list = [cast(str, LOOTBOXES[reward]["image"]).format(url) if isinstance(reward := self._get_reward(i), int) and reward < 100 else (BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-") for i in range(1, 12)]
+            path_list = [
+                cast(str, LOOTBOXES[reward]["image"]).format(url) if 
+                isinstance(reward := self._get_reward(i), int) and reward < 100 else 
+                (
+                    BOOSTER_LOGO_IMG.format(url) if isinstance(reward, Booster) else "-"
+                ) for i in range(1, 12)
+            ]
             # Replace the character position where the user currently is with a black circle
             path_list[streak-1] = user
             return path_list
@@ -163,7 +169,7 @@ class IPCRoutes(commands.Cog):
             cast(str, LOOTBOXES[reward]["image"]).format(url) 
             if isinstance(reward := self._get_reward(streak-i), int) and reward < 100 
             else (
-                BOOSTER_LOGO_IMG 
+                BOOSTER_LOGO_IMG.format(url)
                 if isinstance(reward, Booster) else "-"
             ) for i in range(1, 6)
         ]
@@ -171,7 +177,7 @@ class IPCRoutes(commands.Cog):
             cast(str, LOOTBOXES[reward]["image"]).format(url) 
             if isinstance(reward := self._get_reward(streak+i), int) and reward < 100 
             else (
-                BOOSTER_LOGO_IMG if isinstance(reward, Booster) else "-"
+                BOOSTER_LOGO_IMG.format(url) if isinstance(reward, Booster) else "-"
             ) for i in range(1, 6)
         ]
         path = before[::-1] + [user] + after
