@@ -568,7 +568,7 @@ BOOSTERS = {
     },
 }
 
-BOOSTER_LOGO_IMG = "https://i.imgur.com/QAQFffJ.png"
+BOOSTER_LOGO_IMG = "{}/image/powerups/logo.png"
 
 # GREED ISLAND STUFF
 

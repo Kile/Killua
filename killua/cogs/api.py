@@ -51,7 +51,7 @@ class IPCRoutes(commands.Cog):
         res = await self.client.session.get(url)
 
         if res.status != 200:
-            raise Exception(f"Failed to download image: {url}")
+            raise Exception(f"Failed to download image")
         
         image_bytes = await res.read()
         image = Image.open(BytesIO(image_bytes)).convert("RGBA")
