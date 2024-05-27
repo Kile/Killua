@@ -7,6 +7,8 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -19,7 +21,7 @@ jobs:
   # run only if some file in 'api' folder was changed
   test:
     needs: setup
-    if: needs.setup.changes.outputs.api == 'true'
+    if: ${{ needs.setup.changes.outputs.api == 'true' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
