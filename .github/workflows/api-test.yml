@@ -21,7 +21,7 @@ jobs:
   # run only if some file in 'api' folder was changed
   test:
     needs: setup
-    if: ${{ needs.setup.changes.outputs.api == 'true' }}
+    if: ${{ needs.setup.outputs.api == 'true' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
