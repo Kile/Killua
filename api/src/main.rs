@@ -7,6 +7,7 @@ use std::sync::Arc;
 // add routes module
 mod fairings;
 mod routes;
+mod db;
 #[cfg(test)]
 mod tests;
 

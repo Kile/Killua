@@ -6,6 +6,8 @@ use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Status;
 use rocket::{Data, Request, Response};
 
+use crate::db;
+
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Default)]
 pub struct Endpoint {
     pub requests: usize,
