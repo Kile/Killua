@@ -28,11 +28,9 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    - name: Setup
-      run: mv RocketTemplate.toml Rocket.toml;
     - name: Run tests
-      run: cd api; cargo test -- --test-threads=1
+      run: cd api; mv RocketTemplate.toml Rocket.toml; cargo test -- --test-threads=1
     - name: Run clippy
-      run: cd api; cargo clippy --all --all-features --tests -- -D warnings
+      run: cd api; mv RocketTemplate.toml Rocket.toml; cargo clippy --all --all-features --tests -- -D warnings
     - name: Run cargo fmt
-      run: cd api; cargo fmt --all -- --check
+      run: cd api; mv RocketTemplate.toml Rocket.toml; cargo fmt --all -- --check
