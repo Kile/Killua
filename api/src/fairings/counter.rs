@@ -20,7 +20,7 @@ pub struct Counter {
 }
 
 impl Counter {
-    const MAX_SIZE: usize = 5;
+    const MAX_SIZE: usize = 50;
 }
 
 #[rocket::async_trait]
@@ -48,9 +48,9 @@ impl Fairing for Counter {
         endpoint.requests += 1;
 
         if stats.values().map(|value| value.requests).sum::<usize>() >= Self::MAX_SIZE {
-			db::counter::update_counter(&stats);
-			stats.clear();
-		}
+            db::counter::update_counter(&stats);
+            stats.clear();
+        }
     }
 
     async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {

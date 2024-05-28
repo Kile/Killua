@@ -5,9 +5,9 @@ use rocket::{fairing::AdHoc, routes};
 use std::sync::Arc;
 
 // add routes module
+mod db;
 mod fairings;
 mod routes;
-mod db;
 #[cfg(test)]
 mod tests;
 
@@ -42,6 +42,7 @@ fn rocket() -> _ {
                 get_diagnostics
             ],
         )
+        .attach(AdHoc::config::<Config>())
         .attach(Cors)
         .manage(Arc::clone(&counter))
         .attach(counter)
