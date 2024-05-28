@@ -43,6 +43,7 @@ impl Fairing for Counter {
 
         if stats.len() > Counter::MAX_SIZE {
             db::counter::update_counter(&*stats);
+			stats.clear();
         }
     }
 
