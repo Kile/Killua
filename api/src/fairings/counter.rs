@@ -20,7 +20,7 @@ pub struct Counter {
 }
 
 impl Counter {
-    const MAX_SIZE: usize = 50;
+    const MAX_SIZE: usize = 5;
 }
 
 #[rocket::async_trait]
@@ -28,8 +28,14 @@ impl Fairing for Counter {
     fn info(&self) -> Info {
         Info {
             name: "GET/POST Counter",
-            kind: Kind::Request | Kind::Response,
+            kind: Kind::Request | Kind::Response | Kind::Shutdown,
         }
+    }
+
+    async fn on_shutdown(&self, _: &rocket::Rocket<rocket::Orbit>) {
+        let stats = self.stats.lock().expect("poisoned lock");
+
+        db::counter::update_counter(&*stats);
     }
 
     async fn on_request(&self, req: &mut Request<'_>, _: &mut Data<'_>) {
@@ -41,10 +47,10 @@ impl Fairing for Counter {
         });
         endpoint.requests += 1;
 
-        if stats.len() > Counter::MAX_SIZE {
-            db::counter::update_counter(&*stats);
+        if stats.values().map(|value| value.requests).sum::<usize>() >= Self::MAX_SIZE {
+			db::counter::update_counter(&stats);
 			stats.clear();
-        }
+		}
     }
 
     async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {

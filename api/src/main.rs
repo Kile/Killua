@@ -42,7 +42,6 @@ fn rocket() -> _ {
                 get_diagnostics
             ],
         )
-        .attach(AdHoc::config::<Config>())
         .attach(Cors)
         .manage(Arc::clone(&counter))
         .attach(counter)
