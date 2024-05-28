@@ -35,7 +35,7 @@ impl Fairing for Counter {
     async fn on_shutdown(&self, _: &rocket::Rocket<rocket::Orbit>) {
         let stats = self.stats.lock().expect("poisoned lock");
 
-        db::counter::update_counter(&*stats);
+        db::counter::update_counter(&stats);
     }
 
     async fn on_request(&self, req: &mut Request<'_>, _: &mut Data<'_>) {
