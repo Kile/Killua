@@ -25,8 +25,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install MongoDB shell tools
-        run: sudo apt-get update && sudo apt-get install -y mongodb-clients
+      - name: Setup mongodb-tools
+        run: |
+          wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.6.1.deb
+          sudo apt install ./mongodb-database-tools-*-100.6.1.deb
+          mongorestore --version
       - name: Start MongoDB server
         uses: supercharge/mongodb-github-action@1.11.0
         with:
