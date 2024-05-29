@@ -25,11 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # - name: Setup mongodb-tools
-      #   run: |
-      #     wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.6.1.deb
-      #     sudo apt install ./mongodb-database-tools-*-100.6.1.deb
-      #     mongorestore --version
+      - name: Setup mongodb-tools
+        run: |
+          wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.6.1.deb
+          sudo apt install ./mongodb-database-tools-*-100.6.1.deb
+          mongorestore --version
+          ./dbsetup.sh
       # - name: Initialise MongoDB Database and Collection
       #   run: |
       #     mongo --host localhost:27017 << EOF
@@ -43,8 +44,6 @@ jobs:
       - name: Setup config.json
         run: |
           echo '{"mongodb": "mongodb://localhost:27017/Killua"}' > config.json
-      - name: Setup db collections
-        run: pip3 install git+https://github.com/Rapptz/discord.py.git; pip3 install pymongo; python3 setup.py
       - name: Setup Rocket.toml
         run: mv api/RocketTemplate.toml api/Rocket.toml
       - name: Run tests
