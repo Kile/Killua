@@ -31,7 +31,7 @@ jobs:
           sudo apt install ./mongodb-database-tools-*-100.6.1.deb
           mongorestore --version
           # Initialise db and collections
-          mongo --eval "db.getSiblingDB('Killua').createCollection('api-stats')"
+          mongosh --eval "db.getSiblingDB('Killua').createCollection('api-stats')"
           
       # - name: Initialise MongoDB Database and Collection
       #   run: |
