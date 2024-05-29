@@ -25,22 +25,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Start MongoDB server
-        uses: supercharge/mongodb-github-action@1.11.0
-        with:
-          mongodb-version: 'latest'
-      - name: Setup mongodb-tools
-        steps:
-          - name: Install MongoDB tools
-          run: |
-            wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.6.1.deb
-            sudo apt install ./mongodb-database-tools-*-100.6.1.deb
-            mongorestore --version
-          run: |
-            mongo --host localhost:27017 << EOF
-            use Killua;
-            db.createCollection("api-stats");
-            EOF
+      # - name: Setup mongodb-tools
+      #   run: |
+      #     wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.6.1.deb
+      #     sudo apt install ./mongodb-database-tools-*-100.6.1.deb
+      #     mongorestore --version
+      # - name: Initialise MongoDB Database and Collection
+      #   run: |
+      #     mongo --host localhost:27017 << EOF
+      #     use Killua;
+      #     db.createCollection("api-stats");
+      #     EOF
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -48,6 +43,8 @@ jobs:
       - name: Setup config.json
         run: |
           echo '{"mongodb": "mongodb://localhost:27017/Killua"}' > config.json
+      - name: Setup db collections
+        run: python3 setup.py
       - name: Setup Rocket.toml
         run: mv api/RocketTemplate.toml api/Rocket.toml
       - name: Run tests
