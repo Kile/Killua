@@ -25,6 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Start MongoDB server
+        uses: supercharge/mongodb-github-action@1.11.0
+        with:
+          mongodb-version: 'latest'
       - name: Setup mongodb-tools
         run: |
           wget https://downloads.mongodb.com/compass/mongodb-mongosh_2.2.6_amd64.deb
