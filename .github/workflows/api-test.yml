@@ -30,8 +30,9 @@ jobs:
           wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.6.1.deb
           sudo apt install ./mongodb-database-tools-*-100.6.1.deb
           mongorestore --version
-          chmod +x dbsetup.sh
-          ./dbsetup.sh
+          # Initialise db and collections
+          mongo --eval "db.getSiblingDB('Killua').createCollection('api-stats')"
+          
       # - name: Initialise MongoDB Database and Collection
       #   run: |
       #     mongo --host localhost:27017 << EOF
