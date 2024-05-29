@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Start MongoDB server
-        uses: supercharge/mongodb-github-action@v1.11.0 
+        uses: supercharge/mongodb-github-action@1.11.0
         with:
           mongodb-version: 'latest'
       - name: Initialise MongoDB Database and Collection
