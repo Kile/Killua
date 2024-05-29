@@ -44,7 +44,7 @@ jobs:
         run: |
           echo '{"mongodb": "mongodb://localhost:27017/Killua"}' > config.json
       - name: Setup db collections
-        run: python3 setup.py
+        run: pip3 install pymongo; python3 setup.py
       - name: Setup Rocket.toml
         run: mv api/RocketTemplate.toml api/Rocket.toml
       - name: Run tests
