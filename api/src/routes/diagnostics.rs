@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use mongodb::Client;
+use mongodb::bson::DateTime;
 use std::time::SystemTime;
 
 use rocket::response::status::BadRequest;
@@ -7,9 +8,10 @@ use rocket::serde::json::{Json, Value};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::State;
 
+use crate::db::models::ApiStats;
 use super::common::keys::ApiKey;
-use super::common::utils::{make_request, NoData};
-use crate::fairings::counter::{Counter, Endpoint};
+use super::common::utils::{make_request, NoData, ResultExt};
+use crate::fairings::counter::Endpoint;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct IPCData {
@@ -26,13 +28,36 @@ pub struct DiagnosticsResonse {
 #[get("/diagnostics")]
 pub async fn get_diagnostics(
     _key: ApiKey,
-    diag: &State<Arc<Counter>>,
+    diag: &State<Client>,
 ) -> Result<Json<DiagnosticsResonse>, BadRequest<Json<Value>>> {
-    let mut stats = diag.inner().stats.lock().unwrap().clone();
+    let diag = ApiStats::new(&diag);
+    let stats = diag.get_all_stats().await.context("Failed to get stats")?;
+    let mut formatted: HashMap<String, Endpoint> = HashMap::new();
+
+    for item in stats.into_iter() {
+        formatted.insert(item._id, Endpoint {
+            requests: item.requests.into_iter().map(|x| x.timestamp_millis()).collect(),
+            successful_responses: item.successful_responses as usize,
+            }
+        );
+    };
+
+    /// It is very likely that for the first time this endpoint is called,
+    /// it is not yet in the database (the background task is too slow)
+    /// so we need to kind of "fake" the data. This will not be a problem
+    /// except for the first request
+    fn insert(formatted: &mut HashMap<String, Endpoint>) {
+        formatted.insert("/diagnostics".to_string(), Endpoint {
+            requests: vec![DateTime::now().timestamp_millis()],
+            successful_responses: 1,
+        });
+    }
 
     // Add 1 to /diagnostics successful_responses since it is not yet incremented
-    stats.get_mut("/diagnostics").unwrap().successful_responses += 1;
-
+    match formatted.get_mut("/diagnostics") {
+        Some(endpoint) => endpoint.successful_responses += 1,
+        None => insert(&mut formatted),
+    };
     let start_time = SystemTime::now();
     let res = make_request("heartbeat", NoData {}).await;
     let success = res.is_ok();
@@ -43,7 +68,7 @@ pub async fn get_diagnostics(
 
     // Make new owned Counter object
     let data = DiagnosticsResonse {
-        usage: stats,
+        usage: formatted,
         ipc: IPCData {
             success,
             response_time,

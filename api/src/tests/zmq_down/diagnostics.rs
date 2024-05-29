@@ -58,8 +58,9 @@ fn diagnostics_plus_one_success() {
             .get("/stats")
             .unwrap_or(&Endpoint::default())
             .requests
+            .len()
             + 1
-            == new_values.get("/stats").unwrap().requests
+            == new_values.get("/stats").unwrap().requests.len()
     );
     // Request fails so the successful_responses should be the same
     assert!(

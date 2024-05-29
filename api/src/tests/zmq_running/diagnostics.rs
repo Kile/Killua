@@ -55,7 +55,7 @@ fn self_success_is_accurate() {
     let parsed_response =
         serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
 
-    let before = *parsed_response.usage.get("/diagnostics").unwrap();
+    let before = parsed_response.usage.get("/diagnostics").unwrap().clone();
 
     let response = client
         .get("/diagnostics")
@@ -65,7 +65,7 @@ fn self_success_is_accurate() {
     let parsed_response =
         serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
 
-    let after = *parsed_response.usage.get("/diagnostics").unwrap();
+    let after = parsed_response.usage.get("/diagnostics").unwrap().clone();
 
     assert_eq!(before.successful_responses + 1, after.successful_responses);
 }
@@ -110,8 +110,9 @@ fn diagnostics_plus_one_success() {
             .get("/stats")
             .unwrap_or(&Endpoint::default())
             .requests
+            .len()
             + 1
-            == new_values.get("/stats").unwrap().requests
+            == new_values.get("/stats").unwrap().requests.len()
     );
     assert!(
         initial_values
