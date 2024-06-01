@@ -1,20 +1,36 @@
+use mongodb::Client;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Mutex;
 
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Status;
 use rocket::{Data, Request, Response};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Copy, Default)]
+use crate::db::models::ApiStats;
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Endpoint {
-    pub requests: usize,
+    pub requests: Vec<i64>, // int representation of DateTime
     pub successful_responses: usize,
 }
 
 #[derive(Default, Debug)]
-pub struct Counter {
-    pub stats: Mutex<HashMap<String, Endpoint>>,
+pub struct Counter;
+
+/// Parse the endpoint to turn endpoints like /image/folder/image.png into
+/// just /image
+fn parse_endpoint(rocket: &rocket::Rocket<rocket::Orbit>, endpoint: String) -> String {
+    let all_endpoints = rocket.routes();
+    // If and endpoint starts with endpoint, return the startswith part
+    for route in all_endpoints {
+        if route.name.is_none() {
+            continue;
+        }
+        if endpoint.starts_with(&("/".to_owned() + route.name.as_ref().unwrap().as_ref())) {
+            return "/".to_owned() + route.name.as_ref().unwrap().as_ref();
+        }
+    }
+
+    endpoint
 }
 
 #[rocket::async_trait]
@@ -22,38 +38,30 @@ impl Fairing for Counter {
     fn info(&self) -> Info {
         Info {
             name: "GET/POST Counter",
-            kind: Kind::Request | Kind::Response,
+            kind: Kind::Request | Kind::Response | Kind::Shutdown,
         }
     }
 
     async fn on_request(&self, req: &mut Request<'_>, _: &mut Data<'_>) {
-        match self.stats.lock() {
-            Ok(mut stats) => {
-                let endpoint = stats.entry(req.uri().to_string()).or_insert(Endpoint {
-                    requests: 0,
-                    successful_responses: 0,
-                });
-                endpoint.requests += 1;
-            }
-            Err(poisoned) => {
-                eprintln!("Poisoned lock: {:?}", poisoned);
-            }
-        }
+        let dbclient = req.rocket().state::<Client>().unwrap();
+        let statsdb = ApiStats::new(dbclient);
+        let id = parse_endpoint(req.rocket(), req.uri().path().to_string());
+        // Update the database with the current stats
+        tokio::spawn(async move {
+            statsdb.add_request(&id).await;
+        });
     }
 
     async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {
         let status = res.status();
         if status == Status::Ok {
-            match self.stats.lock() {
-                Ok(mut stats) => {
-                    if let Some(endpoint) = stats.get_mut(&req.uri().to_string()) {
-                        endpoint.successful_responses += 1;
-                    }
-                }
-                Err(poisoned) => {
-                    eprintln!("Poisoned lock: {:?}", poisoned);
-                }
-            }
+            let dbclient = req.rocket().state::<Client>().unwrap();
+            let statsdb = ApiStats::new(dbclient);
+            let id = parse_endpoint(req.rocket(), req.uri().path().to_string());
+            // Update the database with the current stats
+            tokio::spawn(async move {
+                statsdb.add_successful_response(&id).await;
+            });
         }
     }
 }

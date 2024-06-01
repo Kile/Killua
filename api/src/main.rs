@@ -2,9 +2,9 @@
 extern crate rocket;
 use rocket::serde::Deserialize;
 use rocket::{fairing::AdHoc, routes};
-use std::sync::Arc;
 
 // add routes module
+mod db;
 mod fairings;
 mod routes;
 #[cfg(test)]
@@ -29,7 +29,6 @@ pub struct Config {
 
 #[launch]
 fn rocket() -> _ {
-    let counter = Arc::new(Counter::default());
     rocket::build()
         .mount(
             "/",
@@ -41,9 +40,34 @@ fn rocket() -> _ {
                 get_diagnostics
             ],
         )
+        .attach(db::init())
         .attach(AdHoc::config::<Config>())
         .attach(Cors)
-        .manage(Arc::clone(&counter))
-        .attach(counter)
+        //.manage(Arc::clone(&counter))
+        //.attach(counter)
+        .attach(Counter)
         .attach(RequestTimer)
 }
+
+// #[launch]
+// async fn rocket() -> _ {
+//     let counter = Arc::new(Counter::default());
+//     let client = Client::with_uri_str(get_mongo_uri()).await.unwrap();
+//     rocket::build()
+//         .mount(
+//             "/",
+//             routes![
+//                 get_commands,
+//                 register_vote,
+//                 get_stats,
+//                 image,
+//                 get_diagnostics
+//             ],
+//         )
+//         .attach(AdHoc::config::<Config>())
+//         .attach(Cors)
+//         .manage(Arc::clone(&counter))
+//         .attach(counter)
+//         .attach(RequestTimer)
+//         .manage(ApiStats::new(&client))
+// }
