@@ -3,23 +3,11 @@ use mongodb::Client;
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
-use crate::routes::stats::Stats;
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct StatsStruct {
     pub _id: String,
     pub requests: Vec<DateTime>,
     pub successful_responses: u32,
-}
-
-impl Default for StatsStruct {
-    fn default() -> Self {
-        StatsStruct {
-            _id: String::from(""),
-            requests: Vec::new(),
-            successful_responses: 0,
-        }
-    }
 }
 
 // impl From<mongodb::bson::Document> for StatsStruct {
@@ -130,16 +118,16 @@ impl ApiStats {
         Ok(stats_vec)
     }
 
-    pub async fn get_stats(&self, id: &str) -> Option<StatsStruct> {
-        let filter = mongodb::bson::doc! { "_id": id };
-        let result = self.collection.find_one(filter, None).await.unwrap();
+    // pub async fn get_stats(&self, id: &str) -> Option<StatsStruct> {
+    //     let filter = mongodb::bson::doc! { "_id": id };
+    //     let result = self.collection.find_one(filter, None).await.unwrap();
 
-        match result {
-            Some(doc) => {
-                let stats: StatsStruct = mongodb::bson::from_document(doc).unwrap();
-                Some(stats)
-            }
-            None => None,
-        }
-    }
+    //     match result {
+    //         Some(doc) => {
+    //             let stats: StatsStruct = mongodb::bson::from_document(doc).unwrap();
+    //             Some(stats)
+    //         }
+    //         None => None,
+    //     }
+    // }
 }

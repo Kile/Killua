@@ -30,7 +30,7 @@ pub async fn get_diagnostics(
     _key: ApiKey,
     diag: &State<Client>,
 ) -> Result<Json<DiagnosticsResonse>, BadRequest<Json<Value>>> {
-    let diag = ApiStats::new(&diag);
+    let diag = ApiStats::new(diag);
     let stats = diag.get_all_stats().await.context("Failed to get stats")?;
     let mut formatted: HashMap<String, Endpoint> = HashMap::new();
 

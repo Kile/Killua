@@ -16,6 +16,8 @@ pub struct Endpoint {
 #[derive(Default, Debug)]
 pub struct Counter;
 
+/// Parse the endpoint to turn endpoints like /image/folder/image.png into
+/// just /image
 fn parse_endpoint(rocket: &rocket::Rocket<rocket::Orbit>, endpoint: String) -> String {
     let all_endpoints = rocket.routes();
     // If and endpoint starts with endpoint, return the startswith part
@@ -23,8 +25,8 @@ fn parse_endpoint(rocket: &rocket::Rocket<rocket::Orbit>, endpoint: String) -> S
         if route.name.is_none() {
             continue;
         }
-        if endpoint.starts_with(&("/".to_owned()+&route.name.as_ref().unwrap().to_string())) {
-            return "/".to_owned()+&route.name.as_ref().unwrap().to_string();
+        if endpoint.starts_with(&("/".to_owned()+route.name.as_ref().unwrap().as_ref())) {
+            return "/".to_owned()+route.name.as_ref().unwrap().as_ref();
         }
     }
 

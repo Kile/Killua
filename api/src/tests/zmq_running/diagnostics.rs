@@ -58,7 +58,7 @@ fn self_success_is_accurate() {
     let before = parsed_response.usage.get("/diagnostics").unwrap().clone();
 
     // Sleep for a bit to allow the stats to update
-    std::thread::sleep(std::time::Duration::from_secs(1));
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
     let response = client
         .get("/diagnostics")
@@ -97,7 +97,7 @@ fn diagnostics_plus_one_success() {
     assert_eq!(response.status(), Status::Ok);
 
     // Sleep for a bit to allow the stats to update
-    std::thread::sleep(std::time::Duration::from_secs(1));
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
     // Get stats again
     let response = client

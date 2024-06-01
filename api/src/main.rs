@@ -2,7 +2,6 @@
 extern crate rocket;
 use rocket::serde::Deserialize;
 use rocket::{fairing::AdHoc, routes};
-use std::sync::Arc;
 
 // add routes module
 mod db;
@@ -30,7 +29,6 @@ pub struct Config {
 
 #[launch]
 fn rocket() -> _ {
-    let counter = Arc::new(Counter::default());
     rocket::build()
         .mount(
             "/",
@@ -47,7 +45,7 @@ fn rocket() -> _ {
         .attach(Cors)
         //.manage(Arc::clone(&counter))
         //.attach(counter)
-        .attach(Counter::default())
+        .attach(Counter)
         .attach(RequestTimer)
 }
 
