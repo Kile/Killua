@@ -1,5 +1,5 @@
-use mongodb::{bson::DateTime, options::UpdateOptions, error::Error, bson};
 use mongodb::Client;
+use mongodb::{bson, bson::DateTime, error::Error, options::UpdateOptions};
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
@@ -41,6 +41,12 @@ impl ApiStats {
         let update = mongodb::bson::doc! {
             "$push": {
                 "requests": DateTime::now(),
+            },
+            // Add 0 to successful_responses.
+            // The reason I am doing this is for the first time the document is created.
+            // This won't rly happen in production but it does in testsin a new environment
+            "$inc": {
+                "successful_responses": 0,
             },
         };
         let mut option = UpdateOptions::default();
@@ -105,12 +111,10 @@ impl ApiStats {
 
         while let Some(result) = cursor.next().await {
             match result {
-                Ok(document) => {
-                    match bson::from_document::<StatsStruct>(document) {
-                        Ok(stats) => stats_vec.push(stats),
-                        Err(e) => eprintln!("Failed to deserialize document: {}", e),
-                    }
-                }
+                Ok(document) => match bson::from_document::<StatsStruct>(document) {
+                    Ok(stats) => stats_vec.push(stats),
+                    Err(e) => eprintln!("Failed to deserialize document: {}", e),
+                },
                 Err(e) => return Err(e),
             }
         }

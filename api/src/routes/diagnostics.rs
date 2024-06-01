@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use mongodb::Client;
 use mongodb::bson::DateTime;
+use mongodb::Client;
+use std::collections::HashMap;
 use std::time::SystemTime;
 
 use rocket::response::status::BadRequest;
@@ -8,9 +8,9 @@ use rocket::serde::json::{Json, Value};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::State;
 
-use crate::db::models::ApiStats;
 use super::common::keys::ApiKey;
 use super::common::utils::{make_request, NoData, ResultExt};
+use crate::db::models::ApiStats;
 use crate::fairings::counter::Endpoint;
 
 #[derive(Serialize, Deserialize, Default)]
@@ -35,22 +35,31 @@ pub async fn get_diagnostics(
     let mut formatted: HashMap<String, Endpoint> = HashMap::new();
 
     for item in stats.into_iter() {
-        formatted.insert(item._id, Endpoint {
-            requests: item.requests.into_iter().map(|x| x.timestamp_millis()).collect(),
-            successful_responses: item.successful_responses as usize,
-            }
+        formatted.insert(
+            item._id,
+            Endpoint {
+                requests: item
+                    .requests
+                    .into_iter()
+                    .map(|x| x.timestamp_millis())
+                    .collect(),
+                successful_responses: item.successful_responses as usize,
+            },
         );
-    };
+    }
 
     /// It is very likely that for the first time this endpoint is called,
     /// it is not yet in the database (the background task is too slow)
     /// so we need to kind of "fake" the data. This will not be a problem
     /// except for the first request
     fn insert(formatted: &mut HashMap<String, Endpoint>) {
-        formatted.insert("/diagnostics".to_string(), Endpoint {
-            requests: vec![DateTime::now().timestamp_millis()],
-            successful_responses: 1,
-        });
+        formatted.insert(
+            "/diagnostics".to_string(),
+            Endpoint {
+                requests: vec![DateTime::now().timestamp_millis()],
+                successful_responses: 1,
+            },
+        );
     }
 
     // Add 1 to /diagnostics successful_responses since it is not yet incremented

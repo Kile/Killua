@@ -25,8 +25,8 @@ fn parse_endpoint(rocket: &rocket::Rocket<rocket::Orbit>, endpoint: String) -> S
         if route.name.is_none() {
             continue;
         }
-        if endpoint.starts_with(&("/".to_owned()+route.name.as_ref().unwrap().as_ref())) {
-            return "/".to_owned()+route.name.as_ref().unwrap().as_ref();
+        if endpoint.starts_with(&("/".to_owned() + route.name.as_ref().unwrap().as_ref())) {
+            return "/".to_owned() + route.name.as_ref().unwrap().as_ref();
         }
     }
 
@@ -50,7 +50,6 @@ impl Fairing for Counter {
         tokio::spawn(async move {
             statsdb.add_request(&id).await;
         });
-
     }
 
     async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {
