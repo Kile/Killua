@@ -71,7 +71,7 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] caching
 *   [x] Website with backend
 *   [x] CSS
-*   [ ] Threading
+*   [x] Threading
 *   [x] Github workflows
 
 ## Contributors
@@ -140,7 +140,8 @@ You will also need a file named `config.json` having the layout like this:
 }
 ```
 
-You can finally run the bot in development or production environment in a menu by running `./run.sh`
+You can finally run the bot in development or production environment in a menu by running `./run.sh`.
+This will start the main bot process. To start the API, ideally you should use a different Terminal or screen/tmux session and run `cd api; cargo run`
 
 **If you add any commands, please make sure to also add tests for it. A document explaining how tests for Killua work can be found** [**here**](https://github.com/Kile/Killua/blob/main/killua/tests/README.md)
 

@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageChops
 from killua.bot import BaseBot
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
-from killua.static.constants import DB, LOOTBOXES, IPC_TOKEN, VOTE_STREAK_REWARDS, BOOSTERS, BOOSTER_LOGO_IMG, DEFAULT_AVATAR
+from killua.static.constants import DB, LOOTBOXES, VOTE_STREAK_REWARDS, BOOSTERS, BOOSTER_LOGO_IMG, DEFAULT_AVATAR
 
 from typing import List, Dict, Union, cast
 
