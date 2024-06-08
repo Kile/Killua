@@ -50,7 +50,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     assert!(socket.set_rcvtimeo(5000).is_ok());
     assert!(socket.set_sndtimeo(1000).is_ok());
     assert!(socket.set_connect_timeout(5000).is_ok());
-    assert!(socket.connect("ipc:///tmp/killua.ipc").is_ok());
+    assert!(socket.connect("ipc:///dev/killua.ipc").is_ok());
 
     let request_data = RequestData {
         route: route.to_owned(),
@@ -64,7 +64,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     let result = socket.recv(&mut msg, 0);
 
     // Close the socket
-    assert!(socket.disconnect("ipc:///tmp/killua.ipc").is_ok());
+    assert!(socket.disconnect("ipc:///dev/killua.ipc").is_ok());
 
     result?; // Return error if error (Rust is cool)
     Ok(msg.as_str().unwrap().to_string())

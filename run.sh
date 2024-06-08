@@ -4,11 +4,11 @@ select opt in "${options[@]}"
 do
     case $REPLY in
         "1")
-            python3 -m killua
+             MODE=prod docker compose up -d --build
             break
             ;;
         "2")
-            python3 -m killua --development
+            docker compose up -d --build
             break
             ;;
         "3")

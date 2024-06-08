@@ -11,12 +11,8 @@ port = 8000
 ## only the `json` key from `default` will be overridden; `form` will remain
 limits = { json = "10MiB" }
 
-## set only when the `nyc` profile is selected
-[nyc]
-port = 9001
-
 ## set only when compiled in release mode, i.e, `cargo build --release`
 [release]
-port = 9999
+port = 8000
 ip_header = false
 secret_key = "123"

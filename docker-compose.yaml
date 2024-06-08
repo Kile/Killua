@@ -1,0 +1,31 @@
+version: '1.0'
+
+services:
+  bot:
+    build:
+      context: ./
+      dockerfile: ./killua/Dockerfile
+      # MODE=[dev | prod] docker compose up -d --build 
+      # default is dev
+      target: ${MODE:-dev}
+    container_name: python_bot
+    environment:
+      - PORT=6060
+    # Bind /dev volume. This is used for ipc communication between containers.
+    # Initially this was /tmp but macOS does not support that out of the box.
+    # Since the whole point of containers is to be platform agnostic, we use /dev
+    volumes:
+      - /dev:/dev
+    
+
+  api:
+    build:
+      context: ./
+      dockerfile: ./api/Dockerfile
+      # MODE=[dev | prod] docker compose up -d --build 
+      target: ${MODE:-dev}
+    container_name: rust_api
+    ports:
+      - "6060:8000"
+    volumes:
+      - /dev:/dev

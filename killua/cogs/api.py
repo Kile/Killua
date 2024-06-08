@@ -27,7 +27,7 @@ class IPCRoutes(commands.Cog):
         """Starts the zmq server asyncronously and handles incoming requests"""
         context = Context()
         socket = context.socket(REP)
-        socket.bind("ipc:///tmp/killua.ipc")
+        socket.bind("ipc:///dev/killua.ipc")
 
         poller = Poller()
         poller.register(socket, POLLIN)

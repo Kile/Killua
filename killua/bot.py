@@ -10,6 +10,7 @@ from datetime import date
 from PIL import Image
 from io import BytesIO
 from toml import load
+from os import getenv
 from typing import Coroutine, Union, Dict, List
 
 from .migrate import migrate_requiring_bot
@@ -48,8 +49,10 @@ class BaseBot(commands.AutoShardedBot):
         # Load ../api/Rocket.toml to get port under [debug]
         with open("api/Rocket.toml") as f:
             loaded = load(f)
-            self.dev_port = loaded["debug"]["port"]
             self.secret_api_key = loaded["default"]["api_key"]
+
+        # Get dev port from os env variable
+        self.dev_port = int(getenv("PORT", 8000))
 
     async def setup_hook(self):
         await self.load_extension("jishaku")
