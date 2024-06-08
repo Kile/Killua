@@ -1,14 +1,15 @@
 import discord
 from discord.ext import commands
 
+from os import environ
 from random import choices
 from json import loads, dumps
 from asyncio import create_task
 from zmq import REP, Poller, POLLIN
 from zmq.asyncio import Context
-
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageChops
+
 from killua.bot import BaseBot
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
@@ -27,7 +28,8 @@ class IPCRoutes(commands.Cog):
         """Starts the zmq server asyncronously and handles incoming requests"""
         context = Context()
         socket = context.socket(REP)
-        socket.bind("ipc:///dev/killua.ipc")
+        address = environ["ZMQ_ADDRESS"]
+        socket.connect(address)
 
         poller = Poller()
         poller.register(socket, POLLIN)

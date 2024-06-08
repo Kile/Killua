@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+# from discord.ext.prometheus import PrometheusCog
 
 import asyncio
 from datetime import datetime
@@ -56,6 +57,7 @@ class BaseBot(commands.AutoShardedBot):
 
     async def setup_hook(self):
         await self.load_extension("jishaku")
+        # await self.add_cog(PrometheusCog(self, port=5000))
         # await self.ipc.start()
         await self.tree.sync()
         self.cached_skus = await self.fetch_skus()
