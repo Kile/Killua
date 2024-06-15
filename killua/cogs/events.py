@@ -90,10 +90,13 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.save_guilds.start()
-        self.vote_reminders.start()
+        if not self.save_guilds.is_running():
+            self.save_guilds.start()
+        if not self.vote_reminders.is_running():
+            self.vote_reminders.start()
         if not self.status_started:
-            self.status.start()
+            if not self.status.is_running():
+                self.status.start()
             self.status_started = True
 
         logging.info(PrintColors.OKGREEN + "Logged in as: " + self.client.user.name + f" (ID: {self.client.user.id})" + PrintColors.ENDC)

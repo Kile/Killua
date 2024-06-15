@@ -103,7 +103,8 @@ class Premium(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         if self.invalid:
-            self.get_patrons.start()
+            if not self.get_patrons.is_running():
+                self.get_patrons.start()
 
     def _get_boosters(self) -> list:
         """Gets a list of all the boosters of the support server"""

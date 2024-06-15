@@ -69,7 +69,8 @@ class Shop(commands.Cog):
 
 
     async def cog_load(self):
-        self.cards_shop_update.start()
+        if not self.cards_shop_update.is_running():
+            self.cards_shop_update.start()
     
     @tasks.loop(hours=6)
     async def cards_shop_update(self):

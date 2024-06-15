@@ -28,9 +28,12 @@ class PrometheusCog(commands.Cog):
         self.port = port
 
         if self.client.run_in_docker:
-            self.latency_loop.start()
-            self.system_usage_loop.start()
-            self.db_loop.start()
+            if not self.latency_loop.is_running():
+                self.latency_loop.start()
+            if not self.system_usage_loop.is_running():
+                self.system_usage_loop.start()
+            if not self.db_loop.is_running():
+                self.db_loop.start()
 
     async def update_api_stats(self):
         url = f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}" if self.client.is_dev else self.client.url

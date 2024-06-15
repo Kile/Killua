@@ -22,7 +22,8 @@ class TodoSystem(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.check_todo_dues.start()
+        if not self.check_todo_dues.is_running():
+            self.check_todo_dues.start()
 
     def _init_menus(self) -> None:
         menus = []
