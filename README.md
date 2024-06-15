@@ -54,6 +54,9 @@ I started Killua as a way to learn python and different programming concepts. It
 ## Algorithms
 Killua contains a number of interesting algorithms which I have explained more and gone into detail in the [algorithms](./algorithms/README.md) folder.
 
+## Flowchart 
+![setup](https://github.com/Kile/Killua/assets/69253692/186f027c-2941-45d9-ae40-2c71a339618d)
+
 ## Programming concepts list
 
 As explained previously, I use Killua as a tool to learn more about python and programming. Here is a list of programming concepts Killua uses and which ones it is planned to use at some point in the future.
@@ -131,7 +134,7 @@ Both of these files have a template in the same directory with the same name but
 
 While running Killua using Docker is more convenient, running from source is more flexible and allows you to make changes to the code and see them in action. To run Killua from source, follow these steps:
 
-> [!IMPORTANT]
+> WARNING:
 > Not running Killua in Docker will make you unable to use Grafana or Prometheus. The code handles this on its own but if you want to use either of these you must run Killua using docker-compose. You also do not need to run the rust proxy as the IPC connection will be direct.
 
 ### Bot process
