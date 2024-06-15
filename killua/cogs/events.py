@@ -10,6 +10,7 @@ from PIL import Image
 from typing import Dict, List, Tuple
 from matplotlib import pyplot as plt
 
+from killua.metrics import DAILY_ACTIVE_USERS
 from killua.bot import BaseBot
 from killua.utils.classes import Guild, Book, User
 from killua.static.enums import PrintColors
@@ -150,6 +151,7 @@ class Events(commands.Cog):
 
         if not self.client.is_dev and self.skipped_first:
             DB.const.update_one({"_id": "growth"}, {"$push": {"growth": {"date": datetime.now() ,"guilds": len(self.client.guilds), "users": len(self.client.users), "registered_users": DB.teams.count_documents({}), "daily_users": len(daily_users.users)}}})
+            DAILY_ACTIVE_USERS.set(len(daily_users.users))
             daily_users.users = [] # Resetting the daily users list lgtm [py/unused-local-variable]
         elif not self.skipped_first: # We want to avoid saving data each time the bot restarts, start 24h after one
             self.skipped_first = True
@@ -448,9 +450,11 @@ class Events(commands.Cog):
             return 
 
         if self.client.is_dev: # prints the full traceback in dev enviroment
-            logging.error(PrintColors.FAIL + "Ignoring exception in command {}:".format(ctx.command))
+            # CRITIAL for the dev bot instead of error is because it makes it easier spot 
+            # errors my code caused and not the library itself
+            logging.critical(PrintColors.FAIL + "Ignoring exception in command {}:".format(ctx.command))
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-            return print(PrintColors.ENDC)
+            return logging.critical(PrintColors.ENDC)
         
         else:
             guild = ctx.guild.id if ctx.guild else "dm channel with "+ str(ctx.author.id)

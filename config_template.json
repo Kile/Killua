@@ -1,0 +1,12 @@
+{
+    "token": "BOT TOKEN",
+    "mongodb": "MONGODB CONNECTION STRING",
+    "pxlapi": "PXLAPI TOKEN",
+    "patreon": "PATREON API TOKEN",
+    "dbl_token": "DBL TOKEN",
+    "topgg_token": "TOPGG TOKEN",
+    "password": "IPC PASSWORD",
+    "json-api": {
+        "key": "This is not really used yet, a work in progress."
+    }
+}

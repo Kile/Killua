@@ -5,6 +5,7 @@ from typing import List, Union, Literal
 from aiohttp import ClientSession
 from datetime import datetime
 
+from killua.metrics import PREMIUM_USERS
 from killua.bot import BaseBot
 from killua.utils.checks import check, premium_user_only
 from killua.utils.classes import User, Guild, LootBox
@@ -209,6 +210,9 @@ class Premium(commands.Cog):
         entitelment_ids = [{"tier": tier_1, "discord": e.user_id} for e in entitelments]
 
         current_patrons.patrons.extend(entitelment_ids)
+
+        # Save stat to prometheus
+        PREMIUM_USERS.set(len(current_patrons.patrons))
 
         diff = self._get_differences(current_patrons, saved_patrons)
         self._assign_badges(diff)

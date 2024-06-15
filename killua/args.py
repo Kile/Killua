@@ -18,6 +18,7 @@ class _Args:
         parser.add_argument("-t", "--test", help="Run the tests", nargs="*", default=None, metavar=("cog", "command"))
         parser.add_argument("-l", "--log", help="Set the logging level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], metavar="level")
         parser.add_argument("-dl", "--download", help="Download all cards into a file for offline testing", action="store_const", const=True)
+        parser.add_argument("-dc", "--docker", help="Set if the bot is running in a docker container", action="store_const", const=True)
 
         parsed = parser.parse_args()
 
@@ -26,6 +27,7 @@ class _Args:
         cls.test = parsed.test
         cls.log = parsed.log
         cls.download = parsed.download
+        cls.docker = parsed.docker
 
 def init():
     global Args

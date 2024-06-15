@@ -9,6 +9,28 @@ from .classes import User, Guild
 
 cooldowndict = {}
 
+class CommandUsageCache:
+    data = dict(DB.const.find_one({"_id": "usage"})["command_usage"])
+
+    """
+    A class to cache command usage
+    """
+    def __init__(self):
+        ...
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+        DB.const.update_one({"_id": "usage"}, {"$set": {"command_usage": self.data}})
+
+    def __contains__(self, key):
+        return key in self.data
+    
+    def get(self, key, default):
+        return self.data.get(key, default)
+
 def blcheck(userid:int): # It is necessary to define it twice as I might have to use this function on its own
     """
     Checks if a user is blacklisted
@@ -31,7 +53,7 @@ def premium_guild_only():
             return False
         return True
 
-    predicate.premium_guild_only = True
+    setattr(predicate, "premium_guild_only", True)
 
     return commands.check(predicate)
 
@@ -46,7 +68,7 @@ def premium_user_only():
                 return False
             return True
 
-    predicate.premium_user_only = True
+    setattr(predicate, "premium_user_only", True)
 
     return commands.check(predicate)
 
@@ -67,9 +89,12 @@ def check(time: int = 0):
         if isinstance(command, commands.HybridGroup) or isinstance(command, discord.app_commands.Group):
             return
 
-        data = DB.const.find_one({"_id": "usage"})["command_usage"]
-        data[str(command.extras["id"])] = data[str(command.extras["id"])]+1 if str(command.extras["id"]) in data else 1
-        DB.const.update_one({"_id": "usage"}, {"$set": {"command_usage": data}})
+        data = CommandUsageCache()
+        data[str(command.extras["id"])] = (
+            data[str(command.extras["id"])]+1 
+            if str(command.extras["id"]) in data 
+            else 1
+        )
     
     async def custom_cooldown(ctx: commands.Context, time:int) -> bool:
         global cooldowndict
@@ -91,7 +116,13 @@ def check(time: int = 0):
         user = User(ctx.author.id)
         guild = Guild(ctx.guild.id) if ctx.guild else None
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Get premium", url="https://patreon.com/kilealkuri", style=discord.ButtonStyle.blurple)) # sadly I cannot color a link button :c
+        view.add_item(
+            discord.ui.Button(
+                label="Get premium", 
+                url="https://patreon.com/kilealkuri", 
+                style=discord.ButtonStyle.blurple
+            )
+        ) # sadly I cannot color a link button :c
 
         if guild and guild.is_premium:
             time /= 2

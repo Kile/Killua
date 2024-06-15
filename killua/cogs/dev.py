@@ -15,7 +15,7 @@ from killua.utils.classes import User, Guild #lgtm [py/unused-import]
 from killua.utils.interactions import View, Button, Modal
 from killua.static.enums import Category# , StatsOptions
 from killua.static.cards import Card #lgtm [py/unused-import]
-from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT, INFO
+from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT, INFO, API_ROUTES
 
 class UsagePaginator(Paginator):
     """A normal paginator with a button that returns to the original help command"""
@@ -198,24 +198,17 @@ class Dev(commands.GroupCog, group_name="dev"):
         return c.extras
 
     async def initial_top(self, ctx: commands.Context) -> None:
-        s: dict = DB.const.find_one({"_id": "usage"})["command_usage"]
         # Convert the ids to actualy command names
-        s_formatted = {}
+        usage_data: dict = DB.const.find_one({"_id": "usage"})["command_usage"]
+        usage_data_formatted = {}
 
-        # The way to convert the ids to actualy command names is currently very hacky as bot.tree.get_commands() does not includes 
-        # the "extras" attr and the bot.walk_commands() qualified name is incorrect for GroupCogs (of which there are a lot)
-        command_groups = [c.commands for c in self.client.tree.get_commands() if hasattr(c, "commands")]
-        commands = [item for sublist in command_groups for item in sublist]
+        commands = self.client.get_raw_formatted_commands()
         for cmd in commands:
-            if not cmd.qualified_name.startswith("image"):
-                cmd_extras = self.get_command_extras(cmd.qualified_name) # Edge case and possibly a lib bug. See https://github.com/Rapptz/discord.py/issues/9243
-            else:
-                cmd_extras = None
-            if not cmd_extras or not str(cmd_extras["id"]) in s:
+            if not cmd.extras or not "id" in cmd.extras or not str(cmd.extras["id"]) in usage_data:
                 continue
-            s_formatted[cmd.qualified_name] = s[str(cmd_extras["id"])]
+            usage_data_formatted[cmd.qualified_name] = usage_data[str(cmd.extras["id"])]
 
-        top = sorted(s_formatted.items(), key=lambda x: x[1], reverse=True)
+        top = sorted(usage_data_formatted.items(), key=lambda x: x[1], reverse=True)
         rest = 0
         for x in top[9:]:
             rest += x[1]
@@ -371,8 +364,7 @@ class Dev(commands.GroupCog, group_name="dev"):
     @commands.hybrid_command(extras={"category":Category.OTHER, "id": 119}, usage="api <user_id>", hidden=True)
     async def api(self, ctx: commands.Context):
         """Gets statistics about the Killua API"""
-        valid_routes = ["/diagnostics", "/commands", "/stats", "/image"]
-        url = f"http://0.0.0.0:{self.client.dev_port}" if self.client.is_dev else self.client.url
+        url = f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}" if self.client.is_dev else self.client.url
 
         data = await self.client.session.get(url + "/diagnostics", headers={"Authorization": self.client.secret_api_key})
         if data.status != 200:
@@ -393,7 +385,7 @@ class Dev(commands.GroupCog, group_name="dev"):
             color=0x3e4a78
         )
         for key, val in cast(dict, json["usage"]).items():
-            if not any([x.startswith("/"+key.split("/")[0]) for x in valid_routes]):
+            if not any([x.startswith("/"+key.split("/")[0]) for x in API_ROUTES]):
                 continue
             reqs = cast(dict, val).get("requests")
             successful_res = cast(dict, val).get("successful_responses")

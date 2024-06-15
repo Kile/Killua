@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9-bookworm AS base
+FROM python:3.9-slim AS base
 
 # Set the working directory in the container
 WORKDIR /app
@@ -28,7 +28,7 @@ RUN pip3 install --no-cache-dir --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 FROM base AS dev
-CMD ["python3", "-m", "killua", "--development"]
+CMD ["python3", "-m", "killua", "--development", "--docker"]
 
 FROM base as prod
-CMD ["python3", "-m", "killua"]
+CMD ["python3", "-m", "killua", "--docker"]

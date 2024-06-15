@@ -196,7 +196,7 @@ class IPCRoutes(commands.Cog):
         reward: Union[int, Booster] = self._get_reward(streak, data["isWeekend"] if hasattr(data, "isWeekend") else False)
 
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
-        url = f"http://0.0.0.0:{self.client.dev_port}" if self.client.is_dev else self.client.url
+        url = f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}" if self.client.is_dev else self.client.url
 
         path = self._create_path(streak, usr, url)
         image = await self.streak_image(
@@ -268,7 +268,6 @@ class IPCRoutes(commands.Cog):
         usage_slash = (cmd.qualified_name.replace(cmd.name, "") + cmd.usage) if not isinstance(cmd.cog, commands.GroupCog) else cmd.cog.__cog_group_name__ + " " + cmd.usage
         usage_message = (f"k!" + cmd.qualified_name.replace(cmd.name, "") + cmd.usage) if not isinstance(cmd.cog, commands.GroupCog) else f"k!" + cmd.usage
 
-            
         return {
             "name": cmd.name,
             "slash_usage": usage_slash,
@@ -282,13 +281,11 @@ class IPCRoutes(commands.Cog):
 
     async def commands(self, _) -> dict:
         """Returns all commands with descriptions etc"""
-        if not self.command_cache:
-            raw = [v["commands"] for v in self.client.get_formatted_commands().values() if "commands" in v]
-            self.command_cache = [item for sublist in raw for item in sublist]
+        raw = self.client.get_raw_formatted_commands()
         
         to_be_returned: Dict[str, Dict[str, Union[str, list]]] = {}
 
-        for cmd in self.command_cache:
+        for cmd in raw:
             formatted = self.format_command(cmd)
 
             if cmd.extras["category"].name in to_be_returned:

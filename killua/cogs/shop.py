@@ -2,7 +2,7 @@ import discord
 import logging
 
 from math import ceil
-from datetime import datetime
+from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from random import randint, choice
 from typing import Union, Tuple, List, Literal, Dict
@@ -42,8 +42,9 @@ class Shop(commands.Cog):
     def __init__(self, client: BaseBot):
         self.client = client
         self.cardname_cache: Dict[int, Tuple[str, str]] = None
+        self.last_update = None
 
-    def _format_offers(self, offers: list, reduced_item: int = None, reduced_by: int = None) -> list:
+    def _format_offers(self, offers: list, reduced_item: int = None, reduced_by: int = None) -> List[Dict[str, str]]:
         """Formats the offers for the shop"""
         formatted: list = []
         if reduced_item and reduced_by:
@@ -57,7 +58,7 @@ class Shop(commands.Cog):
 
         return formatted
 
-    def _format_item(self, offer: int, reduced_item: int = None, reduced_by: int = None, number: int = None) -> dict:
+    def _format_item(self, offer: int, reduced_item: int = None, reduced_by: int = None, number: int = None) -> Dict[str, str]:
         """Formats a single item for the shop"""
         item = DB.items.find_one({"_id": int(offer)})
         if reduced_item:
@@ -79,7 +80,7 @@ class Shop(commands.Cog):
             number_of_items = randint(3,5) # How many items the shop has
             if randint(1,100) > 95:
                 # Add a S/A card to the shop
-                thing = [i["_id"] for i in DB.items.find({"type": "normal", "rank": {"$in": ["A", "S"], "available": True}})]
+                thing = [i["_id"] for i in DB.items.find({"type": "normal", "rank": {"$in": ["A", "S"]}, "available": True})]
                 shop_items.append(choice(thing))
             if randint(1,100) > 20: # 80% chance for spell
                 if randint(1, 100) > 95: # 5% chance for a good spell (they are rare)
@@ -108,16 +109,17 @@ class Shop(commands.Cog):
                 else:
                     logging.info(f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}")
                     DB.const.update_many({"_id": "daily_offers"}, {"$set": {"offers": shop_items, "reduced": None}})
+            self.last_update = datetime.now()
         except (IndexError, TypeError):
             logging.error(f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}")
 
-    def _get_view(self, ctx) -> View:
+    def _get_view(self, ctx: commands.Context) -> View:
         """Creates a view for the shop"""
         view = View(ctx.author.id)
         view.add_item(Button(label="Menu", style=discord.ButtonStyle.blurple, custom_id="menu"))
         return view
 
-    async def _shop_menu(self, ctx, msg, view) -> None:
+    async def _shop_menu(self, ctx: commands.Context, msg: discord.Message, view: View) -> None:
         """Handles the shop menu"""
         await view.wait()
         await view.disable(msg)
@@ -160,7 +162,7 @@ class Shop(commands.Cog):
         """Shows the current cards for sale"""
         
         sh = DB.const.find_one({"_id": "shop"})
-        shop_items:list = sh["offers"]
+        shop_items = sh["offers"]
 
         if not sh["reduced"] is None:
             reduced_item = sh["reduced"]["reduced_item"]
@@ -168,13 +170,16 @@ class Shop(commands.Cog):
             formatted = self._format_offers(shop_items, reduced_item, reduced_by)
             embed = discord.Embed(title="Current Card shop", description=f"**{Card(shop_items[reduced_item]).name} is reduced by {reduced_by}%**")
         else:
-            formatted:list = self._format_offers(shop_items)
+            formatted = self._format_offers(shop_items)
             embed = discord.Embed(title="Current Card shop")
 
         embed.color = 0x3e4a78
         embed.set_thumbnail(url="https://static.wikia.nocookie.net/hunterxhunter/images/0/08/Spell_Card_Store.png/revision/latest?cb=20130328063032")
         for item in formatted:
             embed.add_field(name=item["name"], value=item["value"], inline=True)
+        diff = (self.last_update + timedelta(hours=6) - datetime.now())
+        next_in = str(diff.seconds//3600) + " hours and " + str((diff.seconds//60)%60) + " minutes"
+        embed.set_footer(text="Next shop update in " + next_in)
         view = self._get_view(ctx)
         msg = await self.client.send_message(ctx, embed=embed, view=view)
         await self._shop_menu(ctx, msg, view)

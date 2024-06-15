@@ -1,10 +1,11 @@
 services:
-  device:
+  proxy:
     build:
-      context: "./zmq_device"
+      context: "./zmq_proxy"
     environment:
       - ZMQ_CLIENT_ADDRESS=tcp://*:5559
       - ZMQ_SERVER_ADDRESS=tcp://*:5560
+    restart: unless-stopped
 
   api:
     build:
@@ -14,9 +15,10 @@ services:
       target: ${MODE:-dev}
     container_name: rust_api
     ports:
-      - "6060:8000"
+      - "6060:7650"
     environment:
-      - ZMQ_ADDRESS=tcp://device:5559
+      - ZMQ_ADDRESS=tcp://proxy:5559
+    restart: unless-stopped
 
   bot:
     build:
@@ -26,6 +28,32 @@ services:
       # default is dev
       target: ${MODE:-dev}
     container_name: python_bot
+    restart: unless-stopped
     environment:
       - PORT=6060
-      - ZMQ_ADDRESS=tcp://device:5560
+      - ZMQ_ADDRESS=tcp://proxy:5560
+    ports:
+      - '8000:8000' # prometheus endpoint
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/datasources
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+
+volumes:
+  prom_data:

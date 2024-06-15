@@ -48,7 +48,6 @@ class HelpCommand(commands.Cog):
     def __init__(self, client: BaseBot) -> None:
         self.client = client
         self.client.remove_command("help")
-        self.cache = {}
 
     def find_source(self, command: commands.HybridCommand) -> str:
         """Finds the source of a command and links the GitHub link to it"""
@@ -116,7 +115,7 @@ class HelpCommand(commands.Cog):
     def get_group_help(self, ctx: commands.Context, group: Category, prefix: str) -> HelpPaginator:
         """Gets the help embed for a group"""
 
-        c = self.cache[group.name.lower()]["commands"]
+        c = self.client.get_formatted_commands()[group.name.lower()]["commands"]
 
         def make_embed(page, embed, pages):
             embed = self.get_command_help(c[page-1], prefix)
@@ -157,14 +156,8 @@ class HelpCommand(commands.Cog):
         current: str,
     ) -> List[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
-        if not self.cache:
-            self.cache = self.client.get_formatted_commands()
-
-        all_commands = [v["commands"] for v in self.cache.values()]
-        # combine all individual lists in all_commands into one in one line
-        all_commands: List[commands.Command] = [item for sublist in all_commands for item in sublist]
-        
-        return [command.qualified_name for command in all_commands if current.lower() in command.qualified_name][0:25]
+        raw = self.client.get_raw_formatted_commands()
+        return [command.qualified_name for command in raw if current.lower() in command.qualified_name][0:25]
 
     @commands.hybrid_command(usage="help [group] [command]", extras={"id": 45})
     @discord.app_commands.describe(group="The group to get help for", command="The command to get help for")
@@ -175,18 +168,17 @@ class HelpCommand(commands.Cog):
         """Displays helfpul information about a command, group, or the bot itself."""
         message_prefix = Guild(ctx.guild.id).prefix if ctx.guild else "k!"
 
-        if not self.cache:
-            self.cache = self.client.get_formatted_commands()
-
         if not (group or command):
+            all_formatted_commands = self.client.get_formatted_commands()
+
             embed = HelpEmbed(str(ctx.me.avatar.url))
 
-            for k, v in self.cache.items():
+            for k, v in all_formatted_commands.items():
                 embed.add_field(name=f"{v['emoji']['normal']} `{k}` ({len(v['commands'])} commands)", value=v["description"], inline=False)
 
             embed.add_field(name="** **", value="\nFor more info to a specific command, use ```css\nhelp <command_name>```", inline=False)
             view = View(user_id=ctx.author.id, timeout=None)
-            view.add_item(Select([discord.SelectOption(label=k, value=str(i), emoji=v["emoji"]["unicode"]) for i, (k, v) in enumerate(self.cache.items())], placeholder="Select a command group"))
+            view.add_item(Select([discord.SelectOption(label=k, value=str(i), emoji=v["emoji"]["unicode"]) for i, (k, v) in enumerate(all_formatted_commands.items())], placeholder="Select a command group"))
 
             view.add_item(discord.ui.Button(url=self.client.support_server_invite, label="Support server"))
             view.add_item(discord.ui.Button(url="https://github.com/kile/killua", label="Source code"))
@@ -203,7 +195,7 @@ class HelpCommand(commands.Cog):
             else:
                 #await msg.edit(embed=msg.embeds[0], view=discord.ui.View())
                 await msg.delete()
-                paginator = self.get_group_help(ctx, self.find_category(list(self.cache.keys())[view.value]), message_prefix)
+                paginator = self.get_group_help(ctx, self.find_category(list(all_formatted_commands.keys())[view.value]), message_prefix)
                 return await paginator.start()
 
         elif group and not command: # if group is specified, but not command
@@ -212,10 +204,7 @@ class HelpCommand(commands.Cog):
                 paginator = self.get_group_help(ctx, self.find_category(group), message_prefix)
                 return await paginator.start()
             
-            # If the group doesn't exist, check if the command exists
-            all_commands = [v["commands"] for v in self.cache.values()]
-            # combine all individual lists in all_commands into one in one line
-            all_commands: List[commands.Command] = [item for sublist in all_commands for item in sublist]
+            all_commands= self.client.get_raw_formatted_commands()
 
             # if command not in [c.qualified_name for c in self.client.commands]:
             #     return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
@@ -226,9 +215,7 @@ class HelpCommand(commands.Cog):
             return await self.handle_command(ctx, cmd, message_prefix)
 
         elif command: # If both command and group exist, command takes priority
-            all_commands = [v["commands"] for v in self.cache.values()]
-            # combine all individual lists in all_commands into one in one line
-            all_commands: List[commands.Command] = [item for sublist in all_commands for item in sublist]
+            all_commands= self.client.get_raw_formatted_commands()
 
             # if command not in [c.qualified_name for c in self.client.commands]:
             #     return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)

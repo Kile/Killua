@@ -28,6 +28,8 @@ MAX_VOTES_DISPLAYED = 5
 
 CARDS_URL = "https://json.extendsclass.com/bin/7d2c78bde0cd"
 
+API_ROUTES = ["/diagnostics", "/commands", "/stats", "/image", "/vote"]
+
 T = TypeVar("T")
 
 class DBProperty(Generic[T]):
@@ -82,10 +84,13 @@ class DB:
             return db
         else:
             return self._DB["const"]
+        
+    @DBProperty
+    def APIstats(self) -> Union[collection.Collection, Database]:
+        return self._DB["api-stats"] if args.Args.test is None else Database("api-stats")
 
 DB = DB()
 
-IPC_TOKEN: str = config["ipc"]
 TOKEN = config["token"]
 PATREON = config["patreon"]
 PXLAPI = config["pxlapi"]

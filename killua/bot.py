@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-# from discord.ext.prometheus import PrometheusCog
 
 import asyncio
 from datetime import datetime
@@ -11,15 +10,14 @@ from datetime import date
 from PIL import Image
 from io import BytesIO
 from toml import load
-from os import getenv
-from typing import Coroutine, Union, Dict, List
+from typing import Coroutine, Union, Dict, List, Optional
 
 from .migrate import migrate_requiring_bot
 from .static.enums import Category
 from .utils.interactions import Modal
 from .static.constants import TIPS, LOOTBOXES, DB
 
-def get_prefix(bot, message):
+def get_prefix(bot: "BaseBot", message):
     if bot.is_dev:
         return commands.when_mentioned_or('kil!', 'kil.')(bot, message)
     try:
@@ -43,7 +41,9 @@ class BaseBot(commands.AutoShardedBot):
         self.url = "https://api.killua.dev"
         # self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
         self.is_dev = False
+        self.run_in_docker = False
         self.startup_datetime = datetime.now()
+        self.__cached_formatted_commands: List[commands.Command] = []
         self.cached_skus: List[discord.SKU] = []
         self.cached_entitlements: List[discord.Entitlement] = []
 
@@ -51,13 +51,13 @@ class BaseBot(commands.AutoShardedBot):
         with open("api/Rocket.toml") as f:
             loaded = load(f)
             self.secret_api_key = loaded["default"]["api_key"]
+            self.dev_port = loaded["debug"]["port"]
 
         # Get dev port from os env variable
-        self.dev_port = int(getenv("PORT", 8000))
+        # self.dev_port = int(getenv("PORT", 7000))
 
     async def setup_hook(self):
         await self.load_extension("jishaku")
-        # await self.add_cog(PrometheusCog(self, port=5000))
         # await self.ipc.start()
         await self.tree.sync()
         self.cached_skus = await self.fetch_skus()
@@ -70,8 +70,13 @@ class BaseBot(commands.AutoShardedBot):
         await super().close()
         await self.session.close()
 
-    def __format_command(self, res: Dict[str, list], cmd: discord.app_commands.Command) -> dict:
+    def __format_command(
+            self, 
+            res: Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]], 
+            cmd: discord.app_commands.Command
+        ) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
         """Adds a command to a dict of formatted commands"""
+
         if "jishaku" in cmd.qualified_name or cmd.name == "help" or cmd.hidden:
             return res
 
@@ -82,9 +87,18 @@ class BaseBot(commands.AutoShardedBot):
         res[cmd.extras["category"].value["name"]]["commands"].append(cmd)
         
         return res
+    
+    def _get_group(self, command: commands.HybridCommand) -> Optional[str]:
+        if isinstance(command.cog, commands.GroupCog):
+            return command.cog.__cog_group_name__
+        else:
+            return " ".join(command.qualified_name.split(" ")[:-1])
 
-    def get_formatted_commands(self) -> dict:
+    def get_formatted_commands(self) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
         """Gets a dictionary of formatted commands"""
+        if self.__cached_formatted_commands:
+            return self.__cached_formatted_commands
+        
         res = {c.value["name"]: {"description": c.value["description"], "emoji": c.value["emoji"], "commands": []} for c in Category}
 
         for cmd in self.walk_commands():
@@ -94,7 +108,14 @@ class BaseBot(commands.AutoShardedBot):
                 continue
             res = self.__format_command(res, cmd)
 
+        self.cached_commands = res
         return res
+    
+    def get_raw_formatted_commands(self) -> List[commands.Command]:
+        # If the group doesn't exist, check if the command exists
+        all_commands = [v["commands"] for v in self.get_formatted_commands().values()]
+        # combine all individual lists in all_commands into one in one line
+        return [item for sublist in all_commands for item in sublist]
     
     async def _get_bytes(self, image: Union[discord.Attachment, str]) -> Union[None, BytesIO]:
         if isinstance(image, discord.Attachment):
@@ -116,7 +137,7 @@ class BaseBot(commands.AutoShardedBot):
         if hasattr(image, "is_animated"):
             # Set image variable to first frame of GIF
             image = image.convert("RGB")
-		#Resize image
+        #Resize image
         image = image.resize((width, height),resample = 0)
         #Get colors from image object
         pixels = image.getcolors(width * height)
@@ -271,3 +292,8 @@ class BaseBot(commands.AutoShardedBot):
         # dpy caches members (assuming they are members when the command is executed 
         # on a guild)
         return True
+    
+    def get_command_from_id(self, id: int) -> Union[discord.app_commands.Command, None]:
+        for cmd in [*self.walk_commands(), *self.tree.walk_commands()]:
+            if cmd.extras["id"] == id:
+                return cmd
