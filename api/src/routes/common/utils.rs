@@ -51,7 +51,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     assert!(socket.set_sndtimeo(1000).is_ok());
     assert!(socket.set_connect_timeout(5000).is_ok());
     // Get route from environment variable
-    let address = std::env::var("ZMQ_ADDRESS").unwrap_or("tcp://0.0.0.0:3000".to_string());
+    let address = std::env::var("ZMQ_ADDRESS").unwrap_or("tcp://0.0.0.0:3210".to_string());
     assert!(socket.connect(&address).is_ok());
 
     let request_data = RequestData {

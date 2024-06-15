@@ -73,6 +73,10 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] CSS
 *   [x] Threading
 *   [x] Github workflows
+*   [x] Docker
+*   [x] Rust
+*   [x] Prometheus
+*   [x] Grafana
 
 ## Contributors
 
@@ -105,6 +109,9 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 > Helped write some of the action texts, topics, 8ball responses and would you rather questions.
 
+*   [Apollo-Roboto](https://github.com/Apollo-Roboto) 
+> Wrote a great library to use Prometheus/Grafana with discord.py which became the template for the current implementation. He also assisted me with questions during this process.
+
 *   [Vivany](https://vivany.carrd.co/)
 
 > Found a lot of hug images and also tracked down most artists of previously used ones to give them credit making Killua a much more considerate bot.
@@ -115,37 +122,58 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 ## Running Killua locally
 
-First, set up a virtual environment. Do so with `python3 -m venv env; source env/bin/activate`. To leave the virtual environment after you are done, simply run `deactivate`
+Regardless of how you decide to run Killua, you need to edit two files. `config.json` includes most of the configurations for Killua such as the bot token and the mongodb connection string. `api/Rocket.toml` includes configurations for the API such as the port it runs on. The main thing to edit here is secret_key which is the API's Auth key for things like the `/vote` endpoint. It is not recommended to edit the other values in this file.
+
+Both of these files have a template in the same directory with the same name but with `.template` at the end. You can copy these files and edit them to your liking.
+
+<details>
+<summary><b>Running from source</b></summary>
+
+While running Killua using Docker is more convenient, running from source is more flexible and allows you to make changes to the code and see them in action. To run Killua from source, follow these steps:
+
+> [!IMPORTANT]
+> Not running Killua in Docker will make you unable to use Grafana or Prometheus. The code handles this on its own but if you want to use either of these you must run Killua using docker-compose. You also do not need to run the rust proxy as the IPC connection will be direct.
+
+### Bot process
+First, set up a virtual environment. Do so with `python3 -m venv env; source env/bin/activate` (for linux). To leave the virtual environment after you are done, simply run `deactivate`
 
 `requirements.txt` contains the libraries you'll need. To install them use `pip3 install -r requirements.txt`
 
-You will need a Mongodb account. Why do I use mongodb and not SQL? In my opinion, mongo is easier to use and you can manually add and remove data.
+Depending on if you self host mongodb or not, you may also need a mongodb. You can to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up. As a warning, this script is rarely run so it may not be up to date.
 
-You will have to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up
-
-You will also need a file named `config.json` having the layout like this:
-
-```plaintext
-{
-    "token": "token",
-    
-    "mongodb": "your-mongodb-token",
-    "pxlapi": "pxlapi-token",
-    "patreon": "patreon-api-token",
-    "dbl_token": "dbl-token",
-    "topgg_token": "topgg-token",
-    "password": "vote-pages-password",
-    "port": 8000,
-    "ipc": "ipc-token"
-}
+The bot can be run using 
+```sh
+python3 -m killua
+``` 
+There are a number of command line options, you can see them by running 
+```sh
+python3 -m killua --help
 ```
+most notabily the `--development` flag which will prevent the bot from caching all it needs on startup and requests local API versions instead of the server. This is useful for development.
 
-You can finally run the bot in development or production environment in a menu by running `./run.sh`.
-This will start the main bot process. To start the API, ideally you should use a different Terminal or screen/tmux session and run `cd api; cargo run`
+### API
+To start the API, ideally you should use a different Terminal or screen/tmux session and run `cd api; cargo run`
+</details>
 
-**If you add any commands, please make sure to also add tests for it. A document explaining how tests for Killua work can be found** [**here**](https://github.com/Kile/Killua/blob/main/killua/tests/README.md)
+<details>
+<summary><b>Running using Docker</b></summary>
+Running from Docker, while taking longer to start up, is much more convenient and allows you to use Grafana and Prometheus. To run Killua using Docker, follow these steps:
 
-If you don't like me using one of your images for the hug command, please contact me on discord `Kile#0606` or on `kile@killua.dev`
+
+1) Either clone the repo or pull the latest image from Docker Hub using `docker pull`
+2) Edit the `config.json` and `api/Rocket.toml` files as explained above
+3) Run `MODE=[dev|prod] docker compose up` in the root directory of the project. The mode specifies if you want to run the bot in development or production mode. Development mode will not cache anything and will use the local API instead of the server. If not provided, it will default to development mode.
+
+</details>
+
+## Contributing
+> [!INFO]
+> If you add any commands, please make sure to also add tests for it. A document explaining how tests for Killua work can be found [**here**](https://github.com/Kile/Killua/blob/main/killua/tests/README.md).
+> This also applies to the API, if you add any endpoints, please make sure to add tests for them.
+
+Contributions are always welcome! If you just want to contribute but don't know where to start, just contact me! I can help you find something to work on. If you have any questions, feel free to ask me on discord (`k1le`).
+
+If you don't like me using one of your images for the hug command, please contact me on discord `k1le` or on `kile@killua.dev`
 
 If you have any further questions, join my discord server or dm me!
 

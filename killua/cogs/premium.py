@@ -211,8 +211,9 @@ class Premium(commands.Cog):
 
         current_patrons.patrons.extend(entitelment_ids)
 
-        # Save stat to prometheus
-        PREMIUM_USERS.set(len(current_patrons.patrons))
+        if self.client.run_in_docker:
+            # Save stat to prometheus
+            PREMIUM_USERS.set(len(current_patrons.patrons))
 
         diff = self._get_differences(current_patrons, saved_patrons)
         self._assign_badges(diff)

@@ -84,7 +84,7 @@ DAILY_ACTIVE_USERS = Gauge(
 COMMAND_USAGE = Gauge(
     METRIC_PREFIX + 'command_usage',
     'Amount of times a command was used',
-    ['group', 'command']
+    ['group', 'command', 'command_id']
 )
 
 PREMIUM_USERS = Gauge(

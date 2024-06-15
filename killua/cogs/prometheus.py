@@ -27,12 +27,10 @@ class PrometheusCog(commands.Cog):
         self.client = client
         self.port = port
 
-        # start() comes from the @task.loop decorator
-        # pylint: disable=no-member
-        self.latency_loop.start()
-        # pylint: enable=no-member
-        self.system_usage_loop.start()
-        self.db_loop.start()
+        if self.client.run_in_docker:
+            self.latency_loop.start()
+            self.system_usage_loop.start()
+            self.db_loop.start()
 
     async def update_api_stats(self):
         url = f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}" if self.client.is_dev else self.client.url
@@ -82,7 +80,8 @@ class PrometheusCog(commands.Cog):
 
             COMMAND_USAGE.labels(
                 self.client._get_group(cmd),
-                cmd.name
+                cmd.name,
+                str(cmd.extras["id"])
             ).set(
                 usage_data[str(cmd.extras["id"])]
             )
@@ -118,14 +117,17 @@ class PrometheusCog(commands.Cog):
         )
 
     async def cog_load(self):
-        # some gauges needs to be initialized after each reconect
-        # (value could changed during an outtage)
-        await self.init_gauges()
+        if self.client.run_in_docker:
+            # some gauges needs to be initialized after each reconect
+            # (value could changed during an outtage)
+            await self.init_gauges()
 
-        # Set connection back up (since we in on_ready)
-        CONNECTION_GAUGE.labels(None).set(1)
+            # Set connection back up (since we in on_ready)
+            CONNECTION_GAUGE.labels(None).set(1)
 
-        self.start_prometheus()
+            self.start_prometheus()
+        else:
+            log.info("Running outside of Docker, not starting Prometheus server")
 
     @commands.Cog.listener()
     async def on_command(self, ctx: commands.Context):
@@ -135,7 +137,8 @@ class PrometheusCog(commands.Cog):
         if not ctx.command.extras.get("id"): return
         COMMAND_USAGE.labels(
             self.client._get_group(ctx.command),
-            ctx.command.name
+            ctx.command.name,
+            str(ctx.command.extras["id"])
         ).inc()
 
     @commands.Cog.listener()

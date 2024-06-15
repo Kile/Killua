@@ -28,8 +28,15 @@ class IPCRoutes(commands.Cog):
         """Starts the zmq server asyncronously and handles incoming requests"""
         context = Context()
         socket = context.socket(REP)
-        address = environ["ZMQ_ADDRESS"]
-        socket.connect(address)
+        address = environ.get("ZMQ_ADDRESS", "tcp://0.0.0.0:3210")
+        if self.client.run_in_docker:
+            # If run in docker, both client and server connect
+            # to the proxy server
+            socket.connect(address)
+        else:
+            # If not run in docker, the server binds to the address
+            # to recieve requests directly
+            socket.bind(address)
 
         poller = Poller()
         poller.register(socket, POLLIN)
