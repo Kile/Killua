@@ -167,7 +167,7 @@ Running from Docker, while taking longer to start up, is much more convenient an
 </details>
 
 ## Contributing
-> [!INFO]
+> [!NOTE]
 > If you add any commands, please make sure to also add tests for it. A document explaining how tests for Killua work can be found [**here**](https://github.com/Kile/Killua/blob/main/killua/tests/README.md).
 > This also applies to the API, if you add any endpoints, please make sure to add tests for them.
 

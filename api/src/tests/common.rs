@@ -16,7 +16,7 @@ pub fn test_zmq_server() {
 
     assert!(responder.set_rcvtimeo(5000).is_ok());
     assert!(responder.set_linger(0).is_ok());
-    assert!(responder.bind("tcp://127.0.0.1:3000").is_ok());
+    assert!(responder.bind("tcp://127.0.0.1:3210").is_ok());
 
     // Wait for a request in the background
     std::thread::spawn(move || loop {
