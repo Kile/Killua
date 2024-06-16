@@ -36,8 +36,6 @@
   <a href="https://www.patreon.com/KileAlkuri">
     <img src="https://img.shields.io/badge/Support-Killua!-blue.svg" alt="Support Killua on Patreon!">
   </a>
-  <a href="https://lgtm.com/projects/g/Kile/Killua/context:python"><img alt="Language grade: Python" src="https://img.shields.io/lgtm/grade/python/g/Kile/Killua.svg?logo=lgtm&logoWidth=18"/>
-  </a>
 </p>
 
 ## What is Killua?
@@ -167,6 +165,8 @@ Running from Docker, while taking longer to start up, is much more convenient an
 2) Edit the `config.json` and `api/Rocket.toml` files as explained above
 3) Run `MODE=[dev|prod] docker compose up` in the root directory of the project. The mode specifies if you want to run the bot in development or production mode. Development mode will not cache anything and will use the local API instead of the server. If not provided, it will default to development mode.
 
+
+You can access Grafana on port 3000. The configured dashboard should already be added. You can access it after logging in with username `admin` and password `admin`. Prometheus can be accessed on port 8000. The API can be accessed on port 6060.
 </details>
 
 ## Contributing

@@ -268,7 +268,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
     async def nokia(self, ctx: commands.Context, target: str = None):
         """Add the image onto a nokia display"""
         async def func(data, *_):
-            d = "const url = "" + data + ";"" + NOKIA_CODE
+            d = "const url = \"" + data + ";\"" + NOKIA_CODE
             return await self.pxl.imagescript(version="1.2.0", code=d)
         await self.handle_command(ctx, target, func)
 

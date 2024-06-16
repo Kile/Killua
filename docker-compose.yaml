@@ -41,7 +41,8 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - ./grafana:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
 
   prometheus:
     image: prom/prometheus
