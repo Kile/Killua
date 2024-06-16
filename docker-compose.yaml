@@ -6,6 +6,12 @@ services:
       - ZMQ_CLIENT_ADDRESS=tcp://*:5559
       - ZMQ_SERVER_ADDRESS=tcp://*:5560
     restart: unless-stopped
+    # image: localhost:5000/zmq_proxy:latest
+  labels:
+    - org.opencontainers.image.source=https://github.com/kile/Killua
+    - org.opencontainers.image.title=ZMQ Proxy
+    - org.opencontainers.image.description=ZMQ Proxy for Killua's API and Bot
+
 
   api:
     build:
@@ -19,6 +25,10 @@ services:
     environment:
       - ZMQ_ADDRESS=tcp://proxy:5559
     restart: unless-stopped
+    labels: 
+      - org.opencontainers.image.source=https://github.com/kile/Killua
+      - org.opencontainers.image.title=Killua API
+      - org.opencontainers.image.description=Killua's API, written in Rust using Rocket
 
   bot:
     build:
@@ -34,6 +44,11 @@ services:
       - ZMQ_ADDRESS=tcp://proxy:5560
     ports:
       - '8000:8000' # prometheus endpoint
+    # image: localhost:5000/python_bot:latest
+    labels:
+      - org.opencontainers.image.source=https://github.com/kile/Killua
+      - org.opencontainers.image.title=Killua Bot
+      - org.opencontainers.image.description=The Killua Discord Bot, written in Python using discord.py
 
   grafana:
     image: grafana/grafana:10.4.2
