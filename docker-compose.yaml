@@ -8,6 +8,7 @@ x-common-labels: &common-labels
     
 services:
   proxy:
+    image: ghcr.io/Kile/zmq-proxy:latest
     build:
       context: "./zmq_proxy"
     environment:
@@ -18,6 +19,7 @@ services:
 
 
   api:
+    image: ghcr.io/kile/killua-api:latest
     build:
       context: ./
       dockerfile: ./api/Dockerfile
@@ -34,6 +36,7 @@ services:
     <<: *common-labels
 
   bot:
+    image: ghcr.io/kile/killua-bot:latest
     build:
       context: ./
       dockerfile: ./killua/Dockerfile
