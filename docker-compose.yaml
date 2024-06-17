@@ -24,7 +24,7 @@ services:
       context: ./
       dockerfile: ./api/Dockerfile
       # MODE=[dev | prod] docker compose up -d --build 
-      target: ${MODE:-dev}
+      target: ${MODE:-prod}
     container_name: rust_api
     ports:
       - "6060:7650"
@@ -44,7 +44,7 @@ services:
       dockerfile: ./killua/Dockerfile
       # MODE=[dev | prod] docker compose up -d --build 
       # default is dev
-      target: ${MODE:-dev}
+      target: ${MODE:-prod}
     container_name: python_bot
     restart: unless-stopped
     environment:
