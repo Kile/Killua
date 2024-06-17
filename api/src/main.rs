@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate rocket;
-use rocket::serde::Deserialize;
-use rocket::{fairing::AdHoc, routes};
+use rocket::routes;
 
 // add routes module
 mod db;
@@ -21,12 +20,6 @@ use fairings::cors::Cors;
 use fairings::counter::Counter;
 use fairings::timer::RequestTimer;
 
-#[derive(Deserialize)]
-#[serde(crate = "rocket::serde")]
-pub struct Config {
-    api_key: String,
-}
-
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -41,7 +34,6 @@ fn rocket() -> _ {
             ],
         )
         .attach(db::init())
-        .attach(AdHoc::config::<Config>())
         .attach(Cors)
         //.manage(Arc::clone(&counter))
         //.attach(counter)
@@ -49,25 +41,3 @@ fn rocket() -> _ {
         .attach(RequestTimer)
 }
 
-// #[launch]
-// async fn rocket() -> _ {
-//     let counter = Arc::new(Counter::default());
-//     let client = Client::with_uri_str(get_mongo_uri()).await.unwrap();
-//     rocket::build()
-//         .mount(
-//             "/",
-//             routes![
-//                 get_commands,
-//                 register_vote,
-//                 get_stats,
-//                 image,
-//                 get_diagnostics
-//             ],
-//         )
-//         .attach(AdHoc::config::<Config>())
-//         .attach(Cors)
-//         .manage(Arc::clone(&counter))
-//         .attach(counter)
-//         .attach(RequestTimer)
-//         .manage(ApiStats::new(&client))
-// }

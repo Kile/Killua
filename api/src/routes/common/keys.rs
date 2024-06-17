@@ -1,8 +1,5 @@
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
-use rocket::State;
-
-use crate::Config;
 
 pub struct ApiKey(());
 
@@ -18,8 +15,7 @@ impl<'r> FromRequest<'r> for ApiKey {
 
     /// Returns true if `key` is a valid API key string.
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let config = req.guard::<&State<Config>>().await.unwrap();
-        let correct_key = &config.api_key;
+        let correct_key = std::env::var("API_KEY").unwrap();
 
         match req.headers().get_one("Authorization") {
             None => Outcome::Error((Status::Forbidden, ApiKeyError::Missing)),

@@ -393,7 +393,8 @@ class Rps(CompetitiveGame):
             await self.check_for_achivement(player2)
 
             if self.points:
-                p1.remove_jenny(self.points, player2 == self.ctx.me)
+                if player1 != self.ctx.me:
+                    p1.remove_jenny(self.points)
                 if player2 != self.ctx.me:
                     p2.add_jenny(self.points)
                 return await self.ctx.send(f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}", view=view)

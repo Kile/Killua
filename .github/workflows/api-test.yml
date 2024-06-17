@@ -46,9 +46,9 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Setup config.json
+      - name: Setup env
         run: |
-          echo '{"mongodb": "mongodb://localhost:27017/Killua"}' > config.json
+          ENV=mongodb://localhost:27017/Killua
       - name: Setup Rocket.toml
         run: mv api/Rocket.toml.template api/Rocket.toml
       - name: Run tests

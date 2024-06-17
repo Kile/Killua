@@ -5,9 +5,8 @@ use rocket::fairing::AdHoc;
 
 // Tries opening config.json and reading the URI for the MongoDB database
 fn get_mongo_uri() -> String {
-    let config = std::fs::read_to_string("../config.json").unwrap();
-    let config: serde_json::Value = serde_json::from_str(&config).unwrap();
-    config["mongodb"].as_str().unwrap().to_string()
+    // Read environment variable
+    std::env::var("MONGODB").unwrap()
 }
 
 pub fn init() -> AdHoc {

@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-import asyncio
+import asyncio, os
 from datetime import datetime
 from aiohttp import ClientSession
 from random import randint, choice
@@ -50,8 +50,10 @@ class BaseBot(commands.AutoShardedBot):
         # Load ../api/Rocket.toml to get port under [debug]
         with open("api/Rocket.toml") as f:
             loaded = load(f)
-            self.secret_api_key = loaded["default"]["api_key"]
             self.dev_port = loaded["debug"]["port"]
+
+
+        self.secret_api_key = os.getenv("API_KEY")
 
         # Get dev port from os env variable
         # self.dev_port = int(getenv("PORT", 7000))

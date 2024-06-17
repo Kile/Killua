@@ -40,16 +40,7 @@ pub fn test_zmq_server() {
     });
 }
 
-static KEY_CACHE: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
-
 /// Gets the API key from Rocket.toml
 pub fn get_key() -> String {
-    if let Some(key) = KEY_CACHE.lock().unwrap().as_ref() {
-        return key.to_owned();
-    }
-    let config = std::fs::read_to_string("Rocket.toml").unwrap();
-    let config: toml::Value = toml::from_str(&config).unwrap();
-    let key = config["default"]["api_key"].as_str().unwrap().to_owned();
-    *KEY_CACHE.lock().unwrap() = Some(key.clone());
-    key
+    std::env::var("API_KEY").unwrap()
 }

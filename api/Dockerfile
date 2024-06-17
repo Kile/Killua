@@ -6,8 +6,6 @@ WORKDIR /app
 
 COPY api/ api/
 
-COPY config.json .
-
 # This is mainly for reading the config.json
 WORKDIR /app/api
 

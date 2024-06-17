@@ -12,7 +12,7 @@ COPY api/Rocket.toml api/Rocket.toml
 
 # Copy requirements.txt, hugs.json and config.json which are needed for the bot
 COPY requirements.txt .
-COPY config.json .
+# COPY config.json .
 COPY hugs.json .
 
 # Git needs to be installed for pip

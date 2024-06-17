@@ -1,6 +1,9 @@
 # Configuration
 /config.json
 
+# Env file
+.env
+
 # Downloaded cards
 /cards.json
 

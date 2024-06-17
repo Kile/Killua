@@ -30,6 +30,8 @@ services:
       - "6060:7650"
     environment:
       - ZMQ_ADDRESS=tcp://proxy:5559
+    env_file:
+      - .env
     restart: unless-stopped
     depends_on:
       - proxy
@@ -48,6 +50,8 @@ services:
     environment:
       - PORT=6060
       - ZMQ_ADDRESS=tcp://proxy:5560
+    env_file:
+      - .env
     ports:
       - '8000:8000' # prometheus endpoint
     depends_on:
