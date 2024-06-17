@@ -1,4 +1,11 @@
-services:
+x-common-labels: &common-labels
+  labels:
+    org.opencontainers.image.source: https://github.com/kile/Killua
+    org.opencontainers.image.title: "Killua"
+    org.opencontainers.image.description: "The Killua Discor bot with Rust API and ZMQ Proxy"
+    org.opencontainers.image.version: "1.1.0"
+    org.opencontainers.image.authors: "kile@killua.dev"
+
   proxy:
     build:
       context: "./zmq_proxy"
@@ -6,11 +13,7 @@ services:
       - ZMQ_CLIENT_ADDRESS=tcp://*:5559
       - ZMQ_SERVER_ADDRESS=tcp://*:5560
     restart: unless-stopped
-    # image: localhost:5000/zmq_proxy:latest
-  labels:
-    - org.opencontainers.image.source=https://github.com/kile/Killua
-    - org.opencontainers.image.title=ZMQ Proxy
-    - org.opencontainers.image.description=ZMQ Proxy for Killua's API and Bot
+    <<: *common-labels
 
 
   api:
@@ -25,10 +28,9 @@ services:
     environment:
       - ZMQ_ADDRESS=tcp://proxy:5559
     restart: unless-stopped
-    labels: 
-      - org.opencontainers.image.source=https://github.com/kile/Killua
-      - org.opencontainers.image.title=Killua API
-      - org.opencontainers.image.description=Killua's API, written in Rust using Rocket
+    depends_on:
+      - proxy
+    <<: *common-labels
 
   bot:
     build:
@@ -44,11 +46,10 @@ services:
       - ZMQ_ADDRESS=tcp://proxy:5560
     ports:
       - '8000:8000' # prometheus endpoint
-    # image: localhost:5000/python_bot:latest
-    labels:
-      - org.opencontainers.image.source=https://github.com/kile/Killua
-      - org.opencontainers.image.title=Killua Bot
-      - org.opencontainers.image.description=The Killua Discord Bot, written in Python using discord.py
+    depends_on:
+      - api
+      - proxy
+    <<: *common-labels
 
   grafana:
     image: grafana/grafana:10.4.2
