@@ -1,4 +1,4 @@
-name: Docker
+name: Docker deploy
 
 on:
   push:
@@ -25,7 +25,4 @@ jobs:
           run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
         - name: Build image
-          run: docker compose build
-        
-        - name: Push image to Container Registry
-          run: docker compose -f docker-compose.yaml
+          run: docker compose build --push
