@@ -18,6 +18,9 @@ jobs:
     steps:
         - uses: actions/checkout@v4
 
+        - name: Copy secret files
+          run: mv config.json.template config.json; mv api/Rocket.toml.template api/Rocket.toml
+
         - name: Build image
           run: docker compose build
 
