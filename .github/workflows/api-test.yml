@@ -48,7 +48,8 @@ jobs:
 
       - name: Setup env
         run: |
-          ENV=mongodb://localhost:27017/Killua
+          MONGODB=mongodb://localhost:27017/Killua
+          API_KEY=test
       - name: Setup Rocket.toml
         run: mv api/Rocket.toml.template api/Rocket.toml
       - name: Run tests

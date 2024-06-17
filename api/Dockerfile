@@ -9,6 +9,8 @@ COPY api/ api/
 # This is mainly for reading the config.json
 WORKDIR /app/api
 
+RUN mv Rocket.toml.example Rocket.toml
+
 # Runs in development and production on port 8000 (in the container)
 EXPOSE 8000
 

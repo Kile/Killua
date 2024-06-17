@@ -40,4 +40,3 @@ fn rocket() -> _ {
         .attach(Counter)
         .attach(RequestTimer)
 }
-
