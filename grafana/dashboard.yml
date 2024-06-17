@@ -1,4 +1,4 @@
-apiVersion: 1
+apiVersion: 2
 
 providers:
   - name: "Dashboard provider"
@@ -10,11 +10,3 @@ providers:
     options:
       path: /var/lib/grafana/dashboards
       foldersFromFilesStructure: true
-      
-datasources:
-  - name: Prometheus
-    type: prometheus
-    url: http://prometheus:9090 
-    isDefault: true
-    access: proxy
-    editable: true

@@ -67,6 +67,10 @@ services:
     volumes:
       - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana:/etc/grafana/provisioning/datasources
+      # - ./grafana/datasources/datasources.yml:/etc/grafana/provisioning/datasources/default.yaml
+    env_file:
+      - .env
 
   prometheus:
     image: prom/prometheus
