@@ -8,7 +8,7 @@ x-common-labels: &common-labels
     
 services:
   proxy:
-    image: ghcr.io/Kile/zmq-proxy:latest
+    image: ghcr.io/kile/zmq-proxy:latest
     build:
       context: "./zmq_proxy"
     environment:
