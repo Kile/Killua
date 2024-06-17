@@ -48,8 +48,8 @@ jobs:
 
       - name: Setup env
         run: |
-          echo "MONGODB=\"mongodb://localhost:27017/Killua\"" > .env
-          echo "API_KEY=\"test\"" >> .env
+          echo 'MONGODB="mongodb://localhost:27017/Killua"\n' > .env
+          echo 'API_KEY="test"' >> .env
       - name: Setup Rocket.toml
         run: mv api/Rocket.toml.template api/Rocket.toml
       - name: Run tests
