@@ -9,6 +9,7 @@ from datetime import datetime
 from .utils import get_random_discord_id, random_date
 from .user import TestingUser as User
 
+
 class TestingMember(User):
     """A class imulating a discord member"""
 
@@ -21,7 +22,9 @@ class TestingMember(User):
         self.deaf: bool = kwargs.pop("deaf", False)
         self.muted: bool = kwargs.pop("muted", False)
         self.nick: str = kwargs.pop("nick", None)
-        self.communication_disabled_until: str = kwargs.pop("communication_disabled_until", "")
+        self.communication_disabled_until: str = kwargs.pop(
+            "communication_disabled_until", ""
+        )
         self.premium_since: Union[datetime, None] = kwargs.pop("premium_since", None)
 
     @property

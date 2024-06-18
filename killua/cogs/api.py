@@ -13,9 +13,17 @@ from PIL import Image, ImageDraw, ImageChops
 from killua.bot import BaseBot
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
-from killua.static.constants import DB, LOOTBOXES, VOTE_STREAK_REWARDS, BOOSTERS, BOOSTER_LOGO_IMG, DEFAULT_AVATAR
+from killua.static.constants import (
+    DB,
+    LOOTBOXES,
+    VOTE_STREAK_REWARDS,
+    BOOSTERS,
+    BOOSTER_LOGO_IMG,
+    DEFAULT_AVATAR,
+)
 
 from typing import List, Dict, Union, cast
+
 
 class IPCRoutes(commands.Cog):
 
@@ -61,7 +69,7 @@ class IPCRoutes(commands.Cog):
 
         if res.status != 200:
             raise Exception(f"Failed to download image")
-        
+
         image_bytes = await res.read()
         image = Image.open(BytesIO(image_bytes)).convert("RGBA")
 
@@ -74,12 +82,12 @@ class IPCRoutes(commands.Cog):
         img_grey = img_colored.convert("L").convert("RGB")
         img_grey.putalpha(alpha)
         return img_grey
-    
+
     async def get_background(self) -> ImageDraw.Image:
         """Creates a transparent image to paste the user images on to"""
         background = Image.new("RGBA", (1100, 100), (0, 0, 0, 0))
         return background
-    
+
     def crop_to_circle(self, im: Image.Image) -> Image.Image:
         """Crops the given image to a circle"""
         bigsize = (im.size[0] * 3, im.size[1] * 3)
@@ -90,16 +98,17 @@ class IPCRoutes(commands.Cog):
         im.putalpha(mask)
         return im.copy()
 
-    async def streak_image(self, data: List[Union[discord.User, str]], reward: str = None) -> BytesIO:
+    async def streak_image(
+        self, data: List[Union[discord.User, str]], reward: str = None
+    ) -> BytesIO:
         """Creates an image of the streak path and returns it as a BytesIO"""
         if len(data) != 11:
             return Exception("Invalid Length")
-        
-        offset = 0 # Start with a 0 offset
+
+        offset = 0  # Start with a 0 offset
         user_index = next(
-            (i for i, x in enumerate(data) if isinstance(x, discord.User)), 
-            None
-        ) # Find at what positon the user image is
+            (i for i, x in enumerate(data) if isinstance(x, discord.User)), None
+        )  # Find at what positon the user image is
         background = await self.get_background()
         drawn = ImageDraw.Draw(background)
         for position, item in enumerate(data):
@@ -109,26 +118,40 @@ class IPCRoutes(commands.Cog):
                 # if position < user_index:
                 #     drawn.line((offset+5, 50, offset+105, 50), fill="white", width=5)
                 # else:
-                drawn.line((offset+5, 50, offset+95, 50), fill="white", width=5) # Draw normal path line
+                drawn.line(
+                    (offset + 5, 50, offset + 95, 50), fill="white", width=5
+                )  # Draw normal path line
 
             else:
-                image = await self.download((item.avatar.url if item.avatar else DEFAULT_AVATAR) if isinstance(item, discord.User) else item) # Download the image
+                image = await self.download(
+                    (item.avatar.url if item.avatar else DEFAULT_AVATAR)
+                    if isinstance(item, discord.User)
+                    else item
+                )  # Download the image
                 size = (100, 100)
                 image = image.resize(size)
 
                 if position == user_index:
-                    image = self.crop_to_circle(image) # If the image is the user avatar, make it a circle
+                    image = self.crop_to_circle(
+                        image
+                    )  # If the image is the user avatar, make it a circle
                 elif position < user_index:
-                    image = self.make_grey(image) # Convert to grayscale if it was already "claimed"
+                    image = self.make_grey(
+                        image
+                    )  # Convert to grayscale if it was already "claimed"
 
-                background.paste(image, (offset, 0)) # Paste the image to the background
+                background.paste(
+                    image, (offset, 0)
+                )  # Paste the image to the background
 
-                if reward and position == user_index: # If the user lands on a reward, paste the reward image to the bottom left of the user image
+                if (
+                    reward and position == user_index
+                ):  # If the user lands on a reward, paste the reward image to the bottom left of the user image
                     reward_image = await self.download(reward)
                     reward_image = reward_image.resize((50, 50))
-                    background.paste(reward_image, (offset-5, 60), mask=reward_image)
+                    background.paste(reward_image, (offset - 5, 60), mask=reward_image)
 
-            offset += 100 # Increase the offset by 100 for the next image
+            offset += 100  # Increase the offset by 100 for the next image
 
         # Turn image into BytesIO
         buffer = BytesIO()
@@ -146,10 +169,15 @@ class IPCRoutes(commands.Cog):
         for key, value in list(VOTE_STREAK_REWARDS.items())[::-1]:
             if streak % key == 0:
                 return value
-        
+
         # Then follow the algorithm to find whether a "booster" reward applies
         if streak % 7 == 0 or str(streak)[-1] == "7":
-            return Booster(choices(list(BOOSTERS.keys()), weights=[v["probability"] for v in BOOSTERS.values()])[0])
+            return Booster(
+                choices(
+                    list(BOOSTERS.keys()),
+                    weights=[v["probability"] for v in BOOSTERS.values()],
+                )[0]
+            )
 
         # If no streak reward applies, just return the base reward
         return int((120 if weekend else 100) * float(f"1.{int(streak//5)}"))
@@ -163,70 +191,104 @@ class IPCRoutes(commands.Cog):
         # Edgecase where the user has no streak or a streak smaller than 5 which is when it would start in the middle
         if streak < 5:
             path_list = [
-                cast(str, LOOTBOXES[reward]["image"]).format(url) if 
-                isinstance(reward := self._get_reward(i), int) and reward < 100 else 
                 (
-                    BOOSTER_LOGO_IMG.format(url) if isinstance(reward, Booster) else "-"
-                ) for i in range(1, 12)
+                    cast(str, LOOTBOXES[reward]["image"]).format(url)
+                    if isinstance(reward := self._get_reward(i), int) and reward < 100
+                    else (
+                        BOOSTER_LOGO_IMG.format(url)
+                        if isinstance(reward, Booster)
+                        else "-"
+                    )
+                )
+                for i in range(1, 12)
             ]
             # Replace the character position where the user currently is with a black circle
-            path_list[streak-1] = user
+            path_list[streak - 1] = user
             return path_list
 
         # Create the path
         before = [
-            cast(str, LOOTBOXES[reward]["image"]).format(url) 
-            if isinstance(reward := self._get_reward(streak-i), int) and reward < 100 
-            else (
-                BOOSTER_LOGO_IMG.format(url)
-                if isinstance(reward, Booster) else "-"
-            ) for i in range(1, 6)
+            (
+                cast(str, LOOTBOXES[reward]["image"]).format(url)
+                if isinstance(reward := self._get_reward(streak - i), int)
+                and reward < 100
+                else (
+                    BOOSTER_LOGO_IMG.format(url) if isinstance(reward, Booster) else "-"
+                )
+            )
+            for i in range(1, 6)
         ]
         after = [
-            cast(str, LOOTBOXES[reward]["image"]).format(url) 
-            if isinstance(reward := self._get_reward(streak+i), int) and reward < 100 
-            else (
-                BOOSTER_LOGO_IMG.format(url) if isinstance(reward, Booster) else "-"
-            ) for i in range(1, 6)
+            (
+                cast(str, LOOTBOXES[reward]["image"]).format(url)
+                if isinstance(reward := self._get_reward(streak + i), int)
+                and reward < 100
+                else (
+                    BOOSTER_LOGO_IMG.format(url) if isinstance(reward, Booster) else "-"
+                )
+            )
+            for i in range(1, 6)
         ]
         path = before[::-1] + [user] + after
 
         return path
-
 
     async def handle_vote(self, data: dict) -> None:
         user_id = data["user"] if "user" in data else data["id"]
 
         user = User(int(user_id))
         user.add_vote("topgg" if "isWeekend" in data else "discordbotlist")
-        streak = user.voting_streak["topgg" if "isWeekend" in data else "discordbotlist"]["streak"]
-        reward: Union[int, Booster] = self._get_reward(streak, data["isWeekend"] if hasattr(data, "isWeekend") else False)
+        streak = user.voting_streak[
+            "topgg" if "isWeekend" in data else "discordbotlist"
+        ]["streak"]
+        reward: Union[int, Booster] = self._get_reward(
+            streak, data["isWeekend"] if hasattr(data, "isWeekend") else False
+        )
 
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
-        url = f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}" if self.client.is_dev else self.client.url
+        url = (
+            f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}"
+            if self.client.is_dev
+            else self.client.url
+        )
 
         path = self._create_path(streak, usr, url)
         image = await self.streak_image(
-            path, 
+            path,
             (
                 cast(str, LOOTBOXES[reward]["image"]).format(url)
-                if isinstance(reward, int) and reward < 100 else 
-                (
+                if isinstance(reward, int) and reward < 100
+                else (
                     cast(str, BOOSTERS[reward.value]["image"]).format(url)
-                    if isinstance(reward, Booster) 
+                    if isinstance(reward, Booster)
                     else None
                 )
-            )
+            ),
         )
         file = discord.File(image, filename="streak.png")
 
-        embed = discord.Embed.from_dict({
-            "title": "Thank you for voting!",
-            "description": (f"Well done for keeping your voting **streak** 🔥 of {streak} for" if streak > 1 else "Thank you for voting on ") + f" {'top.gg' if 'isWeekend' in data else 'discordbotlist'}! As a reward I am happy to award with " + \
-            ((f"{reward} Jenny" if reward >= 100 else f"a lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}") if isinstance(reward, int) else f"the {BOOSTERS[reward.value]['emoji']} `{BOOSTERS[reward.value]['name']}` booster") + \
-            f"! You are **{5 - (streak % 5)}** votes away from the next reward!",
-            "color": 0x3e4a78
-        })
+        embed = discord.Embed.from_dict(
+            {
+                "title": "Thank you for voting!",
+                "description": (
+                    f"Well done for keeping your voting **streak** 🔥 of {streak} for"
+                    if streak > 1
+                    else "Thank you for voting on "
+                )
+                + f" {'top.gg' if 'isWeekend' in data else 'discordbotlist'}! As a reward I am happy to award with "
+                + (
+                    (
+                        f"{reward} Jenny"
+                        if reward >= 100
+                        else f"a lootbox {LOOTBOXES[reward]['emoji']} {LOOTBOXES[reward]['name']}"
+                    )
+                    if isinstance(reward, int)
+                    else f"the {BOOSTERS[reward.value]['emoji']} `{BOOSTERS[reward.value]['name']}` booster"
+                )
+                + f"! You are **{5 - (streak % 5)}** votes away from the next reward!",
+                "color": 0x3E4A78,
+            }
+        )
         embed.set_image(url="attachment://streak.png")
 
         if isinstance(reward, Booster):
@@ -243,37 +305,52 @@ class IPCRoutes(commands.Cog):
 
     async def top(self, _) -> List[dict]:
         """Returns a list of the top 50 users by the amount of jenny they have"""
-        members = DB.teams.find({'id': {'$in': [x.id for x in self.client.users]} })
-        top = sorted(members, key=lambda x: x['points'], reverse=True)[:50]
+        members = DB.teams.find({"id": {"$in": [x.id for x in self.client.users]}})
+        top = sorted(members, key=lambda x: x["points"], reverse=True)[:50]
         res = []
         for t in top:
             u = self.client.get_user(t["id"])
-            res.append({"name": u.name, "tag": u.discriminator, "avatar": str(u.avatar.url), "jenny": t["points"]})
+            res.append(
+                {
+                    "name": u.name,
+                    "tag": u.discriminator,
+                    "avatar": str(u.avatar.url),
+                    "jenny": t["points"],
+                }
+            )
         return res
-    
+
     def get_message_command(self, cmd: str):
         c = self.client.get_command(cmd)
         if not c:
             c = self.client.get_command(cmd.split(" ")[-1])
         return c
-    
+
     def format_command(self, cmd: commands.HybridCommand) -> dict:
         checks = cmd.checks
 
         premium_guild, premium_user, cooldown = False, False, False
 
         if [c for c in checks if hasattr(c, "premium_guild_only")]:
-                premium_guild = True
+            premium_guild = True
 
         if [c for c in checks if hasattr(c, "premium_user_only")]:
-                premium_user = True
+            premium_user = True
 
-        if (res := [c for c in checks if hasattr(c, "cooldown")]):
+        if res := [c for c in checks if hasattr(c, "cooldown")]:
             check = res[0]
             cooldown = getattr(check, "cooldown", False)
 
-        usage_slash = (cmd.qualified_name.replace(cmd.name, "") + cmd.usage) if not isinstance(cmd.cog, commands.GroupCog) else cmd.cog.__cog_group_name__ + " " + cmd.usage
-        usage_message = (f"k!" + cmd.qualified_name.replace(cmd.name, "") + cmd.usage) if not isinstance(cmd.cog, commands.GroupCog) else f"k!" + cmd.usage
+        usage_slash = (
+            (cmd.qualified_name.replace(cmd.name, "") + cmd.usage)
+            if not isinstance(cmd.cog, commands.GroupCog)
+            else cmd.cog.__cog_group_name__ + " " + cmd.usage
+        )
+        usage_message = (
+            (f"k!" + cmd.qualified_name.replace(cmd.name, "") + cmd.usage)
+            if not isinstance(cmd.cog, commands.GroupCog)
+            else f"k!" + cmd.usage
+        )
 
         return {
             "name": cmd.name,
@@ -283,28 +360,40 @@ class IPCRoutes(commands.Cog):
             "cooldown": cooldown or 0,
             "premium_guild": premium_guild,
             "premium_user": premium_user,
-            "message_usage": usage_message
+            "message_usage": usage_message,
         }
 
     async def commands(self, _) -> dict:
         """Returns all commands with descriptions etc"""
         raw = self.client.get_raw_formatted_commands()
-        
+
         to_be_returned: Dict[str, Dict[str, Union[str, list]]] = {}
 
         for cmd in raw:
             formatted = self.format_command(cmd)
 
             if cmd.extras["category"].name in to_be_returned:
-                to_be_returned[cmd.extras["category"].name]["commands"].append(formatted)
+                to_be_returned[cmd.extras["category"].name]["commands"].append(
+                    formatted
+                )
             else:
-                to_be_returned[cmd.extras["category"].name] = {"commands": [formatted], "description": cmd.extras["category"].value["description"], "name": cmd.extras["category"].value["name"], "emoji": cmd.extras["category"].value["emoji"]}
+                to_be_returned[cmd.extras["category"].name] = {
+                    "commands": [formatted],
+                    "description": cmd.extras["category"].value["description"],
+                    "name": cmd.extras["category"].value["name"],
+                    "emoji": cmd.extras["category"].value["emoji"],
+                }
 
         return to_be_returned
-    
+
     async def stats(self, _) -> dict:
         """Gets stats about the bot"""
-        return {"guilds": len(self.client.guilds), "shards": self.client.shard_count, "registered_users": DB.teams.count_documents({}), "last_restart": self.client.startup_datetime.timestamp()}
+        return {
+            "guilds": len(self.client.guilds),
+            "shards": self.client.shard_count,
+            "registered_users": DB.teams.count_documents({}),
+            "last_restart": self.client.startup_datetime.timestamp(),
+        }
 
     async def save_user(self, data) -> None:
         """This functions purpose is not that much getting user data but saving a user in the database"""
@@ -312,8 +401,13 @@ class IPCRoutes(commands.Cog):
 
     async def get_discord_user(self, data) -> dict:
         """Getting additional info about a user with their id"""
-        res =  self.client.get_user(data["user"])
-        return {"name": res.name, "tag": res.discriminator, "avatar": str(res.avatar.url), "created_at": res.created_at.strftime('%Y-%m-%dT%H:%M:%SZ')}
+        res = self.client.get_user(data["user"])
+        return {
+            "name": res.name,
+            "tag": res.discriminator,
+            "avatar": str(res.avatar.url),
+            "created_at": res.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
 
     async def update_guild_cache(self, data) -> None:
         """Makes sure the local cache is up to date with the db"""

@@ -2,11 +2,13 @@
 This file contains one function, `migrate`, which is used to migrate the database from one version to another once when 
 an update is released. It can be run through the command line with `python3 -m killua --migrate`
 """
+
 import logging
 from typing import Type
 from pymongo.collection import Collection
 from discord.ext.commands import AutoShardedBot, HybridGroup
 from killua.static.constants import DB
+
 
 def migrate_requiring_bot(bot: Type[AutoShardedBot]):
     """
@@ -62,7 +64,9 @@ def migrate_requiring_bot(bot: Type[AutoShardedBot]):
 
     usage = {k: v for k, v in usage.items() if v > -1}
 
-    logging.info("Fininished migrating different command group names, migrating command usage...")
+    logging.info(
+        "Fininished migrating different command group names, migrating command usage..."
+    )
 
     for command in bot.walk_commands():
         if "jishaku" in command.qualified_name:
@@ -92,6 +96,7 @@ def migrate_requiring_bot(bot: Type[AutoShardedBot]):
 
     const.update_one({"_id": "usage"}, {"$set": {"command_usage": new}})
     logging.info("successfully migrated command usage")
+
 
 def migrate():
     """

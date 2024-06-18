@@ -78,6 +78,8 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] Rust
 *   [x] Prometheus
 *   [x] Grafana
+*   [] Dynamically deploying docker containers
+*   [] Multithreading the bot (related to the above but can be static)
 
 ## Contributors
 
@@ -123,9 +125,11 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 ## Running Killua locally
 
-Regardless of how you decide to run Killua, you need to edit two files. `config.json` includes most of the configurations for Killua such as the bot token and the mongodb connection string. `api/Rocket.toml` includes configurations for the API such as the port it runs on. The main thing to edit here is secret_key which is the API's Auth key for things like the `/vote` endpoint. It is not recommended to edit the other values in this file.
+Regardless of how you decide to run Killua, you need to edit the `.env` file. This file contains all secrets needed for the bot to run. A few can be left the same as the template for debugging purpose, such as `MODE` which defined if the bot should run in development or production mode. The GF_ variables are the admin login for Grafana which can remain default unless you deploy the bot in production somewhere (which is stealing so please like - don't)
 
-Both of these files have a template in the same directory with the same name but with `.template` at the end. You can copy these files and edit them to your liking.
+This file has a template in the same directory with the same name but with `.template` at the end. You can copy it and edit it to your liking.
+
+Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up. As a warning, this script is rarely run so it may not be up to date.
 
 <details>
 <summary><b>Running from source</b></summary>
@@ -139,8 +143,6 @@ While running Killua using Docker is more convenient, running from source is mor
 First, set up a virtual environment. Do so with `python3 -m venv env; source env/bin/activate` (for linux). To leave the virtual environment after you are done, simply run `deactivate`
 
 `requirements.txt` contains the libraries you'll need. To install them use `pip3 install -r requirements.txt`
-
-Depending on if you self host mongodb or not, you may also need a mongodb. You can to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up. As a warning, this script is rarely run so it may not be up to date.
 
 The bot can be run using 
 ```sh
@@ -161,20 +163,45 @@ To start the API, ideally you should use a different Terminal or screen/tmux ses
 Running from Docker, while taking longer to start up, is much more convenient and allows you to use Grafana and Prometheus. To run Killua using Docker, follow these steps:
 
 
-1) Either clone the repo or pull the latest image from Docker Hub using `docker pull`
-2) Edit the `config.json` and `api/Rocket.toml` files as explained above
-3) Run `MODE=[dev|prod] docker compose up` in the root directory of the project. The mode specifies if you want to run the bot in development or production mode. Development mode will not cache anything and will use the local API instead of the server. If not provided, it will default to development mode.
+1) Clone the repository (you need the `docker-compose.yml` file)
+2) Edit the `.env` file to your liking
 
+If you want to contribute and test your changes:
 
-You can access Grafana on port 3000. The configured dashboard should already be added. You can access it after logging in with username `admin` and password `admin`. Prometheus can be accessed on port 8000. The API can be accessed on port 6060.
+3) Run `docker compose up --build -d` to build the images and start the containers
+
+If you want to run the built images:
+
+3) Run `docker compose up -d` to start the containers (it will pull the images from Docker Hub)
+
+You can access Grafana on port 3000. The configured dashboard should already be added. You can access it after logging in with username `admin` and password `admin` (unless you changed it in the env file). Prometheus can be accessed on port 8000. The API can be accessed on port 6060.
+
+Note: if you want to expose Grafana on nginx, you need to add `proxy_set_header Host $http_host;` to the `server` config.
 </details>
 
 ## Contributing
+Before I start talking about contributing, I want to mention an area of Killua of which traces can be found of but it is not yet complete. This is due to me working on it for a few while and not enjoying it to a point where I decided to postpone development. This is my own testing framework for dpy. This can be found in [`killua/tests`](./killua/tests/). A part of this is also downloading all card data from somewhere so these tests can be run by someone who does not have them in their mongodb database like me. Both of these are incomplete. 
+
+
+### What to work on
+Contributions are MASSIVELY appreciated. A codebase this big can look a bit intimidating so if you would like to contribute but don't know where to start, here are some suggestions:
+*  **Documentation**: I try to document what I can but ultimately most of this lives in my head so I have never needed to provide detailed documentation. If you see something that is not documented or could be documented better, feel free to make a PR.
+*  **Multiple languages**: I would love to have Killua be available in multiple languages. You do not need to speak a language other than English to build a framework for it. I can organize translators. I have attempted this previously but got insanely burned out quickly. Discord offers a way to get the language of the user so all needed is to build a smart system to use this data.
+*  **Testing**: I have a testing framework in place but it is not complete. I would love to have a system where I can run tests on the bot and get a report of what failed and why. This is a big project and probably overengineered but it could be INSANELY useful. It was originally planned to **need** to get done for a non alpha/beta 1.0 version to get published but ultimately I don't have enough time to finish it currently so it has been removed from the roadmap of that release.
+* **Image generation**: I have a few commands that generate images. I rely on pxlapi for quite a few of them which is fine but if you have any other ideas (can be simple copy paste into another image) then feel free to PR them! They are always a lot of fun to use.
+* **An RPG system**: I am in the early stages of thinking about an RPG system using hxh's "Nen" system and building out the hunt command for a more interactive fun experience. I will likely work on this myself but I would love some help.
+* **Web development**: I have a website but it not very advanced. Frontend is my weak spot. If you would like to help me to build out the website, I am happy to write backend code for it. Please contact me if you are interested in this.
+
+
 > [!NOTE]
-> If you add any commands, please make sure to also add tests for it. A document explaining how tests for Killua work can be found [**here**](https://github.com/Kile/Killua/blob/main/killua/tests/README.md).
+> (If the testing system works for the bot) If you add any commands, please make sure to also add tests for it. A document explaining how tests for Killua work can be found [**here**](./killua/tests/README.md).
 > This also applies to the API, if you add any endpoints, please make sure to add tests for them.
 
-Contributions are always welcome! If you just want to contribute but don't know where to start, just contact me! I can help you find something to work on. If you have any questions, feel free to ask me on discord (`k1le`).
+
+## Grafana
+Grafana is pretty cool. The Grafana dashboard was added in version 1.1.0. You can find it in grafana/dashboards/main.json. Here are some screenshots:
+
+If you use Docker to run Killua, this would work without any additional setup. I also welcome contributions to the Grafana dashboard (maybe even add more analytics to the code!). You are also free to use my dashboard for your own bot if you want to, most of the saved data logic can be found in [`killua/cogs/prometheus.py`](./killua/cogs/prometheus.py) and [`killua/metrics/`](./killua/metrics/).
 
 If you don't like me using one of your images for the hug command, please contact me on discord `k1le` or on `kile@killua.dev`
 

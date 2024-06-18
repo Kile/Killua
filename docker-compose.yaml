@@ -1,5 +1,6 @@
 x-common-labels: &common-labels
   labels:
+    # Labels to be applied to all services
     org.opencontainers.image.source: https://github.com/kile/Killua
     org.opencontainers.image.title: "Killua"
     org.opencontainers.image.description: "The Killua Discord bot with Rust API and ZMQ Proxy"
@@ -17,13 +18,11 @@ services:
     restart: unless-stopped
     <<: *common-labels
 
-
   api:
     image: ghcr.io/kile/killua-api:latest
     build:
       context: ./
       dockerfile: ./api/Dockerfile
-      # MODE=[dev | prod] docker compose up -d --build 
       target: ${MODE:-prod}
     container_name: rust_api
     ports:
@@ -42,8 +41,6 @@ services:
     build:
       context: ./
       dockerfile: ./killua/Dockerfile
-      # MODE=[dev | prod] docker compose up -d --build 
-      # default is dev
       target: ${MODE:-prod}
     container_name: python_bot
     restart: unless-stopped
@@ -68,7 +65,6 @@ services:
       - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/dashboards:/var/lib/grafana/dashboards
       - ./grafana:/etc/grafana/provisioning/datasources
-      # - ./grafana/datasources/datasources.yml:/etc/grafana/provisioning/datasources/default.yaml
     env_file:
       - .env
 

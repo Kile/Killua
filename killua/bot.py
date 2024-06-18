@@ -17,19 +17,21 @@ from .static.enums import Category
 from .utils.interactions import Modal
 from .static.constants import TIPS, LOOTBOXES, DB
 
+
 def get_prefix(bot: "BaseBot", message):
     if bot.is_dev:
-        return commands.when_mentioned_or('kil!', 'kil.')(bot, message)
+        return commands.when_mentioned_or("kil!", "kil.")(bot, message)
     try:
         from .utils.classes import Guild
-        
+
         g = Guild(message.guild.id)
         if g is None:
-            return commands.when_mentioned_or('k!')(bot, message)
+            return commands.when_mentioned_or("k!")(bot, message)
         return commands.when_mentioned_or(g.prefix)(bot, message)
     except Exception:
         # in case message.guild is `None` or something went wrong getting the prefix the bot still NEEDS to react to mentions and k!
-        return commands.when_mentioned_or('k!')(bot, message)
+        return commands.when_mentioned_or("k!")(bot, message)
+
 
 class BaseBot(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
@@ -52,7 +54,6 @@ class BaseBot(commands.AutoShardedBot):
             loaded = load(f)
             self.dev_port = loaded["debug"]["port"]
 
-
         self.secret_api_key = os.getenv("API_KEY")
 
         # Get dev port from os env variable
@@ -63,7 +64,9 @@ class BaseBot(commands.AutoShardedBot):
         # await self.ipc.start()
         await self.tree.sync()
         self.cached_skus = await self.fetch_skus()
-        self.cached_entitlements = [entitlement async for entitlement in self.entitlements(limit=None)]
+        self.cached_entitlements = [
+            entitlement async for entitlement in self.entitlements(limit=None)
+        ]
         if DB.const.find_one({"_id": "migrate"})["value"]:
             migrate_requiring_bot(self)
             DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
@@ -73,10 +76,10 @@ class BaseBot(commands.AutoShardedBot):
         await self.session.close()
 
     def __format_command(
-            self, 
-            res: Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]], 
-            cmd: discord.app_commands.Command
-        ) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
+        self,
+        res: Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]],
+        cmd: discord.app_commands.Command,
+    ) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
         """Adds a command to a dict of formatted commands"""
 
         if "jishaku" in cmd.qualified_name or cmd.name == "help" or cmd.hidden:
@@ -84,24 +87,33 @@ class BaseBot(commands.AutoShardedBot):
 
         # message_command = self.get_command(cmd.qualified_name)
         if cmd in res[cmd.extras["category"].value["name"]]["commands"]:
-            return res 
+            return res
 
         res[cmd.extras["category"].value["name"]]["commands"].append(cmd)
-        
+
         return res
-    
+
     def _get_group(self, command: commands.HybridCommand) -> Optional[str]:
         if isinstance(command.cog, commands.GroupCog):
             return command.cog.__cog_group_name__
         else:
             return " ".join(command.qualified_name.split(" ")[:-1])
 
-    def get_formatted_commands(self) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
+    def get_formatted_commands(
+        self,
+    ) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
         """Gets a dictionary of formatted commands"""
         if self.__cached_formatted_commands:
             return self.__cached_formatted_commands
-        
-        res = {c.value["name"]: {"description": c.value["description"], "emoji": c.value["emoji"], "commands": []} for c in Category}
+
+        res = {
+            c.value["name"]: {
+                "description": c.value["description"],
+                "emoji": c.value["emoji"],
+                "commands": [],
+            }
+            for c in Category
+        }
 
         for cmd in self.walk_commands():
             if isinstance(cmd, commands.Group) and cmd.name != "jishaku":
@@ -112,45 +124,54 @@ class BaseBot(commands.AutoShardedBot):
 
         self.cached_commands = res
         return res
-    
+
     def get_raw_formatted_commands(self) -> List[commands.Command]:
         # If the group doesn't exist, check if the command exists
         all_commands = [v["commands"] for v in self.get_formatted_commands().values()]
         # combine all individual lists in all_commands into one in one line
         return [item for sublist in all_commands for item in sublist]
-    
-    async def _get_bytes(self, image: Union[discord.Attachment, str]) -> Union[None, BytesIO]:
+
+    async def _get_bytes(
+        self, image: Union[discord.Attachment, str]
+    ) -> Union[None, BytesIO]:
         if isinstance(image, discord.Attachment):
             return BytesIO(await image.read())
         else:
             res = await self.session.get(image)
-            if res.status != 200: # Likely ratelimited
+            if res.status != 200:  # Likely ratelimited
                 return
             return BytesIO(await res.read())
-    
+
     async def find_dominant_color(self, url: str) -> int:
         """Finds the dominant color of an image and returns it as an rgb tuple"""
-        #Resizing parameters
-        width, height = 150,150
+        # Resizing parameters
+        width, height = 150, 150
         obj = await self._get_bytes(url)
-        if not obj: return 0x3e4a78
+        if not obj:
+            return 0x3E4A78
         image = Image.open(obj)
         # Handle if image is a GIF
         if hasattr(image, "is_animated"):
             # Set image variable to first frame of GIF
             image = image.convert("RGB")
-        #Resize image
-        image = image.resize((width, height),resample = 0)
-        #Get colors from image object
+        # Resize image
+        image = image.resize((width, height), resample=0)
+        # Get colors from image object
         pixels = image.getcolors(width * height)
-        #Sort them by count number(first element of tuple)
+        # Sort them by count number(first element of tuple)
         sorted_pixels = sorted(pixels, key=lambda t: t[0])
-        #Get the most frequent color
+        # Get the most frequent color
         dominant_color = sorted_pixels[-1][1]
         # Return integer representation of color
-        return dominant_color[0] << 16 | dominant_color[1] << 8 | dominant_color[2] if isinstance(dominant_color, tuple) else 0x3e4a78
+        return (
+            dominant_color[0] << 16 | dominant_color[1] << 8 | dominant_color[2]
+            if isinstance(dominant_color, tuple)
+            else 0x3E4A78
+        )
 
-    async def find_user(self, ctx: commands.Context, user: str) -> Union[discord.Member, discord.User, None]:
+    async def find_user(
+        self, ctx: commands.Context, user: str
+    ) -> Union[discord.Member, discord.User, None]:
         """Attempts to create a member or user object from the passed string"""
         try:
             res = await commands.MemberConverter().convert(ctx, user)
@@ -172,35 +193,47 @@ class BaseBot(commands.AutoShardedBot):
             if name.lower() == v["name"].lower():
                 return k
 
-    def callback_from_command(self, command: Coroutine, message: bool, *args, **kwargs) -> Coroutine[discord.Interaction, Union[discord.Member, discord.Message], None]:
+    def callback_from_command(
+        self, command: Coroutine, message: bool, *args, **kwargs
+    ) -> Coroutine[discord.Interaction, Union[discord.Member, discord.Message], None]:
         """Turn a command function into a context menu callback"""
         if message:
-            async def callback(interaction: discord.Interaction, message: discord.Message):
+
+            async def callback(
+                interaction: discord.Interaction, message: discord.Message
+            ):
                 ctx = await commands.Context.from_interaction(interaction)
                 ctx.message = message
-                ctx.invoked_by_context_menu = True # This is added so we can check inside of the command if it was invoked from a modal
+                ctx.invoked_by_context_menu = True  # This is added so we can check inside of the command if it was invoked from a modal
                 await ctx.invoke(command, text=message.content, *args, **kwargs)
+
         else:
-            async def callback(interaction: discord.Interaction, member: discord.Member):
+
+            async def callback(
+                interaction: discord.Interaction, member: discord.Member
+            ):
                 ctx = await commands.Context.from_interaction(interaction)
                 ctx.invoked_by_context_menu = True
                 await ctx.invoke(command, str(member.id), *args, **kwargs)
+
         return callback
 
     async def get_text_response(
-        self, 
-        ctx: commands.Context, 
-        text: str, 
-        timeout: int = None, 
-        timeout_message: str = None, 
+        self,
+        ctx: commands.Context,
+        text: str,
+        timeout: int = None,
+        timeout_message: str = None,
         interaction: discord.Interaction = None,
-        *args, 
-        **kwargs
+        *args,
+        **kwargs,
     ) -> Union[str, None]:
         """Gets a reponse from either a textinput UI or by waiting for a response"""
 
         if (ctx.interaction and not ctx.interaction.response.is_done()) or interaction:
-            modal = Modal(title="Anser the question(s) and click submit", timeout=timeout)
+            modal = Modal(
+                title="Anser the question(s) and click submit", timeout=timeout
+            )
             textinput = discord.ui.TextInput(label=text, *args, **kwargs)
             modal.add_item(textinput)
 
@@ -219,12 +252,15 @@ class BaseBot(commands.AutoShardedBot):
             return textinput.value
 
         else:
+
             def check(m: discord.Message):
                 return m.author.id == ctx.author.id
 
             msg = await ctx.send(text)
             try:
-                confirmmsg: discord.Message = await self.wait_for('message', check=check, timeout=timeout)
+                confirmmsg: discord.Message = await self.wait_for(
+                    "message", check=check, timeout=timeout
+                )
             except asyncio.TimeoutError:
                 if timeout_message:
                     await ctx.send(timeout_message, delete_after=5)
@@ -240,32 +276,46 @@ class BaseBot(commands.AutoShardedBot):
 
             return res
 
-
     async def update_presence(self):
         status = DB.const.find_one({"_id": "presence"})
-        if status['text']:
-            if not status['activity']:
-                status['activity'] = 'playing'
+        if status["text"]:
+            if not status["activity"]:
+                status["activity"] = "playing"
 
-            s = discord.Activity(name=status['text'], type=getattr(discord.ActivityType, status['activity']))
-                
-            if not status['presence']:
-                status['presence'] = 'online'
+            s = discord.Activity(
+                name=status["text"],
+                type=getattr(discord.ActivityType, status["activity"]),
+            )
 
-            return await self.change_presence(activity=s, status=getattr(discord.Status, status['presence']))
+            if not status["presence"]:
+                status["presence"] = "online"
+
+            return await self.change_presence(
+                activity=s, status=getattr(discord.Status, status["presence"])
+            )
 
         a = date.today()
-        #The day Killua was born!!
-        b = date(2020,9,17)
+        # The day Killua was born!!
+        b = date(2020, 9, 17)
         delta = a - b
-        playing = discord.Activity(name=f'over {len(self.guilds)} guilds | k! | day {delta.days}', type=discord.ActivityType.watching)
-        return await self.change_presence(status=discord.Status.online, activity=playing)
+        playing = discord.Activity(
+            name=f"over {len(self.guilds)} guilds | k! | day {delta.days}",
+            type=discord.ActivityType.watching,
+        )
+        return await self.change_presence(
+            status=discord.Status.online, activity=playing
+        )
 
-    async def send_message(self, messageable: discord.abc.Messageable, *args, **kwargs) -> discord.Message:
+    async def send_message(
+        self, messageable: discord.abc.Messageable, *args, **kwargs
+    ) -> discord.Message:
         """A helper function sending messages and adding a tip with the probability of 5%"""
         msg = await messageable.send(*args, **kwargs)
-        if randint(1, 100) < 6: # 5% probability to send a tip afterwards
-            await messageable.send(f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.is_dev else 'kil!')}", ephemeral=True)
+        if randint(1, 100) < 6:  # 5% probability to send a tip afterwards
+            await messageable.send(
+                f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.is_dev else 'kil!')}",
+                ephemeral=True,
+            )
         return msg
 
     def convert_to_timestamp(self, id: int, args: str = "f") -> str:
@@ -274,8 +324,10 @@ class BaseBot(commands.AutoShardedBot):
 
     def _encrypt(self, n: int, b: int = 10000, smallest: bool = True) -> str:
         """Changes an integer into base 10000 but with my own characters resembling numbers. It only returns the last 2 characters as they are the most unique"""
-        chars = "".join([chr(i) for i in range(b+1)][::-1])
-        chars = chars.replace(":", "").replace(";", "").replace("-", "").replace(",", "") # These characters are indicators used in the ids so they should be not be available as characters
+        chars = "".join([chr(i) for i in range(b + 1)][::-1])
+        chars = (
+            chars.replace(":", "").replace(";", "").replace("-", "").replace(",", "")
+        )  # These characters are indicators used in the ids so they should be not be available as characters
 
         if n == 0:
             return [0]
@@ -283,18 +335,25 @@ class BaseBot(commands.AutoShardedBot):
         while n:
             digits.append(int(n % b))
             n //= b
-        return "".join([chars[d] for d in digits[::-1]])[-2:] if smallest else "".join([chars[d] for d in digits[::-1]])
-    
+        return (
+            "".join([chars[d] for d in digits[::-1]])[-2:]
+            if smallest
+            else "".join([chars[d] for d in digits[::-1]])
+        )
+
     def is_user_installed(self, ctx: commands.Context) -> bool:
-        if not ctx.interaction: return False
-        if not ctx.guild: return True
-        if len(ctx.guild.members) == ctx.guild.member_count: return False # Best indicator I found
+        if not ctx.interaction:
+            return False
+        if not ctx.guild:
+            return True
+        if len(ctx.guild.members) == ctx.guild.member_count:
+            return False  # Best indicator I found
         # if not self.user.id in [m.id for m in ctx.guild.members]: return True
         # ^ Does not work for some reason. That is really dumb. May be an issue with how
-        # dpy caches members (assuming they are members when the command is executed 
+        # dpy caches members (assuming they are members when the command is executed
         # on a guild)
         return True
-    
+
     def get_command_from_id(self, id: int) -> Union[discord.app_commands.Command, None]:
         for cmd in [*self.walk_commands(), *self.tree.walk_commands()]:
             if cmd.extras["id"] == id:

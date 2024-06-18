@@ -1,14 +1,15 @@
+echo "This script is to run Killua outside of Docker. If this is not what you meant to do, run docker compose up -d instead."
 PS3='Please enter your choice: '
 options=("Run bot in production environment" "Run bot in development environment" "Setup database" "Quit")
 select opt in "${options[@]}"
 do
     case $REPLY in
         "1")
-             MODE=prod docker compose up -d --build
+            cargo run --release && python3 -m killua
             break
             ;;
         "2")
-            docker compose up -d --build
+            cargo run && python3 -m killua -d
             break
             ;;
         "3")

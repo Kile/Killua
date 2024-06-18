@@ -1,9 +1,10 @@
 from discord import Role
 
 from .utils import random_name
-from.permissions import Permissions
+from .permissions import Permissions
 
 from typing import Optional
+
 
 class TestingRole:
 

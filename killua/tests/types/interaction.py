@@ -6,6 +6,7 @@ from discord.ext.commands import Context
 from typing import Literal
 from .utils import get_random_discord_id, random_name
 
+
 class ArgumentResponseInteraction:
     def __init__(self, interaction: ArgumentInteraction):
         self.interaction = interaction
@@ -18,7 +19,9 @@ class ArgumentResponseInteraction:
         if self._is_done:
             raise Exception("Interaction can only be responded to once.")
         self._is_done = True
-        view = kwargs.pop("view", self.interaction.context.current_view) # If no new view is responded we want the old one still as the current view
+        view = kwargs.pop(
+            "view", self.interaction.context.current_view
+        )  # If no new view is responded we want the old one still as the current view
         await self.interaction.context.send(view=view, *args, **kwargs)
 
     async def edit_message(self, *args, **kwargs) -> None:
@@ -36,16 +39,19 @@ class ArgumentResponseInteraction:
     def is_done(self) -> bool:
         return self._is_done
 
+
 class ArgumentInteraction:
     """This classes purpose is purely to be supplied to callbacks of message interactions"""
+
     def __init__(self, context: Context, **kwargs):
         self.__dict__ = kwargs
         self.context = context
         self.user = context.author
         self.response = ArgumentResponseInteraction(self)
 
+
 class TestingInteraction(Interaction):
-    """A testing class mocking an interaction class""" 
+    """A testing class mocking an interaction class"""
 
     @classmethod
     def base_interaction(cls, **kwargs) -> dict:
@@ -53,16 +59,18 @@ class TestingInteraction(Interaction):
             "id": kwargs.pop("id", get_random_discord_id()),
             "application_id": kwargs.pop("application_id", get_random_discord_id()),
             "token": kwargs.pop("token", ""),
-            "version": 1
+            "version": 1,
         }
 
     @classmethod
-    def context_menus_interaction(cls, type: Literal[2, 4], menu_type: Literal[2, 3], *kwargs) -> TestingInteraction:
+    def context_menus_interaction(
+        cls, type: Literal[2, 4], menu_type: Literal[2, 3], *kwargs
+    ) -> TestingInteraction:
         """Creates a testing interaction for the app command"""
         base = cls.base_interaction(**kwargs)
         base["type"] = type
         base["data"] = {
-            "type": menu_type, # User: 2, Message: 3
+            "type": menu_type,  # User: 2, Message: 3
             "target": kwargs.pop("target", get_random_discord_id()),
             "id": kwargs.pop("data_id", get_random_discord_id()),
             "name": kwargs.pop("name", random_name()),
@@ -71,7 +79,9 @@ class TestingInteraction(Interaction):
         return TestingInteraction(**base)
 
     @classmethod
-    def app_command_interaction(cls, type: Literal[2, 4], **kwargs) -> TestingInteraction:
+    def app_command_interaction(
+        cls, type: Literal[2, 4], **kwargs
+    ) -> TestingInteraction:
         """Creates a testing interaction for the app command"""
         base = cls.base_interaction(**kwargs)
         base["type"] = type

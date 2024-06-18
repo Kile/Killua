@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+env:
+  RUST_BACKTRACE: full
+  MONGODB: mongodb://localhost:27017/Killua
+  API_KEY: test
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -46,10 +51,6 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Setup env
-        run: |
-          echo 'MONGODB="mongodb://localhost:27017/Killua"\n' > .env
-          echo 'API_KEY="test"' >> .env
       - name: Setup Rocket.toml
         run: mv api/Rocket.toml.template api/Rocket.toml
       - name: Run tests

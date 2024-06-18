@@ -10,7 +10,8 @@ from killua.metrics import *
 from killua.static.constants import DB, API_ROUTES
 from killua.bot import BaseBot as Bot
 
-log = logging.getLogger('prometheus')
+log = logging.getLogger("prometheus")
+
 
 class PrometheusCog(commands.Cog):
     """
@@ -18,7 +19,7 @@ class PrometheusCog(commands.Cog):
     using the `on_ready` listener.
     """
 
-    def __init__(self, client: Bot, port: int=8000):
+    def __init__(self, client: Bot, port: int = 8000):
         """
         Parameters:
             bot: The Discord bot
@@ -36,17 +37,23 @@ class PrometheusCog(commands.Cog):
                 self.db_loop.start()
 
     async def update_api_stats(self):
-        url = f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}" if self.client.is_dev else self.client.url
+        url = (
+            f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}"
+            if self.client.is_dev
+            else self.client.url
+        )
 
-        data = await self.client.session.get(url + "/diagnostics", headers={"Authorization": self.client.secret_api_key})
+        data = await self.client.session.get(
+            url + "/diagnostics", headers={"Authorization": self.client.secret_api_key}
+        )
         if data.status != 200:
             return
-        
+
         json = await data.json()
         response_time = data.headers.get("X-Response-Time")
 
         API_RESPONSE_TIME.set(int(response_time.replace("ms", "")))
-        if (time := cast(dict, json["ipc"]).get("response_time")): # Can be None
+        if time := cast(dict, json["ipc"]).get("response_time"):  # Can be None
             IPC_RESPONSE_TIME.set(time)
 
         reqs = 0
@@ -61,12 +68,11 @@ class PrometheusCog(commands.Cog):
 
         API_SPAM_REQUESTS.set(reqs - not_spam)
 
-
-    async def init_gauges(self):    
-        log.debug('Initializing gauges')
+    async def init_gauges(self):
+        log.debug("Initializing gauges")
         num_of_commands = len(self.get_all_commands())
         COMMANDS_GAUGE.set(num_of_commands)
-        
+
         registered_users = DB.teams.count_documents({})
         REGISTERED_USER_GAUGE.set(registered_users)
 
@@ -78,24 +84,24 @@ class PrometheusCog(commands.Cog):
 
         commands = self.client.get_raw_formatted_commands()
         for cmd in commands:
-            if not cmd.extras or not "id" in cmd.extras or not str(cmd.extras["id"]) in usage_data:
+            if (
+                not cmd.extras
+                or not "id" in cmd.extras
+                or not str(cmd.extras["id"]) in usage_data
+            ):
                 continue
 
             COMMAND_USAGE.labels(
-                self.client._get_group(cmd),
-                cmd.name,
-                str(cmd.extras["id"])
-            ).set(
-                usage_data[str(cmd.extras["id"])]
-            )
-        
+                self.client._get_group(cmd), cmd.name, str(cmd.extras["id"])
+            ).set(usage_data[str(cmd.extras["id"])])
+
         await self.update_api_stats()
 
     def get_all_commands(self) -> List[commands.Command]:
         return self.client.get_raw_formatted_commands()
 
     def start_prometheus(self):
-        log.debug(f'Starting Prometheus Server on port {self.port}')
+        log.debug(f"Starting Prometheus Server on port {self.port}")
         start_http_server(self.port)
         self.started = True
 
@@ -110,7 +116,6 @@ class PrometheusCog(commands.Cog):
         REGISTERED_USER_GAUGE.set(registered_users)
         await self.update_api_stats()
 
-            
     @tasks.loop(seconds=5)
     async def system_usage_loop(self):
         RAM_USAGE_GAUGE.set(virtual_memory().percent)
@@ -137,11 +142,12 @@ class PrometheusCog(commands.Cog):
         shard_id = ctx.guild.shard_id if ctx.guild else None
         ON_COMMAND_COUNTER.labels(shard_id, ctx.command.name).inc()
 
-        if not ctx.command.extras.get("id"): return
+        if not ctx.command.extras.get("id"):
+            return
         COMMAND_USAGE.labels(
             self.client._get_group(ctx.command),
             ctx.command.name,
-            str(ctx.command.extras["id"])
+            str(ctx.command.extras["id"]),
         ).inc()
 
     @commands.Cog.listener()
@@ -150,10 +156,15 @@ class PrometheusCog(commands.Cog):
 
         # command name can be None if comming from a view (like a button click) or a modal
         command_name = None
-        if interaction.type == InteractionType.application_command and interaction.command:
+        if (
+            interaction.type == InteractionType.application_command
+            and interaction.command
+        ):
             command_name = interaction.command.name
 
-        ON_INTERACTION_COUNTER.labels(shard_id, interaction.type.name, command_name).inc()
+        ON_INTERACTION_COUNTER.labels(
+            shard_id, interaction.type.name, command_name
+        ).inc()
 
     @commands.Cog.listener()
     async def on_connect(self):
@@ -195,5 +206,6 @@ class PrometheusCog(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_remove(self, _):
         GUILD_GAUGE.set(len(self.client.guilds))
-        
+
+
 Cog = PrometheusCog
