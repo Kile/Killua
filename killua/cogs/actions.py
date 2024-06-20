@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 import random
 import asyncio
-from typing import List, Union, Optional
+from io import BytesIO
+from typing import List, Union, Optional, cast, Tuple
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -47,6 +48,9 @@ class Actions(commands.GroupCog, group_name="action"):
         self.session = self.client.session
 
     async def request_action(self, endpoint: str) -> Union[dict, str]:
+        """
+        Fetch an image from the API for the action commands
+        """
 
         r = await self.session.get(f"https://purrbot.site/api/img/sfw/{endpoint}/gif")
         if r.status == 200:
@@ -64,6 +68,9 @@ class Actions(commands.GroupCog, group_name="action"):
     ) -> (
         discord.Message
     ):  # for endpoints like /blush/gif where you don't want to mention a user
+        """
+        Get the image for one of the action commands from the API without arguments
+        """
         image = await self.request_action(ctx.command.name)
         if isinstance(image, str):
             return await ctx.send(f":x: {image}")
@@ -83,11 +90,19 @@ class Actions(commands.GroupCog, group_name="action"):
         targetted: bool = False,
         amount: int = 1,
     ) -> Optional[str]:
+        """
+        Saves the action being done on a user and returns the badge if the user
+        has reached a milestone for the action.
+        """
         user = User(member.id)
         badge = user.add_action(endpoint, targetted, amount)
         return badge
 
     def generate_users(self, members: List[discord.Member], title: str) -> str:
+        """
+        Parses the list of members and returns a string with their names,
+        making sure the string is not too long for the embed title
+        """
         if isinstance(members, str):
             return members
         memberlist = ""
@@ -99,7 +114,9 @@ class Actions(commands.GroupCog, group_name="action"):
                     + title.replace("(a)", "").replace("(u)", "")
                 )
                 > 231
-            ):  # embed titles have a max lentgh of 256 characters. If the name list contains too many names, stuff breaks. This prevents that and displays the other people as "and x more"
+            ):  # embed titles have a max length of 256 characters.
+                # If the name list contains too many names, stuff breaks.
+                # This prevents that and displays the other people as "and x more"
                 memberlist = memberlist + f" *and {len(members)-(p+1)} more*"
                 break
             if members[-1] == member and len(members) != 1:
@@ -117,18 +134,26 @@ class Actions(commands.GroupCog, group_name="action"):
         author: Union[str, discord.User],
         members: List[discord.Member],
         disabled: int = 0,
-    ) -> discord.Embed:
+    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+        """
+        Creates an embed for the action commands with the members and author provided
+        as well as adding the image and action text
+        """
         if disabled == len(members):
-            return "All members targetted have disabled this action."
+            return "All members targetted have disabled this action.", None
 
         if endpoint == "hug":
+            chosen = random.choice(ACTIONS[endpoint]["images"])
+            chosen["url"] = (
+                self.client.api_url(to_fetch=self.client.is_dev) + chosen["url"]
+            )
             image = {
-                "link": random.choice(ACTIONS[endpoint]["images"])
+                "link": chosen
             }  # This might eventually be deprecated for copyright reasons
         else:
             image = await self.request_action(endpoint)
             if isinstance(image, str):
-                return f":x: {image}"
+                return f":x: {image}", None
 
         text: str = random.choice(ACTIONS[endpoint]["text"])
         text = text.replace(
@@ -139,13 +164,6 @@ class Actions(commands.GroupCog, group_name="action"):
         embed = discord.Embed.from_dict(
             {
                 "title": text,
-                "image": {
-                    "url": (
-                        image["link"]["url"]
-                        if "url" in image["link"]
-                        else image["link"]
-                    )
-                },
                 "color": await self.client.find_dominant_color(
                     image["link"]["url"] if "url" in image["link"] else image["link"]
                 ),
@@ -159,13 +177,31 @@ class Actions(commands.GroupCog, group_name="action"):
             }
         )
 
+        file = None
+        if self.client.is_dev and "hug" == endpoint:
+            # Upload the image as attachment instead
+            data = await self.session.get(image["link"]["url"])
+            if data.status != 200:
+                return ":x: " + await data.text(), None
+            extension = cast(str, image["link"]["url"]).split(".")[-1]
+            embed.set_image(url=f"attachment://image.{extension}")
+            file = discord.File(BytesIO(await data.read()), f"image.{extension}")
+        else:
+            embed.set_image(url=image["link"]["url"])
+
         if disabled > 0:
             embed.set_footer(
                 text=f"{disabled} user{'s' if disabled > 1 else ''} disabled being targetted with this action"
             )
-        return embed
+        return embed, file
 
-    async def no_argument(self, ctx: commands.Context) -> Union[None, discord.Embed]:
+    async def no_argument(
+        self, ctx: commands.Context
+    ) -> Optional[Tuple[discord.Embed, Optional[discord.File]]]:
+        """
+        The user didn't provide any (valid) arguments to the command, so they are asked if they
+        want to be hugged. If they respond with "yes", the command is executed with the author as the target.
+        """
         await ctx.send(
             f"You provided no one to {ctx.command.name}.. Should- I {ctx.command.name} you?"
         )
@@ -183,8 +219,11 @@ class Actions(commands.GroupCog, group_name="action"):
     async def do_action(
         self, ctx: commands.Context, members: List[discord.Member] = None
     ) -> Union[discord.Message, None]:
+        """
+        Executes an action command with the given members
+        """
         if not members:
-            embed = await self.no_argument(ctx)
+            embed, file = await self.no_argument(ctx)
             if not embed:
                 return
         elif ctx.author == members[0]:
@@ -232,14 +271,14 @@ class Actions(commands.GroupCog, group_name="action"):
                     )
                 except discord.Forbidden:
                     pass
-            embed = await self.action_embed(
+            embed, file = await self.action_embed(
                 ctx.command.name, ctx.author, members, disabled
             )
 
         if isinstance(embed, str):
             return await ctx.send(content=embed)
         else:
-            return await self.client.send_message(ctx, embed=embed)
+            return await self.client.send_message(ctx, embed=embed, file=file)
 
     @check()
     @commands.hybrid_command(

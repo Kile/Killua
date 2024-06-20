@@ -1,9 +1,8 @@
-from . import cogs
 import discord
 import aiohttp
 import logging
-from prometheus_client import Counter
 
+from . import cogs
 from .tests import run_tests
 from .migrate import migrate
 from .download import download

@@ -180,7 +180,6 @@ class Shop(commands.Cog):
                         {
                             "$set": {
                                 "offers": shop_items,
-                                "log": log,
                                 "reduced": {
                                     "reduced_item": reduced_item,
                                     "reduced_by": reduced_by,

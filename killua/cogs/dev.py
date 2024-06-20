@@ -529,14 +529,9 @@ class Dev(commands.GroupCog, group_name="dev"):
     )
     async def api(self, ctx: commands.Context):
         """Gets statistics about the Killua API"""
-        url = (
-            f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}"
-            if self.client.is_dev
-            else self.client.url
-        )
-
         data = await self.client.session.get(
-            url + "/diagnostics", headers={"Authorization": self.client.secret_api_key}
+            self.client.api_url(to_fetch=True) + "/diagnostics",
+            headers={"Authorization": self.client.secret_api_key},
         )
         if data.status != 200:
             return await ctx.send("An error occured while fetching the data")

@@ -246,20 +246,19 @@ class IPCRoutes(commands.Cog):
         )
 
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
-        url = (
-            f"http://{'api' if self.client.run_in_docker else '0.0.0.0'}:{self.client.dev_port}"
-            if self.client.is_dev
-            else self.client.url
-        )
 
-        path = self._create_path(streak, usr, url)
+        path = self._create_path(streak, usr, self.client.api_url(to_fetch=True))
         image = await self.streak_image(
             path,
             (
-                cast(str, LOOTBOXES[reward]["image"]).format(url)
+                cast(str, LOOTBOXES[reward]["image"]).format(
+                    self.client.api_url(to_fetch=True)
+                )
                 if isinstance(reward, int) and reward < 100
                 else (
-                    cast(str, BOOSTERS[reward.value]["image"]).format(url)
+                    cast(str, BOOSTERS[reward.value]["image"]).format(
+                        self.client.api_url(to_fetch=True)
+                    )
                     if isinstance(reward, Booster)
                     else None
                 )

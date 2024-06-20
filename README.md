@@ -144,6 +144,21 @@ First, set up a virtual environment. Do so with `python3 -m venv env; source env
 
 `requirements.txt` contains the libraries you'll need. To install them use `pip3 install -r requirements.txt`
 
+Before you run anything, unlike Docker where the env variables are automatically exported, you need to do it manually. For this you can run 
+```sh
+export $(cat .env | xargs)
+# or to ignore comments started with #
+export $(grep -v '^#' .env | xargs)
+```
+
+You can remove these exports again with 
+```sh
+unset $(cat .env | xargs)
+# or to ignore comments started with #
+unset $(grep -v '^#' .env | xargs)
+```
+
+### Bot
 The bot can be run using 
 ```sh
 python3 -m killua
@@ -170,9 +185,9 @@ If you want to contribute and test your changes:
 
 3) Run `docker compose up --build -d` to build the images and start the containers
 
-If you want to run the built images:
+If you want to run the pre-built images from the registry:
 
-3) Run `docker compose up -d` to start the containers (it will pull the images from Docker Hub)
+3) Run `docker compose up -d` to start the containers (it will pull the images from the GitHub registry)
 
 You can access Grafana on port 3000. The configured dashboard should already be added. You can access it after logging in with username `admin` and password `admin` (unless you changed it in the env file). Prometheus can be accessed on port 8000. The API can be accessed on port 6060.
 

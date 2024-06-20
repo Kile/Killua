@@ -56,8 +56,12 @@ class BaseBot(commands.AutoShardedBot):
 
         self.secret_api_key = os.getenv("API_KEY")
 
-        # Get dev port from os env variable
-        # self.dev_port = int(getenv("PORT", 7000))
+    def api_url(self, *, to_fetch=False):
+        if to_fetch:
+            return (
+                f"http://{'api' if self.run_in_docker else '0.0.0.0'}:{self.dev_port}"
+            )
+        return self.url
 
     async def setup_hook(self):
         await self.load_extension("jishaku")
