@@ -178,16 +178,19 @@ class Actions(commands.GroupCog, group_name="action"):
         )
 
         file = None
-        if self.client.is_dev and "hug" == endpoint:
-            # Upload the image as attachment instead
-            data = await self.session.get(image["link"]["url"])
-            if data.status != 200:
-                return ":x: " + await data.text(), None
-            extension = cast(str, image["link"]["url"]).split(".")[-1]
-            embed.set_image(url=f"attachment://image.{extension}")
-            file = discord.File(BytesIO(await data.read()), f"image.{extension}")
+        if endpoint == "hug":
+            if self.client.is_dev:
+                # Upload the image as attachment instead
+                data = await self.session.get(image["link"]["url"])
+                if data.status != 200:
+                    return ":x: " + await data.text(), None
+                extension = cast(str, image["link"]["url"]).split(".")[-1]
+                embed.set_image(url=f"attachment://image.{extension}")
+                file = discord.File(BytesIO(await data.read()), f"image.{extension}")
+            else:
+                embed.set_image(url=image["link"]["url"])
         else:
-            embed.set_image(url=image["link"]["url"])
+            embed.set_image(url=image["link"])
 
         if disabled > 0:
             embed.set_footer(
