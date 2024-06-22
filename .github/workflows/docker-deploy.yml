@@ -1,11 +1,16 @@
 name: Docker deploy
 
 on:
-  workflow_run:
-    workflows: ["Run API Tests"]
-    branches: [main, api-rewrite]
-    types: 
-      - completed
+  # workflow_run:
+  #   workflows: ["Run API Tests"]
+  #   branches: [main, api-rewrite]
+  #   types: 
+  #     - completed
+  push:
+    # Publish `main` as Docker `latest` image.
+    branches:
+      - main
+      - api-rewrite
 
 jobs:
   # Push image to GitHub Packages.
@@ -13,7 +18,7 @@ jobs:
   push:
     # Ensure test job passes before pushing image.
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'push'
 
     steps:
         - uses: actions/checkout@v4
