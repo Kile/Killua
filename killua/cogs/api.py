@@ -234,15 +234,21 @@ class IPCRoutes(commands.Cog):
         return path
 
     async def handle_vote(self, data: dict) -> None:
-        user_id = data["user"] if "user" in data else data["id"]
+        user_id = data["user"] if data.get("user", False) else data["id"]
 
         user = User(int(user_id))
-        user.add_vote("topgg" if "isWeekend" in data else "discordbotlist")
+        user.add_vote("topgg" if data.get("isWeekend", False) else "discordbotlist")
         streak = user.voting_streak[
-            "topgg" if "isWeekend" in data else "discordbotlist"
+            (
+                "topgg"
+                if "isWeekend" in data and data["isWeekend"] is not None
+                else "discordbotlist"
+            )
         ]["streak"]
         reward: Union[int, Booster] = self._get_reward(
-            streak, data["isWeekend"] if hasattr(data, "isWeekend") else False
+            streak,
+            "isWeekend" in data and data["isWeekend"] is not None,
+            # Could exist but be None so it needs an or False
         )
 
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
@@ -272,9 +278,9 @@ class IPCRoutes(commands.Cog):
                 "description": (
                     f"Well done for keeping your voting **streak** 🔥 of {streak} for"
                     if streak > 1
-                    else "Thank you for voting on "
+                    else "Thank you for voting on"
                 )
-                + f" {'top.gg' if 'isWeekend' in data else 'discordbotlist'}! As a reward I am happy to award with "
+                + f" {'top.gg' if 'isWeekend' in data and data['isWeekend'] is not None  else 'discordbotlist'}! As a reward I am happy to award with "
                 + (
                     (
                         f"{reward} Jenny"

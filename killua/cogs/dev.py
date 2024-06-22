@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 
 import math
-from typing import List, Tuple, Union, Literal, cast
+from typing import List, Tuple, Union, Literal, cast, Dict
 from io import BytesIO
 from datetime import datetime
 from matplotlib import pyplot as plt
@@ -264,18 +264,22 @@ class Dev(commands.GroupCog, group_name="dev"):
 
     async def initial_top(self, ctx: commands.Context) -> None:
         # Convert the ids to actualy command names
-        usage_data: dict = DB.const.find_one({"_id": "usage"})["command_usage"]
+        usage_data: Dict[str, int] = DB.const.find_one({"_id": "usage"})["command_usage"]
         usage_data_formatted = {}
 
-        commands = self.client.get_raw_formatted_commands()
-        for cmd in commands:
+        cmds = self.client.get_raw_formatted_commands()
+        for cmd in cmds:       
             if (
                 not cmd.extras
                 or not "id" in cmd.extras
                 or not str(cmd.extras["id"]) in usage_data
             ):
                 continue
-            usage_data_formatted[cmd.qualified_name] = usage_data[str(cmd.extras["id"])]
+            usage_data_formatted[
+                cmd.qualified_name
+                if not isinstance(cmd.cog, commands.GroupCog)
+                else cmd.cog.__cog_group_name__ + " " + cmd.name
+            ] = usage_data[str(cmd.extras["id"])]
 
         top = sorted(usage_data_formatted.items(), key=lambda x: x[1], reverse=True)
         rest = 0
@@ -633,7 +637,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
         elif type == "growth":
 
-            def make_embed(page, embed, _):
+            def make_embed(page, embed: discord.Embed, _):
                 embed.clear_fields()
                 embed.description = ""
 

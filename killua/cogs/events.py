@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 from PIL import Image
 from typing import Dict, List, Tuple
 from matplotlib import pyplot as plt
+from pymongo.errors import ServerSelectionTimeoutError
 
 from killua.metrics import DAILY_ACTIVE_USERS
 from killua.bot import BaseBot
@@ -153,7 +154,12 @@ class Events(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def vote_reminders(self):
-        enabled = DB.teams.find({"voting_reminder": True})
+        try:
+            enabled = DB.teams.find({"voting_reminder": True})
+        except ServerSelectionTimeoutError:
+            return logging.warn(
+                f"{PrintColors.WARNING}Could not send vote reminders because the database is not available{PrintColors.ENDC}"
+            )
         for user in enabled:
             user = User(user["id"])
             for site, data in user.voting_streak.items():

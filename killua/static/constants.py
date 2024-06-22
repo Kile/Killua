@@ -2,7 +2,7 @@ import json
 import io, os
 import discord
 from pymongo import MongoClient, collection
-from typing import Any, Callable, TypeVar, Generic, Union
+from typing import Any, Callable, TypeVar, Generic, Union, Dict, List, Tuple
 
 from os.path import exists
 from killua.utils.test_db import TestingDatabase as Database
@@ -818,7 +818,20 @@ GUILD_BADGES = {
 }
 
 
-LOOTBOXES = {
+LOOTBOXES: Dict[
+    int,
+    Dict[
+        str,
+        Union[
+            str,
+            int,
+            bool,
+            Dict[
+                str, Union[Dict[int, int], Dict[str, List[str]], Tuple[int], List[int]]
+            ],
+        ],
+    ],
+] = {
     1: {
         "name": "Standard Box",
         "price": 250,

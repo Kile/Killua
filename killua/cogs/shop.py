@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from random import randint, choice
 from typing import Union, Tuple, List, Literal, Dict
+from pymongo.errors import ServerSelectionTimeoutError
 
 from killua.bot import BaseBot
 from killua.static.cards import Card
@@ -52,7 +53,7 @@ class Shop(commands.Cog):
 
     def __init__(self, client: BaseBot):
         self.client = client
-        self.cardname_cache: Dict[int, Tuple[str, str]] = None
+        self.cardname_cache: Dict[int, Tuple[str, str]] = {}
         self.last_update = None
 
     def _format_offers(
@@ -161,12 +162,12 @@ class Shop(commands.Cog):
                             }
                         )
                     ]
-                    # There is just one D item so there is a really high probability of it being in the shop EVERY TIME
+                    # There is just one D item so there is a really high
+                    # probability of it being in the shop EVERY TIME
                     t = choice(thing)
                     if not t in shop_items:
                         shop_items.append(t)
 
-                log = DB.const.find_one({"_id": "shop"})["log"]
                 if randint(1, 10) > 6:  # 40% to have an item in the shop reduced
                     reduced_item = randint(0, len(shop_items) - 1)
                     reduced_by = randint(15, 40)
@@ -197,8 +198,12 @@ class Shop(commands.Cog):
                     )
             self.last_update = datetime.now()
         except (IndexError, TypeError):
-            logging.error(
+            logging.warn(
                 f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}"
+            )
+        except ServerSelectionTimeoutError:
+            logging.warn(
+                f"{PrintColors.WARNING}Failed to update shop due to database error{PrintColors.ENDC}"
             )
 
     def _get_view(self, ctx: commands.Context) -> View:
@@ -291,7 +296,7 @@ class Shop(commands.Cog):
         )
         for item in formatted:
             embed.add_field(name=item["name"], value=item["value"], inline=True)
-        diff = self.last_update + timedelta(hours=6) - datetime.now()
+        diff: timedelta = self.last_update + timedelta(hours=6) - datetime.now()
         next_in = (
             str(diff.seconds // 3600)
             + " hours and "
@@ -313,22 +318,17 @@ class Shop(commands.Cog):
         embed = discord.Embed.from_dict(
             {
                 "title": "**The todo shop**",
-                "description": f"""You can buy the following items with `{prefix}buy todo <item>` while you are in the edit menu for the todo list you want to buy the item for
-            
-**Cost**: 1000 Jenny
-`color` change the color of the embed which displays your todo list!
-
-**Cost**: 1000 Jenny
-`thumbnail` add a neat thumbnail to your todo list (small image on the top right)
-
-**Cost**: 1000 Jenny
-`description` add a description to your todo list (recommended for public lists with custom id)
-
-**Timed todos**: 2000 Jenny
-`timed` add todos with deadline to your list and get notified when the deadline is reached
-
-**Cost**: number of current spots * 50
-`space` buy 10 more spots for todo"s for your list""",
+                "description": f"You can buy the following items with `{prefix}buy todo <item>` while you are in the edit menu for the todo list you want to buy the item for\n"
+                + "**Cost**: 1000 Jenny\n"
+                + "`color` change the color of the embed which displays your todo list!\n\n"
+                + "**Cost**: 1000 Jenny\n"
+                + "`thumbnail` add a neat thumbnail to your todo list (small image on the top right)\n\n"
+                + "**Cost**: 1000 Jenny\n"
+                + "`description` add a description to your todo list (recommended for public lists with custom id)\n\n"
+                + "**Timed todos**: 2000 Jenny\n"
+                + "`timed` add todos with deadline to your list and get notified when the deadline is reached\n\n"
+                + "**Cost**: number of current spots * 50\n"
+                + "`space` buy 10 more spots for todos for your list",
                 "color": 0x3E4A78,
             }
         )
@@ -653,13 +653,13 @@ class Shop(commands.Cog):
             return [
                 discord.app_commands.Choice(name=x[1], value=str(x[0]))
                 for x in name_cards
-            ]
+            ][:25]
         return [
             *[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_cards],
             *[
                 discord.app_commands.Choice(name=str(i), value=str(i))
                 for i, _ in id_cards
-            ],
+            ][:25],
         ]
 
     @check()
@@ -699,6 +699,39 @@ class Shop(commands.Cog):
             f"✉️ gave `{other}` card No. {item}!",
             allowed_mentions=discord.AllowedMentions.none(),
         )
+    
+    async def all_lootboxes_autocomplete(
+            self, 
+            interaction: discord.Interaction,
+            current: str
+    ) -> List[discord.app_commands.Choice[str]]:
+        """Autocomplete for all lootboxes"""
+        name_boxes = [
+            (x, LOOTBOXES[x]["name"])
+            for x in User(interaction.user.id).lootboxes
+            if LOOTBOXES[x]["name"].lower().startswith(current.lower())
+        ]
+        id_boxes = [
+            (x, LOOTBOXES[x]["name"])
+            for x in User(interaction.user.id).lootboxes
+            if str(x).startswith(current)
+        ]
+        name_boxes = list(dict.fromkeys(name_boxes))
+        id_boxes = list(dict.fromkeys(id_boxes))
+
+        if current == "":  # No ids AND names if the user hasn't typed anything yet
+            return [
+                discord.app_commands.Choice(name=x[1], value=str(x[0]))
+                for x in name_boxes
+            ][:25]
+        
+        return [
+            *[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_boxes],
+            *[
+                discord.app_commands.Choice(name=str(i), value=str(i))
+                for i, _ in id_boxes
+            ][:25],
+        ]
 
     @check()
     @give.command(
@@ -710,6 +743,7 @@ class Shop(commands.Cog):
     @discord.app_commands.describe(
         other="The user to give the lootbox to", box="What lootbox to give"
     )
+    @discord.app_commands.autocomplete(box=all_lootboxes_autocomplete)
     async def _lootbox(self, ctx: commands.Context, other: discord.Member, box: str):
         """If you're feeling generous give another user a lootbox, maybe they'll get lucky'"""
 

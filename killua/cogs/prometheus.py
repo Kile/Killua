@@ -1,6 +1,6 @@
 import logging
 from prometheus_client import start_http_server
-from typing import cast, List, Optional
+from typing import cast, List, Dict
 from psutil import virtual_memory, cpu_percent
 from discord.ext import commands, tasks
 from discord import Interaction, InteractionType
@@ -27,6 +27,7 @@ class PrometheusCog(commands.Cog):
         """
         self.client = client
         self.port = port
+        self.initial = False
 
         if self.client.run_in_docker:
             if not self.latency_loop.is_running():
@@ -80,19 +81,19 @@ class PrometheusCog(commands.Cog):
         DAILY_ACTIVE_USERS.set(dau)
 
         # Update command stats
-        usage_data: dict = DB.const.find_one({"_id": "usage"})["command_usage"]
-
-        commands = self.client.get_raw_formatted_commands()
-        for cmd in commands:
+        usage_data: Dict[str, int] = DB.const.find_one({"_id": "usage"})[
+            "command_usage"
+        ]
+        cmds = self.client.get_raw_formatted_commands()
+        for cmd in cmds:
             if (
                 not cmd.extras
                 or not "id" in cmd.extras
                 or not str(cmd.extras["id"]) in usage_data
             ):
                 continue
-
             COMMAND_USAGE.labels(
-                self.client._get_group(cmd), cmd.name, str(cmd.extras["id"])
+                self.client._get_group(cmd), cmd.name, cmd.extras["id"]
             ).set(usage_data[str(cmd.extras["id"])])
 
         await self.update_api_stats()
@@ -124,10 +125,23 @@ class PrometheusCog(commands.Cog):
             virtual_memory().available * 100 / virtual_memory().total
         )
 
-    async def cog_load(self):
+    @commands.Cog.listener()
+    async def on_ready(self):
+        # This is very intentionally not cog_load.
+        # I hope future me remembers why. For whatever reason,
+        # commands which are NOT part of a GroupCog are only
+        # loaded AFTER the Bot is ready. I am not sure why, they
+        # could already be added since it doesn't need any info
+        # from Discord, but it is what it is and this is the way
+        # to make sure all commands are returned by get_all_raw_commands.
+        #
+        # Given how significant it is especially for the command stats
+        # to take into account historical data, I am glad I spotted this.
+        if self.initial:
+            return
+        self.initial = True
         if self.client.run_in_docker:
-            # some gauges needs to be initialized after each reconect
-            # (value could changed during an outtage)
+            GUILD_GAUGE.set(len(self.client.guilds))
             await self.init_gauges()
 
             # Set connection back up (since we in on_ready)
@@ -193,11 +207,6 @@ class PrometheusCog(commands.Cog):
     @commands.Cog.listener()
     async def on_shard_disconnect(self, shard_id):
         CONNECTION_GAUGE.labels(shard_id).set(0)
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        # Seperate from setup hook due to the count being 0 before ready
-        GUILD_GAUGE.set(len(self.client.guilds))
 
     @commands.Cog.listener()
     async def on_guild_join(self, _):

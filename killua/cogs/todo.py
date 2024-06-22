@@ -1,12 +1,12 @@
 import discord
 from discord.ext import commands, tasks
 from datetime import datetime
-import re
-import math
+import math, logging, re
 from typing import Union, Optional, List, Literal, cast
+from pymongo.errors import ServerSelectionTimeoutError
 
 from killua.bot import BaseBot
-from killua.static.enums import Category
+from killua.static.enums import Category, PrintColors
 from killua.static.constants import DB, URL_REGEX, editing, REPORT_CHANNEL
 from killua.utils.checks import check, blcheck
 from killua.utils.classes import TodoList, Todo, User, TodoListNotFound
@@ -45,7 +45,14 @@ class TodoSystem(commands.Cog):
         """
         Checks if any todo's are due and sends a message to the owner if so
         """
-        for todo_list in [TodoList(r["_id"]) for r in DB.todo.find()]:
+        try:
+            lists = [TodoList(r["_id"]) for r in DB.todo.find({})]
+        except ServerSelectionTimeoutError:
+            return logging.warn(
+                f"{PrintColors.WARNING}Failed to send out todo due notifications due to failing to connect to the db{PrintColors.ENDC}"
+            )
+
+        for todo_list in lists:
             for todo in todo_list.todos:
 
                 if (

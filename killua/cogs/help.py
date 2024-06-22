@@ -218,10 +218,13 @@ class HelpCommand(commands.Cog):
         """Autocomplete for all cards"""
         raw = self.client.get_raw_formatted_commands()
         return [
-            command.qualified_name
+            discord.app_commands.Choice(
+                name=((self.client._get_group(command) or "") + " " + command.name).strip(),
+                value=command.qualified_name,
+            )
             for command in raw
-            if current.lower() in command.qualified_name
-        ][0:25]
+            if current.lower() in ((self.client._get_group(command) or "") + " " + command.name).strip()
+        ][:25]
 
     @commands.hybrid_command(usage="help [group] [command]", extras={"id": 45})
     @discord.app_commands.describe(
