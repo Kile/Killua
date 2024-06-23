@@ -78,8 +78,8 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] Rust
 *   [x] Prometheus
 *   [x] Grafana
-*   [] Dynamically deploying docker containers
-*   [] Multithreading the bot (related to the above but can be static)
+*   [ ] Dynamically deploying docker containers
+*   [ ] Multithreading the bot (related to the above but can be static)
 
 ## Contributors
 
@@ -215,12 +215,23 @@ Contributions are MASSIVELY appreciated. A codebase this big can look a bit inti
 
 ## Grafana
 Grafana is pretty cool. The Grafana dashboard was added in version 1.1.0. You can find it in grafana/dashboards/main.json. Here are some screenshots:
+<img width="1377" alt="image" src="https://github.com/Kile/Killua/assets/69253692/75df43a9-558e-4b97-9b22-4f93e3c393e5">
+<img width="1386" alt="image" src="https://github.com/Kile/Killua/assets/69253692/83d6da9f-dba1-4e42-8f7b-ea5b7f621b47">
+<img width="1376" alt="image" src="https://github.com/Kile/Killua/assets/69253692/0a0560d3-c5ba-4acf-abe9-a6cf4ef29de8">
+<img width="1379" alt="image" src="https://github.com/Kile/Killua/assets/69253692/222063c9-60ae-4f8b-8b67-cdb6a90b586c">
+<img width="1376" alt="image" src="https://github.com/Kile/Killua/assets/69253692/49926a8d-a85f-4ba0-80fc-a97c84557095">
 
-If you use Docker to run Killua, this would work without any additional setup. I also welcome contributions to the Grafana dashboard (maybe even add more analytics to the code!). You are also free to use my dashboard for your own bot if you want to, most of the saved data logic can be found in [`killua/cogs/prometheus.py`](./killua/cogs/prometheus.py) and [`killua/metrics/`](./killua/metrics/).
 
+
+If you use Docker to run Killua, this would work without any additional setup. I also welcome contributions to the Grafana dashboard (maybe even add more analytics to the code!). You are also free to use my dashboard for your own bot if you want to, most of the saving data logic can be found in [`killua/cogs/prometheus.py`](./killua/cogs/prometheus.py) and [`killua/metrics/`](./killua/metrics/).
+
+
+## Thanks for checking this repo out!
 If you don't like me using one of your images for the hug command, please contact me on discord `k1le` or on `kile@killua.dev`
 
 If you have any further questions, join my discord server or dm me!
+
+If you think I did a good job at this now pretty massive codebase I spent years working on, a star would be much appreciated!!
 
 <p align="center">
   <a href"https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
