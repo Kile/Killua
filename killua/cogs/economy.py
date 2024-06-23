@@ -393,7 +393,7 @@ class Economy(commands.GroupCog, group_name="econ"):
         """Displays the owned lootboxes and boosters"""
         if (
             len((user := User(ctx.author.id)).lootboxes) == 0
-            and len(sum(user.boosters.values())) == 0
+            and sum(user.boosters.values()) == 0
         ):
             return await ctx.send("Sadly you don't have any lootboxes or boosters!")
 
