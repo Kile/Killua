@@ -17,7 +17,7 @@ click==8.1.7
 colorclass==2.2.2
 contourpy==1.2.1
 cycler==0.12.1
-discord.py @ git+https://github.com/Rapptz/discord.py.git@b0024dc86652db19cad16296d6c16c6272b2eaa3
+discord.py==2.4.0
 dnspython==2.6.1
 docopt==0.6.2
 exceptiongroup==1.2.1

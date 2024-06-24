@@ -264,11 +264,13 @@ class Dev(commands.GroupCog, group_name="dev"):
 
     async def initial_top(self, ctx: commands.Context) -> None:
         # Convert the ids to actualy command names
-        usage_data: Dict[str, int] = DB.const.find_one({"_id": "usage"})["command_usage"]
+        usage_data: Dict[str, int] = DB.const.find_one({"_id": "usage"})[
+            "command_usage"
+        ]
         usage_data_formatted = {}
 
         cmds = self.client.get_raw_formatted_commands()
-        for cmd in cmds:       
+        for cmd in cmds:
             if (
                 not cmd.extras
                 or not "id" in cmd.extras
@@ -276,9 +278,11 @@ class Dev(commands.GroupCog, group_name="dev"):
             ):
                 continue
             usage_data_formatted[
-                cmd.qualified_name
-                if not isinstance(cmd.cog, commands.GroupCog)
-                else cmd.cog.__cog_group_name__ + " " + cmd.name
+                (
+                    cmd.qualified_name
+                    if not isinstance(cmd.cog, commands.GroupCog)
+                    else cmd.cog.__cog_group_name__ + " " + cmd.name
+                )
             ] = usage_data[str(cmd.extras["id"])]
 
         top = sorted(usage_data_formatted.items(), key=lambda x: x[1], reverse=True)
@@ -315,6 +319,60 @@ class Dev(commands.GroupCog, group_name="dev"):
                 await self.all_top(ctx, top)
             elif view.value == "group":
                 await self.group_top(ctx, top, view.interaction)
+
+    async def api_stats(self, ctx: commands.Context):
+        """Gets statistics about the Killua API"""
+        data = await self.client.session.get(
+            self.client.api_url(to_fetch=True) + "/diagnostics",
+            headers={"Authorization": self.client.secret_api_key},
+        )
+        if data.status != 200:
+            return await ctx.send("An error occured while fetching the data")
+
+        json = await data.json()
+        response_time = data.headers.get("X-Response-Time")
+
+        embed = discord.Embed(
+            title="Killua API statistics",
+            description="IPC connection: "
+            + ("✅ Ok" if json["ipc"]["success"] else "❌ Down")
+            + "\n"
+            + (
+                ("IPC latency: " + str(round(json["ipc"]["response_time"], 2)) + "ms\n")
+                if json["ipc"]["success"]
+                else ""
+            )
+            + "API latency: "
+            + response_time,
+            color=0x3E4A78,
+        )
+
+        # Generate piechart
+        spam = 0
+        data = []
+        for key, val in cast(dict, json["usage"]).items():
+            if not key in API_ROUTES:
+                spam += len(val["requests"])
+                continue
+            reqs: List[datetime] = cast(dict, val).get("requests")
+            successful_res: int = cast(dict, val).get("successful_responses")
+
+            embed.add_field(
+                name=key,
+                value="Requests: "
+                + str(len(reqs))
+                + "\n"
+                + "Successful responses: "
+                + str(successful_res)
+                + f" ({round(successful_res/len(reqs)*100)}%)"
+                + "\n",
+            )
+            data.append((key, len(reqs)))
+
+        embed.description += f"\nSpam requests: {spam}"
+        piechart = self._create_piechart(data)
+        embed.set_image(url="attachment://piechart.png")
+        await ctx.send(embed=embed, file=piechart)
 
     # Eval command, unnecessary with the jsk extension but useful for database stuff
     @commands.is_owner()
@@ -527,57 +585,6 @@ class Dev(commands.GroupCog, group_name="dev"):
 
     @commands.is_owner()
     @commands.hybrid_command(
-        extras={"category": Category.OTHER, "id": 119},
-        usage="api <user_id>",
-        hidden=True,
-    )
-    async def api(self, ctx: commands.Context):
-        """Gets statistics about the Killua API"""
-        data = await self.client.session.get(
-            self.client.api_url(to_fetch=True) + "/diagnostics",
-            headers={"Authorization": self.client.secret_api_key},
-        )
-        if data.status != 200:
-            return await ctx.send("An error occured while fetching the data")
-
-        json = await data.json()
-        response_time = data.headers.get("X-Response-Time")
-
-        embed = discord.Embed(
-            title="Killua API statistics",
-            description="IPC connection: "
-            + ("✅ Ok" if json["ipc"]["success"] else "❌ Down")
-            + "\n"
-            + (
-                ("IPC latency: " + str(round(json["ipc"]["response_time"], 2)) + "ms\n")
-                if json["ipc"]["success"]
-                else ""
-            )
-            + "API latency: "
-            + response_time,
-            color=0x3E4A78,
-        )
-        for key, val in cast(dict, json["usage"]).items():
-            if not any([x.startswith("/" + key.split("/")[0]) for x in API_ROUTES]):
-                continue
-            reqs = cast(dict, val).get("requests")
-            successful_res = cast(dict, val).get("successful_responses")
-
-            embed.add_field(
-                name=key,
-                value="Requests: "
-                + str(reqs)
-                + "\n"
-                + "Successful responses: "
-                + str(successful_res)
-                + f" ({round(successful_res/reqs, 3)*100}%)"
-                + "\n",
-            )
-
-        await ctx.send(embed=embed)
-
-    @commands.is_owner()
-    @commands.hybrid_command(
         aliases=["st", "pr", "status"],
         extras={"category": Category.OTHER, "id": 119},
         usage="pr <text>",
@@ -629,12 +636,20 @@ class Dev(commands.GroupCog, group_name="dev"):
     )
     @discord.app_commands.describe(type="The type of stats you want to see")
     async def stats(
-        self, ctx: commands.Context, type: Literal["growth", "usage", "general"]
+        self, ctx: commands.Context, type: Literal["growth", "usage", "general", "api"]
     ):
         """Shows some statistics about the bot such as growth and command usage"""
         if type == "usage":
             await self.initial_top(ctx)
-
+        elif type == "api":
+            # if not bot owner deny
+            if not await self.client.is_owner(ctx.author):
+                return await ctx.send(
+                    "API stats are currently only visible to the bot owner",
+                    ephemeral=True,
+                )
+            return await self.api_stats(ctx)
+        
         elif type == "growth":
 
             def make_embed(page, embed: discord.Embed, _):

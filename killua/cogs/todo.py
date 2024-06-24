@@ -32,8 +32,12 @@ class TodoSystem(commands.Cog):
             discord.app_commands.ContextMenu(
                 name="Add as todo",
                 callback=self.client.callback_from_command(self.add, message=True),
-                allowed_installs=discord.AppInstallationType.all(),
-                allowed_contexts=discord.AppCommandContext.all(),
+                allowed_installs=discord.app_commands.AppInstallationType(
+                    guild=True, user=True
+                ),
+                allowed_contexts=discord.app_commands.AppCommandContext(
+                    guild=True, dm_channel=True, private_channel=True
+                ),
             )
         )
 
@@ -282,7 +286,7 @@ class TodoSystem(commands.Cog):
 
     @check(10)
     @todo.command(extras={"category": Category.TODO, "id": 100}, usage="create")
-    @discord.app_commands.allowed_installs(discord.AppInstallationType.all())
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
     @discord.app_commands.allowed_contexts(discord.AppCommandContext.all())
     @discord.app_commands.describe(
         name="The name of the todo list",

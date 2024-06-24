@@ -71,7 +71,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             discord.app_commands.ContextMenu(
                 name="meet",
                 callback=self.client.callback_from_command(self.meet, message=False),
-                allowed_installs=discord.AppInstallationType(guild=True),
+                allowed_installs=discord.app_commands.AppInstallationType(guild=True),
             )
         )
 

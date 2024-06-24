@@ -1,16 +1,65 @@
+from threading import Thread, Event
+from queue import Queue
+from typing import Tuple, Callable, Any
+import traceback
+import time
+
 import logging
-from prometheus_client import start_http_server
+from prometheus_client import start_wsgi_server
 from typing import cast, List, Dict
 from psutil import virtual_memory, cpu_percent
 from discord.ext import commands, tasks
 from discord import Interaction, InteractionType
 
-from killua.utils.checks import CommandUsageCache
 from killua.metrics import *
 from killua.static.constants import DB, API_ROUTES
 from killua.bot import BaseBot as Bot
 
 log = logging.getLogger("prometheus")
+
+
+def start_wsgi_server_with_error_handling(
+    *args, **kwargs
+) -> Tuple[Any, Thread, Thread, Queue, Event]:
+    error_queue = Queue()
+    stop_event = Event()
+
+    server_obj, server_thread = start_wsgi_server(*args, **kwargs)
+
+    def target_with_exception_handling(original_thread: Thread, error_queue: Queue):
+        try:
+            original_thread.join()
+        except Exception as e:
+            error_queue.put((e, traceback.format_exc()))
+
+    def error_handling_function(stop_event: Event, error_queue: Queue):
+        while not stop_event.is_set():
+            if not error_queue.empty():
+                # Non-blocking get with timeout
+                exception, traceback_str = error_queue.get(timeout=1)
+                logging.info(f"Caught (custom) exception: {exception}")
+                logging.info(traceback_str)
+
+    # Create and start the error handling thread
+    error_thread = Thread(
+        target=error_handling_function, args=(stop_event, error_queue)
+    )
+    error_thread.start()
+
+    # Wrap the original server thread to capture its exceptions
+    exception_thread = Thread(
+        target=target_with_exception_handling, args=(server_thread, error_queue)
+    )
+    exception_thread.start()
+
+    return (
+        server_obj,
+        server_thread,
+        error_thread,
+        exception_thread,
+        error_queue,
+        stop_event,
+    )
 
 
 class PrometheusCog(commands.Cog):
@@ -103,8 +152,22 @@ class PrometheusCog(commands.Cog):
 
     def start_prometheus(self):
         log.debug(f"Starting Prometheus Server on port {self.port}")
-        start_http_server(self.port)
+        (
+            self.server_obj,
+            self.server_thread,
+            self.error_thread,
+            self.exception_thread,
+            self.error_queue,
+            self.stop_event,
+        ) = start_wsgi_server_with_error_handling(self.port)
         self.started = True
+
+    async def on_shutdown(self):
+        log.debug("Shutting down Prometheus server")
+        cast(Event, self.stop_event).set()
+        self.server_thread.join()
+        self.error_thread.join()
+        self.exception_thread.join()
 
     @tasks.loop(seconds=5)
     async def latency_loop(self):

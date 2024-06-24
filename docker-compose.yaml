@@ -23,7 +23,7 @@ services:
     build:
       context: ./
       dockerfile: ./api/Dockerfile
-      target: ${MODE:-prod}
+      target: ${MODE:-prod} # dev/prod
     container_name: rust_api
     ports:
       - "6060:7650"
@@ -41,7 +41,7 @@ services:
     build:
       context: ./
       dockerfile: ./killua/Dockerfile
-      target: ${MODE:-prod}
+      target: ${MODE:-prod} # dev/prod
     container_name: python_bot
     restart: unless-stopped
     environment:

@@ -41,8 +41,12 @@ class WebScraping(commands.GroupCog, group_name="web"):
             discord.app_commands.ContextMenu(
                 name="google",
                 callback=self.client.callback_from_command(self.google, message=True),
-                allowed_installs=discord.AppInstallationType.all(),
-                allowed_contexts=discord.AppCommandContext.all(),
+                allowed_installs=discord.app_commands.AppInstallationType(
+                    guild=True, user=True
+                ),
+                allowed_contexts=discord.app_commands.AppCommandContext(
+                    guild=True, dm_channel=True, private_channel=True
+                ),
             )
         )
 

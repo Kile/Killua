@@ -237,7 +237,7 @@ class IPCRoutes(commands.Cog):
         user_id = data["user"] if data.get("user", False) else data["id"]
 
         user = User(int(user_id))
-        user.add_vote("topgg" if data.get("isWeekend", False) else "discordbotlist")
+        user.add_vote("topgg" if data.get("isWeekend", None) is not None else "discordbotlist")
         streak = user.voting_streak[
             (
                 "topgg"

@@ -97,8 +97,8 @@ class Tags(commands.Cog):
             discord.app_commands.ContextMenu(
                 name="tags",
                 callback=self.client.callback_from_command(self.user, message=False),
-                allowed_installs=discord.AppInstallationType.all(),
-                allowed_contexts=discord.AppCommandContext(guild=True),
+                allowed_installs=discord.app_commands.AppInstallationType(guild=True, user=True),
+                allowed_contexts=discord.app_commands.AppCommandContext(guild=True),
             )
         )
 
