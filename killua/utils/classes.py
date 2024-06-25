@@ -13,7 +13,7 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw
-from typing import Union, Tuple, List, Any, Optional, Literal, Dict
+from typing import Union, Tuple, List, Any, Optional, Literal, Dict, cast
 
 from .paginator import View
 from killua.static.enums import Booster
@@ -385,10 +385,10 @@ class _LootBoxButton(discord.ui.Button):
             most_valuable = max(
                 [
                     (p, _LootBoxButton(p, self.rewards))
-                    for p, _ in enumerate(self.view.children)
+                    for p, b in enumerate(self.view.children)
                     if p != 24
                     and _LootBoxButton(p, self.rewards).has_reward
-                    and not _LootBoxButton(p, self.rewards).disabled
+                    and not cast(discord.ui.Button, b).disabled
                 ],
                 key=lambda x: _monetary_value(x[1].reward),
             )
