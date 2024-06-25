@@ -215,7 +215,7 @@ class Actions(commands.GroupCog, group_name="action"):
         try:
             await self.client.wait_for("message", check=check, timeout=60)
         except asyncio.TimeoutError:
-            pass
+            return None, None # Needs to be a tuple
         else:
             return await self.action_embed(ctx.command.name, "Killua", ctx.author.name)
 

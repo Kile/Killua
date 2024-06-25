@@ -193,7 +193,7 @@ class Shop(commands.Cog):
                         f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}"
                     )
                     DB.const.update_many(
-                        {"_id": "daily_offers"},
+                        {"_id": "shop"},
                         {"$set": {"offers": shop_items, "reduced": None}},
                     )
             self.last_update = datetime.now()

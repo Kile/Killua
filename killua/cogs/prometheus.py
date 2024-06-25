@@ -30,6 +30,7 @@ def start_wsgi_server_with_error_handling(
         try:
             original_thread.join()
         except Exception as e:
+            logging.info("Caught prometheus exception")
             error_queue.put((e, traceback.format_exc()))
 
     def error_handling_function(stop_event: Event, error_queue: Queue):
