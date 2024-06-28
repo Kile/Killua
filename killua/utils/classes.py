@@ -9,13 +9,16 @@ import aiohttp
 import pathlib
 import random
 import discord
+import inspect
 
+from dataclasses import dataclass, field
 from discord.ext import commands
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw
-from typing import Union, Tuple, List, Any, Optional, Literal, Dict, cast
+from typing import Union, Tuple, List, Any, Optional, Literal, Dict, cast, ClassVar
 
 from .paginator import View
+from killua.bot import BaseBot
 from killua.static.enums import Booster
 from killua.static.constants import (
     FREE_SLOTS,
@@ -59,35 +62,51 @@ class SuccessfullDefense(CheckFailure):
     pass
 
 
+@dataclass
 class PartialCard:
     """A class preventing a circular import by providing the bare minimum of methods and properties. Only used in this file"""
 
-    def __init__(self, card_id: int):
-        card = DB.items.find_one({"_id": card_id})
-        if card is None:
+    id: int
+    image_url: str
+    owners: List[int]
+    emoji: str
+    limit: int
+    rank: int
+    type: str = "normal"
+
+    @classmethod
+    def from_dict(cls, raw: dict):      
+        return cls(**{
+            k: v for k, v in raw.items() 
+            if k in inspect.signature(cls).parameters
+        })
+
+    @classmethod
+    async def new(cls, card_id) -> PartialCard:
+        raw = dict(await DB.items.find_one({"_id": card_id}))
+        if raw is None:
             raise CardNotFound
+        raw["id"] = raw.pop("_id")
+        raw["image_url"] = raw.pop("image")
+        return cls.from_dict(raw)
 
-        self.id: int = card["_id"]
-        self.image_url: str = card["Image"]
-        self.owners: list = card["owners"]
-        self.emoji: str = card["emoji"]
-        self.limit: int = card["limit"]
-        self.rank: int = card["rank"]
-        try:
-            self.type: str = card["type"]
-        except KeyError:
-            DB.items.update_one({"_id": self.id}, {"$set": {"type": "normal"}})
-            self.type = "normal"
+    def formatted_image_url(self, client: BaseBot, *, to_fetch: bool) -> str:
+        if to_fetch:
+            return (
+                f"http://{'api' if client.run_in_docker else '0.0.0.0'}:{client.dev_port}"
+                + self.image_url
+            )
+        return client.url + self.image_url
 
-    def add_owner(self, user_id: int) -> None:
+    async def add_owner(self, user_id: int) -> None:
         """Adds an owner to a card entry in my db. Only used in User().add_card()"""
         self.owners.append(user_id)
-        DB.items.update_one({"_id": self.id}, {"$push": {"owners": user_id}})
+        await DB.items.update_one({"_id": self.id}, {"$push": {"owners": user_id}})
 
-    def remove_owner(self, user_id: int) -> None:
+    async def remove_owner(self, user_id: int) -> None:
         """Removes an owner from a card entry in my db. Only used in User().remove_card()"""
         self.owners.remove(user_id)
-        DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
+        await DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
 
 
 class _BoosterSelect(discord.ui.Select):
@@ -158,7 +177,7 @@ class _OptionView(View):
         self, interaction: discord.Interaction, _: discord.ui.Button
     ) -> None:
         """Lets the user pick a booster"""
-        user = User(self.user_id)
+        user = await User.new(self.user_id)
         if not [v for v in user.boosters.values() if v > 0]:
             return await interaction.response.edit_message(
                 content="You don't have any remaining boosters! Please select an option.",
@@ -456,9 +475,9 @@ class _LootBoxButton(discord.ui.Button):
             self.view.stop()
 
         elif isinstance(view.value, int):
-            user = User(interaction.user.id)
+            user = await User.new(interaction.user.id)
 
-            user.use_booster(view.value)
+            await user.use_booster(view.value)
             self._use_booster(view.value)
             self.view.used.append(view.value)
             await interaction.message.edit(view=self.view)  # sketchy
@@ -551,7 +570,7 @@ class LootBox:
         )[0]
 
     @classmethod
-    def generate_rewards(self, box: int) -> List[Union[PartialCard, int]]:
+    async def generate_rewards(self, box: int) -> List[Union[PartialCard, int]]:
         """Generates a list of rewards that can be used to pass to this class"""
         data = LOOTBOXES[box]
         rew = []
@@ -563,7 +582,9 @@ class LootBox:
             ]:  # if a card is guaranteed it is added here, it will count as one of the total_cards though
                 for card, amount in data["rewards"]["guaranteed"].items():
                     if [r.id for r in rew].count(card) < amount:
-                        rew.append(PartialCard(DB.items.find_one(card)["_id"]))
+                        rew.append(
+                            PartialCard.new((await DB.items.find_one(card))["_id"])
+                        )
                         skip = True
                         break
 
@@ -571,7 +592,7 @@ class LootBox:
                 continue
             r = [
                 x["_id"]
-                for x in DB.items.find(
+                async for x in DB.items.find(
                     {
                         "rank": {"$in": data["rewards"]["cards"]["rarities"]},
                         "type": {"$in": data["rewards"]["cards"]["types"]},
@@ -580,7 +601,7 @@ class LootBox:
                 )
                 if x["_id"] != 0
             ]
-            rew.append(PartialCard(random.choice(r)))
+            rew.append(await PartialCard.new(random.choice(r)))
 
         for _ in range(boosters := random.randint(*data["boosters_total"])):
             if isinstance(data["rewards"]["boosters"], int):
@@ -616,7 +637,7 @@ class LootBox:
         if not view.saved:
             return
 
-        user = User(self.ctx.author.id)
+        user = await User.new(self.ctx.author.id)
         for r in view.claimed:
             if isinstance(r, PartialCard):
                 user.add_card(r.id)
@@ -886,12 +907,16 @@ class Book:
         return image
 
     async def _get_book(
-        self, user: discord.Member, page: int, just_fs_cards: bool = False
+        self,
+        user: discord.Member,
+        page: int,
+        client: BaseBot,
+        just_fs_cards: bool = False,
     ) -> Tuple[discord.Embed, discord.File]:
         """Gets a formatted embed containing the book for the user"""
         rs_cards = []
         fs_cards = []
-        person = User(user.id)
+        person = await User.new(user.id)
         if just_fs_cards:
             page += 6
 
@@ -909,7 +934,9 @@ class Book:
                 if not i in [x[0] for x in person.rs_cards]:
                     rs_cards.append([i, None])
                 else:
-                    rs_cards.append([i, PartialCard(i).image_url])
+                    rs_cards.append(
+                        [i, (await PartialCard.new(i)).formatted_image_url(client, to_fetch=True)]
+                    )
                 if page == 1 and len(rs_cards) == 10:
                     break
                 i = i + 1
@@ -920,7 +947,9 @@ class Book:
                     fs_cards.append(
                         [
                             person.fs_cards[i][0],
-                            PartialCard(person.fs_cards[i][0]).image_url,
+                            (await PartialCard.new(person.fs_cards[i][0])).formatted_image_url(
+                                client, to_fetch=True
+                            ),
                         ]
                     )
                 except IndexError:
@@ -949,95 +978,98 @@ class Book:
         return embed, f
 
     async def create(
-        self, user: discord.Member, page: int, just_fs_cards: bool = False
+        self,
+        user: discord.Member,
+        page: int,
+        client: BaseBot,
+        just_fs_cards: bool = False,
     ) -> Tuple[discord.Embed, discord.File]:
-        return await self._get_book(user, page, just_fs_cards)
+        return await self._get_book(user, page, client, just_fs_cards)
 
 
+@dataclass
 class User:
     """This class allows me to handle a lot of user related actions more easily"""
 
-    cache = {}
+    id: int
+    jenny: int
+    daily_cooldown: datetime
+    met_user: List[int]
+    effects: Dict[str, Any]
+    rs_cards: List[List[int, Dict[str, Any]]]
+    fs_cards: List[List[int, Dict[str, Any]]]
+    _badges: List[str]
+    rps_stats: Dict[str, Dict[str, int]]
+    counting_highscore: Dict[str, int]
+    trivia_stats: Dict[str, Dict[str, int]]
+    achievements: List[str]
+    votes: int
+    voting_streak: Dict[str, int]
+    voting_reminder: bool
+    premium_guilds: Dict[str, int]
+    lootboxes: List[int]
+    boosters: Dict[str, int]
+    weekly_cooldown: Optional[datetime]
+    action_settings: Dict[str, Any]
+    action_stats: Dict[str, Any]
+    cache: ClassVar[Dict[int, User]] = {}
 
     @classmethod
-    def __get_cache(cls, user_id: int):
-        """Returns a cached object"""
-        return cls.cache[user_id] if user_id in cls.cache else None
+    async def new(cls, user_id: int):
+        """Creates a new user object"""
+        # return cached obj if it exists
+        if user_id in cls.cache:
+            return cls.cache[user_id]
 
-    def __new__(cls, user_id: int, *args, **kwargs):
-        existing = cls.__get_cache(user_id)
-        if existing:
-            return existing
-        return super().__new__(cls)
+        data = await DB.teams.find_one({"id": user_id})
+        if data is None:
+            await cls.add_empty(user_id)
+            data = await DB.teams.find_one({"id": user_id})
 
-    def __init__(self, user_id: int):
-        if user_id in self.cache:
-            return
+        data = dict(data)
+        data["stats"] = data.get("stats", {})
 
-        user = DB.teams.find_one({"id": user_id})
-        self.id: int = int(user_id)
-
-        if user is None:
-            self.add_empty(self.id, False)
-            user = DB.teams.find_one({"id": user_id})
-
-        if not "cards" in user or not "met_user" in user:
-            self.add_empty(self.id)
-            user = DB.teams.find_one({"id": user_id})
-
-        self.jenny: int = user["points"]
-        self.daily_cooldown: datetime = user["cooldowndaily"]
-        self.met_user: List[int] = user["met_user"]
-        self.effects: dict = user["cards"]["effects"]
-        self.rs_cards: List[list] = user["cards"]["rs"]
-        self.fs_cards: List[list] = user["cards"]["fs"]
-        self._badges: List[str] = user["badges"]
-
-        self.rps_stats: dict = (
-            user["stats"]["rps"]
-            if "stats" in user and "rps" in user["stats"]
-            else {
-                "pvp": {"won": 0, "lost": 0, "tied": 0},
-                "pve": {"won": 0, "lost": 0, "tied": 0},
-            }
-        )
-        self.counting_highscore: dict = (
-            user["stats"]["counting_highscore"]
-            if "stats" in user and "counting_highscore" in user["stats"]
-            else {"easy": 0, "hard": 0}
-        )
-        self.trivia_stats: dict = (
-            user["stats"]["trivia"]
-            if "stats" in user and "trivia" in user["stats"]
-            else {
-                "easy": {"right": 0, "wrong": 0},
-                "medium": {"right": 0, "wrong": 0},
-                "hard": {"right": 0, "wrong": 0},
-            }
+        instance = User(
+            id=user_id,
+            jenny=data["points"],
+            daily_cooldown=data["cooldowndaily"],
+            met_user=data["met_user"],
+            effects=data["cards"]["effects"],
+            rs_cards=data["cards"]["rs"],
+            fs_cards=data["cards"]["fs"],
+            _badges=data["badges"],
+            rps_stats=cast(dict, data["stats"]).get(
+                "rps",
+                {
+                    "pvp": {"won": 0, "lost": 0, "tied": 0},
+                    "pve": {"won": 0, "lost": 0, "tied": 0},
+                },
+            ),
+            counting_highscore=cast(dict, data["stats"]).get(
+                "counting_highscore", {"easy": 0, "hard": 0}
+            ),
+            trivia_stats=cast(dict, data["stats"]).get(
+                "trivia",
+                {
+                    "easy": {"right": 0, "wrong": 0},
+                    "medium": {"right": 0, "wrong": 0},
+                    "hard": {"right": 0, "wrong": 0},
+                },
+            ),
+            achievements=data.get("achievements", []),
+            votes=data.get("votes", 0),
+            voting_streak=data.get("voting_streak", {}),
+            voting_reminder=data.get("voting_reminder", False),
+            premium_guilds=data.get("premium_guilds", {}),
+            lootboxes=data.get("lootboxes", []),
+            boosters=data.get("boosters", {}),
+            weekly_cooldown=data.get("weekly_cooldown", None),
+            action_settings=data.get("action_settings", {}),
+            action_stats=data.get("action_stats", {}),
         )
 
-        self.achievements: List[str] = (
-            user["achievements"] if "achievements" in user else []
-        )  # A list of one time achivenments so track what was archived and what not
-        self.votes: int = user["votes"] if "votes" in user else 0
-        self.voting_streak = user["voting_streak"] if "voting_streak" in user else {}
-        self.voting_reminder = (
-            user["voting_reminder"] if "voting_reminder" in user else False
-        )
-        self.premium_guilds: dict = (
-            user["premium_guilds"] if "premium_guilds" in user else {}
-        )
-        self.lootboxes: List[int] = user["lootboxes"] if "lootboxes" in user else []
-        self.boosters: Dict[str, int] = user["boosters"] if "boosters" in user else {}
-        self.weekly_cooldown: Optional[datetime] = (
-            user["weekly_cooldown"] if "weekly_cooldown" in user else None
-        )
-        self.action_settings: dict = (
-            user["action_settings"] if "action_settings" in user else {}
-        )
-        self.action_stats: dict = user["action_stats"] if "action_stats" in user else {}
-
-        self.cache[self.id] = self
+        cls.cache[user_id] = instance
+        return instance
 
     @property
     def badges(self) -> List[str]:
@@ -1094,23 +1126,27 @@ class User:
         self.rs_cards = []
 
     @classmethod
-    def remove_all(cls) -> str:
+    async def remove_all(cls) -> str:
         """Removes all cards etc from every user. Only used for testing"""
         start = datetime.now()
         user = []
-        for u in DB.teams.find():
+        async for u in DB.teams.find({}):
             if "cards" in u:
                 user.append(u["id"])
             if "id" in u and u["id"] in cls.cache:
                 cls.cache[u["id"]].all_cards = []
                 cls.cache[u["id"]].effects = {}
 
-        DB.teams.update_many(
+        await DB.teams.update_many(
             {"$or": [{"id": x} for x in user]},
             {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": []}},
         )
-        cards = [x for x in DB.items.find() if "owners" in x and len(x["owners"]) > 0]
-        DB.items.update_many(
+        cards = [
+            x
+            async for x in await DB.items.find({})
+            if "owners" in x and len(x["owners"]) > 0
+        ]
+        await DB.items.update_many(
             {"_id": {"$in": [x["_id"] for x in DB.items.find()]}},
             {"$set": {"owners": []}},
         )
@@ -1118,9 +1154,9 @@ class User:
         return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
 
     @classmethod
-    def is_registered(cls, user_id: int) -> bool:
+    async def is_registered(cls, user_id: int) -> bool:
         """Checks if the "cards" dictionary is in the database entry of the user"""
-        u = DB.teams.find_one({"id": user_id})
+        u = await DB.teams.find_one({"id": user_id})
         if u is None:
             return False
         if not "cards" in u:
@@ -1130,10 +1166,10 @@ class User:
 
     @classmethod  # The reason for this being a classmethod is that User(user_id) automatically calls this function,
     # so while I will also never use this, it at least makes more sense
-    def add_empty(cls, user_id: int, cards: bool = True) -> None:
+    async def add_empty(cls, user_id: int, cards: bool = True) -> None:
         """Can be called when the user does not have an entry to make the class return empty objects instead of None"""
         if cards:
-            DB.teams.update_one(
+            await DB.teams.update_one(
                 {"id": user_id},
                 {
                     "$set": {
@@ -1144,7 +1180,7 @@ class User:
                 },
             )
         else:
-            DB.teams.insert_one(
+            await DB.teams.insert_one(
                 {
                     "id": user_id,
                     "points": 0,
@@ -1179,36 +1215,36 @@ class User:
                 }
             )
 
-    def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
+    async def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
-        DB.teams.update_one({"id": self.id}, {operator: {key: value}})
+        await DB.teams.update_one({"id": self.id}, {operator: {key: value}})
 
-    def add_badge(self, badge: str) -> None:
+    async def add_badge(self, badge: str) -> None:
         """Adds a badge to a user"""
         if badge.lower() in self.badges:
             raise TypeError("Badge already in possesion of user")
 
         self._badges.append(badge.lower())
-        self._update_val("badges", badge.lower(), "$push")
+        await self._update_val("badges", badge.lower(), "$push")
 
-    def remove_badge(self, badge: str) -> None:
+    async def remove_badge(self, badge: str) -> None:
         """Removes a badge from a user"""
         if not badge.lower() in self.badges:
             return  # don't really care if that happens
         self._badges.remove(badge.lower())
-        self._update_val("badges", badge.lower(), "$pull")
+        await self._update_val("badges", badge.lower(), "$pull")
 
-    def set_badges(self, badges: List[str]) -> None:
+    async def set_badges(self, badges: List[str]) -> None:
         """Sets badges to anything"""
         self._badges = badges
-        self._update_val("badges", self._badges)
+        await self._update_val("badges", self._badges)
 
-    def clear_premium_guilds(self) -> None:
+    async def clear_premium_guilds(self) -> None:
         """Removes all premium guilds from a user"""
         self.premium_guilds = {}
-        self._update_val("premium_guilds", {})
+        await self._update_val("premium_guilds", {})
 
-    def add_vote(self, site) -> None:
+    async def add_vote(self, site) -> None:
         """Keeps track of how many times a user has voted for Killua to increase the rewards over time"""
         self.votes += 1
         if site not in self.voting_streak:
@@ -1222,59 +1258,59 @@ class User:
                 self.voting_streak[site]["streak"] = 1
 
         self.voting_streak[site]["last_vote"] = datetime.now()
-        self._update_val("voting_streak", self.voting_streak)
-        self._update_val("votes", 1, "$inc")
+        await self._update_val("voting_streak", self.voting_streak)
+        await self._update_val("votes", 1, "$inc")
 
-    def add_premium_guild(self, guild_id: int) -> None:
+    async def add_premium_guild(self, guild_id: int) -> None:
         """Adds a guild to a users premium guilds"""
         self.premium_guilds[str(guild_id)] = datetime.now()
-        self._update_val("premium_guilds", self.premium_guilds)
+        await self._update_val("premium_guilds", self.premium_guilds)
 
-    def remove_premium_guild(self, guild_id: int) -> None:
+    async def remove_premium_guild(self, guild_id: int) -> None:
         """Removes a guild from a users premium guilds"""
         del self.premium_guilds[str(guild_id)]
-        self._update_val("premium_guilds", self.premium_guilds)
+        await self._update_val("premium_guilds", self.premium_guilds)
 
-    def claim_weekly(self) -> None:
+    async def claim_weekly(self) -> None:
         """Sets the weekly cooldown new"""
         self.weekly_cooldown = datetime.now() + timedelta(days=7)
-        self._update_val("weekly_cooldown", self.weekly_cooldown)
+        await self._update_val("weekly_cooldown", self.weekly_cooldown)
 
-    def claim_daily(self) -> None:
+    async def claim_daily(self) -> None:
         """Sets the daily cooldown new"""
         self.daily_cooldown = datetime.now() + timedelta(days=1)
-        self._update_val("cooldowndaily", self.daily_cooldown)
+        await self._update_val("cooldowndaily", self.daily_cooldown)
 
     def has_lootbox(self, box: int) -> bool:
         """Returns wether the user has the lootbox specified"""
         return box in self.lootboxes
 
-    def add_lootbox(self, box: int) -> None:
+    async def add_lootbox(self, box: int) -> None:
         """Adds a lootbox to a users inventory"""
         self.lootboxes.append(box)
-        self._update_val("lootboxes", box, "$push")
+        await self._update_val("lootboxes", box, "$push")
 
-    def remove_lootbox(self, box: int) -> None:
+    async def remove_lootbox(self, box: int) -> None:
         """Removes a lootbox from a user"""
         self.lootboxes.remove(box)
-        self._update_val("lootboxes", self.lootboxes, "$set")
+        await self._update_val("lootboxes", self.lootboxes, "$set")
 
-    def add_booster(self, booster: int) -> None:
+    async def add_booster(self, booster: int) -> None:
         """Adds a booster to a users inventory"""
         self.boosters[str(booster)] = self.boosters.get(str(booster), 0) + 1
-        self._update_val("boosters", self.boosters, "$set")
+        await self._update_val("boosters", self.boosters, "$set")
 
-    def use_booster(self, booster: int) -> None:
+    async def use_booster(self, booster: int) -> None:
         """Uses a booster from a users inventory"""
         self.boosters[str(booster)] -= 1
-        self._update_val("boosters", self.boosters, "$set")
+        await self._update_val("boosters", self.boosters, "$set")
 
-    def set_action_settings(self, settings: dict) -> None:
+    async def set_action_settings(self, settings: dict) -> None:
         """Sets the action settings for a user"""
         self.action_settings = settings
-        self._update_val("action_settings", settings)
+        await self._update_val("action_settings", settings)
 
-    def add_action(
+    async def add_action(
         self, action: str, was_target: bool = False, amount: int = 1
     ) -> Optional[str]:
         """Adds an action to the action stats. If a badge was a added, returns the name of the badge."""
@@ -1287,7 +1323,7 @@ class User:
             self.action_stats[action]["used"] += amount if not was_target else 0
             self.action_stats[action]["targeted"] += 1 if was_target else 0
 
-        self._update_val("action_stats", self.action_stats)
+        await self._update_val("action_stats", self.action_stats)
 
         # Check if action of a certain type are more than x and if so, add a badge. TODO these are subject to change along with the requirements
         if (
@@ -1342,24 +1378,24 @@ class User:
         """Checks if the user has the card"""
         return self._has_card(self.all_cards, card_id, fake_allowed, only_allow_fakes)
 
-    def remove_jenny(self, amount: int) -> None:
+    async def remove_jenny(self, amount: int) -> None:
         """Removes x Jenny from a user"""
         if self.jenny < amount:
             raise Exception("Trying to remove more Jenny than the user has")
         self.jenny -= amount
-        self._update_val("points", -amount, "$inc")
+        await self._update_val("points", -amount, "$inc")
 
-    def add_jenny(self, amount: int) -> None:
+    async def add_jenny(self, amount: int) -> None:
         """Adds x Jenny to a users balance"""
         self.jenny += amount
-        self._update_val("points", amount, "$inc")
+        await self._update_val("points", amount, "$inc")
 
-    def set_jenny(self, amount: int) -> None:
+    async def set_jenny(self, amount: int) -> None:
         """Sets the users jenny to the specified value. Only used for testing"""
         self.jenny = amount
-        self._update_val("points", amount)
+        await self._update_val("points", amount)
 
-    def _find_match(
+    async def _find_match(
         self,
         cards: List[list],
         card_id: int,
@@ -1378,7 +1414,7 @@ class User:
             ):
 
                 if not data["fake"]:
-                    PartialCard(id).remove_owner(self.id)
+                    await (await PartialCard.new(id)).remove_owner(self.id)
 
                 del cards[
                     counter
@@ -1387,12 +1423,7 @@ class User:
             counter += 1
         return None, None
 
-    def _incomplete(self) -> None:
-        """Called every time a card is removed it checks if it should remove card 0 and the badge and if it should, it does"""
-        if len(self.rs_cards) == 99:
-            self.remove_card(0)
-
-    def _remove_logic(
+    async def _remove_logic(
         self,
         card_type: str,
         card_id: int,
@@ -1402,18 +1433,22 @@ class User:
     ) -> List[int, dict]:
         """Handles the logic of the remove_card method"""
         attr = getattr(self, f"{card_type}_cards")
-        cards, match = self._find_match(attr, card_id, remove_fake, clone)
+        cards, match = await self._find_match(attr, card_id, remove_fake, clone)
         if not match:
             if no_exception:
-                return self._remove_logic("rs", card_id, remove_fake, clone)
+                return await self._remove_logic("rs", card_id, remove_fake, clone)
             else:
                 raise NoMatches
-        attr = cards
-        self._update_val(f"cards.{card_type}", attr)
-        self._incomplete()
+        before = len([x for x in cards if not x[1]["fake"]])
+        await self._update_val(f"cards.{card_type}", cards)
+        after = len([x for x in cards if not x[1]["fake"]])
+        if before == 100 and after < 100:
+            # If the book was complete before and now 
+            # isn't anymore, remove card 0 with it
+            await self.remove_card(0)
         return match
 
-    def remove_card(
+    async def remove_card(
         self,
         card_id: int,
         remove_fake: bool = None,
@@ -1425,17 +1460,17 @@ class User:
             raise NotInPossesion("This card is not in possesion of the specified user!")
 
         if restricted_slot:
-            return self._remove_logic("rs", card_id, remove_fake, clone)
+            return await self._remove_logic("rs", card_id, remove_fake, clone)
 
         elif restricted_slot is False:
-            return self._remove_logic("fs", card_id, remove_fake, clone)
+            return await self._remove_logic("fs", card_id, remove_fake, clone)
 
-        else:  # if it wasn"t specified it first tries to find it in the free slots, then restricted slots
-            return self._remove_logic(
+        else:  # if it wasn't specified it first tries to find it in the free slots, then restricted slots
+            return await self._remove_logic(
                 "fs", card_id, remove_fake, clone, no_exception=True
             )
 
-    def bulk_remove(
+    async def bulk_remove(
         self,
         cards: List[List[int, dict]],
         fs_slots: bool = True,
@@ -1451,7 +1486,7 @@ class User:
                         raise NotInPossesion(
                             "This card is not in possesion of the specified user!"
                         )
-            self._update_val("cards.fs", self.fs_cards)
+            await self._update_val("cards.fs", self.fs_cards)
         else:
             for c in cards:
                 try:
@@ -1461,33 +1496,31 @@ class User:
                         raise NotInPossesion(
                             "This card is not in possesion of the specified user!"
                         )
-            self._update_val("cards.rs", self.rs_cards)
+            await self._update_val("cards.rs", self.rs_cards)
 
-    def _add_card_owner(self, card: int, fake: bool) -> None:
+    async def _add_card_owner(self, card: int, fake: bool) -> None:
         if not fake:
-            PartialCard(card).add_owner(self.id)
+            await (await PartialCard.new(card)).add_owner(self.id)
 
-    def add_card(self, card_id: int, fake: bool = False, clone: bool = False):
+    async def add_card(self, card_id: int, fake: bool = False, clone: bool = False):
         """Adds a card to the the user"""
         data = [card_id, {"fake": fake, "clone": clone}]
 
         if self.has_rs_card(card_id) is False:
             if card_id < 100:
-
                 self.rs_cards.append(data)
-                self._add_card_owner(card_id, fake)
-                self._update_val("cards.rs", data, "$push")
+                await self._add_card_owner(card_id, fake)
+                await self._update_val("cards.rs", data, "$push")
                 if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
-                    self.add_card(0)
-                    self.add_achievement("full_house")
+                    await self.add_card(0)
+                    await self.add_achievement("full_house")
                 return
 
         if len(self.fs_cards) >= FREE_SLOTS:
             raise CardLimitReached("User reached card limit for free slots")
-
         self.fs_cards.append(data)
-        self._add_card_owner(card_id, fake)
-        self._update_val("cards.fs", data, "$push")
+        await self._add_card_owner(card_id, fake)
+        await self._update_val("cards.fs", data, "$push")
 
     def count_card(self, card_id: int, including_fakes: bool = True) -> int:
         "Counts how many copies of a card someone has"
@@ -1499,7 +1532,7 @@ class User:
             ]
         )
 
-    def add_multi(self, *args) -> None:
+    async def add_multi(self, *args) -> None:
         """The purpose of this function is to be a faster alternative when adding multiple cards than for loop with add_card"""
         fs_cards = []
         rs_cards = []
@@ -1512,8 +1545,8 @@ class User:
 
         for item in args:
             if not item[1]["fake"]:
-                PartialCard(item[0]).add_owner(self.id)
-            if item[0] < 99:
+                await (await PartialCard.new(item[0])).add_owner(self.id)
+            if item[0] < 100:
                 if not self.has_rs_card(item[0]):
                     if not item[0] in [x[0] for x in rs_cards]:
                         rs_cards.append(item)
@@ -1522,7 +1555,7 @@ class User:
 
         self.rs_cards = [*self.rs_cards, *rs_cards]
         self.fs_cards = [*self.fs_cards, *fs_cards]
-        DB.teams.update_one(
+        await DB.teams.update_one(
             {"id": self.id},
             {"$set": {"cards.rs": self.rs_cards, "cards.fs": self.fs_cards}},
         )
@@ -1548,39 +1581,46 @@ class User:
             return True
 
         else:
-            return False  # Returned if the requirements haven"t been met
+            return False  # Returned if the requirements haven't been met
 
-    def swap(self, card_id: int) -> Union[bool, None]:
-        """Swaps a card from the free slots with one from the restricted slots. Usecase: swapping fake and real card"""
+    async def swap(self, card_id: int) -> Union[bool, None]:
+        """
+        Swaps a card from the free slots with one from the restricted slots.
+        Usecase: swapping fake and real card
+        """
 
         if True in [
             x[1]["fake"] for x in self.rs_cards if x[0] == card_id
         ] and False in [x[1]["fake"] for x in self.fs_cards if x[0] == card_id]:
-            r = self.remove_card(card_id, remove_fake=True, restricted_slot=True)
-            r2 = self.remove_card(card_id, remove_fake=False, restricted_slot=False)
-            self.add_card(card_id, False, r[1]["clone"])
-            self.add_card(card_id, True, r2[1]["clone"])
+            r = await self.remove_card(card_id, remove_fake=True, restricted_slot=True)
+            r2 = await self.remove_card(
+                card_id, remove_fake=False, restricted_slot=False
+            )
+            await self.add_card(card_id, False, r[1]["clone"])
+            await self.add_card(card_id, True, r2[1]["clone"])
 
         elif True in [
             x[1]["fake"] for x in self.fs_cards if x[0] == card_id
         ] and False in [x[1]["fake"] for x in self.rs_cards if x[0] == card_id]:
-            r = self.remove_card(card_id, remove_fake=True, restricted_slot=False)
-            r2 = self.remove_card(card_id, remove_fake=False, restricted_slot=True)
-            self.add_card(card_id, True, r[1]["clone"])
-            self.add_card(card_id, False, r2[1]["clone"])
+            r = await self.remove_card(card_id, remove_fake=True, restricted_slot=False)
+            r2 = await self.remove_card(
+                card_id, remove_fake=False, restricted_slot=True
+            )
+            await self.add_card(card_id, True, r[1]["clone"])
+            await self.add_card(card_id, False, r2[1]["clone"])
 
         else:
             return False  # Returned if the requirements haven't been met
 
-    def add_effect(self, effect: str, value: Any):
+    async def add_effect(self, effect: str, value: Any):
         """Adds a card with specified value, easier than checking for appropriate value with effect name"""
         self.effects[effect] = value
-        self._update_val("cards.effects", self.effects)
+        await self._update_val("cards.effects", self.effects)
 
-    def remove_effect(self, effect: str):
+    async def remove_effect(self, effect: str):
         """Remove effect provided"""
         self.effects.pop(effect, None)
-        self._update_val("cards.effects", self.effects)
+        await self._update_val("cards.effects", self.effects)
 
     def has_effect(self, effect: str) -> Tuple[bool, Any]:
         """Checks if a user has an effect and returns what effect if the user has it"""
@@ -1589,47 +1629,47 @@ class User:
         else:
             return False, None
 
-    def add_met_user(self, user_id: int) -> None:
+    async def add_met_user(self, user_id: int) -> None:
         """Adds a user to a "previously met" list which is a parameter in some spell cards"""
         if not user_id in self.met_user:
             self.met_user.append(user_id)
-            self._update_val("met_user", user_id, "$push")
+            await self._update_val("met_user", user_id, "$push")
 
     def has_met(self, user_id: int) -> bool:
         """Checks if the user id provided has been met by the self.id user"""
         return user_id in self.met_user
 
-    def _remove(self, cards: str) -> None:
+    async def _remove(self, cards: str) -> None:
         for card in [x[0] for x in getattr(self, cards)]:
             try:
-                PartialCard(card).remove_owner(self.id)
+                await (await PartialCard.new(card)).remove_owner(self.id)
             except Exception:
                 pass
 
         setattr(self, cards, [])
 
-    def nuke_cards(self, t: str = "all") -> bool:
+    async def nuke_cards(self, t: str = "all") -> bool:
         """A function only intended to be used by bot owners, not in any actual command, that"s why it returns True, so the owner can see if it succeeded"""
         if t == "all":
-            self._remove("all_cards")
+            await self._remove("all_cards")
             self.effects = {}
-            DB.teams.update_one(
+            await DB.teams.update_one(
                 {"id": self.id},
                 {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}}},
             )
         if t == "fs":
-            self._remove("fs_cards")
-            DB.teams.update_one({"id": self.id}, {"$set": {"cards.fs": []}})
+            await self._remove("fs_cards")
+            await DB.teams.update_one({"id": self.id}, {"$set": {"cards.fs": []}})
         if t == "rs":
-            self._remove("rs_cards")
-            DB.teams.update_one({"id": self.id}, {"$set": {"cards.rs": []}})
+            await self._remove("rs_cards")
+            await DB.teams.update_one({"id": self.id}, {"$set": {"cards.rs": []}})
         if t == "effects":
             self.effects = {}
-            DB.teams.update_one({"id": self.id}, {"$set": {"cards.effects": {}}})
+            await DB.teams.update_one({"id": self.id}, {"$set": {"cards.effects": {}}})
 
         return True
 
-    def add_rps_stat(
+    async def add_rps_stat(
         self, stat: Literal["won", "tied", "lost"], against_bot: bool, val: int = 1
     ) -> None:
         """Adds a stat to the user's rps stats"""
@@ -1637,9 +1677,9 @@ class User:
             self.rps_stats["pvp" if not against_bot else "pve"][stat] += val
         else:
             self.rps_stats["pvp" if not against_bot else "pve"][stat] = val
-        self._update_val(f"stats.rps", self.rps_stats)
+        await self._update_val(f"stats.rps", self.rps_stats)
 
-    def add_trivia_stat(
+    async def add_trivia_stat(
         self,
         stat: Literal["right", "wrong"],
         difficulty: Literal["easy", "medium", "hard"],
@@ -1649,26 +1689,44 @@ class User:
             self.trivia_stats[difficulty][stat] += 1
         else:
             self.trivia_stats[difficulty][stat] = 1
-        self._update_val(f"stats.trivia", self.trivia_stats)
+        await self._update_val(f"stats.trivia", self.trivia_stats)
 
-    def set_counting_highscore(
+    async def set_counting_highscore(
         self, difficulty: Literal["easy", "hard"], score: int
     ) -> None:
         """Sets the highscore for counting"""
         if score > self.counting_highscore[difficulty]:
             self.counting_highscore[difficulty] = score
-            self._update_val(f"stats.counting_highscore", self.counting_highscore)
+            await self._update_val(f"stats.counting_highscore", self.counting_highscore)
 
-    def add_achievement(self, achievement: str) -> None:
+    async def add_achievement(self, achievement: str) -> None:
         """Adds an achievement to the user's achievements"""
         if not achievement in self.achievements:
             self.achievements.append(achievement)
-            self._update_val("achievements", achievement, "$push")
+            await self._update_val("achievements", achievement, "$push")
 
 
+@dataclass
 class TodoList:
-    cache = {}
-    custom_id_cache = {}
+    id: int
+    owner: int
+    name: str
+    _custom_id: Optional[str]
+    status: str
+    delete_done: bool
+    viewer: List[int]
+    editor: List[int]
+    created_at: Union[str, datetime]
+    spots: int
+    views: int
+    todos: List[dict]
+    _bought: List[str]
+    thumbnail: Optional[str]
+    color: Optional[int]
+    description: Optional[str]
+
+    cache: ClassVar[Dict[int, TodoList]] = {}
+    custom_id_cache: ClassVar[Dict[str, int]] = {}
 
     @classmethod
     def __get_cache(cls, list_id: Union[int, str]):
@@ -1679,58 +1737,53 @@ class TodoList:
             list_id = cls.custom_id_cache[list_id]
         return cls.cache[int(list_id)] if list_id in cls.cache else None
 
-    def __new__(cls, list_id: Union[int, str], *args, **kwargs):
-        existing = cls.__get_cache(list_id)
-        if (
-            existing is not None
-        ):  # why not just `if existing:` python does not call this when I do this which is dumb so I have to do it this way
-            return existing
-        return super().__new__(cls)
+    @classmethod
+    async def new(cls, list_id: Union[int, str]) -> TodoList:
+        cached = cls.__get_cache(list_id)
+        if cached is not None:
+            return cached
 
-    def __init__(self, list_id: Union[int, str]):
+        raw = await DB.todo.find_one(
+                {
+                    (
+                        "_id"
+                        if (isinstance(list_id, int) or list_id.isdigit())
+                        else "custom_id"
+                    ): (
+                        int(list_id)
+                        if (isinstance(list_id, int) or list_id.isdigit())
+                        else list_id.lower()
+                    )
+                }
+            )
+        
+        if raw is None:
+            raise TodoListNotFound()
 
-        if (list_id in self.cache) or (list_id in self.custom_id_cache):
-            return
-
-        td_list = DB.todo.find_one(
-            {
-                (
-                    "_id"
-                    if (isinstance(list_id, int) or list_id.isdigit())
-                    else "custom_id"
-                ): (
-                    int(list_id)
-                    if (isinstance(list_id, int) or list_id.isdigit())
-                    else list_id.lower()
-                )
-            }
+        td_list = TodoList(
+            id=raw["_id"],
+            owner=raw["owner"],
+            name=raw["name"],
+            _custom_id=raw["custom_id"],
+            status=raw["status"],
+            delete_done=raw["delete_done"],
+            viewer=raw["viewer"],
+            editor=raw["editor"],
+            created_at=raw["created_at"],
+            spots=raw["spots"],
+            views=raw["views"],
+            todos=raw["todos"],
+            _bought=raw.get("bought", []),
+            thumbnail=raw.get("thumbnail", None),
+            color=raw.get("color", None),
+            description=raw.get("description", None),
         )
 
-        if not td_list:
-            raise TodoListNotFound
+        if td_list.custom_id:
+            td_list.custom_id_cache[td_list.custom_id] = td_list.id
+        td_list.cache[td_list.id] = td_list
 
-        self.id: int = td_list["_id"]
-        self.owner: int = td_list["owner"]
-        self.name: str = td_list["name"]
-        self._custom_id: str = td_list["custom_id"]
-        self.status: str = td_list["status"]
-        self.delete_done: bool = td_list["delete_done"]
-        self.viewer: List[int] = td_list["viewer"]
-        self.editor: List[int] = td_list["editor"]
-        self.created_at: Union[str, datetime] = td_list["created_at"]
-        self.spots: int = td_list["spots"]
-        self.views: int = td_list["views"]
-        self.todos: List[dict] = td_list["todos"]
-        self._bought: List[str] = [] if not "bought" in td_list else td_list["bought"]
-        self.thumbnail: str = td_list["thumbnail"] if "thumbnail" in td_list else None
-        self.color: int = td_list["color"] if "color" in td_list else None
-        self.description: str = (
-            td_list["description"] if "description" in td_list else None
-        )
-
-        if self._custom_id:
-            self.custom_id_cache[self._custom_id] = self.id
-        self.cache[self.id] = self
+        return td_list
 
     @property
     def custom_id(self) -> Union[str, None]:
@@ -1747,12 +1800,12 @@ class TodoList:
         return len(self.todos)
 
     @staticmethod
-    def _generate_id() -> int:
+    async def _generate_id() -> int:
         l = []
         while len(l) != 6:
             l.append(str(random.randint(0, 9)))
 
-        todo_id = DB.todo.find_one({"_id": "".join(l)})
+        todo_id = await DB.todo.find_one({"_id": "".join(l)})
 
         if todo_id is None:
             return int("".join(l))
@@ -1760,12 +1813,12 @@ class TodoList:
             return TodoList._generate_id()
 
     @staticmethod
-    def create(
+    async def create(
         owner: int, title: str, status: str, done_delete: bool, custom_id: str = None
     ) -> TodoList:
         """Creates a todo list and returns a TodoList class"""
-        list_id = TodoList._generate_id()
-        DB.todo.insert_one(
+        list_id = await TodoList._generate_id()
+        await DB.todo.insert_one(
             {
                 "_id": list_id,
                 "name": title,
@@ -1794,12 +1847,12 @@ class TodoList:
         )
         return TodoList(list_id)
 
-    def delete(self) -> None:
+    async def delete(self) -> None:
         """Deletes a todo list"""
         del self.cache[self.id]
         if self.custom_id:
             del self.custom_id_cache[self.custom_id]
-        DB.todo.delete_one({"_id": self.id})
+        await DB.todo.delete_one({"_id": self.id})
 
     def has_view_permission(self, user_id: int) -> bool:
         """Checks if someone has permission to view a todo list"""
@@ -1818,16 +1871,16 @@ class TodoList:
             return False
         return True
 
-    def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
+    async def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
-        DB.todo.update_one({"_id": self.id}, {operator: {key: value}})
+        await DB.todo.update_one({"_id": self.id}, {operator: {key: value}})
 
-    def set_property(self, prop: str, value: Any) -> None:
+    async def set_property(self, prop: str, value: Any) -> None:
         """Sets any property and updates the db as well"""
         setattr(self, prop, value)
-        self._update_val(prop, value)
+        await self._update_val(prop, value)
 
-    def add_view(self, viewer: int) -> None:
+    async def add_view(self, viewer: int) -> None:
         """Adds a view to a todo lists viewcount"""
         if (
             not viewer == self.owner
@@ -1835,41 +1888,41 @@ class TodoList:
             and viewer in self.editor
         ):
             self.views += 1
-            self._update_val("views", 1, "$inc")
+            await self._update_val("views", 1, "$inc")
 
-    def add_task_view(self, viewer: int, task_id: int) -> None:
+    async def add_task_view(self, viewer: int, task_id: int) -> None:
         """Adds a view to a todo task"""
         if (
             not viewer == self.todos[task_id - 1]["added_by"]
             and not viewer in self.todos[task_id - 1]["assigned_to"]
         ):
             self.todos[task_id - 1]["views"] += 1
-            self._update_val("todos", self.todos)
+            await self._update_val("todos", self.todos)
 
-    def add_spots(self, spots: int) -> None:
+    async def add_spots(self, spots: int) -> None:
         """Easy way to add max spots"""
         self.spots += spots
-        self._update_val("spots", spots, "$inc")
+        await self._update_val("spots", spots, "$inc")
 
-    def add_editor(self, user: int) -> None:
+    async def add_editor(self, user: int) -> None:
         """Easy way to add an editor"""
         self.editor.append(user)
-        self._update_val("editor", user, "$push")
+        await self._update_val("editor", user, "$push")
 
-    def add_viewer(self, user: int) -> None:
+    async def add_viewer(self, user: int) -> None:
         """Easy way to add a viewer"""
         self.viewer.append(user)
-        self._update_val("viewer", user, "$push")
+        await self._update_val("viewer", user, "$push")
 
-    def kick_editor(self, editor: int) -> None:
+    async def kick_editor(self, editor: int) -> None:
         """Easy way to kick an editor"""
         self.editor.remove(editor)
-        self._update_val("editor", editor, "$pull")
+        await self._update_val("editor", editor, "$pull")
 
-    def kick_viewer(self, viewer: int) -> None:
+    async def kick_viewer(self, viewer: int) -> None:
         """Easy way to kick a viewer"""
         self.viewer.remove(viewer)
-        self._update_val("viewer", viewer, "$pull")
+        await self._update_val("viewer", viewer, "$pull")
 
     def has_todo(self, task: int) -> bool:
         """Checks if a list contains a certain todo task"""
@@ -1881,15 +1934,15 @@ class TodoList:
             return False
         return True
 
-    def clear(self) -> None:
+    async def clear(self) -> None:
         """Removes all todos from a todo list"""
         self.todos = []
-        self._update_val("todos", [])
+        await self._update_val("todos", [])
 
-    def enable_addon(self, addon: str) -> None:
+    async def enable_addon(self, addon: str) -> None:
         """Adds an attribute to the bought list to be able to be used"""
         if not addon.lower() in self._bought:
-            self._update_val("bought", addon.lower(), "$push")
+            await self._update_val("bought", addon.lower(), "$push")
             self._bought.append(addon.lower())
 
     def has_addon(self, addon: str) -> bool:
@@ -1897,77 +1950,70 @@ class TodoList:
         return addon.lower() in self._bought
 
 
-class Todo(TodoList):
+@dataclass
+class Todo:
+    position: int
+    todo: str
+    marked: str
+    added_by: int
+    added_on: Union[str, datetime]
+    views: int
+    assigned_to: List[int]
+    mark_log: List[dict]
+    due_at: datetime = None
+    notified: bool = None
 
-    def __new__(cls, position: Union[int, str], list_id: Union[int, str]):
-        cls = super().__new__(cls, list_id)
-        task = cls.todos[int(position) - 1]
+    @classmethod
+    async def new(cls, position: Union[int, str], list_id: Union[int, str]) -> Todo:
+        parent = await TodoList.new(list_id)
+        task = parent.todos[int(position) - 1]
 
-        cls.position = position
-        cls.todo: str = task["todo"]
-        cls.marked: str = task["marked"]
-        cls.added_by: int = task["added_by"]
-        cls.added_on: Union[str, datetime] = task["added_on"]
-        cls.views: int = task["views"]
-        cls.assigned_to: List[int] = task["assigned_to"]
-        cls.mark_log: List[dict] = task["mark_log"]
-        cls.due_at: datetime = task["due_at"] if "due_at" in task else None
-        cls.notified: bool = task["notified"] if "notified" in task else False
-        return cls
+        return Todo(position=position, **task)
 
 
+@dataclass
 class Guild:
     """A class to handle basic guild data"""
 
-    cache = {}
+    id: int
+    prefix: str
+    badges: List[str] = field(default_factory=list)
+    commands: dict = field(default_factory=dict)  # The logic behind this is not used and needs to be rewritten
+    polls: dict = field(default_factory=dict)
+    tags: List[dict] = field(default_factory=list)
+    cache: ClassVar[Dict[int, Guild]] = {}
 
     @classmethod
-    def __get_cache(cls, guild_id: int) -> Union[Guild, None]:
-        return cls.cache[guild_id] if guild_id in cls.cache else None
-
-    def __new__(cls, guild_id: int, *args, **kwargs):
-        existing = cls.__get_cache(guild_id)
-        if existing:
-            return existing
-        guild = super().__new__(cls)
+    def from_dict(cls, raw: dict):      
+        return cls(**{
+            k: v for k, v in raw.items() 
+            if k in inspect.signature(cls).parameters
+        })
+    
+    @classmethod
+    async def new(cls, guild_id: int) -> Guild:
+        raw = await DB.guilds.find_one({"id": guild_id})
+        if not raw:
+            await cls.add_default(guild_id)
+            raw = await DB.guilds.find_one({"id": guild_id})
+        del raw["_id"]
+        guild = cls.from_dict(raw)
+        cls.cache[guild_id] = guild
         return guild
-
-    def __init__(self, guild_id: int):
-        if guild_id in self.cache:
-            return
-
-        g = DB.guilds.find_one({"id": guild_id})
-
-        if not g:
-            self.add_default(guild_id)
-            g = DB.guilds.find_one({"id": guild_id})
-
-        self.id: int = guild_id
-        self.badges: List[str] = g["badges"] if "badges" in g else []
-        self.prefix: str = g["prefix"]
-        self.commands: dict = (
-            {v for _, v in g["commands"].items()} if "commands" in g else {}
-        )
-        self.polls: dict = g["polls"] if "polls" in g else {}
-
-        if "tags" in g:
-            self.tags = g["tags"]
-
-        self.cache[self.id] = self
 
     @property
     def is_premium(self) -> bool:
         return ("partner" in self.badges) or ("premium" in self.badges)
 
     @classmethod
-    def add_default(self, guild_id: int) -> None:
+    async def add_default(self, guild_id: int) -> None:
         """Adds a guild to the database"""
-        DB.guilds.insert_one(
+        await DB.guilds.insert_one(
             {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!"}
         )
 
     @classmethod
-    def bullk_remove_premium(cls, guild_ids: List[int]) -> None:
+    async def bullk_remove_premium(cls, guild_ids: List[int]) -> None:
         """Removes premium from all guilds specified, if possible"""
         for guild in guild_ids:
             try:
@@ -1977,45 +2023,45 @@ class Guild:
                     guild
                 )  # in case something got messed up it removes the guild id before making the db interaction
 
-        DB.guilds.update_many(
+        await DB.guilds.update_many(
             {"id": {"$in": guild_ids}}, {"$pull": {"badges": "premium"}}
         )
 
-    def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
+    async def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
-        DB.guilds.update_one({"id": self.id}, {operator: {key: value}})
+        await DB.guilds.update_one({"id": self.id}, {operator: {key: value}})
 
-    def delete(self) -> None:
+    async def delete(self) -> None:
         """Deletes a guild from the database"""
         del self.cache[self.id]
-        DB.guilds.delete_one({"id": self.id})
+        await DB.guilds.delete_one({"id": self.id})
 
-    def change_prefix(self, prefix: str) -> None:
+    async def change_prefix(self, prefix: str) -> None:
         "Changes the prefix of a guild"
         self.prefix = prefix
-        self._update_val("prefix", self.prefix)
+        await self._update_val("prefix", self.prefix)
 
-    def add_premium(self) -> None:
+    async def add_premium(self) -> None:
         """Adds premium to a guild"""
         self.badges.append("premium")
-        self._update_val("badges", "premium", "$push")
+        await self._update_val("badges", "premium", "$push")
 
-    def remove_premium(self) -> None:
+    async def remove_premium(self) -> None:
         """ "Removes premium from a guild"""
         self.badges.remove("premium")
-        self._update_val("badges", "premium", "$pull")
+        await self._update_val("badges", "premium", "$pull")
 
-    def add_poll(self, id: int, poll_data: dict) -> None:
+    async def add_poll(self, id: int, poll_data: dict) -> None:
         """Adds a poll to a guild"""
         self.polls[id] = poll_data
-        self._update_val("polls", self.polls)
+        await self._update_val("polls", self.polls)
 
-    def close_poll(self, id: int) -> None:
+    async def close_poll(self, id: int) -> None:
         """Closes a poll"""
         del self.polls[id]
-        self._update_val("polls", self.polls)
+        await self._update_val("polls", self.polls)
 
-    def update_poll_votes(self, id: int, updated: dict) -> None:
+    async def update_poll_votes(self, id: int, updated: dict) -> None:
         """Updates the votes of a poll"""
         self.polls[str(id)]["votes"] = updated
-        self._update_val(f"polls.{id}.votes", updated)
+        await self._update_val(f"polls.{id}.votes", updated)

@@ -1,66 +1,17 @@
-from threading import Thread, Event
-from queue import Queue
-from typing import Tuple, Callable, Any
-import traceback
-import time
-
-import logging
-from prometheus_client import start_wsgi_server
-from typing import cast, List, Dict
-from psutil import virtual_memory, cpu_percent
 from discord.ext import commands, tasks
 from discord import Interaction, InteractionType
+
+import logging
+from pymongo.errors import ServerSelectionTimeoutError
+from prometheus_client import start_http_server
+from typing import cast, List, Dict
+from psutil import virtual_memory, cpu_percent
 
 from killua.metrics import *
 from killua.static.constants import DB, API_ROUTES
 from killua.bot import BaseBot as Bot
 
 log = logging.getLogger("prometheus")
-
-
-def start_wsgi_server_with_error_handling(
-    *args, **kwargs
-) -> Tuple[Any, Thread, Thread, Queue, Event]:
-    error_queue = Queue()
-    stop_event = Event()
-
-    server_obj, server_thread = start_wsgi_server(*args, **kwargs)
-
-    def target_with_exception_handling(original_thread: Thread, error_queue: Queue):
-        try:
-            original_thread.join()
-        except Exception as e:
-            logging.info("Caught prometheus exception")
-            error_queue.put((e, traceback.format_exc()))
-
-    def error_handling_function(stop_event: Event, error_queue: Queue):
-        while not stop_event.is_set():
-            if not error_queue.empty():
-                # Non-blocking get with timeout
-                exception, traceback_str = error_queue.get(timeout=1)
-                logging.info(f"Caught (custom) exception: {exception}")
-                logging.info(traceback_str)
-
-    # Create and start the error handling thread
-    error_thread = Thread(
-        target=error_handling_function, args=(stop_event, error_queue)
-    )
-    error_thread.start()
-
-    # Wrap the original server thread to capture its exceptions
-    exception_thread = Thread(
-        target=target_with_exception_handling, args=(server_thread, error_queue)
-    )
-    exception_thread.start()
-
-    return (
-        server_obj,
-        server_thread,
-        error_thread,
-        exception_thread,
-        error_queue,
-        stop_event,
-    )
 
 
 class PrometheusCog(commands.Cog):
@@ -78,6 +29,8 @@ class PrometheusCog(commands.Cog):
         self.client = client
         self.port = port
         self.initial = False
+        self.api_previous: Dict[str, Dict[str, int]] = {}
+        self.spam_previous: int = 0
 
         if self.client.run_in_docker:
             if not self.latency_loop.is_running():
@@ -114,24 +67,42 @@ class PrometheusCog(commands.Cog):
             if not key in API_ROUTES:
                 continue
             not_spam += len(val["requests"])
-            API_REQUESTS_COUNTER.labels(key, "requests").set(len(val["requests"]))
-            API_REQUESTS_COUNTER.labels(key, "success").set(val["successful_responses"])
+            new_requests = len(val["requests"]) - self.api_previous.get(key, {}).get(
+                "requests", 0
+            )
+            if key not in self.api_previous:
+                self.api_previous[key] = {}
+            self.api_previous[key]["requests"] = len(val["requests"])
+            API_REQUESTS_COUNTER.labels(key, "requests").inc(amount=new_requests)
+            new_success = val["successful_responses"] - self.api_previous.get(
+                key, {}
+            ).get("successful_responses", 0)
+            self.api_previous[key]["successful_responses"] = val["successful_responses"]
+            API_REQUESTS_COUNTER.labels(key, "success").inc(amount=new_success)
 
-        API_SPAM_REQUESTS.set(reqs - not_spam)
+        new_spam = reqs - not_spam - self.spam_previous
+        self.spam_previous = reqs - not_spam
+        API_SPAM_REQUESTS.inc(new_spam)
 
     async def init_gauges(self):
         log.debug("Initializing gauges")
         num_of_commands = len(self.get_all_commands())
         COMMANDS_GAUGE.set(num_of_commands)
 
-        registered_users = DB.teams.count_documents({})
+        # The main point of this is to initialise the Counter
+        # with the correct labels, so that the labels are present
+        # in the metrics even if no one has voted there yet.
+        VOTES.labels("topgg").reset()
+        VOTES.labels("discordbotlist").reset()
+
+        registered_users = await DB.teams.count_documents({})
         REGISTERED_USER_GAUGE.set(registered_users)
 
-        dau = DB.const.find_one({"_id": "growth"})["growth"][-1]["daily_users"]
+        dau = (await DB.const.find_one({"_id": "growth"}))["growth"][-1]["daily_users"]
         DAILY_ACTIVE_USERS.set(dau)
 
         # Update command stats
-        usage_data: Dict[str, int] = DB.const.find_one({"_id": "usage"})[
+        usage_data: Dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
             "command_usage"
         ]
         cmds = self.client.get_raw_formatted_commands()
@@ -153,22 +124,8 @@ class PrometheusCog(commands.Cog):
 
     def start_prometheus(self):
         log.debug(f"Starting Prometheus Server on port {self.port}")
-        (
-            self.server_obj,
-            self.server_thread,
-            self.error_thread,
-            self.exception_thread,
-            self.error_queue,
-            self.stop_event,
-        ) = start_wsgi_server_with_error_handling(self.port)
+        start_http_server(self.port)
         self.started = True
-
-    async def on_shutdown(self):
-        log.debug("Shutting down Prometheus server")
-        cast(Event, self.stop_event).set()
-        self.server_thread.join()
-        self.error_thread.join()
-        self.exception_thread.join()
 
     @tasks.loop(seconds=5)
     async def latency_loop(self):
@@ -177,9 +134,24 @@ class PrometheusCog(commands.Cog):
 
     @tasks.loop(minutes=10)
     async def db_loop(self):
-        registered_users = DB.teams.count_documents({})
-        REGISTERED_USER_GAUGE.set(registered_users)
-        await self.update_api_stats()
+        try:
+            registered_users = await DB.teams.count_documents({})
+            REGISTERED_USER_GAUGE.set(registered_users)
+
+            todo_list_amount = await DB.todo.count_documents({})
+            TODO_LISTS.set(todo_list_amount)
+            todos = sum([len(todo["todos"]) async for todo in DB.todo.find({})])
+            TODOS.set(todos)
+
+            tags = await DB.guilds.find({"tags": {"$exists": True}}).to_list(
+                length=None
+            )
+            tag_amount = sum([len(v["tags"]) for v in tags])
+            TAGS.set(tag_amount)
+            await self.update_api_stats()
+        except ServerSelectionTimeoutError:
+            logging.warn("Failed to save mongodb stats to DB due to connection error")
+            pass  # Skip this iteration
 
     @tasks.loop(seconds=5)
     async def system_usage_loop(self):

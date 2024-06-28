@@ -34,21 +34,15 @@ class Events(commands.Cog):
         self.log_channel_id = 718818548524384310
 
     @property
-    def old_commands(self) -> List[str]:
-        return self._get_old_commands()
-
-    @property
     def log_channel(self):
         return self.client.get_guild(GUILD).get_channel(self.log_channel_id)
 
     async def _post_guild_count(self) -> None:
         """Posts relevant stats to the botlists Killua is on"""
-        data = {"guilds": len(self.client.guilds)}  # The data for discordbotlist
-
         await self.client.session.post(
             f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats",
             headers={"Authorization": DBL_TOKEN},
-            data=data,
+            data={"guilds": len(self.client.guilds)},
         )
         await self.client.session.post(
             f"https://top.gg/api/bots/756206646396452975/stats",
@@ -58,7 +52,7 @@ class Events(commands.Cog):
 
     async def _load_cards_cache(self) -> None:
         """Downloads all the card images so the image manipulation is fairly fast"""
-        cards = [x for x in DB.items.find()]
+        cards = [x async for x in DB.items.find()]
 
         if len(cards) == 0:
             return logging.error(
@@ -72,7 +66,9 @@ class Events(commands.Cog):
                 if item["_id"] in Book.card_cache:
                     continue  # in case the event fires multiple times this avoids using unnecessary cpu power
 
-                async with self.client.session.get(item["Image"]) as res:
+                async with self.client.session.get(
+                    self.client.api_url(to_fetch=True) + item["image"]
+                ) as res:
                     image_bytes = await res.read()
                     image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
                     image_card = image_card.resize((84, 115), Image.LANCZOS)
@@ -156,66 +152,66 @@ class Events(commands.Cog):
     async def vote_reminders(self):
         try:
             enabled = DB.teams.find({"voting_reminder": True})
+            async for user in enabled:
+                user = await User.new(user["id"])
+                for site, data in user.voting_streak.items():
+                    if not data["last_vote"]:
+                        continue
+                    if (
+                        self._date_helper(data["last_vote"].hour)
+                        == self._date_helper(datetime.now().hour)
+                        and data["last_vote"].minute == datetime.now().minute
+                        and not (
+                            int(int(datetime.now().timestamp()) / 60)
+                            == int(int(data["last_vote"].timestamp()) / 60)
+                        )
+                    ):  # If they are the same amounts of minutes away from the unix epoch
+
+                        user = self.client.get_user(
+                            user.id
+                        ) or await self.client.fetch_user(user.id)
+                        if not user:
+                            continue
+                        embed = discord.Embed.from_dict(
+                            {
+                                "title": "Vote Reminder",
+                                "description": f"Hey {user.name}, you voted the last time <t:{int(data['last_vote'].timestamp())}:R> for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
+                                "color": 0x3E4A78,
+                            }
+                        )
+                        view = discord.ui.View()
+                        if site == "topgg":
+                            view.add_item(
+                                discord.ui.Button(
+                                    label="Vote on top.gg",
+                                    url=f"https://top.gg/bot/{self.client.user.id}/vote",
+                                    style=discord.ButtonStyle.link,
+                                )
+                            )
+                        elif site == "discordbotlist":
+                            view.add_item(
+                                discord.ui.Button(
+                                    label="Vote on discordbotlist",
+                                    url=f"https://discordbotlist.com/bots/killua/upvote",
+                                    style=discord.ButtonStyle.link,
+                                )
+                            )
+
+                        try:
+                            await user.send(embed=embed, view=view)
+                        except discord.Forbidden:
+                            continue
         except ServerSelectionTimeoutError:
             return logging.warn(
                 f"{PrintColors.WARNING}Could not send vote reminders because the database is not available{PrintColors.ENDC}"
             )
-        for user in enabled:
-            user = User(user["id"])
-            for site, data in user.voting_streak.items():
-                if not data["last_vote"]:
-                    continue
-                if (
-                    self._date_helper(data["last_vote"].hour)
-                    == self._date_helper(datetime.now().hour)
-                    and data["last_vote"].minute == datetime.now().minute
-                    and not (
-                        int(int(datetime.now().timestamp()) / 60)
-                        == int(int(data["last_vote"].timestamp()) / 60)
-                    )
-                ):  # If they are the same amounts of minutes away from the unix epoch
-
-                    user = self.client.get_user(
-                        user.id
-                    ) or await self.client.fetch_user(user.id)
-                    if not user:
-                        continue
-                    embed = discord.Embed.from_dict(
-                        {
-                            "title": "Vote Reminder",
-                            "description": f"Hey {user.name}, you voted the last time <t:{int(data['last_vote'].timestamp())}:R> for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
-                            "color": 0x3E4A78,
-                        }
-                    )
-                    view = discord.ui.View()
-                    if site == "topgg":
-                        view.add_item(
-                            discord.ui.Button(
-                                label="Vote on top.gg",
-                                url=f"https://top.gg/bot/{self.client.user.id}/vote",
-                                style=discord.ButtonStyle.link,
-                            )
-                        )
-                    elif site == "discordbotlist":
-                        view.add_item(
-                            discord.ui.Button(
-                                label="Vote on discordbotlist",
-                                url=f"https://discordbotlist.com/bots/killua/upvote",
-                                style=discord.ButtonStyle.link,
-                            )
-                        )
-
-                    try:
-                        await user.send(embed=embed, view=view)
-                    except discord.Forbidden:
-                        continue
 
     @tasks.loop(hours=24)
     async def save_guilds(self):
         from killua.static.constants import daily_users
 
         if not self.client.is_dev and self.skipped_first:
-            DB.const.update_one(
+            await DB.const.update_one(
                 {"_id": "growth"},
                 {
                     "$push": {
@@ -249,7 +245,7 @@ class Events(commands.Cog):
     async def on_guild_remove(self, guild: discord.Guild):
         # Changing Killua's status
         await self.client.update_presence()
-        Guild(guild.id).delete()
+        (await Guild.new(guild.id)).delete()
         await self._post_guild_count()
 
     @commands.Cog.listener()
@@ -343,7 +339,7 @@ class Events(commands.Cog):
                     _p == "poll"
                 )  # As the logic for polls and wyr overlaps we can use the same code for both, just need to differentiate for a few small things
 
-                guild = Guild(interaction.guild_id)
+                guild = await Guild.new(interaction.guild_id)
                 saved = guild.is_premium and poll
 
                 if saved:
@@ -564,7 +560,7 @@ class Events(commands.Cog):
 
                         votes[str(option - 1)].append(interaction.user.id)
 
-                        guild.update_poll_votes(interaction.message.id, votes)
+                        await guild.update_poll_votes(interaction.message.id, votes)
 
                     embed = interaction.message.embeds[0]
 
@@ -781,7 +777,7 @@ class Events(commands.Cog):
                         new_view.add_item(new_button)
 
                     if saved:
-                        guild.close_poll(str(interaction.message.id))
+                        await guild.close_poll(str(interaction.message.id))
 
                     await interaction.message.delete()
                     await interaction.response.send_message(
@@ -800,7 +796,7 @@ class Events(commands.Cog):
             return
 
         if ctx.command:
-            usage = f"`{self.client.command_prefix(self.client, ctx.message)[2]}{(ctx.command.parent.name + ' ') if ctx.command.parent else ''}{ctx.command.usage}`"
+            usage = f"`{(await self.client.command_prefix(self.client, ctx.message))[2]}{(ctx.command.parent.name + ' ') if ctx.command.parent else ''}{ctx.command.usage}`"
 
         if isinstance(error, commands.BotMissingPermissions):
             return await ctx.send(
@@ -852,7 +848,7 @@ class Events(commands.Cog):
             traceback.print_exception(
                 type(error), error, error.__traceback__, file=sys.stderr
             )
-            return logging.critical(PrintColors.ENDC)
+            return logging.info(PrintColors.ENDC)
 
         else:
             guild = (
@@ -863,16 +859,20 @@ class Events(commands.Cog):
                 if ctx.command
                 else "Error didn't occur during a command"
             )
-            logging.error(
+            logging.info(  # Info so only a single "critical" log is saved
                 f"{PrintColors.FAIL}------------------------------------------"
             )
-            logging.error(
+            logging.critical(
                 f"An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}"
             )
-            logging.error(
+            logging.info(
                 f"------------------------------------------{PrintColors.ENDC}"
             )
-
+        if isinstance(error, discord.HTTPException) and error.code == 10062:
+            # This is the error code for unknown interaction. This means the error occured
+            # running a slash command or button or whatever where it failed to find the interaction
+            # Because of this, following up will also fail so we just return
+            return
         view = discord.ui.View()
         view.add_item(
             discord.ui.Button(label="Report bug", url=self.client.support_server_invite)

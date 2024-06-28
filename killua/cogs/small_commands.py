@@ -530,11 +530,11 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
 
         poll = await ctx.send(embed=embed, view=view)
 
-        if (guild := Guild(ctx.guild.id)).is_premium:
+        if (guild := await Guild.new(ctx.guild.id)).is_premium:
             option_count = len(
                 [i for i in modal.children if i.value and i.label.startswith("Option")]
             )
-            guild.add_poll(
+            await guild.add_poll(
                 str(poll.id),
                 {
                     "author": ctx.author.id,

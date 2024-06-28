@@ -102,11 +102,13 @@ class Economy(commands.GroupCog, group_name="econ"):
             start += f"{BOOSTERS[int(booster)]['emoji']} {BOOSTERS[int(booster)]['name']} (id:{booster}) - {boosters[booster]}x\n"
         return start
 
-    def _getmember(self, user: Union[discord.Member, discord.User]) -> discord.Embed:
+    async def _getmember(
+        self, user: Union[discord.Member, discord.User]
+    ) -> discord.Embed:
         """A function to handle getting infos about a user for less messy code"""
         joined = self.client.convert_to_timestamp(user.id)
 
-        info = User(user.id)
+        info = await User.new(user.id)
         flags = [USER_FLAGS[x[0]] for x in user.public_flags if x[1]]
         if (user.avatar and user.avatar.is_animated()) or len(
             [
@@ -154,9 +156,11 @@ class Economy(commands.GroupCog, group_name="econ"):
             }
         )
 
-    def _lb(self, ctx: commands.Context, limit: int = 10) -> dict:
+    async def _lb(self, ctx: commands.Context, limit: int = 10) -> dict:
         """Creates a list of the top members regarding jenny in a server"""
-        members = DB.teams.find({"id": {"$in": [x.id for x in ctx.guild.members]}})
+        members = await DB.teams.find(
+            {"id": {"$in": [x.id for x in ctx.guild.members]}}
+        ).to_list(None)
         top = sorted(
             members, key=lambda x: x["points"], reverse=True
         )  # Bringing it in a nice lederboard order
@@ -193,8 +197,8 @@ class Economy(commands.GroupCog, group_name="econ"):
     )
     async def guild(self, ctx: commands.Context):
         """Displays infos about the current guild"""
-        top = self._lb(ctx, limit=1)
-        guild = Guild(ctx.guild.id)
+        top = await self._lb(ctx, limit=1)
+        guild = await Guild.new(ctx.guild.id)
         badges = " ".join([GUILD_BADGES[b] for b in guild.badges])
 
         embed = discord.Embed.from_dict(
@@ -235,10 +239,10 @@ class Economy(commands.GroupCog, group_name="econ"):
     )
     async def leaderboard(self, ctx: commands.Context):
         """Get a leaderboard of members with the most jenny"""
-        top = self._lb(ctx)
+        top = await self._lb(ctx)
         if top["points"] == 0:
             return await ctx.send(
-                f"Nobody here has any jenny! Be the first to claim some with `{self.client.command_prefix(self.client, ctx.message)[2]}daily`!",
+                f"Nobody here has any jenny! Be the first to claim some with `{(await self.client.command_prefix(self.client, ctx.message))[2]}daily`!",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
         embed = discord.Embed.from_dict(
@@ -277,7 +281,7 @@ class Economy(commands.GroupCog, group_name="econ"):
                     ephemeral=True,
                 )
 
-        embed = self._getmember(res)
+        embed = await self._getmember(res)
         return await self.client.send_message(
             ctx, embed=embed, ephemeral=hasattr(ctx, "invoked_by_context_menu")
         )
@@ -300,7 +304,7 @@ class Economy(commands.GroupCog, group_name="econ"):
             if not res:
                 return await ctx.send("User not found", ephemeral=True)
 
-        balance = User(res.id).jenny
+        balance = (await User.new(res.id)).jenny
         return await ctx.send(
             f"{res.display_name}'s balance is {balance} Jenny",
             ephemeral=hasattr(ctx, "invoked_by_context_menu"),
@@ -313,7 +317,7 @@ class Economy(commands.GroupCog, group_name="econ"):
     async def daily(self, ctx: commands.Context):
         """Claim your daily Jenny with this command!"""
         now = datetime.now()
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
 
         if str(user.daily_cooldown) > str(now):  # When the cooldown is still active
             return await ctx.send(
@@ -326,14 +330,14 @@ class Economy(commands.GroupCog, group_name="econ"):
                 min * 2,
                 max * 2,
             )  # Sadly `min, max *= 2` does not work, this is the only way to fit it in one line
-        if ctx.guild and Guild(ctx.guild.id).is_premium:
+        if ctx.guild and (await Guild.new(ctx.guild.id)).is_premium:
             min, max = min * 2, max * 2
         daily = randint(min, max)
         if user.is_entitled_to_double_jenny:
             daily *= 2
 
-        user.claim_daily()
-        user.add_jenny(daily)
+        await user.claim_daily()
+        await user.add_jenny(daily)
         await ctx.send(
             f"You claimed your {daily} daily Jenny and hold now on to {user.jenny}"
         )
@@ -344,7 +348,7 @@ class Economy(commands.GroupCog, group_name="econ"):
     )
     async def open(self, ctx: commands.Context):
         """Open a lootbox with an interactive UI"""
-        if len((user := User(ctx.author.id)).lootboxes) == 0:
+        if len((user := await User.new(ctx.author.id)).lootboxes) == 0:
             return await ctx.send("Sadly you don't have any lootboxes!")
 
         lootboxes = self._fieldify_lootboxes(user.lootboxes)
@@ -386,8 +390,8 @@ class Economy(commands.GroupCog, group_name="econ"):
         if view.timed_out:
             return await ctx.send("Timed out!", ephemeral=True)
 
-        user.remove_lootbox(view.value)
-        values = LootBox.generate_rewards(view.value)
+        await user.remove_lootbox(view.value)
+        values = await LootBox.generate_rewards(view.value)
         box = LootBox(ctx, values)
         return await box.open()
 
@@ -400,7 +404,7 @@ class Economy(commands.GroupCog, group_name="econ"):
     async def inventory(self, ctx: commands.Context):
         """Displays the owned lootboxes and boosters"""
         if (
-            len((user := User(ctx.author.id)).lootboxes) == 0
+            len((user := await User.new(ctx.author.id)).lootboxes) == 0
             and sum(user.boosters.values()) == 0
         ):
             return await ctx.send("Sadly you don't have any lootboxes or boosters!")
@@ -414,7 +418,7 @@ class Economy(commands.GroupCog, group_name="econ"):
                 "color": 0x3E4A78,
                 "fields": lootboxes,
                 "footer": {
-                    "text": f"open a lootbox with {self.client.command_prefix(self.client, ctx.message)[2]}open"
+                    "text": f"open a lootbox with {(await self.client.command_prefix(self.client, ctx.message))[2]}open"
                 },
             }
         )

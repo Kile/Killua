@@ -25,7 +25,7 @@ This would eventually enable the command to boil down to:
     def _use_check(self, ctx: commands.Context, card: str, args: Optional[Union[discord.Member, int, str]], add_args: Optional[int]) -> None:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card: Card = Card(card)
+            card: Card = await Card.new(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
@@ -65,7 +65,7 @@ This would eventually enable the command to boil down to:
                 l.append(None)
 
         if None in l:
-            return await ctx.send(f"Invalid arguments provided! Usage: `{self.client.command_prefix(self.client, ctx.message)[2]}use {item} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"Invalid arguments provided! Usage: `{(await self.client.command_prefix(self.client, ctx.message))[2]}use {item} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`", allowed_mentions=discord.AllowedMentions.none())
         kwargs = {k: v for d in l for k, v in d.items()}
         try:
             await card_class(ctx, name_or_id=item).exec(**kwargs)
@@ -107,8 +107,8 @@ class Card:
     def __init__(self, name_or_id: str):
         ...
 
-    def _is_maxed_check(self, card: int) -> None:
-        c = Card(card)
+    async def _is_maxed_check(self, card: int) -> None:
+        c = await Card.new(card)
         if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
             raise CheckFailure(f"The maximum amount of existing cards with id {card} is reached!")
             
@@ -125,7 +125,7 @@ class Card:
         return object.__new__(cls)
 
     async def exec(self, card_id:int) -> None:
-        user = User(self.ctx.author.id)
+        user = await User.new(self.ctx.author.id)
 
         if not user.has_any_card(card_id, False):
             raise CheckFailure("Seems like you don't own this card You already need to own a (non-fake) copy of the card you want to duplicate")

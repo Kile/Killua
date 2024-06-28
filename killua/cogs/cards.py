@@ -4,7 +4,18 @@ import random
 from discord.ext import commands
 from datetime import datetime, timedelta
 
-from typing import Union, List, Optional, Tuple, Optional, Dict, Literal, Any, cast
+from typing import (
+    Union,
+    List,
+    Optional,
+    Tuple,
+    Optional,
+    Dict,
+    Literal,
+    Any,
+    cast,
+    Type,
+)
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -31,38 +42,6 @@ class Cards(commands.GroupCog, group_name="cards"):
     def __init__(self, client: BaseBot):
         self.client = client
         self.cardname_cache: Dict[int, Tuple[str, str]] = {}
-        self.reward_cache = {
-            "item": [
-                x["_id"]
-                for x in DB.items.find(
-                    {"type": "normal", "rank": {"$in": ["A", "B", "C"]}}
-                )
-            ],
-            "spell": [
-                x["_id"]
-                for x in DB.items.find({"type": "spell", "rank": {"$in": ["B", "C"]}})
-            ],
-            "monster": {
-                "E": [
-                    x["_id"]
-                    for x in DB.items.find(
-                        {"type": "monster", "rank": {"$in": ["E", "G", "H"]}}
-                    )
-                ],
-                "D": [
-                    x["_id"]
-                    for x in DB.items.find(
-                        {"type": "monster", "rank": {"$in": ["D", "E", "F"]}}
-                    )
-                ],
-                "C": [
-                    x["_id"]
-                    for x in DB.items.find(
-                        {"type": "monster", "rank": {"$in": ["C", "D", "E"]}}
-                    )
-                ],
-            },
-        }
         self._init_menus()
 
     def _init_menus(self) -> None:
@@ -81,6 +60,42 @@ class Cards(commands.GroupCog, group_name="cards"):
             except discord.app_commands.errors.CommandAlreadyRegistered:
                 pass  # Ignoring this
 
+    async def cog_load(self) -> None:
+        self.reward_cache = {
+            "item": [
+                x["_id"]
+                async for x in DB.items.find(
+                    {"type": "normal", "rank": {"$in": ["A", "B", "C"]}}
+                )
+            ],
+            "spell": [
+                x["_id"]
+                async for x in DB.items.find(
+                    {"type": "spell", "rank": {"$in": ["B", "C"]}}
+                )
+            ],
+            "monster": {
+                "E": [
+                    x["_id"]
+                    async for x in DB.items.find(
+                        {"type": "monster", "rank": {"$in": ["E", "G", "H"]}}
+                    )
+                ],
+                "D": [
+                    x["_id"]
+                    async for x in DB.items.find(
+                        {"type": "monster", "rank": {"$in": ["D", "E", "F"]}}
+                    )
+                ],
+                "C": [
+                    x["_id"]
+                    async for x in DB.items.find(
+                        {"type": "monster", "rank": {"$in": ["C", "D", "E"]}}
+                    )
+                ],
+            },
+        }
+
     async def all_cards_autocomplete(
         self,
         interaction: discord.Interaction,
@@ -88,17 +103,17 @@ class Cards(commands.GroupCog, group_name="cards"):
     ) -> List[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         if not self.cardname_cache:
-            for card in DB.items.find({}):
+            async for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
-            for x in User(interaction.user.id).all_cards
+            for x in (await User.new(interaction.user.id)).all_cards
             if self.cardname_cache[x[0]][0].lower().startswith(current.lower())
         ]
         id_cards = [
             (x[0], self.cardname_cache[x[0]][0])
-            for x in User(interaction.user.id).all_cards
+            for x in (await User.new(interaction.user.id)).all_cards
             if str(x[0]).startswith(current)
         ]
         name_cards = list(dict.fromkeys(name_cards))
@@ -162,7 +177,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 final_rewards.append(reward)
         return final_rewards
 
-    def _format_rewards(
+    async def _format_rewards(
         self, rewards: List[Tuple[int, int]], user: User
     ) -> Tuple[List[list], List[str], bool]:
         """Formats the generated rewards for further use"""
@@ -194,7 +209,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                     formatted_rewards.append(
                         [reward[1], {"fake": False, "clone": False}]
                     )
-            card = Card(reward[1])
+            card = await Card.new(reward[1])
             if maxed:
                 if (
                     not maxed[1] == 0
@@ -213,7 +228,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     @discord.app_commands.describe(page="The page of the book to see")
     async def book(self, ctx: commands.Context, page: int = 1):
         """Allows you to take a look at your cards"""
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
 
         if len(user.all_cards) == 0:
             return await ctx.send("You don't have any cards yet!")
@@ -225,7 +240,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 )
 
         async def make_embed(page, *_) -> Tuple[discord.Embed, discord.File]:
-            return await Book(self.client.session).create(ctx.author, page)
+            return await Book(self.client.session).create(ctx.author, page, self.client)
 
         return await Paginator(
             ctx,
@@ -259,7 +274,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 SellOptions, type
             )  # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
 
         if not type and not card:
             return await ctx.send(
@@ -279,7 +294,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 to_be_sold = [
                     x
                     for x in user.fs_cards
-                    if Card(x[0]).type == "spell"
+                    if (await Card.new(x[0])).type == "spell"
                     and not x[1]["clone"]
                     and not x[1]["fake"]
                 ]
@@ -287,7 +302,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 to_be_sold = [
                     x
                     for x in user.fs_cards
-                    if Card(x[0]).type == "monster"
+                    if (await Card.new(x[0])).type == "monster"
                     and not x[1]["clone"]
                     and not x[1]["fake"]
                 ]
@@ -295,7 +310,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             to_be_gained = 0
 
             for c, _ in to_be_sold:
-                j = int(PRICES[Card(c).rank] / 10)
+                j = int(PRICES[(await Card.new(c)).rank] / 10)
                 if user.is_entitled_to_double_jenny:
                     j *= 2
                 to_be_gained += j
@@ -319,8 +334,8 @@ class Cards(commands.GroupCog, group_name="cards"):
                 else:
                     return await ctx.send(f"Successfully canceled!")
             else:
-                user.bulk_remove(to_be_sold)
-                user.add_jenny(to_be_gained)
+                await user.bulk_remove(to_be_sold)
+                await user.add_jenny(to_be_gained)
                 return await ctx.send(
                     f"You sold all your {type.name if not type.name == 'all' else 'free slots cards'} for {to_be_gained} Jenny!"
                 )
@@ -332,7 +347,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         if len(user.all_cards) == 0:
             return await ctx.send("You don't have any cards yet!")
         try:
-            card: Card = Card(card)
+            card: Card = await Card.new(card)
         except CardNotFound:
             return await ctx.send(
                 f"A card with the id `{card}` does not exist",
@@ -367,8 +382,8 @@ class Cards(commands.GroupCog, group_name="cards"):
                 return await ctx.send(f"Successfully canceled!")
 
         for _ in range(amount):
-            user.remove_card(card.id, False)
-        user.add_jenny(jenny)
+            await user.remove_card(card.id, False)
+        await user.add_jenny(jenny)
         await ctx.send(
             f"Successfully sold {amount} cop{'y' if amount == 1 else 'ies'} of card {card.id} for {jenny} Jenny!"
         )
@@ -381,10 +396,10 @@ class Cards(commands.GroupCog, group_name="cards"):
         """Autocomplete for the swap command"""
 
         if not self.cardname_cache:
-            for card in DB.items.find({}):
+            async for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
-        user = User(interaction.user.id)
+        user = await User.new(interaction.user.id)
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
             for x in user.all_cards
@@ -431,18 +446,18 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def swap(self, ctx: commands.Context, card: str):
         """Allows you to swap cards from your free slots with the restricted slots and the other way around"""
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
         if len(user.all_cards) == 0:
             return await ctx.send("You don't have any cards yet!")
         try:
-            card: Card = Card(card)
+            card: Card = await Card.new(card)
         except CardNotFound:
             return await ctx.send("Please use a valid card number!")
 
         if card.id == 0:
             return await ctx.send("You cannot swap out card No. 0!")
 
-        sw = user.swap(card.id)
+        sw = await user.swap(card.id)
 
         if sw is False:
             return await ctx.send(
@@ -461,7 +476,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     ):
         """Go on a hunt! The longer you are on the hunt, the better the rewards!"""
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
         value: datetime  # Typehint since type is Any
         has_effect, value = user.has_effect("hunting")
 
@@ -489,7 +504,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             )  # There are 10080 minutes in a week if I'm not completely wrong
 
             rewards = self._construct_rewards(score)
-            formatted_rewards, formatted_text, hit_limit = self._format_rewards(
+            formatted_rewards, formatted_text, hit_limit = await self._format_rewards(
                 rewards, user
             )
 
@@ -498,9 +513,9 @@ class Cards(commands.GroupCog, group_name="cards"):
                 c, n = hit_limit
                 for pos, card in enumerate(rewards):
                     if pos == c:
-                        jenny += PRICES[Card(card[1]).rank] * (card[0] - n)
+                        jenny += PRICES[(await Card.new(card[1])).rank] * (card[0] - n)
                     elif pos >= c:
-                        jenny += PRICES[Card(card[1]).rank] * card[0]
+                        jenny += PRICES[(await Card.new(card[1])).rank] * card[0]
 
             text = f"You've started hunting <t:{int(value.timestamp())}:R>. You brought back the following items from your hunt: \n\n"
 
@@ -514,9 +529,9 @@ class Cards(commands.GroupCog, group_name="cards"):
                     "color": 0x3E4A78,
                 }
             )
-            user.remove_effect("hunting")
-            user.add_multi(*formatted_rewards)
-            user.add_jenny(jenny)
+            await user.remove_effect("hunting")
+            await user.add_multi(*formatted_rewards)
+            await user.add_jenny(jenny)
             return await ctx.send(embed=embed)
 
         elif option == "end" and not has_effect:
@@ -530,7 +545,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 f"You are already on a hunt! Get the results with `/cards hunt end`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
-        user.add_effect("hunting", datetime.now())
+        await user.add_effect("hunting", datetime.now())
         await ctx.send(
             "You went hunting! Make sure to claim your rewards at least twelve hours from now, but remember, the longer you hunt, the more you get"
         )
@@ -549,8 +564,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         if hasattr(ctx, "invoked_by_context_menu"):
             user = await self.client.find_user(ctx, user)
 
-        author = User(ctx.author.id)
-        past_users = list()
+        author = await User.new(ctx.author.id)
+        past_users = []
         if user.bot:
             return await ctx.send(
                 "You can't interact with bots with this command", ephemeral=True
@@ -577,7 +592,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 ephemeral=True,
             )
 
-        author.add_met_user(user.id)
+        await author.add_met_user(user.id)
         try:
             await ctx.message.delete()
         except discord.HTTPException:
@@ -598,9 +613,9 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def discard(self, ctx: commands.Context, card: str):
         """Discard a card you want to get rid of with this command. Make sure it's in the free slots"""
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
         try:
-            card: Card = Card(card)
+            card: Card = await Card.new(card)
         except CardNotFound:
             return await ctx.send("This card does not exist!")
 
@@ -612,7 +627,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         view = ConfirmButton(ctx.author.id, timeout=20)
         msg = await ctx.send(
-            f"Do you really want to throw this card away? (if you want to throw a fake aware, make sure it's in the free slots (unless it's the only copy you own. You can switch cards between free and restricted slots with `{self.client.command_prefix(self.client, ctx.message)[2]}swap <card_id>`)",
+            f"Do you really want to throw this card away? (if you want to throw a fake aware, make sure it's in the free slots (unless it's the only copy you own. You can switch cards between free and restricted slots with `{(await self.client.command_prefix(self.client, ctx.message))[2]}swap <card_id>`)",
             view=view,
             allowed_mentions=discord.AllowedMentions.none(),
         )
@@ -626,10 +641,10 @@ class Cards(commands.GroupCog, group_name="cards"):
                 return await ctx.send(f"Successfully cancelled!")
 
         try:
-            user.remove_card(card.id, remove_fake=True, restricted_slot=False)
+            await user.remove_card(card.id, remove_fake=True, restricted_slot=False)
             # essentially here it first looks for fakes in your free slots and tried to remove them. If it doesn't find any fakes in the free slots, it will remove the first match of the card it finds in free or restricted slots
         except NoMatches:
-            user.remove_card(card.id)
+            await user.remove_card(card.id)
         await ctx.send(f"Successfully thrown away card No. `{card.id}`")
 
     @check()
@@ -643,23 +658,23 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def cardinfo(self, ctx: commands.Context, card: str):
         """Check card info out about any card you own"""
         try:
-            c = Card(card)
+            c = await Card.new(card)
         except CardNotFound:
             return await ctx.send("Invalid card")
 
-        author = User(ctx.author.id)
+        author = await User.new(ctx.author.id)
         if not author.has_any_card(c.id):
             return await ctx.send(
                 "You don't own a copy of this card so you can't view its infos"
             )
 
-        embed = c._get_analysis_embed(c.id)
+        embed, file = await c._get_analysis_embed(c.id, self.client)
         if c.type == "spell" and c.id not in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
-            card_class = next(
-                (c for c in Card.__subclasses__() if c.__name__ == f"Card{card}"), None
+            card_class: IndividualCard = next(
+                (c for c in Card.__subclasses__() if c.__name__ == f"Card{c.id}"), None
             )
             usage = (
-                f"`{self.client.command_prefix(self.client, ctx.message)[2]}use {card} "
+                f"`{(await self.client.command_prefix(self.client, ctx.message))[2]}use {card} "
                 + " ".join(
                     [
                         f"[{k}: {v.__name__}]"
@@ -671,7 +686,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             )
             embed.add_field(name="Usage", value=usage, inline=False)
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, file=file)
 
     @check()
     @commands.hybrid_command(
@@ -684,11 +699,11 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def _check(self, ctx: commands.Context, card: str):
         """Lets you see how many copies of the specified card are fakes"""
         try:
-            card: Card = Card(card)
+            card: Card = await Card.new(card)
         except CardNotFound:
             return await ctx.send("Invalid card")
 
-        author = User(ctx.author.id)
+        author = await User.new(ctx.author.id)
 
         if not author.has_any_card(card.id, only_allow_fakes=True):
             return await ctx.send(
@@ -723,7 +738,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         """Converts the data to a discord.Member if possible"""
         try:
             return await commands.MemberConverter().convert(ctx, data)
-        except commands.BadArgument:
+        except (commands.BadArgument, TypeError):
             return None
 
     async def _use_converter(
@@ -732,6 +747,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         """Converts the args to a discord.Member, int or str if possible"""
         if not args:
             return None
+        elif isinstance(args, int):
+            return args
         elif m := await self._member_converter(ctx, args):
             return m
         elif args.isdigit():
@@ -739,7 +756,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         else:
             return args
 
-    def _use_check(
+    async def _use_check(
         self,
         ctx: commands.Context,
         card: str,
@@ -748,12 +765,12 @@ class Cards(commands.GroupCog, group_name="cards"):
     ) -> Card:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card: Card = Card(card)
+            card: Card = await Card.new(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
         if not card.id in [
-            x[0] for x in User(ctx.author.id).fs_cards
+            x[0] for x in (await User.new(ctx.author.id)).fs_cards
         ] and not card.id in [1036]:
             raise CheckFailure("You are not in possesion of this card!")
 
@@ -782,7 +799,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     async def _use_core(self, ctx: commands.Context, card: Card, *args) -> None:
         """This passes the execution to the right class"""
-        card_class: IndividualCard = next(
+        card_class: Type[IndividualCard] = next(
             (c for c in Card.__subclasses__() if c.__name__ == f"Card{card.id}")
         )
 
@@ -801,7 +818,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         if None in l:
             return await ctx.send(
-                f"Invalid arguments provided! Usage: `{self.client.command_prefix(self.client, ctx.message)[2]}use {card.id} "
+                f"Invalid arguments provided! Usage: `{(await self.client.command_prefix(self.client, ctx.message))[2]}use {card.id} "
                 + " ".join(
                     [
                         f"[{k}: {v.__name__}]"
@@ -815,7 +832,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         kwargs = {k: v for d in l for k, v in d.items()}
         try:
             await cast(
-                IndividualCard, card_class(name_or_id=str(card.id), ctx=ctx)
+                IndividualCard, await card_class._new(name_or_id=str(card.id), ctx=ctx)
             ).exec(**kwargs)
             # It should be able to infert the type but for some reason it is not able to do so
         except CheckFailure as e:
@@ -827,18 +844,18 @@ class Cards(commands.GroupCog, group_name="cards"):
         current: str,
     ) -> List[discord.app_commands.Choice[str]]:
         if not self.cardname_cache:
-            for card in DB.items.find({}):
+            async for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
-            for x in User(interaction.user.id).all_cards
+            for x in (await User.new(interaction.user.id)).all_cards
             if self.cardname_cache[x[0]][0].lower().startswith(current.lower())
             and self.cardname_cache[x[0]][1] == "spell"
         ]
         id_cards = [
             (x[0], self.cardname_cache[x[0]][0])
-            for x in User(interaction.user.id).all_cards
+            for x in (await User.new(interaction.user.id)).all_cards
             if str(x[0]).startswith(current) and self.cardname_cache[x[0]][1] == "spell"
         ]
         name_cards = list(dict.fromkeys(name_cards))
@@ -896,7 +913,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             return await Paginator(ctx, BOOK_PAGES, func=make_embed).start()
 
         try:
-            card = self._use_check(ctx, item, target, args)
+            card = await self._use_check(ctx, item, target, args)
         except CheckFailure as e:
             return await ctx.send(e.message)
 
@@ -911,7 +928,6 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         await self._use_core(ctx, card, *args)
 
-    @commands.is_owner()
     @commands.hybrid_command(
         extras={"category": Category.CARDS, "id": 22},
         usage="gain <type> <card_id/amount/lootbox>",
@@ -928,13 +944,16 @@ class Cards(commands.GroupCog, group_name="cards"):
         amount: int = 1,
     ):
         """An owner restricted command allowing the user to obtain any card or amount of jenny or any lootbox"""
-        user = User(ctx.author.id)
+        if not self.client.is_dev and not self.client.is_owner(ctx.author):
+            return await ctx.send("You are not allowed to use this command")
+
+        user = await User.new(ctx.author.id)
         if amount < 1:
             return await ctx.send("Invalid amount")
 
         if type == "card":
             try:
-                card = Card(item)
+                card = await Card.new(item)
             except CardNotFound:
                 return await ctx.send("Invalid card id")
             if card.id == 0:
@@ -947,7 +966,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 return await ctx.send(
                     "Seems like you have no space left in your free slots!"
                 )
-            user.add_multi(
+            await user.add_multi(
                 *[(card.id, {"fake": False, "clone": False}) for _ in range(amount)]
             )
             return await ctx.send(
@@ -963,14 +982,14 @@ class Cards(commands.GroupCog, group_name="cards"):
                 return await ctx.send("Please provide a valid amount of jenny!")
             if item > 69420:
                 return await ctx.send("Be reasonable.")
-            user.add_jenny(int(item))
+            await user.add_jenny(int(item))
             return await ctx.send(f"Added {item} Jenny to your account")
 
         if type == "lootbox":
             if not item.isdigit() or not int(item) in list(LOOTBOXES.keys()):
                 return await ctx.send("Invalid lootbox!")
             for _ in range(amount):
-                user.add_lootbox(int(item))
+                await user.add_lootbox(int(item))
             return await ctx.send(
                 f"Done! Added lootbox \"{LOOTBOXES[int(item)]['name']}\" to your inventory"
                 + (f" {amount} times " if amount > 1 else "")
@@ -980,7 +999,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             if not item.isdigit() or not int(item) in list(BOOSTERS.keys()):
                 return await ctx.send("Invalid booster!")
             for _ in range(amount):
-                user.add_booster(int(item))
+                await user.add_booster(int(item))
             return await ctx.send(
                 f"Done! Added booster \"{BOOSTERS[int(item)]['name']}\" to your inventory"
                 + (f" {amount} times " if amount > 1 else "")

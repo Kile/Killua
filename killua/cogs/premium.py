@@ -177,10 +177,10 @@ class Premium(commands.Cog):
         ]
         return [*new_patrons, *removed_patrons, *different_badges]
 
-    def _assign_badges(self, diff: List[dict]) -> None:
+    async def _assign_badges(self, diff: List[dict]) -> None:
         """Assigns the changed badges to the users"""
         for d in diff:
-            user = User(d["discord"])
+            user = await User.new(d["discord"])
             premium_guilds = user.premium_guilds
             badges = user.badges
 
@@ -189,12 +189,14 @@ class Premium(commands.Cog):
                     badges.remove(k)
 
             if d["tier"] is None:
-                Guild.bullk_remove_premium([int(x) for x in premium_guilds.keys()])
-                user.clear_premium_guilds()
+                await Guild.bullk_remove_premium(
+                    [int(x) for x in premium_guilds.keys()]
+                )
+                await user.clear_premium_guilds()
             else:
                 badges.append(d["tier"])
 
-            user.set_badges(badges)
+            await user.set_badges(badges)
 
     def _get_subscription_entitlements(
         self, all: List[discord.Entitlement]
@@ -235,11 +237,11 @@ class Premium(commands.Cog):
         if not sku:
             return  # TODO if subbing for the first time, thank user
 
-        user = User(ent.user_id)
+        user = await User.new(ent.user_id)
         # Find lootbox
         lootbox, amount = LootBox.get_lootbox_from_sku(sku)
         for _ in range(amount):
-            user.add_lootbox(lootbox)
+            await user.add_lootbox(lootbox)
 
         # DM user
         try:
@@ -279,13 +281,16 @@ class Premium(commands.Cog):
     @tasks.loop(minutes=2)
     async def get_patrons(self):
         saved_patrons = [
-            x for x in DB.teams.find({"badges": {"$in": list(PATREON_TIERS.keys())}})
+            x
+            async for x in DB.teams.find(
+                {"badges": {"$in": list(PATREON_TIERS.keys())}}
+            )
         ]
 
         current_patrons = await Patreon(
             self.client.session, PATREON, "5394117"
         ).get_patrons()
-        entitelments = self._get_subscription_entitlements(
+        entitlements = self._get_subscription_entitlements(
             self.client.cached_entitlements
         )
 
@@ -294,16 +299,22 @@ class Premium(commands.Cog):
         tier_1 = next((k for k, v in PATREON_TIERS.items() if v["id"] == 1), None)
 
         # Map the entitlements to the discord id
-        entitelment_ids = [{"tier": tier_1, "discord": e.user_id} for e in entitelments]
+        entitlement_ids = [{"tier": tier_1, "discord": e.user_id} for e in entitlements]
 
-        current_patrons.patrons.extend(entitelment_ids)
+        current_patrons.patrons.extend(entitlement_ids)
 
         if self.client.run_in_docker:
+            combined = set(
+                *[
+                    [u["id"] for u in saved_patrons],
+                    *[u["discord"] for u in current_patrons],
+                ]
+            )
             # Save stat to prometheus
-            PREMIUM_USERS.set(len(current_patrons.patrons))
+            PREMIUM_USERS.set(len(combined))
 
         diff = self._get_differences(current_patrons, saved_patrons)
-        self._assign_badges(diff)
+        await self._assign_badges(diff)
         self.invalid = False
 
     @get_patrons.before_loop
@@ -329,7 +340,7 @@ class Premium(commands.Cog):
         """Add or remove the premium status of a guild with this command"""
         if action == "add":
 
-            if not (user := User(ctx.author.id)).is_premium:
+            if not (user := await User.new(ctx.author.id)).is_premium:
                 return await ctx.send(
                     "Sadly you aren't a premium subscriber so you don't have premium guilds! Become a premium subscriber here: https://www.patreon.com/KileAlkuri"
                 )
@@ -342,22 +353,22 @@ class Premium(commands.Cog):
                     "You first need to remove premium perks from one of your other servers to give this server premium status"
                 )
 
-            if (guild := Guild(ctx.guild.id)).is_premium:
+            if (guild := await Guild.new(ctx.guild.id)).is_premium:
                 return await ctx.send("This guild already has the premium status!")
 
-            guild.add_premium()
-            user.add_premium_guild(ctx.guild.id)
+            await guild.add_premium()
+            await user.add_premium_guild(ctx.guild.id)
             await ctx.send("Success! This guild is now a premium guild")
 
         else:
 
-            if not (guild := Guild(ctx.guild.id)).is_premium:
+            if not (guild := await Guild.new(ctx.guild.id)).is_premium:
                 return await ctx.send(
                     "This guild is not a premium guild, so you don't remove it's premium status! Looking for premium? Visit https://www.patreon.com/KileAlkuri"
                 )
 
             if not str(guild.id) in (
-                (user := User(ctx.author.id)).premium_guilds.keys()
+                (user := await User.new(ctx.author.id)).premium_guilds.keys()
             ):
                 return await ctx.send(
                     "You are not the one who added the premium status to this server, so you can't remove it"
@@ -375,8 +386,8 @@ class Premium(commands.Cog):
                     f"You need to wait {7-int(diff)} more days before you can remove this servers premium status!"
                 )
 
-            guild.remove_premium()
-            user.remove_premium_guild(ctx.guild.id)
+            await guild.remove_premium()
+            await user.remove_premium_guild(ctx.guild.id)
             await ctx.send("Successfully removed this servers premium status!")
 
     @check()
@@ -384,7 +395,7 @@ class Premium(commands.Cog):
     @premium.command(extras={"category": Category.ECONOMY, "id": 68}, usage="weekly")
     async def weekly(self, ctx: commands.Context):
         """Claim a weekly lootbox with this command"""
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
 
         if user.weekly_cooldown and user.weekly_cooldown > datetime.now():
             cooldown = f"<t:{int(user.weekly_cooldown.timestamp())}:R>"
@@ -393,8 +404,8 @@ class Premium(commands.Cog):
             )
 
         lootbox = LootBox.get_random_lootbox()
-        user.claim_weekly()
-        user.add_lootbox(lootbox)
+        await user.claim_weekly()
+        await user.add_lootbox(lootbox)
 
         await ctx.send(f"Successfully claimed lootbox: {LOOTBOXES[lootbox]['name']}")
 

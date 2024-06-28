@@ -83,7 +83,7 @@ class Actions(commands.GroupCog, group_name="action"):
         )
         return await ctx.send(embed=embed)
 
-    def save_stat(
+    async def save_stat(
         self,
         member: discord.Member,
         endpoint: str,
@@ -94,8 +94,8 @@ class Actions(commands.GroupCog, group_name="action"):
         Saves the action being done on a user and returns the badge if the user
         has reached a milestone for the action.
         """
-        user = User(member.id)
-        badge = user.add_action(endpoint, targetted, amount)
+        user = await User.new(member.id)
+        badge = await user.add_action(endpoint, targetted, amount)
         return badge
 
     def generate_users(self, members: List[discord.Member], title: str) -> str:
@@ -215,7 +215,7 @@ class Actions(commands.GroupCog, group_name="action"):
         try:
             await self.client.wait_for("message", check=check, timeout=60)
         except asyncio.TimeoutError:
-            return None, None # Needs to be a tuple
+            return None, None  # Needs to be a tuple
         else:
             return await self.action_embed(ctx.command.name, "Killua", ctx.author.name)
 
@@ -232,7 +232,7 @@ class Actions(commands.GroupCog, group_name="action"):
         elif ctx.author == members[0]:
             return await ctx.send("Sorry... you can't use this command on yourself")
         else:
-            first = User(members[0].id)
+            first = await User.new(members[0].id)
             if (
                 len(members) == 1
                 and (ctx.command.name in first.action_settings)
@@ -246,7 +246,7 @@ class Actions(commands.GroupCog, group_name="action"):
             allowed: List[discord.Member] = []
             disabled = 0
             for member in members:
-                m = User(member.id)
+                m = await User.new(member.id)
                 if (
                     m.action_settings
                     and ctx.command.name in m.action_settings
@@ -257,7 +257,7 @@ class Actions(commands.GroupCog, group_name="action"):
                     allowed.append(member)
 
             for member in allowed:
-                badge = self.save_stat(member, ctx.command.name, True)
+                badge = await self.save_stat(member, ctx.command.name, True)
                 if badge:
                     try:
                         await member.send(
@@ -266,7 +266,9 @@ class Actions(commands.GroupCog, group_name="action"):
                     except discord.Forbidden:
                         pass
 
-            badge = self.save_stat(ctx.author, ctx.command.name, False, len(allowed))
+            badge = await self.save_stat(
+                ctx.author, ctx.command.name, False, len(allowed)
+            )
             if badge:
                 try:
                     await ctx.author.send(
@@ -426,7 +428,7 @@ class Actions(commands.GroupCog, group_name="action"):
             }
         )
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
         current = user.action_settings
 
         for action in ACTIONS.keys():
@@ -460,7 +462,7 @@ class Actions(commands.GroupCog, group_name="action"):
                     current[action] = False
                     embed.add_field(name=action, value="❌", inline=False)
 
-            user.set_action_settings(current)
+            await user.set_action_settings(current)
             await view.interaction.response.defer()  # Ideally I would use the response to edit the message, however as view HAS to be redefined above before editing this is impossible
             view = self._get_view(ctx.author.id, current)
 

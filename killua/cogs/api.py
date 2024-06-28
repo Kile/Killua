@@ -11,6 +11,7 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageChops
 
 from killua.bot import BaseBot
+from killua.metrics import VOTES
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
 from killua.static.constants import (
@@ -236,15 +237,15 @@ class IPCRoutes(commands.Cog):
     async def handle_vote(self, data: dict) -> None:
         user_id = data["user"] if data.get("user", False) else data["id"]
 
-        user = User(int(user_id))
-        user.add_vote("topgg" if data.get("isWeekend", None) is not None else "discordbotlist")
-        streak = user.voting_streak[
-            (
-                "topgg"
-                if "isWeekend" in data and data["isWeekend"] is not None
-                else "discordbotlist"
-            )
-        ]["streak"]
+        user = await User.new(int(user_id))
+        platform = (
+            "topgg"
+            if "isWeekend" in data and data["isWeekend"] is not None
+            else "discordbotlist"
+        )
+        await user.add_vote(platform)
+        VOTES.labels(platform).inc()
+        streak = user.voting_streak[platform]["streak"]
         reward: Union[int, Booster] = self._get_reward(
             streak,
             "isWeekend" in data and data["isWeekend"] is not None,
@@ -297,11 +298,11 @@ class IPCRoutes(commands.Cog):
         embed.set_image(url="attachment://streak.png")
 
         if isinstance(reward, Booster):
-            user.add_booster(reward.value)
+            await user.add_booster(reward.value)
         elif reward < 100:
-            user.add_lootbox(reward)
+            await user.add_lootbox(reward)
         else:
-            user.add_jenny(reward)
+            await user.add_jenny(reward)
 
         try:
             await usr.send(embed=embed, file=file)
@@ -310,7 +311,9 @@ class IPCRoutes(commands.Cog):
 
     async def top(self, _) -> List[dict]:
         """Returns a list of the top 50 users by the amount of jenny they have"""
-        members = DB.teams.find({"id": {"$in": [x.id for x in self.client.users]}})
+        members = await DB.teams.find(
+            {"id": {"$in": [x.id for x in self.client.users]}}
+        )
         top = sorted(members, key=lambda x: x["points"], reverse=True)[:50]
         res = []
         for t in top:
@@ -396,13 +399,13 @@ class IPCRoutes(commands.Cog):
         return {
             "guilds": len(self.client.guilds),
             "shards": self.client.shard_count,
-            "registered_users": DB.teams.count_documents({}),
+            "registered_users": await DB.teams.count_documents({}),
             "last_restart": self.client.startup_datetime.timestamp(),
         }
 
     async def save_user(self, data) -> None:
         """This functions purpose is not that much getting user data but saving a user in the database"""
-        User(data["user"])
+        await User.new(data["user"])
 
     async def get_discord_user(self, data) -> dict:
         """Getting additional info about a user with their id"""
@@ -416,7 +419,7 @@ class IPCRoutes(commands.Cog):
 
     async def update_guild_cache(self, data) -> None:
         """Makes sure the local cache is up to date with the db"""
-        guild = Guild(data.id)
+        guild = await Guild.new(data["id"])
         guild.prefix = data["prefix"]
         guild.commands = {v for _, v in data.commands.items()}
 

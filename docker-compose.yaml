@@ -9,9 +9,11 @@ x-common-labels: &common-labels
     
 services:
   proxy:
+    container_name: zmq_proxy
     image: ghcr.io/kile/zmq-proxy:latest
     build:
       context: "./zmq_proxy"
+      target: ${MODE:-prod} # dev/prod
     environment:
       - ZMQ_CLIENT_ADDRESS=tcp://*:5559
       - ZMQ_SERVER_ADDRESS=tcp://*:5560
@@ -49,8 +51,6 @@ services:
       - ZMQ_ADDRESS=tcp://proxy:5560
     env_file:
       - .env
-    ports:
-      - '8000:8000' # prometheus endpoint
     depends_on:
       - api
       - proxy

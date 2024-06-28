@@ -136,6 +136,17 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         if len(ctx.message.attachments) > 0:
             return ctx.message.attachments[0].url
 
+        if ctx.message.reference:
+            message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+            if len(message.attachments) > 0:
+                return message.attachments[0].url
+            elif len(message.embeds) > 0:
+                embed = message.embeds[0]
+                if embed.image:
+                    return embed.image.url
+                if embed.thumbnail:
+                    return embed.thumbnail.url
+
         async for message in ctx.channel.history(limit=5):
             if len(message.attachments) > 0:
                 return message.attachments[0].url
@@ -164,7 +175,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
             data = await self._validate_input(ctx, target)
             if not data:
                 return await ctx.send(
-                    f"Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`",
+                    f"Invalid arguments passed. For help with the command, use `{(await self.client.command_prefix(self.client, ctx.message))[2]}help {ctx.command.name}`",
                     allowed_mentions=discord.AllowedMentions.none(),
                     ephemeral=True,
                 )
@@ -442,7 +453,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         data = await self._validate_input(ctx, target)
         if not data:
             return await ctx.send(
-                f"Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`",
+                f"Invalid arguments passed. For help with the command, use `{(await self.client.command_prefix(self.client, ctx.message))[2]}help {ctx.command.name}`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
@@ -466,7 +477,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         data = await self._validate_input(ctx, target)
         if not data:
             return await ctx.send(
-                f"Invalid arguments passed. For help with the command, use `{self.client.command_prefix(self.client, ctx.message)[2]}help {ctx.command.name}`",
+                f"Invalid arguments passed. For help with the command, use `{(await self.client.command_prefix(self.client, ctx.message))[2]}help {ctx.command.name}`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
         await ctx.channel.typing()

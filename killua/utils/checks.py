@@ -10,7 +10,7 @@ cooldowndict = {}
 
 
 class CommandUsageCache:
-    data = dict(DB.const.find_one({"_id": "usage"})["command_usage"])
+    data: dict = None
 
     """
     A class to cache command usage
@@ -18,12 +18,12 @@ class CommandUsageCache:
 
     def __init__(self): ...
 
-    def __getitem__(self, key):
+    def get(self, key):
         return self.data[key]
 
-    def __setitem__(self, key, value):
+    async def set(self, key, value):
         self.data[key] = value
-        DB.const.update_one({"_id": "usage"}, {"$set": {"command_usage": self.data}})
+        await DB.const.update_one({"_id": "usage"}, {"$set": {"command_usage": self.data}})
 
     def __contains__(self, key):
         return key in self.data
@@ -32,7 +32,7 @@ class CommandUsageCache:
         return self.data.get(key, default)
 
 
-def blcheck(
+async def blcheck(
     userid: int,
 ):  # It is necessary to define it twice as I might have to use this function on its own
     """
@@ -40,7 +40,7 @@ def blcheck(
     """
     result = [
         d
-        for d in DB.const.find_one({"_id": "blacklist"})["blacklist"]
+        for d in (await DB.const.find_one({"_id": "blacklist"}))["blacklist"]
         if d["id"] == userid
     ]
 
@@ -54,7 +54,7 @@ def premium_guild_only():
 
     async def predicate(ctx: commands.Context) -> bool:
 
-        if not Guild(ctx.guild.id).is_premium:
+        if not (await Guild.new(ctx.guild.id)).is_premium:
             view = discord.ui.View()
             view.add_item(
                 discord.ui.Button(
@@ -80,7 +80,7 @@ def premium_user_only():
 
     async def predicate(ctx: commands.Context) -> bool:
 
-        if not User(ctx.author.id).is_premium:
+        if not (await User.new(ctx.author.id)).is_premium:
             view = discord.ui.View()
             view.add_item(
                 discord.ui.Button(
@@ -101,7 +101,6 @@ def premium_user_only():
 
     return commands.check(predicate)
 
-
 def check(time: int = 0):
     """
     A check that checks for blacklists, dashboard configuration and cooldown in that order
@@ -114,7 +113,7 @@ def check(time: int = 0):
         if userid not in daily_users.users:
             daily_users.users.append(userid)
 
-    def add_usage(command: Union[commands.Command, Type[commands.Command]]) -> None:
+    async def add_usage(command: Union[commands.Command, Type[commands.Command]]) -> None:
         """Adds one to the usage count of a command"""
         if isinstance(command, commands.HybridGroup) or isinstance(
             command, discord.app_commands.Group
@@ -122,11 +121,10 @@ def check(time: int = 0):
             return
 
         data = CommandUsageCache()
-        data[str(command.extras["id"])] = (
-            data[str(command.extras["id"])] + 1
-            if str(command.extras["id"]) in data
-            else 1
-        )
+        if data.data is None:
+            data.data = dict(await DB.const.find_one({"_id": "usage"}))["command_usage"]
+
+        await data.set(str(command.extras["id"]), data.get(str(command.extras["id"]), 0) + 1)
 
     async def custom_cooldown(ctx: commands.Context, time: int) -> bool:
         global cooldowndict
@@ -147,8 +145,8 @@ def check(time: int = 0):
         cd: timedelta = now - cdwn
         diff = cd.seconds
 
-        user = User(ctx.author.id)
-        guild = Guild(ctx.guild.id) if ctx.guild else None
+        user = await User.new(ctx.author.id)
+        guild = (await Guild.new(ctx.guild.id)) if ctx.guild else None
         view = discord.ui.View()
         view.add_item(
             discord.ui.Button(
@@ -186,7 +184,7 @@ def check(time: int = 0):
         if not ctx.guild:
             return True
 
-        guild = Guild(ctx.guild.id)
+        guild = await Guild.new(ctx.guild.id)
 
         if not ctx.command.name in guild.commands:
             return True
@@ -259,7 +257,7 @@ def check(time: int = 0):
         if ctx.guild and not ctx.guild.chunked:
             await ctx.guild.chunk()
 
-        if blcheck(ctx.author.id):
+        if await blcheck(ctx.author.id):
             return False
 
         try:
@@ -273,7 +271,7 @@ def check(time: int = 0):
         if time > 0 and await custom_cooldown(ctx, time) is False:
             return False
 
-        add_usage(ctx.command)
+        await add_usage(ctx.command)
         add_daily_user(ctx.author.id)
 
         return True

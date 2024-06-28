@@ -3,10 +3,9 @@ from discord.ext import commands, tasks
 from datetime import datetime
 import math, logging, re
 from typing import Union, Optional, List, Literal, cast
-from pymongo.errors import ServerSelectionTimeoutError
 
 from killua.bot import BaseBot
-from killua.static.enums import Category, PrintColors
+from killua.static.enums import Category
 from killua.static.constants import DB, URL_REGEX, editing, REPORT_CHANNEL
 from killua.utils.checks import check, blcheck
 from killua.utils.classes import TodoList, Todo, User, TodoListNotFound
@@ -49,12 +48,7 @@ class TodoSystem(commands.Cog):
         """
         Checks if any todo's are due and sends a message to the owner if so
         """
-        try:
-            lists = [TodoList(r["_id"]) for r in DB.todo.find({})]
-        except ServerSelectionTimeoutError:
-            return logging.warn(
-                f"{PrintColors.WARNING}Failed to send out todo due notifications due to failing to connect to the db{PrintColors.ENDC}"
-            )
+        lists = [await TodoList.new(r["_id"]) async for r in DB.todo.find({})]
 
         for todo_list in lists:
             for todo in todo_list.todos:
@@ -90,7 +84,7 @@ class TodoSystem(commands.Cog):
                                 continue  # If dms are closed we don't want to interrupt the loop
 
                     todo["notified"] = True
-                    todo_list.set_property("todos", todo_list.todos)
+                    await todo_list.set_property("todos", todo_list.todos)
 
     @check_todo_dues.before_loop
     async def before_check_todo_dues(self):
@@ -130,7 +124,7 @@ class TodoSystem(commands.Cog):
         for n, t in enumerate(
             final_todos if page else l, page * 10 - 10 if page else 0
         ):
-            t = Todo(n + 1, todo_list.id)
+            t = await Todo.new(n + 1, todo_list.id)
             ma = f"\n`Marked as {t.marked}`" if t.marked else ""
             due = f"\nDue <t:{int(t.due_at.timestamp())}:R>" if t.due_at else ""
             desc.append(
@@ -160,7 +154,7 @@ class TodoSystem(commands.Cog):
     ) -> discord.Message:
         """outsourcing big embed production 🛠"""
         try:
-            todo_list = TodoList(list_id)
+            todo_list = await TodoList.new(list_id)
         except TodoListNotFound:
             return await ctx.send("No todo list with this id exists")
         if not todo_list.has_view_permission(ctx.author.id):
@@ -168,7 +162,7 @@ class TodoSystem(commands.Cog):
                 "You don't have permission to view infos about this list!"
             )
 
-        todo_list.add_view(ctx.author.id)
+        await todo_list.add_view(ctx.author.id)
 
         owner = await self._get_user(todo_list.owner)
         created_at = (
@@ -204,11 +198,11 @@ class TodoSystem(commands.Cog):
     ) -> discord.Message:
         """outsourcing big embed production 🛠"""
         try:
-            todo_list = TodoList(list_id)
+            todo_list = await TodoList.new(list_id)
         except TodoListNotFound:
             return await ctx.send("No todo list with this id exists")
         try:
-            todo_task = Todo(task_id, list_id)
+            todo_task = await Todo.new(task_id, list_id)
         except Exception:
             return await ctx.send("A todo task with that id is not on the list")
 
@@ -217,24 +211,24 @@ class TodoSystem(commands.Cog):
                 "You don't have permission to view infos about this list!"
             )
 
-        todo_task.add_task_view(ctx.author.id, todo_task.position)
+        await todo_list.add_task_view(ctx.author.id, todo_task.position)
 
-        addist = await self._get_user(todo_task.added_by)
+        adder = await self._get_user(todo_task.added_by)
         added_on = (
             f"<t:{int(todo_task.added_on.timestamp())}:f>"
             if isinstance(todo_task.added_on, datetime)
             else todo_task.added_on
         )
 
-        mark_log = "\n".join(
+        mark_log = ("\n" + "-" * 20 + "\n").join(
             [
-                f"""Changed to: `{x["change"]}`\nBy `{(await self._get_user(x["author"])).display_name}`\nOn"""
+                f"Changed to: `{x['change']}`\nBy `{(await self._get_user(x['author'])).display_name}`\n"
                 + (
                     f"<t:{int(x['date'].timestamp())}:f>"
                     if isinstance(x["date"], datetime)
                     else f"`{x['date']}`"
                 )
-                for x in todo_task.mark_log[3:]
+                for x in todo_task.mark_log[:3]
             ]
         )
 
@@ -248,7 +242,7 @@ class TodoSystem(commands.Cog):
         embed = discord.Embed.from_dict(
             {
                 "title": f"Information for the todo task {task_id}",
-                "description": f"**Added by**: `{addist.display_name}`\n\n"
+                "description": f"**Added by**: `{adder.display_name}`\n\n"
                 + f"**Content**: {todo_task.todo}\n\n"
                 + f"**Currently marked as**: `{todo_task.marked or 'Not currently marked'}`\n\n"
                 + f"**Assigned to**: `{', '.join([(await self._get_user(u)).display_name for u in todo_task.assigned_to]) if len(todo_task.assigned_to) > 0 else 'unassigned'}`\n\n"
@@ -275,8 +269,7 @@ class TodoSystem(commands.Cog):
                 allowed_mentions=discord.AllowedMentions.none(),
             )
         else:
-            todo_list = TodoList(list_id)
-            return todo_list
+            return await TodoList.new(list_id)
 
     @commands.hybrid_group(hidden=True, extras={"category": Category.TODO})
     @discord.app_commands.allowed_installs(guilds=True, users=True)
@@ -304,41 +297,44 @@ class TodoSystem(commands.Cog):
     ):
         """Lets you create your todo list in an interactive menu"""
 
-        user_todo_lists = [x for x in DB.todo.find({"owner": ctx.author.id})]
+        user_todo_lists = [
+            x async for x in await DB.todo.find({"owner": ctx.author.id})
+        ]
 
         if len(user_todo_lists) == 5:
             return await ctx.send(
                 "You can currently not own more than 5 todo lists", ephemeral=True
             )
 
-        user = User(ctx.author.id)
         if len(name) > 30:
             return await ctx.send(
                 "Name can't be longer than 20 characters", ephemeral=True
             )
 
-        if custom_id and not user.is_premium:
-            return await ctx.send(
-                "You need to be a premium user to use custom ids", ephemeral=True
-            )
+        user = await User.new(ctx.author.id)
+        if custom_id:
+            if not user.is_premium:
+                return await ctx.send(
+                    "You need to be a premium user to use custom ids", ephemeral=True
+                )
 
-        if len(custom_id) > 20:
-            return await ctx.send(
-                "Your custom id can have max 20 characters", ephemeral=True
-            )
+            if len(custom_id) > 20:
+                return await ctx.send(
+                    "Your custom id can have max 20 characters", ephemeral=True
+                )
 
-        if custom_id.lower().isdigit():
-            return await ctx.send(
-                "Your custom id needs to contain at least one character that isn't an integer",
-                ephemeral=True,
-            )
+            if custom_id.lower().isdigit():
+                return await ctx.send(
+                    "Your custom id needs to contain at least one character that isn't an integer",
+                    ephemeral=True,
+                )
 
-        try:
-            TodoList(custom_id.lower())
-        except TodoListNotFound:
-            pass
-        else:
-            return await ctx.send("This custom id is already taken", ephemeral=True)
+            try:
+                await TodoList.new(custom_id.lower())
+            except TodoListNotFound:
+                pass
+            else:
+                return await ctx.send("This custom id is already taken", ephemeral=True)
 
         l = TodoList.create(
             owner=ctx.author.id,
@@ -366,7 +362,7 @@ class TodoSystem(commands.Cog):
                 return
         else:
             try:
-                todo_list = TodoList(todo_id)
+                todo_list = await TodoList.new(todo_id)
             except TodoListNotFound:
                 return await ctx.send("No todo list with specified ID found")
 
@@ -374,7 +370,7 @@ class TodoSystem(commands.Cog):
             return await ctx.send(
                 "This is a private list you don't have the permission to view"
             )
-        todo_list.add_view(ctx.author.id)
+        await todo_list.add_view(ctx.author.id)
 
         if len(todo_list) <= 10:
             return await ctx.send(embed=await self._build_embed(todo_list))
@@ -397,12 +393,12 @@ class TodoSystem(commands.Cog):
                 "You have to be in the editor mode to use this command without providing an id! Use `/todo edit <todo_list_id>`"
             )
 
-        todo_list = TodoList(list_id)
+        todo_list = await TodoList.new(list_id)
         if not todo_list.has_edit_permission(ctx.author.id):
             return await ctx.send(
                 "You have to be added as an editor to this list to use this command"
             )
-        todo_list.clear()
+        await todo_list.clear()
         await ctx.send("Done! Cleared all your todos")
 
     @check(1)
@@ -446,7 +442,7 @@ class TodoSystem(commands.Cog):
         if ctx.author.id in editing and editing[ctx.author.id] == list_id:
             return await ctx.send("You are already editing this list!")
         try:
-            todo_list = TodoList(list_id)
+            todo_list = await TodoList.new(list_id)
         except TodoListNotFound:
             return await ctx.send("No todo list with this id exists")
 
@@ -493,22 +489,22 @@ class TodoSystem(commands.Cog):
 
         updated = []
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
         if name:
             if len(name) > 30:
                 return await ctx.send(
                     "Name can't be longer than 20 characters", ephemeral=True
                 )  #
             else:
-                res.set_property("title", name)
+                await res.set_property("title", name)
                 updated.append("title")
 
         if status:
-            res.set_property("status", status)
+            await res.set_property("status", status)
             updated.append("status")
 
         if delete_when_done:
-            res.set_property("delete_when_done", delete_when_done == "yes")
+            await res.set_property("delete_when_done", delete_when_done == "yes")
             updated.append("delete_when_done")
 
         if custom_id:
@@ -530,13 +526,13 @@ class TodoSystem(commands.Cog):
                 )
 
             try:
-                TodoList(custom_id.lower())
+                await TodoList.new(custom_id.lower())
             except TodoListNotFound:
                 pass
             else:
                 return await ctx.send("This custom id is already taken", ephemeral=True)
 
-            res.set_property("custom_id", custom_id.lower())
+            await res.set_property("custom_id", custom_id.lower())
             updated.append("custom_id")
 
         if color:
@@ -546,10 +542,10 @@ class TodoSystem(commands.Cog):
                     ephemeral=True,
                 )
             if color.lower() == "none":
-                res.set_property("color", None)
+                await res.set_property("color", None)
             else:
                 try:
-                    res.set_property("color", int(color, 16))
+                    await res.set_property("color", int(color, 16))
                     updated.append("color")
                 except ValueError:
                     return await ctx.send(
@@ -572,7 +568,7 @@ class TodoSystem(commands.Cog):
                 )
 
             if image:
-                res.set_property("thumbnail", thumbnail)
+                await res.set_property("thumbnail", thumbnail)
                 updated.append("thumbnail")
             else:
                 await ctx.send(
@@ -590,7 +586,7 @@ class TodoSystem(commands.Cog):
                     "Description can't be longer than 200 characters", ephemeral=True
                 )
             else:
-                res.set_property("description", description)
+                await res.set_property("description", description)
                 updated.append("description")
 
         await ctx.send(
@@ -606,7 +602,7 @@ class TodoSystem(commands.Cog):
     async def remove(self, ctx: commands.Context, todo_numbers: commands.Greedy[int]):
         """Remove a todo with this command. YAY, GETTING THINGS DONE!! (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
 
         if len(todo_numbers) == 0:
@@ -656,7 +652,7 @@ class TodoSystem(commands.Cog):
     async def mark(self, ctx: commands.Context, todo_number: int, *, marked_as: str):
         """Mark a todo with a comment like `done` or `too lazy` (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
 
         todos = todo_list.todos
@@ -669,7 +665,7 @@ class TodoSystem(commands.Cog):
 
         if marked_as.lower() == "done" and todo_list.delete_done is True:
             todos.pop(todo_number - 1)
-            todo_list.set_property("todos", todos)
+            await todo_list.set_property("todos", todos)
             return await ctx.send(
                 f"Marked to-do number {todo_number} as done and deleted it per default"
             )
@@ -680,8 +676,8 @@ class TodoSystem(commands.Cog):
                 "change": "REMOVED MARK",
                 "date": datetime.now(),
             }
-            todos[todo_number - 1]["mark_log"].append(mark_log)
-            todo_list.set_property("todos", todos)
+            cast(list, todos[todo_number - 1]["mark_log"]).append(mark_log)
+            await todo_list.set_property("todos", todos)
             return await ctx.send(
                 f"Removed to-do number {todo_number} successfully!",
                 allowed_mentions=discord.AllowedMentions.none(),
@@ -693,8 +689,8 @@ class TodoSystem(commands.Cog):
                 "change": marked_as,
                 "date": datetime.now(),
             }
-            todos[todo_number - 1]["mark_log"].append(mark_log)
-            todo_list.set_property("todos", todos)
+            cast(list, todos[todo_number - 1]["mark_log"]).append(mark_log)
+            await todo_list.set_property("todos", todos)
             return await ctx.send(
                 f"Marked to-do number {todo_number} as `{marked_as}`!",
                 allowed_mentions=discord.AllowedMentions.none(),
@@ -728,9 +724,8 @@ class TodoSystem(commands.Cog):
     ):
         """Add a todo to your list, *yay, more work* (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
-
         if len(text) > 100:
             return await ctx.send(
                 "Your todo can't have more than 100 characters", ephemeral=True
@@ -764,7 +759,7 @@ class TodoSystem(commands.Cog):
             }
         )
 
-        todo_list.set_property("todos", todos)
+        await todo_list.set_property("todos", todos)
         return await ctx.send(
             f'Great! Added "{text}" to your todo list!'
             + (
@@ -782,7 +777,7 @@ class TodoSystem(commands.Cog):
     async def kick(self, ctx: commands.Context, user: discord.User):
         """Take all permissions from someone from your todo list (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
 
         if not ctx.author.id == todo_list.owner:
@@ -815,7 +810,7 @@ class TodoSystem(commands.Cog):
         """Exit editing mode with this. (Only in editor mode)"""
         # I"ve never used it because it is pointless because my code is so good you realistically never need to be out of editing mode but it is here so use it
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
 
         editing.pop(ctx.author.id, None)
@@ -837,13 +832,16 @@ class TodoSystem(commands.Cog):
     ):
         """Wanna let your friend add more todos for you? Invite them! (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
 
         if user.id == ctx.author.id:
             return await ctx.send(
                 "You are already owner, you don't need to invite yourself"
             )
+
+        if user.bot:
+            return await ctx.send("You can't invite a bot to your todo list")
 
         if blcheck(user.id):
             return await ctx.send("You can't invite a blacklisted user")
@@ -861,6 +859,11 @@ class TodoSystem(commands.Cog):
             return await ctx.send(
                 "User already has editor permissions, you can't also add viewer permission",
                 ephemeral=True,
+            )
+
+        if await self.client._dm_check(user) is False:
+            return await ctx.send(
+                "The user you are trying to invite has their dms closed, they need to open them to accept the invitation"
             )
 
         embed = discord.Embed.from_dict(
@@ -964,7 +967,7 @@ class TodoSystem(commands.Cog):
     async def assign(self, ctx: commands.Context, todo_number: int, user: discord.User):
         """Assign someone a todo task with this. If already asigned they are removed. (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
 
         if not user.id == todo_list.owner and not user.id in todo_list.editor:
@@ -1038,7 +1041,7 @@ class TodoSystem(commands.Cog):
     async def reorder(self, ctx: commands.Context, position: int, new_position: int):
         """Reorder a todo task with this. (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
 
         if (
@@ -1073,7 +1076,7 @@ class TodoSystem(commands.Cog):
     async def delete(self, ctx: commands.Context, todo_id: str):
         """Use this command to delete your todo list. Make sure to say goodbye a last time"""
         todo_list = await self._edit_check(ctx)
-        if not todo_list:
+        if todo_list is None:
             return
 
         if not ctx.author.id == todo_list.owner:
@@ -1096,19 +1099,19 @@ class TodoSystem(commands.Cog):
         l_o = "\n".join(
             [
                 f"{l['name']} (id: {l['_id']}/{l['custom_id'] or 'No custom id'})"
-                for l in lists_owning
+                async for l in lists_owning
             ]
         )
         l_v = "\n".join(
             [
                 f"{l['name']} (id: {l['_id']}/{l['custom_id'] or 'No custom id'})"
-                for l in lists_viewing
+                async for l in lists_viewing
             ]
         )
         l_e = "\n".join(
             [
                 f"{l['name']} (id: {l['_id']}/{l['custom_id'] or 'No custom id'})"
-                for l in lists_editing
+                async for l in lists_editing
             ]
         )
 

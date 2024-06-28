@@ -160,7 +160,7 @@ class _ActionCommand(TestingActions):
     @test
     async def single_member_action_disabled(self) -> None:
         member = DiscordMember(guild=self.base_guild)
-        User(member.id).set_action_settings({self.command.name: False})
+        await User.new(member.id).set_action_settings({self.command.name: False})
         await self.command(self.cog, self.base_context, [member])
 
         assert (
@@ -178,10 +178,12 @@ class _ActionCommand(TestingActions):
             if (
                 p < len(members) - 1
             ):  # We do not want all members to have this action disabled
-                User(member.id).set_action_settings({self.command.name: False})
+                await User.new(member.id).set_action_settings(
+                    {self.command.name: False}
+                )
                 disabled += 1
             else:
-                User(member.id).set_action_settings({self.command.name: True})
+                await User.new(member.id).set_action_settings({self.command.name: True})
         await self.command(self.cog, self.base_context, members)
 
         assert (
@@ -196,7 +198,7 @@ class _ActionCommand(TestingActions):
     async def all_members_action_disabled(self) -> None:
         members = [DiscordMember(guild=self.base_guild) for _ in range(randint(4, 10))]
         for member in members:
-            User(member.id).set_action_settings({self.command.name: False})
+            await User.new(member.id).set_action_settings({self.command.name: False})
         await self.command(self.cog, self.base_context, members)
 
         assert (

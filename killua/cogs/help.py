@@ -219,11 +219,14 @@ class HelpCommand(commands.Cog):
         raw = self.client.get_raw_formatted_commands()
         return [
             discord.app_commands.Choice(
-                name=((self.client._get_group(command) or "") + " " + command.name).strip(),
+                name=(
+                    (self.client._get_group(command) or "") + " " + command.name
+                ).strip(),
                 value=command.qualified_name,
             )
             for command in raw
-            if current.lower() in ((self.client._get_group(command) or "") + " " + command.name).strip()
+            if current.lower()
+            in ((self.client._get_group(command) or "") + " " + command.name).strip()
         ][:25]
 
     @commands.hybrid_command(usage="help [group] [command]", extras={"id": 45})
@@ -237,7 +240,7 @@ class HelpCommand(commands.Cog):
         self, ctx: commands.Context, group: str = None, command: str = None
     ) -> None:
         """Displays helfpul information about a command, group, or the bot itself."""
-        message_prefix = Guild(ctx.guild.id).prefix if ctx.guild else "k!"
+        message_prefix = (await Guild.new(ctx.guild.id)).prefix if ctx.guild else "k!"
 
         if not (group or command):
             all_formatted_commands = self.client.get_formatted_commands()

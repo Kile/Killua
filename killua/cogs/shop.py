@@ -56,23 +56,27 @@ class Shop(commands.Cog):
         self.cardname_cache: Dict[int, Tuple[str, str]] = {}
         self.last_update = None
 
-    def _format_offers(
+    async def _format_offers(
         self, offers: list, reduced_item: int = None, reduced_by: int = None
     ) -> List[Dict[str, str]]:
         """Formats the offers for the shop"""
         formatted: list = []
-        if reduced_item and reduced_by:
+        if reduced_item is not None and reduced_by is not None:
+            # Past me made an error. if reduced_item is False if it is 0.
+            # Needs to explicitly check if it is None
             x: int = 0
             for offer in offers:
-                formatted.append(self._format_item(offer, reduced_item, reduced_by, x))
+                formatted.append(
+                    await self._format_item(offer, reduced_item, reduced_by, x)
+                )
                 x += 1
         else:
             for offer in offers:
-                formatted.append(self._format_item(offer))
+                formatted.append(await self._format_item(offer))
 
         return formatted
 
-    def _format_item(
+    async def _format_item(
         self,
         offer: int,
         reduced_item: int = None,
@@ -80,8 +84,9 @@ class Shop(commands.Cog):
         number: int = None,
     ) -> Dict[str, str]:
         """Formats a single item for the shop"""
-        item = DB.items.find_one({"_id": int(offer)})
-        if reduced_item:
+        item = await DB.items.find_one({"_id": int(offer)})
+        if reduced_item is not None:
+            # Same as mentioned above, needs to be explicitly checked if it is None
             if number == reduced_item:
                 return {
                     "name": f"**Number {item['_id']}: {item['name']}** |{item['emoji']}|",
@@ -108,7 +113,7 @@ class Shop(commands.Cog):
                 # Add a S/A card to the shop
                 thing = [
                     i["_id"]
-                    for i in DB.items.find(
+                    async for i in DB.items.find(
                         {
                             "type": "normal",
                             "rank": {"$in": ["A", "S"]},
@@ -121,7 +126,7 @@ class Shop(commands.Cog):
                 if randint(1, 100) > 95:  # 5% chance for a good spell (they are rare)
                     spells = [
                         s["_id"]
-                        for s in DB.items.find(
+                        async for s in DB.items.find(
                             {"type": "spell", "rank": "A", "available": True}
                         )
                     ]
@@ -129,7 +134,7 @@ class Shop(commands.Cog):
                 elif randint(1, 10) > 5:  # 50% chance of getting a medium good card
                     spells = [
                         s["_id"]
-                        for s in DB.items.find(
+                        async for s in DB.items.find(
                             {
                                 "type": "spell",
                                 "rank": {"$in": ["B", "C"]},
@@ -141,7 +146,7 @@ class Shop(commands.Cog):
                 else:  # otherwise getting a fairly normal card
                     spells = [
                         s["_id"]
-                        for s in DB.items.find(
+                        async for s in DB.items.find(
                             {
                                 "type": "spell",
                                 "rank": {"$in": ["D", "E", "F", "G"]},
@@ -154,7 +159,7 @@ class Shop(commands.Cog):
                 while len(shop_items) != number_of_items:  # Filling remaining spots
                     thing = [
                         t["_id"]
-                        for t in DB.items.find(
+                        async for t in DB.items.find(
                             {
                                 "type": "normal",
                                 "rank": {"$in": ["D", "B"]},
@@ -176,7 +181,7 @@ class Shop(commands.Cog):
                         + ", ".join([str(x) for x in shop_items])
                         + f", reduced item number {shop_items[reduced_item]} by {reduced_by}%{PrintColors.ENDC}"
                     )
-                    DB.const.update_many(
+                    await DB.const.update_many(
                         {"_id": "shop"},
                         {
                             "$set": {
@@ -192,7 +197,7 @@ class Shop(commands.Cog):
                     logging.info(
                         f"{PrintColors.OKBLUE}Updated shop with following cards: {', '.join([str(x) for x in shop_items])}{PrintColors.ENDC}"
                     )
-                    DB.const.update_many(
+                    await DB.const.update_many(
                         {"_id": "shop"},
                         {"$set": {"offers": shop_items, "reduced": None}},
                     )
@@ -275,19 +280,18 @@ class Shop(commands.Cog):
     async def cards_shop(self, ctx: commands.Context):
         """Shows the current cards for sale"""
 
-        sh = DB.const.find_one({"_id": "shop"})
+        sh = await DB.const.find_one({"_id": "shop"})
         shop_items = sh["offers"]
-
         if not sh["reduced"] is None:
             reduced_item = sh["reduced"]["reduced_item"]
             reduced_by = sh["reduced"]["reduced_by"]
-            formatted = self._format_offers(shop_items, reduced_item, reduced_by)
+            formatted = await self._format_offers(shop_items, reduced_item, reduced_by)
             embed = discord.Embed(
                 title="Current Card shop",
-                description=f"**{Card(shop_items[reduced_item]).name} is reduced by {reduced_by}%**",
+                description=f"**{(await Card.new(shop_items[reduced_item])).name} is reduced by {reduced_by}%**",
             )
         else:
-            formatted = self._format_offers(shop_items)
+            formatted = await self._format_offers(shop_items)
             embed = discord.Embed(title="Current Card shop")
 
         embed.color = 0x3E4A78
@@ -314,19 +318,25 @@ class Shop(commands.Cog):
     )
     async def todo_shop(self, ctx: commands.Context):
         """Get some info about what cool stuff you can buy for your todo list with this command"""
-        prefix = self.client.command_prefix(self.client, ctx.message)[2]
+        prefix = (await self.client.command_prefix(self.client, ctx.message))[2]
         embed = discord.Embed.from_dict(
             {
                 "title": "**The todo shop**",
                 "description": f"You can buy the following items with `{prefix}buy todo <item>` while you are in the edit menu for the todo list you want to buy the item for\n"
+                + "\n\n"
+                + "## Custom colors\n"
                 + "**Cost**: 1000 Jenny\n"
                 + "`color` change the color of the embed which displays your todo list!\n\n"
+                + "## Custom thumbnail\n"
                 + "**Cost**: 1000 Jenny\n"
                 + "`thumbnail` add a neat thumbnail to your todo list (small image on the top right)\n\n"
+                + "## Custom description\n"
                 + "**Cost**: 1000 Jenny\n"
                 + "`description` add a description to your todo list (recommended for public lists with custom id)\n\n"
-                + "**Timed todos**: 2000 Jenny\n"
+                + "## ToDo reminders\n"
+                + "**Cost**: 2000 Jenny\n"
                 + "`timed` add todos with deadline to your list and get notified when the deadline is reached\n\n"
+                + "## More space for todos\n"
                 + "**Cost**: number of current spots * 50\n"
                 + "`space` buy 10 more spots for todos for your list",
                 "color": 0x3E4A78,
@@ -345,7 +355,7 @@ class Shop(commands.Cog):
     )
     async def lootboxes_shop(self, ctx: commands.Context):
         """Get the current lootbox shop with this command"""
-        prefix = self.client.command_prefix(self.client, ctx.message)[2]
+        prefix = (await self.client.command_prefix(self.client, ctx.message))[2]
         fields = [
             {
                 "name": data["emoji"] + " " + data["name"] + " (id: " + str(id) + ")",
@@ -394,21 +404,21 @@ class Shop(commands.Cog):
     async def card(self, ctx: commands.Context, item: str):
         """Buy a card from the shop with this command"""
 
-        shop_data = DB.const.find_one({"_id": "shop"})
+        shop_data = await DB.const.find_one({"_id": "shop"})
         shop_items: list = shop_data["offers"]
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
 
         try:
-            card = Card(item)
+            card = await Card.new(item)
         except CardNotFound:
             return await ctx.send(
-                f"This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`",
+                f"This card is not for sale at the moment! Find what cards are in the shop with `{(await self.client.command_prefix(self.client, ctx.message))[2]}shop`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
         if not card.id in shop_items:
             return await ctx.send(
-                f"This card is not for sale at the moment! Find what cards are in the shop with `{self.client.command_prefix(self.client, ctx.message)[2]}shop`",
+                f"This card is not for sale at the moment! Find what cards are in the shop with `{(await self.client.command_prefix(self.client, ctx.message))[2]}shop`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
@@ -432,7 +442,7 @@ class Shop(commands.Cog):
 
         if len(user.fs_cards) >= FREE_SLOTS:
             return await ctx.send(
-                f"Looks like your free slots are filled! Get rid of some with `{self.client.command_prefix(self.client, ctx.message)[2]}sell`",
+                f"Looks like your free slots are filled! Get rid of some with `{(await self.client.command_prefix(self.client, ctx.message))[2]}sell`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
@@ -441,21 +451,20 @@ class Shop(commands.Cog):
                 f"I'm afraid you don't have enough Jenny to buy this card. Your balance is {user.jenny} while the card costs {price} Jenny"
             )
         try:
-            user.add_card(card.id)
+            await user.add_card(card.id)
         except Exception as e:
             if isinstance(e, CardLimitReached):
                 return await ctx.send(
-                    f"Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{self.client.command_prefix(self.client, ctx.message)[2]}sell <card>`",
+                    f"Free slots card limit reached (`{FREE_SLOTS}`)! Get rid of one card in your free slots to add more cards with `{(await self.client.command_prefix(self.client, ctx.message))[2]}sell <card>`",
                     allowed_mentions=discord.AllowedMentions.none(),
                 )
             else:
                 raise
-
-        user.remove_jenny(
+        await user.remove_jenny(
             price
         )  # Always putting substracting points before giving the item so if the payment errors no item is given
         return await ctx.send(
-            f"Successfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{self.client.command_prefix(self.client, ctx.message)[2]}book`!",
+            f"Successfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{(await self.client.command_prefix(self.client, ctx.message))[2]}book`!",
             allowed_mentions=discord.AllowedMentions.none(),
         )
 
@@ -491,15 +500,15 @@ class Shop(commands.Cog):
         if not int(box) in LOOTBOXES or not LOOTBOXES[int(box)]["available"]:
             return await ctx.send("This lootbox is not for sale!")
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
 
         if user.jenny < (price := LOOTBOXES[int(box)]["price"]):
             return await ctx.send(
                 f"You don't have enough jenny to buy this box (You have: {user.jenny}, cost: {price})"
             )
 
-        user.remove_jenny(price)
-        user.add_lootbox(int(box))
+        await user.remove_jenny(price)
+        await user.add_lootbox(int(box))
         return await ctx.send(
             f"Successfully bought lootbox {LOOTBOXES[int(box)]['emoji']} {LOOTBOXES[int(box)]['name']}!"
         )
@@ -516,14 +525,14 @@ class Shop(commands.Cog):
     ):
         """Buy cool stuff for your todo list with this command! (Only in editor mode)"""
         try:
-            todo_list = TodoList(editing[ctx.author.id])
+            todo_list = await TodoList.new(editing[ctx.author.id])
         except KeyError:
             return await ctx.send(
-                f"You have to be in the editor mode to use this command! Use `{self.client.command_prefix(self.client, ctx.message)[2]}todo edit <todo_list_id>`",
+                f"You have to be in the editor mode to use this command! Use `{(await self.client.command_prefix(self.client, ctx.message))[2]}todo edit <todo_list_id>`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
 
         if what == "space":
             if user.jenny < (todo_list.spots * 100 * 0.5):
@@ -548,8 +557,8 @@ class Shop(commands.Cog):
                 else:
                     return await ctx.send(f"Alright, see you later then :3")
 
-            user.remove_jenny(int(100 * todo_list.spots * 0.5))
-            todo_list.add_spots(10)
+            await user.remove_jenny(int(100 * todo_list.spots * 0.5))
+            await todo_list.add_spots(10)
             return await ctx.send(
                 "Congrats! You just bought 10 more todo spots for the current todo list!"
             )
@@ -560,8 +569,8 @@ class Shop(commands.Cog):
                 return await ctx.send(
                     f"You don't have enough Jenny to buy this item. You need 2000 Jenny while you currently have {user.jenny}"
                 )
-            user.remove_jenny(2000)
-            todo_list.enable_addon("due_in")
+            await user.remove_jenny(2000)
+            await todo_list.enable_addon("due_in")
             return await ctx.send(
                 "Congrats! You just bought the timing addon for the current todo list! You can now specifiy the `due_in` parameter when adding a todo."
             )
@@ -572,10 +581,10 @@ class Shop(commands.Cog):
                 return await ctx.send(
                     f"You don't have enough Jenny to buy this item. You need 1000 Jenny while you currently have {user.jenny}"
                 )
-            user.remove_jenny(1000)
-            todo_list.enable_addon(what)
+            await user.remove_jenny(1000)
+            await todo_list.enable_addon(what)
             return await ctx.send(
-                f"Successfully bought {what} for 1000 Jenny! Customize it with `{self.client.command_prefix(self.client, ctx.message)[2]}todo update {what}`"
+                f"Successfully bought {what} for 1000 Jenny! Customize it with `{(await self.client.command_prefix(self.client, ctx.message))[2]}todo update {what}`"
             )
 
     ################################################ Give commands ################################################
@@ -596,7 +605,7 @@ class Shop(commands.Cog):
         if other.bot:
             return await ctx.send("🤖")
 
-        return User(ctx.author.id), User(other.id)
+        return await User.new(ctx.author.id), await User.new(other.id)
 
     @check()
     @give.command(
@@ -631,17 +640,17 @@ class Shop(commands.Cog):
     ) -> List[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         if not self.cardname_cache:
-            for card in DB.items.find({}):
+            async for card in DB.items.find({}):
                 self.cardname_cache[card["_id"]] = card["name"], card["type"]
 
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
-            for x in User(interaction.user.id).all_cards
+            for x in (await User.new(interaction.user.id)).all_cards
             if self.cardname_cache[x[0]][0].lower().startswith(current.lower())
         ]
         id_cards = [
             (x[0], self.cardname_cache[x[0]][0])
-            for x in User(interaction.user.id).all_cards
+            for x in (await User.new(interaction.user.id)).all_cards
             if str(x[0]).startswith(current)
         ]
         name_cards = list(dict.fromkeys(name_cards))
@@ -681,7 +690,7 @@ class Shop(commands.Cog):
             user, o = val
 
         try:
-            item = Card(card).id
+            item = (await Card.new(card)).id
         except CardNotFound:
             return await ctx.send("Invalid card number")
         if user.has_any_card(item, False) is False:
@@ -693,27 +702,25 @@ class Shop(commands.Cog):
                 "The user you are trying to give the cards's free slots are full!"
             )
 
-        removed_card = user.remove_card(item)
-        o.add_card(item, clone=removed_card[1]["clone"])
+        removed_card = await user.remove_card(item)
+        await o.add_card(item, clone=removed_card[1]["clone"])
         return await ctx.send(
             f"✉️ gave `{other}` card No. {item}!",
             allowed_mentions=discord.AllowedMentions.none(),
         )
-    
+
     async def all_lootboxes_autocomplete(
-            self, 
-            interaction: discord.Interaction,
-            current: str
+        self, interaction: discord.Interaction, current: str
     ) -> List[discord.app_commands.Choice[str]]:
         """Autocomplete for all lootboxes"""
         name_boxes = [
             (x, LOOTBOXES[x]["name"])
-            for x in User(interaction.user.id).lootboxes
+            for x in (await User.new(interaction.user.id)).lootboxes
             if LOOTBOXES[x]["name"].lower().startswith(current.lower())
         ]
         id_boxes = [
             (x, LOOTBOXES[x]["name"])
-            for x in User(interaction.user.id).lootboxes
+            for x in (await User.new(interaction.user.id)).lootboxes
             if str(x).startswith(current)
         ]
         name_boxes = list(dict.fromkeys(name_boxes))
@@ -724,7 +731,7 @@ class Shop(commands.Cog):
                 discord.app_commands.Choice(name=x[1], value=str(x[0]))
                 for x in name_boxes
             ][:25]
-        
+
         return [
             *[discord.app_commands.Choice(name=n, value=str(i)) for i, n in name_boxes],
             *[

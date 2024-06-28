@@ -289,10 +289,10 @@ class Moderation(commands.GroupCog, group_name="mod"):
     async def prefix(self, ctx: commands.Context, prefix: str = None):
         """Change Killua's prefix with this command."""
 
-        guild = Guild(ctx.guild.id)
+        guild = await Guild.new(ctx.guild.id)
 
         if ctx.author.guild_permissions.administrator and prefix:
-            guild.change_prefix(prefix)
+            await guild.change_prefix(prefix)
             return await ctx.send(
                 f"Successfully changed server prefix to `{prefix}`!",
                 allowed_mentions=discord.AllowedMentions.none(),

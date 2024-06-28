@@ -1,10 +1,13 @@
 import math
 import random
 import discord
+from io import BytesIO
 from abc import ABC, abstractmethod
 from discord.ext import commands
 from datetime import datetime
-from typing import List, Union
+from typing import List, Union, Tuple, Optional, ClassVar, Dict, cast
+from dataclasses import dataclass
+from functools import partial
 
 from .constants import (
     INDESTRUCTABLE,
@@ -14,6 +17,7 @@ from .constants import (
     FREE_SLOTS,
     DB,
 )
+from killua.bot import BaseBot
 from killua.utils.classes import (
     User,
     SuccessfullDefense,
@@ -27,31 +31,35 @@ from killua.utils.interactions import Select, View, Button, ConfirmButton
 background_cache = {}
 
 
+@dataclass
 class Card:
     """This class makes it easier to access card information"""
 
-    cache = {}
-    cached_raw = []
+    id: int
+    name: str
+    image_url: str
+    owners: List[int]
+    description: str
+    emoji: str
+    rank: str
+    limit: int
+    available: bool
+    type: str = "normal"
+    range: str = None
+    cls: List[str] = None
+
+    cache: ClassVar[Dict[int, "Card"]] = {}
+    cached_raw: ClassVar[List[Tuple[str, int]]] = []
 
     @classmethod
-    def __get_cache(cls, card_id: int):
-        """Returns a cached object"""
-        return cls.cache[card_id] if card_id in cls.cache else None
-
-    def __new__(cls, name_or_id: Union[int, str], *args, **kwargs):
-        card_id = cls._find_card(name_or_id)
-        existing = cls.__get_cache(card_id)
-        if existing:
-            return existing
-        return super().__new__(cls)
-
-    @classmethod
-    def _find_card(self, name_or_id: Union[int, str]) -> Union[int, None]:
+    async def _find_card(self, name_or_id: Union[int, str]) -> Union[int, None]:
 
         # This could be solved much easier but this allows the user to
         # have case insensitivity when looking for a card
         if not self.cached_raw:
-            self.cached_raw = [(c["name"], c["_id"]) for c in DB.items.find({})]
+            self.cached_raw = [
+                (c["name"], c["_id"]) async for c in DB.items.find({})
+            ]
         for c in self.cached_raw:
 
             if not isinstance(name_or_id, int) and not name_or_id.isdigit():
@@ -64,51 +72,53 @@ class Card:
                 if c[1] == int(name_or_id):
                     return c[1]
 
-    def __init__(self, name_or_id: str):
-        card_id = self._find_card(name_or_id)
+    @classmethod
+    async def new(cls, name_or_id: str) -> "Card":
+        cards_id = await cls._find_card(name_or_id)
 
-        if card_id in self.cache:
-            return
+        if cards_id in cls.cache:
+            return cls.cache[cards_id]
 
-        if card_id is None:
+        if not cards_id:
             raise CardNotFound
 
-        card = DB.items.find_one({"_id": card_id})
+        raw = dict(await DB.items.find_one({"_id": cards_id}))
 
-        self.id: int = card["_id"]
-        self.name: str = card["name"]
-        self.image_url: str = card["Image"]
-        self.owners: list = card["owners"]
-        self.description: str = card["description"]
-        self.emoji: str = card["emoji"]
-        self.rank: str = card["rank"]
-        self.limit: int = card["limit"]
-        self.available: bool = card["available"] if "available" in card else True
-        try:
-            self.type: str = card["type"]
-        except KeyError:
-            DB.items.update_one({"_id": self.id}, {"$set": {"type": "normal"}})
-            self.type = "normal"
+        card = cls(
+            id=cards_id,
+            name=raw["name"],
+            image_url=raw["image"],
+            owners=raw["owners"],
+            description=raw["description"],
+            emoji=raw["emoji"],
+            rank=raw["rank"],
+            limit=raw["limit"],
+            available=raw.get("available", True),
+            type=raw.get("type", "normal"),
+            range=raw.get("range", None),
+            cls=raw.get("class", None),
+        )
 
-        if (
-            self.id > 1000 and not self.id == 1217
-        ):  # If the card is a spell card it has two additional properties
-            self.range: str = card["range"]
-            self.cls: list = card["class"]
+        cls.cache[cards_id] = card
+        return card
 
-        self.cache[self.id] = self
+    def formatted_image_url(self, client: BaseBot, *, to_fetch: bool) -> str:
+        if to_fetch:
+            return (
+                f"http://{'api' if client.run_in_docker else '0.0.0.0'}:{client.dev_port}"
+                + self.image_url
+            )
+        return client.url + self.image_url
 
-    def add_owner(self, user_id: int):
+    async def add_owner(self, user_id: int):
         """Adds an owner to a card entry in my db. Only used in Card().add_card()"""
         self.owners.append(user_id)
-        DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
-        return
+        await DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
 
-    def remove_owner(self, user_id: int):
+    async def remove_owner(self, user_id: int):
         """Removes an owner from a card entry in my db. Only used in Card().remove_card()"""
         self.owners.remove(user_id)
-        DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
-        return
+        await DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
 
     async def _wait_for_defense(
         self, ctx: commands.Context, other: User, effects: list
@@ -117,7 +127,7 @@ class Card:
         if len(effects) == 0:
             return
 
-        effects = [Card(c) for c in effects]
+        effects: List["Card"] = [await Card.new(c) for c in effects]
         view = View(other.id, timeout=20)
         view.add_item(
             Select(
@@ -152,7 +162,7 @@ class Card:
             return
 
         if isinstance(view.value, int):
-            other.remove_card(view.value)
+            await other.remove_card(view.value)
             raise SuccessfullDefense(
                 f"<@{other.id}> successfully defended against your attack"
             )
@@ -189,10 +199,10 @@ class Card:
                 x[0] for x in other.all_cards
             ]:  # Card has to remain in posession
                 if other.effects["1026"] - 1 == 0:
-                    other.remove_effect("1026")
-                    other.remove_card(1026)
+                    await other.remove_effect("1026")
+                    await other.remove_card(1026)
                 else:
-                    other.add_effect("1026", other.effects["1026"] - 1)
+                    await other.add_effect("1026", other.effects["1026"] - 1)
                 raise SuccessfullDefense(
                     "The user had remaining protection from card 1026 thus your attack failed"
                 )
@@ -246,8 +256,8 @@ class Card:
         if len(cards) < 2:
             raise CheckFailure(f"You don't have any cards other than card {self.name}!")
 
-    def _is_maxed_check(self, card: int) -> None:
-        c = Card(card)
+    async def _is_maxed_check(self, card: int) -> None:
+        c = await Card.new(card)
         if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
             raise CheckFailure(
                 f"The maximum amount of existing cards with id {card} is reached!"
@@ -257,9 +267,9 @@ class Card:
         if len(user.fs_cards) >= FREE_SLOTS:
             raise CheckFailure("You don't have any space in your free slots left!")
 
-    def _is_valid_card_check(self, card_id: int) -> None:
+    async def _is_valid_card_check(self, card_id: int) -> None:
         try:
-            Card(card_id)
+            await Card.new(card_id)
         except CardNotFound:
             raise CheckFailure("Specified card is invalid!")
 
@@ -267,8 +277,10 @@ class Card:
         if user.has_effect(effect)[0]:
             raise CheckFailure("You already have this effect in place!")
 
-    def _get_analysis_embed(self, card_id: int) -> discord.Embed:
-        card = Card(card_id)
+    async def _get_analysis_embed(
+        self, card_id: int, client: BaseBot
+    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+        card = await Card.new(card_id)
         fields = [
             {"name": "Name", "value": card.name + " " + card.emoji, "inline": True},
             {
@@ -297,16 +309,27 @@ class Card:
         embed = discord.Embed.from_dict(
             {
                 "title": f"Info about card {card_id}",
-                "thumbnail": {"url": card.image_url},
                 "color": 0x3E4A78,
                 "description": card.description,
                 "fields": fields,
             }
         )
-        return embed
+        if client.is_dev:
+            # Fetch the image from the api
+            image = await client.session.get(
+                card.formatted_image_url(client, to_fetch=True)
+            )
+            embed.set_thumbnail(url="attachment://image.png")
+            file = discord.File(BytesIO(await image.read()), filename="image.png")
+            return embed, file
+        else:
+            embed.set_thumbnail(url=card.formatted_image_url(client, to_fetch=False))
+            return embed, None
 
-    def _get_list_embed(self, card_id: int) -> discord.Embed:
-        card = Card(card_id)
+    async def _get_list_embed(
+        self, card_id: int, client: BaseBot
+    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+        card = await Card.new(card_id)
 
         real_owners = []
         for o in card.owners:
@@ -317,15 +340,40 @@ class Card:
             {
                 "title": f"Infos about card {card.name}",
                 "description": f"**Total copies in circulation**: {len(card.owners)}\n\n**Total owners**: {len(real_owners)}",
-                "image": {"url": card.image_url},
+                "image": {"url": card.formatted_image_url(client, to_fetch=False)},
                 "color": 0x3E4A78,
             }
         )
-        return embed
+        if client.is_dev:
+            image = await client.session.get(
+                card.formatted_image_url(client, to_fetch=True)
+            )
+            embed.set_image(url="attachment://image.png")
+            file = discord.File(BytesIO(await image.read()), filename="image.png")
+            return embed, file
+        else:
+            embed.set_image(url=card.formatted_image_url(client, to_fetch=False))
+            return embed, None
 
 
 class IndividualCard(ABC):
-    """A class purely for type purposes to requre subclasses to implement the exect method"""
+    """A class purely for type purposes to require subclasses to implement the exect method"""
+    # This code sucks.
+    # It was all well and good initially when `Card` could be instantiated
+    # through __init__ but since it cannot be anymore (has to be .new), adding
+    # the ctx and exec is not as easy as it was before.
+    #
+    # Before in this init it would set all `Card` attrs to `self` and that was 
+    # well and good. Now `self` doesn't exist because this class cannot be instantiated
+    # through __init__ anymore.
+    ctx: commands.Context
+
+    @classmethod
+    async def _new(cls, name_or_id: str, ctx: commands.Context) -> Card:
+        base = await Card.new(name_or_id=name_or_id)
+        setattr(base, "ctx", ctx)
+        setattr(base, "exec", partial(cls.exec, self=base))
+        return base
 
     @abstractmethod
     async def exec(self, *args, **kwargs) -> None: ...
@@ -333,33 +381,28 @@ class IndividualCard(ABC):
 
 class Card1001(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member) -> None:
-        author = User(self.ctx.author.id)
-        other = User(member.id)
+        author = await User.new(self.ctx.author.id)
+        other = await User.new(member.id)
 
         self._has_met_check(
-            self.ctx.bot.command_prefix(self.ctx.bot, self.ctx.message)[2],
+            cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
+                2
+            ],
             author,
             member,
         )
 
         self._permission_check(self.ctx, member)
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
         await self._view_defense_check(self.ctx, other)
 
         self._has_cards_check(other.fs_cards, " in their free slots", uses_up=True)
 
         async def make_embed(page, *_):
-            return await Book(self.ctx.bot.session).create(member, page, True)
+            return await Book(cast(BaseBot, self.ctx.bot).session).create(
+                member, page, self.ctx.bot, True
+            )
 
         await Paginator(
             self.ctx,
@@ -371,60 +414,46 @@ class Card1001(Card, IndividualCard):
 
 class Card1002(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member) -> None:
-        author = User(self.ctx.author.id)
-        other = User(member.id)
+        author = await User.new(self.ctx.author.id)
+        other = await User.new(member.id)
 
         self._has_met_check(
-            self.ctx.bot.command_prefix(self.ctx.bot, self.ctx.message)[2],
+            cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
+                2
+            ],
             author,
             member,
         )
 
         self._permission_check(self.ctx, member)
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
         await self._view_defense_check(self.ctx, other)
 
-        async def make_embed(page, embed, pages):
-            return await Book(self.ctx.bot.session).create(member, page)
+        async def make_embed(page, *_):
+            return await Book(cast(BaseBot, self.ctx.bot).session).create(
+                member, page, self.ctx.bot
+            )
 
         await Paginator(self.ctx, max_pages=6, func=make_embed, has_file=True).start()
 
 
 class Card1007(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member):
         self._permission_check(self.ctx, member)
 
-        author = User(self.ctx.author.id)
-        other = User(member.id)
+        author = await User.new(self.ctx.author.id)
+        other = await User.new(member.id)
 
         self._has_cards_check(other.rs_cards, " in their restricted slots")
 
         target_card = random.choice([x[0] for x in other.rs_cards if x[0] != 0])
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
 
-        removed_card = other.remove_card(target_card, restricted_slot=True)
-        author.add_card(target_card, removed_card[1]["fake"])
+        removed_card = await other.remove_card(target_card, restricted_slot=True)
+        await author.add_card(target_card, removed_card[1]["fake"])
         await self.ctx.send(
             f"Successfully stole card number `{target_card}` from `{member}`!"
         )
@@ -432,20 +461,11 @@ class Card1007(Card, IndividualCard):
 
 class Card1008(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member) -> None:
         self._permission_check(self.ctx, member)
 
-        author = User(self.ctx.author.id)
-        other = User(member.id)
+        author = await User.new(self.ctx.author.id)
+        other = await User.new(member.id)
 
         self._has_cards_check(other.all_cards)
         self._has_other_card_check(author.all_cards)
@@ -455,13 +475,13 @@ class Card1008(Card, IndividualCard):
         )
         await self._attack_defense_check(self.ctx, other, target_card)
 
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
         removed_card_other = other.remove_card(target_card)
         removed_card_author = author.remove_card(
             random.choice([x[0] for x in author.all_cards if x[0] != 0])
         )
-        other.add_card(removed_card_author[0], removed_card_author[1]["fake"])
-        author.add_card(removed_card_other[0], removed_card_other[1]["fake"])
+        await other.add_card(removed_card_author[0], removed_card_author[1]["fake"])
+        await author.add_card(removed_card_other[0], removed_card_other[1]["fake"])
 
         await self.ctx.send(
             f"Successfully swapped cards! Gave {member} the card `{removed_card_author[0]}` and took card number `{removed_card_other[0]}` from them!"
@@ -470,26 +490,17 @@ class Card1008(Card, IndividualCard):
 
 class Card1010(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, card_id: int) -> None:
-        user = User(self.ctx.author.id)
+        user = await User.new(self.ctx.author.id)
 
         if not user.has_any_card(card_id, False):
             raise CheckFailure(
                 "Seems like you don't own this card You already need to own a (non-fake) copy of the card you want to duplicate"
             )
 
-        self._is_maxed_check(card_id)
-        user.remove_card(self.id)
-        user.add_card(card_id, clone=True)
+        await self._is_maxed_check(card_id)
+        await user.remove_card(self.id)
+        await user.add_card(card_id, clone=True)
 
         await self.ctx.send(
             f"Successfully added another copy of {card_id} to your book!"
@@ -498,27 +509,18 @@ class Card1010(Card, IndividualCard):
 
 class Card1011(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member) -> None:
-        author = User(self.ctx.author.id)
-        other = User(member.id)
-        author.remove_card(self.id)
+        author = await User.new(self.ctx.author.id)
+        other = await User.new(member.id)
+        await author.remove_card(self.id)
 
         self._has_cards_check(
             other.rs_cards, f" in their restricted slots!", uses_up=True
         )
         card = random.choice([x for x in other.rs_cards if x[0] != 0])
-        self._is_maxed_check(card[0])
+        await self._is_maxed_check(card[0])
 
-        author.add_card(card[0], card[1]["fake"], True)
+        await author.add_card(card[0], card[1]["fake"], True)
         await self.ctx.send(
             f"Successfully added another copy of card No. {card[0]} to your book! This card is {'not' if card[1]['fake'] is False else ''} a fake!"
         )
@@ -526,31 +528,24 @@ class Card1011(Card, IndividualCard):
 
 class Card1015(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member) -> None:
-        author = User(self.ctx.author.id)
-        other = User(member.id)
+        author = await User.new(self.ctx.author.id)
+        other = await User.new(member.id)
 
         self._has_met_check(
-            self.ctx.bot.command_prefix(self.ctx.bot, self.ctx.message)[2],
+            cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
+                2
+            ],
             author,
             member,
         )
 
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
 
         self._has_cards_check(other.all_cards)
 
         async def make_embed(page, embed, pages):
-            return await Book(self.ctx.bot.session).create(member, page)
+            return await Book(self.ctx.bot.session).create(member, page, self.ctx.bot)
 
         return await Paginator(
             self.ctx,
@@ -562,18 +557,9 @@ class Card1015(Card, IndividualCard):
 
 class Card1018(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self) -> None:
-        author = User(self.ctx.author.id)
-        author.remove_card(self.id)
+        author = await User.new(self.ctx.author.id)
+        await author.remove_card(self.id)
 
         users: List[discord.Member] = []
         stolen_cards = []
@@ -589,17 +575,17 @@ class Card1018(Card, IndividualCard):
         for user in users:
             try:
                 self._permission_check(self.ctx, user)
-                u = User(user.id)
+                u = await User.new(user.id)
                 self._has_cards_check(u.all_cards)
                 target = random.choice([x for x in u.all_cards if x[0] != 0])
                 await self._attack_defense_check(self.ctx, u, target)
-                r = u.remove_card(target[0], target[1]["fake"])
+                r = await u.remove_card(target[0], target[1]["fake"])
                 stolen_cards.append(r)
             except Exception as e:
                 continue
 
         if len(stolen_cards) > 0:
-            author.add_multi(*stolen_cards)
+            await author.add_multi(*stolen_cards)
             await self.ctx.send(
                 f"Success! Stole the card{'s' if len(stolen_cards) > 1 else ''} {', '.join([str(x[0]) for x in stolen_cards])} from {len(stolen_cards)} user{'s' if len(users) > 1 else ''}!"
             )
@@ -609,27 +595,18 @@ class Card1018(Card, IndividualCard):
 
 class Card1020(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, card_id: int) -> None:
-        self._is_valid_card_check(card_id)
+        await self._is_valid_card_check(card_id)
 
         if card_id > 99 or card_id < 1:
             raise CheckFailure(
                 f"You can only use '{self.name}' on a card with id between 1 and 99!"
             )
 
-        author = User(self.ctx.author.id)
+        author = await User.new(self.ctx.author.id)
 
-        author.remove_card(self.id)
-        author.add_card(card_id, True)
+        await author.remove_card(self.id)
+        await author.add_card(card_id, True)
         await self.ctx.send(
             f"Created a fake of card No. {card_id}! Make sure to remember that it's a fake, fakes don't count towards completion of the album"
         )
@@ -637,47 +614,29 @@ class Card1020(Card, IndividualCard):
 
 class Card1021(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member, card_id: int) -> None:
         self._permission_check(self.ctx, member)
 
         if card_id == 0:
             raise CheckFailure("You cannot steal card 0")
 
-        author = User(self.ctx.author.id)
-        other = User(member.id)
+        author = await User.new(self.ctx.author.id)
+        other = await User.new(member.id)
 
         self._has_any_card(card_id, other)
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, card_id)
 
-        stolen = other.remove_card(card_id)
-        author.add_card(stolen[0], stolen[1]["fake"])
+        stolen = await other.remove_card(card_id)
+        await author.add_card(stolen[0], stolen[1]["fake"])
         await self.ctx.send(f"Stole card number {card_id} successfully!")
 
 
 class Card1024(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member) -> None:
-        other = User(member.id)
-        author = User(self.ctx.author.id)
+        other = await User.new(member.id)
+        author = await User.new(self.ctx.author.id)
 
         tbr = [x for x in other.all_cards if x[1]["fake"] or x[1]["clone"]]
 
@@ -686,7 +645,7 @@ class Card1024(Card, IndividualCard):
                 "This user does not have any cards you could target with this spell!"
             )
 
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
 
         rs_tbr = [
             x for x in other.rs_cards if x[1]["fake"] is True or x[1]["clone"] is True
@@ -700,7 +659,7 @@ class Card1024(Card, IndividualCard):
         for c in fs_tbr:
             other.fs_cards.remove(c)
 
-        other._update_val(
+        await other._update_val(
             "cards",
             {"rs": other.rs_cards, "fs": other.fs_cards, "effects": other.effects},
         )
@@ -711,17 +670,8 @@ class Card1024(Card, IndividualCard):
 
 class Card1026(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self) -> None:
-        author = User(self.ctx.author.id)
+        author = await User.new(self.ctx.author.id)
         try:
             self._has_effect_check(author, str(self.id))
         except CheckFailure:
@@ -743,13 +693,13 @@ class Card1026(Card, IndividualCard):
                 raise CheckFailure("Successfully canceled!")
 
         if author.has_effect(str(self.id)):
-            author.remove_effect(str(self.id))
+            await author.remove_effect(str(self.id))
 
         # if (amount:=author.count_card(self.id)) > 1:
         #     for i in range(amount):
-        #         author.remove_card(self.id)
+        #         await author.remove_card(self.id)
 
-        author.add_effect(str(self.id), 10)
+        await author.add_effect(str(self.id), 10)
 
         await self.ctx.send(
             "Done, you will be automatically protected from the next 10 attacks! You need to keep the card in your inventory until all 10 defenses are used up"
@@ -758,29 +708,20 @@ class Card1026(Card, IndividualCard):
 
 class Card1028(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member) -> None:
         self._permission_check(self.ctx, member)
 
-        other = User(member.id)
-        author = User(self.ctx.author.id)
+        other = await User.new(member.id)
+        author = await User.new(self.ctx.author.id)
 
         self._has_cards_check(other.fs_cards, " in their free slots")
 
         target_card = random.choice(
             [x for x in other.fs_cards if not x[0] in INDESTRUCTABLE]
         )
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
-        other.remove_card(
+        await other.remove_card(
             target_card[0],
             remove_fake=target_card[1]["fake"],
             restricted_slot=False,
@@ -791,29 +732,20 @@ class Card1028(Card, IndividualCard):
 
 class Card1029(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, member: discord.Member) -> None:
         self._permission_check(self.ctx, member)
 
-        other = User(member.id)
-        author = User(self.ctx.author.id)
+        other = await User.new(member.id)
+        author = await User.new(self.ctx.author.id)
 
         self._has_cards_check(other.rs_cards, " in their restricted slots")
 
         target_card = random.choice(
             [x for x in other.rs_cards if not x[0] in INDESTRUCTABLE and x[0] != 0]
         )
-        author.remove_card(self.id)
+        await author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
-        other.remove_card(
+        await other.remove_card(
             target_card[0],
             remove_fake=target_card[1]["fake"],
             restricted_slot=True,
@@ -824,72 +756,47 @@ class Card1029(Card, IndividualCard):
 
 class Card1031(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, card_id: int) -> None:
-        self._is_valid_card_check(card_id)
+        await self._is_valid_card_check(card_id)
 
-        author = User(self.ctx.author.id)
-        author.remove_card(self.id)
-        embed = self._get_analysis_embed(card_id)
-        await self.ctx.send(embed=embed)
+        author = await User.new(self.ctx.author.id)
+        await author.remove_card(self.id)
+        embed, file = await self._get_analysis_embed(card_id, self.ctx.bot)
+        await self.ctx.send(embed=embed, file=file)
 
 
 class Card1032(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self) -> None:
-        author = User(self.ctx.author.id)
+        author = await User.new(self.ctx.author.id)
         self._is_full_check(author)
 
         target = random.choice(
             [
                 x["_id"]
-                for x in DB.items.find({"type": "normal", "available": True})
+                async for x in await DB.items.find(
+                    {"type": "normal", "available": True}
+                )
                 if x["rank"] != "SS" and x["_id"] != 0
             ]
         )  # random card for lottery
-        author.remove_card(self.id)
-        self._is_maxed_check(target)
-        author.add_card(target)
+        await author.remove_card(self.id)
+        await self._is_maxed_check(target)
+        await author.add_card(target)
 
         await self.ctx.send(f"Successfully added card No. {target} to your inventory")
 
 
 class Card1035(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, page: int) -> None:
-        author = User(self.ctx.author.id)
+        author = await User.new(self.ctx.author.id)
 
         if page > 6 or page < 1:
             raise CheckFailure("You need to choose a page between 1 and 6")
         self._has_effect_check(author, f"page_protection_{page}")
-        author.remove_card(self.id)
-        author.add_effect(
+        await author.remove_card(self.id)
+        await author.add_effect(
             f"page_protection_{page}", datetime.now()
         )  # The valuedoesn't matter here
         await self.ctx.send(f"Success! Page {page} is now permanently protected")
@@ -897,17 +804,8 @@ class Card1035(Card, IndividualCard):
 
 class Card1036(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, effect: str, card_id: int) -> None:
-        author = User(self.ctx.author.id)
+        author = await User.new(self.ctx.author.id)
 
         if not str(self.id) in author.effects and not author.has_fs_card(self.id):
             raise CheckFailure(
@@ -915,39 +813,30 @@ class Card1036(Card, IndividualCard):
             )
 
         if author.has_fs_card(self.id) and not str(self.id) in author.effects:
-            author.remove_card(self.id)
-        author.add_effect(str(self.id), datetime.now())
+            await author.remove_card(self.id)
+        await author.add_effect(str(self.id), datetime.now())
 
         if not effect.lower() in ["list", "analysis", "1031", "1038"]:
             raise CheckFailure(
-                f"Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{self.client.command_prefix(self.client, self.ctx.message)[2]}use {self.id} <list/analysis> <card_id>`"
+                f"Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{await self.client.command_prefix(self.client, self.ctx.message)[2]}use {self.id} <list/analysis> <card_id>`"
             )
 
         if effect.lower() in ["list", "1038"]:
-            embed = self._get_list_embed(card_id)
+            embed, file = await self._get_list_embed(card_id, self.ctx.bot)
         if effect.lower() in ["analysis", "1031"]:
-            embed = self._get_analysis_embed(card_id)
-        await self.ctx.send(embed=embed)
+            embed, file = await self._get_analysis_embed(card_id, self.ctx.bot)
+        await self.ctx.send(embed=embed, file=file)
 
 
 class Card1038(Card, IndividualCard):
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
-
     async def exec(self, card_id: int) -> None:
-        self._is_valid_card_check(card_id)
+        await self._is_valid_card_check(card_id)
 
         if card_id == 0:
             raise CheckFailure("Redacted card!")
 
-        User(self.ctx.author.id).remove_card(self.id)
+        await (await User.new(self.ctx.author.id)).remove_card(self.id)
 
-        embed = self._get_list_embed(card_id)
-        await self.ctx.send(embed=embed)
+        embed, file = await self._get_list_embed(card_id, self.ctx.bot)
+        await self.ctx.send(embed=embed, file=file)

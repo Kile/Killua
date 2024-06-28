@@ -1,7 +1,7 @@
 import json
 import io, os
 import discord
-from pymongo import MongoClient, collection
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from typing import Any, Callable, TypeVar, Generic, Union, Dict, List, Tuple
 
 from os.path import exists
@@ -14,7 +14,7 @@ args.init()
 #     config = json.loads(config_file.read())
 
 # Instead, use env variables
-CLUSTER = MongoClient(os.getenv("MONGODB"))
+CLUSTER = AsyncIOMotorClient(os.getenv("MONGODB"))
 
 CONST_DEFAULT = [  # The default values for the const collection
     {"_id": "migrate", "value": True},
@@ -53,11 +53,11 @@ class DB:
             self._DB = CLUSTER["Killua"]
 
     @DBProperty
-    def teams(self) -> Union[collection.Collection, Database]:
+    def teams(self) -> Union[AsyncIOMotorCollection, Database]:
         return self._DB["teams"] if args.Args.test is None else Database("teams")
 
     @DBProperty
-    def items(self) -> Union[collection.Collection, Database]:
+    def items(self) -> Union[AsyncIOMotorCollection, Database]:
         if args.Args.test is not None:
             if exists("cards.json"):
                 with open("cards.json", "r") as file:
@@ -74,15 +74,15 @@ class DB:
             return self._DB["items"]
 
     @DBProperty
-    def guilds(self) -> Union[collection.Collection, Database]:
+    def guilds(self) -> Union[AsyncIOMotorCollection, Database]:
         return self._DB["guilds"] if args.Args.test is None else Database("guilds")
 
     @DBProperty
-    def todo(self) -> Union[collection.Collection, Database]:
+    def todo(self) -> Union[AsyncIOMotorCollection, Database]:
         return self._DB["todo"] if args.Args.test is None else Database("todo")
 
     @DBProperty
-    def const(self) -> Union[collection.Collection, Database]:
+    def const(self) -> Union[AsyncIOMotorCollection, Database]:
         if args.Args.test is not None:
             db = Database("const")
             db.insert_many(CONST_DEFAULT)
@@ -92,7 +92,7 @@ class DB:
             return self._DB["const"]
 
     @DBProperty
-    def APIstats(self) -> Union[collection.Collection, Database]:
+    def APIstats(self) -> Union[AsyncIOMotorCollection, Database]:
         return (
             self._DB["api-stats"] if args.Args.test is None else Database("api-stats")
         )

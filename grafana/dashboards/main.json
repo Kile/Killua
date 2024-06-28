@@ -934,7 +934,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 16
       },
@@ -986,6 +986,104 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
+      "description": "The upvotes for Killua on sites like top.gg",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 8,
+        "y": 16
+      },
+      "id": 856,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "round(delta(discord_votes_created{job=\"$job\"}[1h]))",
+          "instant": false,
+          "legendFormat": "{{platform}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "24h",
+      "title": "Votes for the bot",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The amount of users that use Killua daily, reset every 24 hours",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1039,7 +1137,7 @@
       "gridPos": {
         "h": 8,
         "w": 6,
-        "x": 12,
+        "x": 13,
         "y": 16
       },
       "id": 84,
@@ -1078,6 +1176,7 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
+      "description": "Users who boost the support server or have an active Patreon or Discord bot subscription",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1130,8 +1229,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 6,
-        "x": 18,
+        "w": 5,
+        "x": 19,
         "y": 16
       },
       "id": 817,
@@ -1163,6 +1262,323 @@
       ],
       "timeFrom": "1w",
       "title": "Premium users",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "Premium users"
+              }
+            ],
+            "match": "all",
+            "type": "exclude"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The number of tags registered overall using Killua",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 24
+      },
+      "id": 836,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_tags",
+          "instant": false,
+          "legendFormat": "Tags",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Total tags registered",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The number of todo lists created overall using Killua",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 24
+      },
+      "id": 837,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_todo_lists",
+          "instant": false,
+          "legendFormat": "Todo lists",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Todo lists",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The number of todo tasks created overall using Killua",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 24
+      },
+      "id": 838,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_todos",
+          "instant": false,
+          "legendFormat": "Todo tasks",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Todo tasks",
       "type": "timeseries"
     },
     {
@@ -1171,7 +1587,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 32
       },
       "id": 68,
       "panels": [],
@@ -1241,7 +1657,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 33
       },
       "id": 64,
       "options": {
@@ -1338,7 +1754,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 25
+        "y": 33
       },
       "id": 72,
       "options": {
@@ -1361,7 +1777,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "discord_api_spam_requests{job=~\"$job\"}",
+          "expr": "round(delta(discord_api_spam_requests_total{job=~\"$job\"}[1h]))",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1436,7 +1852,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 25
+        "y": 33
       },
       "id": 76,
       "options": {
@@ -1478,7 +1894,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 41
       },
       "id": 60,
       "panels": [],
@@ -1550,11 +1966,10 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 34
+        "y": 42
       },
       "hideTimeOverride": true,
       "id": 59,
-      "maxPerRow": 4,
       "options": {
         "legend": {
           "calcs": [
@@ -1580,7 +1995,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(discord_api_requests{endpoint=\"$endpoint\", type=\"requests\"})",
+          "expr": "round(delta(discord_api_requests_total{endpoint=\"$endpoint\", type=\"requests\"}[1h]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1597,7 +2012,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(discord_api_requests{endpoint=\"$endpoint\", type=\"success\"})",
+          "expr": "round(delta(discord_api_requests_total{endpoint=\"$endpoint\", type=\"success\"}[1h]))",
           "hide": false,
           "instant": false,
           "legendFormat": "Successful responses",
@@ -1606,7 +2021,7 @@
         }
       ],
       "timeFrom": "24h",
-      "title": "Data for $endpoint",
+      "title": "Requests for $endpoint",
       "transparent": true,
       "type": "timeseries"
     },
@@ -1743,7 +2158,7 @@
           "type": "prometheus",
           "uid": "prometheusdatasource"
         },
-        "definition": "label_values(discord_api_requests, endpoint)",
+        "definition": "label_values(discord_api_requests_total, endpoint)",
         "hide": 0,
         "includeAll": true,
         "multi": false,
@@ -1751,7 +2166,7 @@
         "options": [],
         "query": {
           "qryType": 5,
-          "query": "label_values(discord_api_requests, endpoint)",
+          "query": "label_values(discord_api_requests_total, endpoint)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,

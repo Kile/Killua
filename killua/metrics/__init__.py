@@ -16,6 +16,10 @@ from .metrics import (
     DAILY_ACTIVE_USERS,
     COMMAND_USAGE,
     PREMIUM_USERS,
+    VOTES,
+    TODO_LISTS,
+    TODOS,
+    TAGS
 )
 
 from .logger import PrometheusLoggingHandler
@@ -39,4 +43,8 @@ __all__ = [
     "DAILY_ACTIVE_USERS",
     "COMMAND_USAGE",
     "PREMIUM_USERS",
+    "VOTES",
+    "TODO_LISTS",
+    "TODOS",
+    "TAGS"
 ]

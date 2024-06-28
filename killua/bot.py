@@ -10,6 +10,7 @@ from datetime import date
 from PIL import Image
 from io import BytesIO
 from toml import load
+from functools import cache
 from typing import Coroutine, Union, Dict, List, Optional
 
 from .migrate import migrate_requiring_bot
@@ -18,13 +19,13 @@ from .utils.interactions import Modal
 from .static.constants import TIPS, LOOTBOXES, DB
 
 
-def get_prefix(bot: "BaseBot", message):
+async def get_prefix(bot: "BaseBot", message: discord.Message):
     if bot.is_dev:
         return commands.when_mentioned_or("kil!", "kil.")(bot, message)
     try:
         from .utils.classes import Guild
 
-        g = Guild(message.guild.id)
+        g = await Guild.new(message.guild.id)
         if g is None:
             return commands.when_mentioned_or("k!")(bot, message)
         return commands.when_mentioned_or(g.prefix)(bot, message)
@@ -71,9 +72,9 @@ class BaseBot(commands.AutoShardedBot):
         self.cached_entitlements = [
             entitlement async for entitlement in self.entitlements(limit=None)
         ]
-        if DB.const.find_one({"_id": "migrate"})["value"]:
+        if (await DB.const.find_one({"_id": "migrate"}))["value"]:
             migrate_requiring_bot(self)
-            DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
+            await DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
 
     async def close(self):
         await super().close()
@@ -146,6 +147,7 @@ class BaseBot(commands.AutoShardedBot):
                 return
             return BytesIO(await res.read())
 
+    @cache  # cpu intensive and slow but the result does not change, so it is cached
     async def find_dominant_color(self, url: str) -> int:
         """Finds the dominant color of an image and returns it as an rgb tuple"""
         # Resizing parameters
@@ -281,7 +283,7 @@ class BaseBot(commands.AutoShardedBot):
             return res
 
     async def update_presence(self):
-        status = DB.const.find_one({"_id": "presence"})
+        status = await DB.const.find_one({"_id": "presence"})
         if status["text"]:
             if not status["activity"]:
                 status["activity"] = "playing"
@@ -317,7 +319,7 @@ class BaseBot(commands.AutoShardedBot):
         msg = await messageable.send(*args, **kwargs)
         if randint(1, 100) < 6:  # 5% probability to send a tip afterwards
             await messageable.send(
-                f"**Tip:** {choice(TIPS).replace('<prefix>', get_prefix(self, messageable.message)[2]) if hasattr(messageable, 'message') else ('k!' if not self.is_dev else 'kil!')}",
+                f"**Tip:** {choice(TIPS).replace('<prefix>', (await get_prefix(self, messageable.message))[2]) if hasattr(messageable, 'message') else ('k!' if not self.is_dev else 'kil!')}",
                 ephemeral=True,
             )
         return msg
@@ -362,3 +364,18 @@ class BaseBot(commands.AutoShardedBot):
         for cmd in [*self.walk_commands(), *self.tree.walk_commands()]:
             if cmd.extras["id"] == id:
                 return cmd
+
+    async def _dm_check(self, user: discord.User) -> bool:
+        """
+        Checks if a users dms are open by sending them
+        an empty message and either receiving an error for can't
+        send an empty message or not allowed
+        """
+        try:
+            await user.send("")
+        except Exception as e:
+            if isinstance(e, discord.Forbidden):
+                return False
+            if isinstance(e, discord.HTTPException):
+                return True
+            return True

@@ -18,7 +18,7 @@ from killua.static.cards import Card
 from killua.static.enums import Category, GameOptions
 from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, DB, TRIVIA_TOPICS
 from killua.utils.checks import blcheck, check
-from killua.utils.interactions import Select, Button
+from killua.utils.interactions import Select
 
 leaderboard_options = [
     discord.app_commands.Choice(name="global", value="global"),
@@ -28,17 +28,6 @@ leaderboard_options = [
 
 class CompetitiveGame:
     """A class that includes logic for games where players need to respond to a question in dms or on the same message"""
-
-    async def _dmcheck(self, user: discord.User) -> bool:
-        """Checks if a users dms are open by sending them an empty message and either recieving an error for can't send an empty message or not allowed"""
-        try:
-            await user.send("")
-        except Exception as e:
-            if isinstance(e, discord.Forbidden):
-                return False
-            if isinstance(e, discord.HTTPException):
-                return True
-            return True
 
     async def _timeout(
         self, players: List[discord.Member], data: List[Tuple[discord.Message, View]]
@@ -231,7 +220,7 @@ class Trivia(CompetitiveGame):
 
     async def send_result_single(self, view=None) -> Union[None, discord.Message]:
         """Sends the result of the trivia and hands out jenny as rewards"""
-        user = User(self.ctx.author.id)
+        user = await User.new(self.ctx.author.id)
 
         if self.failed:
             return
@@ -241,7 +230,7 @@ class Trivia(CompetitiveGame):
             return
 
         elif self.result != self.correct_index:
-            user.add_trivia_stat("wrong", self.difficulty)
+            await user.add_trivia_stat("wrong", self.difficulty)
             return await self.ctx.send(
                 f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}",
                 view=view,
@@ -293,21 +282,21 @@ class Trivia(CompetitiveGame):
             (r.value for r in responses if r.user == self.ctx.author), None
         )
         other_response = next((r.value for r in responses if r.user == other), None)
-        author = User(self.ctx.author.id)
-        opponent = User(other.id)
+        author = await User.new(self.ctx.author.id)
+        opponent = await User.new(other.id)
 
         if author_response == other_response:
             if author_response == self.correct_index:
-                author.add_trivia_stat("right", self.difficulty)
-                opponent.add_trivia_stat("right", self.difficulty)
+                await author.add_trivia_stat("right", self.difficulty)
+                await opponent.add_trivia_stat("right", self.difficulty)
                 return await self.ctx.send(
                     f"Both players got the right answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}",
                     reference=self.msg,
                     view=view,
                 )
             else:
-                author.add_trivia_stat("wrong", self.difficulty)
-                opponent.add_trivia_stat("wrong", self.difficulty)
+                await author.add_trivia_stat("wrong", self.difficulty)
+                await opponent.add_trivia_stat("wrong", self.difficulty)
                 return await self.ctx.send(
                     f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}",
                     reference=self.msg,
@@ -315,10 +304,10 @@ class Trivia(CompetitiveGame):
                 )
 
         elif author_response == self.correct_index:
-            author.add_jenny(jenny)
-            author.add_trivia_stat("right", self.difficulty)
-            opponent.remove_jenny(jenny)
-            opponent.add_trivia_stat("wrong", self.difficulty)
+            await author.add_jenny(jenny)
+            await author.add_trivia_stat("right", self.difficulty)
+            await opponent.remove_jenny(jenny)
+            await opponent.add_trivia_stat("wrong", self.difficulty)
 
             return await self.ctx.send(
                 f"{self.ctx.author.mention} got the right answer! {other.mention} lost **{jenny}** Jenny to {self.ctx.author.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}",
@@ -349,12 +338,12 @@ class Trivia(CompetitiveGame):
         self, other: discord.Member, jenny: int, replay=False
     ) -> None:
         """Plays a trivia game against another user"""
-        if not await self._dmcheck(other):
+        if not await cast(BaseBot, self.ctx.bot)._dm_check(other):
             return await self.ctx.send(
                 f"{other.mention} has their dms closed. Please tell them open them to play against them"
             )
 
-        if not await self._dmcheck(self.ctx.author):
+        if not await cast(BaseBot, self.ctx.bot)._dm_check(self.ctx.author):
             return await self.ctx.send(
                 "You have your dms closed. Please open them to play against someone else"
             )
@@ -409,17 +398,6 @@ class Rps(CompetitiveGame):
         self.other = other
         self.emotes = {0: ":page_facing_up:", -1: ":moyai:", 1: ":scissors:"}
 
-    async def _dmcheck(self, user: discord.User) -> bool:
-        """Checks if a users dms are open by sending them an empty message and either recieving an error for can't send an empty message or not allowed"""
-        try:
-            await user.send("")
-        except Exception as e:
-            if isinstance(e, discord.Forbidden):
-                return False
-            if isinstance(e, discord.HTTPException):
-                return True
-            return True
-
     def _get_options(self) -> List[discord.SelectOption]:
         """Returns a new instance of the option list so itdoesn't get mixed up when editing"""
         return [
@@ -448,23 +426,23 @@ class Rps(CompetitiveGame):
 
     async def check_for_achivement(self, player: discord.User) -> None:
         """Checks wether someone has earend the "rps master" achivement"""
-        user = User(player.id)
+        user = await User.new(player.id)
         if not "rps_master" in user.achievements and user.rps_stats["pve"]["won"] >= 25:
             user.add_achievement("rps_master")
-            card = Card(83)
+            card = await Card.new(83)
             try:
                 if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
-                    user.add_jenny(1000)
+                    await user.add_jenny(1000)
                     await player.send(
                         f'By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly the normal reward, the card "{card.name}" {card.emoji}, is currently owned by too many people, so insead you get **1000 Jenny** as a reward! You also now own the **RPS Master** badge!'
                     )
                 else:
-                    user.add_card(83)
+                    await user.add_card(83)
                     await player.send(
                         f'By defeating me 25 times you have earned the **RPS Master** achievemt! As a reward you recieve the card "{card.name}" {card.emoji}. You also now own the **RPS Master** badge!'
                     )
             except CardLimitReached:
-                user.add_jenny(1000)
+                await user.add_jenny(1000)
                 await player.send(
                     f'By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly you have no space in your book for the normal reward, the card "{card.name}" {card.emoji}, so insead you get **1000 Jenny** as a reward! You also now own the **RPS Master** badge!'
                 )
@@ -479,17 +457,17 @@ class Rps(CompetitiveGame):
         view: View,
     ) -> discord.Message:
         """Evaluates the outcome, informs the players and handles the points"""
-        p1 = User(player1.id)
-        p2 = User(player2.id)
+        p1 = await User.new(player1.id)
+        p2 = await User.new(player2.id)
         if winlose == -1:
-            p1.add_rps_stat("won", player2 == self.ctx.me)
-            p2.add_rps_stat("lost", player1 == self.ctx.me)
+            await p1.add_rps_stat("won", player2 == self.ctx.me)
+            await p2.add_rps_stat("lost", player1 == self.ctx.me)
             await self.check_for_achivement(player1)
 
             if self.points:
-                p1.add_jenny(self.points)
+                await p1.add_jenny(self.points)
                 if player2 != self.ctx.me:
-                    p2.remove_jenny(self.points)
+                    await p2.remove_jenny(self.points)
                 return await self.ctx.send(
                     f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}",
                     view=view,
@@ -501,24 +479,24 @@ class Rps(CompetitiveGame):
                 )
 
         elif winlose == 0:
-            p1.add_rps_stat("tied", player2 == self.ctx.me)
+            await p1.add_rps_stat("tied", player2 == self.ctx.me)
             if player2 != self.ctx.me:
-                p2.add_rps_stat("tied", player1 == self.ctx.me)
+                await p2.add_rps_stat("tied", player1 == self.ctx.me)
             return await self.ctx.send(
                 f"{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}",
                 view=view,
             )
 
         elif winlose == 1:
-            p1.add_rps_stat("lost", player2 == self.ctx.me)
-            p2.add_rps_stat("won", player1 == self.ctx.me)
+            await p1.add_rps_stat("lost", player2 == self.ctx.me)
+            await p2.add_rps_stat("won", player1 == self.ctx.me)
             await self.check_for_achivement(player2)
 
             if self.points:
                 if player1 != self.ctx.me:
-                    p1.remove_jenny(self.points)
+                    await p1.remove_jenny(self.points)
                 if player2 != self.ctx.me:
-                    p2.add_jenny(self.points)
+                    await p2.add_jenny(self.points)
                 return await self.ctx.send(
                     f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}",
                     view=view,
@@ -544,6 +522,11 @@ class Rps(CompetitiveGame):
 
     async def singleplayer(self) -> Union[None, discord.Message]:
         """Handles the case of the user playing against the bot"""
+        if await cast(BaseBot, self.ctx.bot)._dm_check(self.ctx.author) is False:
+            return await self.ctx.send(
+                f"You need to open your dms to play against Killua"
+            )
+
         await self._send_rps_embed()
 
         resp = await self._wait_for_dm_response(
@@ -573,11 +556,11 @@ class Rps(CompetitiveGame):
     async def multiplayer(self, replay: bool = False) -> Union[None, discord.Message]:
         """Handles the case of the user playing against self.other user"""
         if not replay:
-            if await self._dmcheck(self.ctx.author) is False:
+            if await cast(BaseBot, self.ctx.bot)._dm_check(self.ctx.author) is False:
                 return await self.ctx.send(
                     f"You need to open your dm to Killua to play {self.ctx.author.mention}"
                 )
-            if await self._dmcheck(self.other) is False:
+            if await cast(BaseBot, self.ctx.bot)._dm_check(self.other) is False:
                 return await self.ctx.send(
                     f"{self.other.name} needs to open their dms to Killua to play"
                 )
@@ -720,9 +703,11 @@ class CountGame:
 
     def __init__(self, ctx: commands.Context, difficulty: str):
         self.ctx = ctx
-        self.user = User(ctx.author.id)
         self.difficulty = difficulty
         self.level = 1
+
+    async def set_user(self) -> None:
+        self.user = await User.new(self.ctx.author.id)
 
     def _handle_reward(self) -> int:
         """Creates a jenny reward based on the level and difficulty"""
@@ -814,10 +799,10 @@ class CountGame:
             for child in view.children:
                 child.disabled = True
             await msg.edit(view=view)
-            self.user.add_jenny(reward)
+            await self.user.add_jenny(reward)
 
             if self.level - 1 > self.user.counting_highscore[self.difficulty]:
-                self.user.set_counting_highscore(self.difficulty, self.level - 1)
+                await self.user.set_counting_highscore(self.difficulty, self.level - 1)
                 return await self.ctx.send(
                     resp
                     + " But well done, you made it to level "
@@ -840,8 +825,8 @@ class CountGame:
 
         if self.level == 26:
             reward = self._handle_reward()
-            self.user.add_jenny(reward)
-            self.user.set_counting_highscore(
+            await self.user.add_jenny(reward)
+            await self.user.set_counting_highscore(
                 self.difficulty, self.level - 1
             )  # This is the last level, so the user has beaten or matched the highscore
             return await self.ctx.send(
@@ -879,6 +864,7 @@ class Games(commands.GroupCog, group_name="games"):
     ):
         """See how many numbers you can remember with this count game!"""
         game = CountGame(ctx, difficulty)
+        await game.set_user()
         await game.start()
 
     @check(30)
@@ -905,7 +891,7 @@ class Games(commands.GroupCog, group_name="games"):
             return await ctx.send("Baka! You can't play against yourself")
 
         if not member.bot:
-            opponent = User(member.id)
+            opponent = await User.new(member.id)
         elif member.bot and member != ctx.me:
             return await ctx.send(
                 "Beep-boop, if you wanna play against a bot, play against me!"
@@ -913,7 +899,7 @@ class Games(commands.GroupCog, group_name="games"):
 
         p2 = opponent.jenny if member != ctx.me else False
 
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
 
         p1 = user.jenny
 
@@ -990,14 +976,14 @@ class Games(commands.GroupCog, group_name="games"):
             if jenny < 0:
                 return await ctx.send("You cannot play for a negative amount of Jenny")
 
-            elif User(ctx.author.id).jenny < jenny:
+            elif (amount := (await User.new(ctx.author.id)).jenny) < jenny:
                 return await ctx.send(
-                    f"You do not have enough Jenny to play for that amount. You currently have {User(ctx.author.id).jenny} Jenny"
+                    f"You do not have enough Jenny to play for that amount. You currently have {amount} Jenny"
                 )
 
-            elif User(opponent.id).jenny < jenny:
+            elif (amount := (await User.new(opponent.id)).jenny) < jenny:
                 return await ctx.send(
-                    f"Your opponent does not have enough Jenny to play for that amount. They currently have {User(opponent.id).jenny} Jenny"
+                    f"Your opponent does not have enough Jenny to play for that amount. They currently have {amount} Jenny"
                 )
 
             if opponent.id == ctx.author.id:
@@ -1030,7 +1016,7 @@ class Games(commands.GroupCog, group_name="games"):
             GameOptions, game_type
         )  # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
 
-        user = User(member.id)
+        user = await User.new(member.id)
 
         if game_type == GameOptions.rps:
             pve_played = (
@@ -1167,13 +1153,12 @@ class Games(commands.GroupCog, group_name="games"):
             )
         )
 
-        all: List[dict] = list(
-            DB.teams.find(
-                {}
-                if where == "global"
-                else {"id": {"$in": [m.id for m in ctx.guild.members]}}
-            )
-        )
+        all: List[dict] = await DB.teams.find(
+            {}
+            if where == "global"
+            else {"id": {"$in": [m.id for m in ctx.guild.members]}}
+        ).to_list(None)
+
         if game == GameOptions.rps:
             top_5_pve: List[dict] = deepcopy(
                 all

@@ -46,7 +46,7 @@ MEMORY_USAGE_GAUGE = Gauge(
     METRIC_PREFIX + "memory_usage", "Amount of memory used by the bot"
 )
 
-API_REQUESTS_COUNTER = Gauge(
+API_REQUESTS_COUNTER = Counter(
     METRIC_PREFIX + "api_requests",
     "Amount of requests made to the Killua API",
     ["endpoint", "type"],
@@ -60,7 +60,7 @@ IPC_RESPONSE_TIME = Gauge(
     METRIC_PREFIX + "ipc_response_time", "Response time of the IPC server"
 )
 
-API_SPAM_REQUESTS = Gauge(
+API_SPAM_REQUESTS = Counter(
     METRIC_PREFIX + "api_spam_requests",
     "Amount of requests that are attempted malice to my API",
 )
@@ -77,4 +77,23 @@ COMMAND_USAGE = Gauge(
 
 PREMIUM_USERS = Gauge(
     METRIC_PREFIX + "premium_users", "Amount of users that have premium"
+)
+
+
+VOTES = Counter(
+    METRIC_PREFIX + "votes",
+    "Amount of votes the bot has received",
+    ["platform"],
+)
+
+TODO_LISTS = Gauge(METRIC_PREFIX + "todo_lists", "Amount of todo lists created")
+
+TODOS = Gauge(
+    METRIC_PREFIX + "todos",
+    "Amount of todos created",
+)
+
+TAGS = Gauge(
+    METRIC_PREFIX + "tags",
+    "Amount of tags created",
 )

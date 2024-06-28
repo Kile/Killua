@@ -52,7 +52,8 @@ class Dev(commands.GroupCog, group_name="dev"):
 
         if not self.version_cache:
             self.version_cache = [
-                x["version"] for x in DB.const.find_one({"_id": "updates"})["updates"]
+                x["version"]
+                for x in (await DB.const.find_one({"_id": "updates"}))["updates"]
             ]
 
         return [
@@ -264,7 +265,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
     async def initial_top(self, ctx: commands.Context) -> None:
         # Convert the ids to actualy command names
-        usage_data: Dict[str, int] = DB.const.find_one({"_id": "usage"})[
+        usage_data: Dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
             "command_usage"
         ]
         usage_data_formatted = {}
@@ -441,7 +442,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
         await modal.wait()
 
-        old = DB.const.find_one({"_id": "updates"})["updates"]
+        old = (await DB.const.find_one({"_id": "updates"}))["updates"]
         old_version = (
             old[-1]["version"]
             if len(old) > 0 and "version" in old[-1]
@@ -474,7 +475,7 @@ class Dev(commands.GroupCog, group_name="dev"):
             "published_by": ctx.author.id,
             "image": image.value,
         }
-        DB.const.update_one({"_id": "updates"}, {"$push": {"updates": data}})
+        await DB.const.update_one({"_id": "updates"}, {"$push": {"updates": data}})
         self.version_cache.append(version.value)
 
         await modal.interaction.response.defer()
@@ -501,11 +502,11 @@ class Dev(commands.GroupCog, group_name="dev"):
     async def update(self, ctx: commands.Context, version: str = None):
         """Allows you to view current and past updates"""
         if version is None:
-            data = DB.const.find_one({"_id": "updates"})["updates"][-1]
+            data = (await DB.const.find_one({"_id": "updates"}))["updates"][-1]
         else:
             d = [
                 x
-                for x in DB.const.find_one({"_id": "updates"})["updates"]
+                for x in (await DB.const.find_one({"_id": "updates"}))["updates"]
                 if "version" in x and x["version"] == version
             ]
             if len(d) == 0:
@@ -543,7 +544,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         if not discord_user:
             return await ctx.send("Invalid user!", ephermal=True)
         # Inserting the bad person into my database
-        DB.const.update_one(
+        await DB.const.update_one(
             {"_id": "blacklist"},
             {
                 "$push": {
@@ -573,14 +574,16 @@ class Dev(commands.GroupCog, group_name="dev"):
 
         to_pull = [
             d
-            for d in DB.const.find_one({"_id": "blacklist"})["blacklist"]
+            for d in (await DB.const.find_one({"_id": "blacklist"}))["blacklist"]
             if d["id"] == user.id
         ]
 
         if not to_pull:
             return await ctx.send("User is not blacklisted!", ephermal=True)
 
-        DB.const.update_one({"_id": "blacklist"}, {"$pull": {"blacklist": to_pull[0]}})
+        await DB.const.update_one(
+            {"_id": "blacklist"}, {"$pull": {"blacklist": to_pull[0]}}
+        )
         await ctx.send(f"Successfully whitelisted `{user}`")
 
     @commands.is_owner()
@@ -606,14 +609,14 @@ class Dev(commands.GroupCog, group_name="dev"):
         """Changes the presence of Killua. Owner restricted"""
 
         if text == "-rm":
-            DB.const.update_many(
+            await DB.const.update_many(
                 {"_id": "presence"},
                 {"$set": {"text": None, "activity": None, "presence": None}},
             )
             await ctx.send("Done! reset Killua's presence", ephemeral=True)
             return await self.client.update_presence()
 
-        DB.const.update_many(
+        await DB.const.update_many(
             {"_id": "presence"},
             {
                 "$set": {
@@ -649,14 +652,14 @@ class Dev(commands.GroupCog, group_name="dev"):
                     ephemeral=True,
                 )
             return await self.api_stats(ctx)
-        
+
         elif type == "growth":
 
-            def make_embed(page, embed: discord.Embed, _):
+            async def make_embed(page, embed: discord.Embed, _):
                 embed.clear_fields()
                 embed.description = ""
 
-                data = DB.const.find_one({"_id": "growth"})["growth"]
+                data = (await DB.const.find_one({"_id": "growth"}))["growth"]
 
                 if page == 1:
                     # Guild growth
@@ -683,7 +686,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                 ) and not command.qualified_name.startswith("jishaku"):
                     n_of_commands += 1
 
-            data = DB.const.find_one({"_id": "updates"})["updates"]
+            data = (await DB.const.find_one({"_id": "updates"}))["updates"]
             bot_version = (
                 "`Development`"
                 if self.client.is_dev
@@ -711,7 +714,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                         },
                         {
                             "name": "Registered users",
-                            "value": str(DB.teams.count_documents({})),
+                            "value": str(await DB.teams.count_documents({})),
                             "inline": True,
                         },
                         {
@@ -764,13 +767,13 @@ class Dev(commands.GroupCog, group_name="dev"):
     @discord.app_commands.describe(toggle="Toggle the voteremind on or off")
     async def voteremind(self, ctx: commands.Context, toggle: Literal["on", "off"]):
         """Toggle the voteremind on or off"""
-        user = User(ctx.author.id)
+        user = await User.new(ctx.author.id)
         if toggle == "on":
             if user.voting_reminder:
                 return await ctx.send(
                     "You already have the voteremind enabled!", ephemeral=True
                 )
-            user._update_val("voting_reminder", True)
+            await user._update_val("voting_reminder", True)
             await ctx.send(
                 "Enabled the voteremind! You can turn it off any time with this command!",
                 ephemeral=True,
@@ -780,7 +783,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                 return await ctx.send(
                     "You already have the voteremind disabled!", ephemeral=True
                 )
-            user._update_val("voting_reminder", False)
+            await user._update_val("voting_reminder", False)
             await ctx.send(
                 "Disabled the voteremind! You can turn it back on any time with this command!",
                 ephemeral=True,
