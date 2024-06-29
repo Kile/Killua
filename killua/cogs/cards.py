@@ -671,7 +671,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         embed, file = await c._get_analysis_embed(c.id, self.client)
         if c.type == "spell" and c.id not in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
             card_class: IndividualCard = next(
-                (c for c in Card.__subclasses__() if c.__name__ == f"Card{c.id}"), None
+                (_c for _c in Card.__subclasses__() if _c.__name__ == f"Card{c.id}"), None
             )
             usage = (
                 f"`{(await self.client.command_prefix(self.client, ctx.message))[2]}use {card} "
@@ -944,7 +944,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         amount: int = 1,
     ):
         """An owner restricted command allowing the user to obtain any card or amount of jenny or any lootbox"""
-        if not self.client.is_dev and not self.client.is_owner(ctx.author):
+        if not self.client.is_dev and not await self.client.is_owner(ctx.author):
             return await ctx.send("You are not allowed to use this command")
 
         user = await User.new(ctx.author.id)

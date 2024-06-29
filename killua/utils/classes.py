@@ -75,11 +75,10 @@ class PartialCard:
     type: str = "normal"
 
     @classmethod
-    def from_dict(cls, raw: dict):      
-        return cls(**{
-            k: v for k, v in raw.items() 
-            if k in inspect.signature(cls).parameters
-        })
+    def from_dict(cls, raw: dict):
+        return cls(
+            **{k: v for k, v in raw.items() if k in inspect.signature(cls).parameters}
+        )
 
     @classmethod
     async def new(cls, card_id) -> PartialCard:
@@ -640,13 +639,13 @@ class LootBox:
         user = await User.new(self.ctx.author.id)
         for r in view.claimed:
             if isinstance(r, PartialCard):
-                user.add_card(r.id)
+                await user.add_card(r.id)
             elif isinstance(r, Booster):
-                user.add_booster(r.value)
+                await user.add_booster(r.value)
             else:
                 if user.is_entitled_to_double_jenny:
                     r *= 2
-                user.add_jenny(r)
+                await user.add_jenny(r)
 
 
 # pillow logic contributed by DerUSBstick (Thank you!)
@@ -935,7 +934,12 @@ class Book:
                     rs_cards.append([i, None])
                 else:
                     rs_cards.append(
-                        [i, (await PartialCard.new(i)).formatted_image_url(client, to_fetch=True)]
+                        [
+                            i,
+                            (await PartialCard.new(i)).formatted_image_url(
+                                client, to_fetch=True
+                            ),
+                        ]
                     )
                 if page == 1 and len(rs_cards) == 10:
                     break
@@ -947,9 +951,9 @@ class Book:
                     fs_cards.append(
                         [
                             person.fs_cards[i][0],
-                            (await PartialCard.new(person.fs_cards[i][0])).formatted_image_url(
-                                client, to_fetch=True
-                            ),
+                            (
+                                await PartialCard.new(person.fs_cards[i][0])
+                            ).formatted_image_url(client, to_fetch=True),
                         ]
                     )
                 except IndexError:
@@ -1023,7 +1027,7 @@ class User:
 
         data = await DB.teams.find_one({"id": user_id})
         if data is None:
-            await cls.add_empty(user_id)
+            await cls.add_empty(user_id, cards=False)
             data = await DB.teams.find_one({"id": user_id})
 
         data = dict(data)
@@ -1180,7 +1184,7 @@ class User:
                 },
             )
         else:
-            await DB.teams.insert_one(
+            data = await DB.teams.insert_one(
                 {
                     "id": user_id,
                     "points": 0,
@@ -1443,7 +1447,7 @@ class User:
         await self._update_val(f"cards.{card_type}", cards)
         after = len([x for x in cards if not x[1]["fake"]])
         if before == 100 and after < 100:
-            # If the book was complete before and now 
+            # If the book was complete before and now
             # isn't anymore, remove card 0 with it
             await self.remove_card(0)
         return match
@@ -1744,19 +1748,19 @@ class TodoList:
             return cached
 
         raw = await DB.todo.find_one(
-                {
-                    (
-                        "_id"
-                        if (isinstance(list_id, int) or list_id.isdigit())
-                        else "custom_id"
-                    ): (
-                        int(list_id)
-                        if (isinstance(list_id, int) or list_id.isdigit())
-                        else list_id.lower()
-                    )
-                }
-            )
-        
+            {
+                (
+                    "_id"
+                    if (isinstance(list_id, int) or list_id.isdigit())
+                    else "custom_id"
+                ): (
+                    int(list_id)
+                    if (isinstance(list_id, int) or list_id.isdigit())
+                    else list_id.lower()
+                )
+            }
+        )
+
         if raw is None:
             raise TodoListNotFound()
 
@@ -1978,18 +1982,19 @@ class Guild:
     id: int
     prefix: str
     badges: List[str] = field(default_factory=list)
-    commands: dict = field(default_factory=dict)  # The logic behind this is not used and needs to be rewritten
+    commands: dict = field(
+        default_factory=dict
+    )  # The logic behind this is not used and needs to be rewritten
     polls: dict = field(default_factory=dict)
     tags: List[dict] = field(default_factory=list)
     cache: ClassVar[Dict[int, Guild]] = {}
 
     @classmethod
-    def from_dict(cls, raw: dict):      
-        return cls(**{
-            k: v for k, v in raw.items() 
-            if k in inspect.signature(cls).parameters
-        })
-    
+    def from_dict(cls, raw: dict):
+        return cls(
+            **{k: v for k, v in raw.items() if k in inspect.signature(cls).parameters}
+        )
+
     @classmethod
     async def new(cls, guild_id: int) -> Guild:
         raw = await DB.guilds.find_one({"id": guild_id})
