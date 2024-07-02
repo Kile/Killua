@@ -10,22 +10,37 @@ from typing import TYPE_CHECKING, List, Coroutine, Optional
 if TYPE_CHECKING:
     from .types import Context, TestResult
 
+
 class Testing:
     """Modifies several discord classes to be suitable in a testing environment"""
 
-    def __new__(cls, *args, **kwargs): # This prevents this class from direct instatioation
+    def __new__(
+        cls, *args, **kwargs
+    ):  # This prevents this class from direct instatioation
         if cls is Testing:
             raise TypeError(f"only children of '{cls.__name__}' may be instantiated")
         return object.__new__(cls, *args, **kwargs)
 
     def __init__(self, cog: Cog):
-        from .types import DiscordGuild, TextChannel, DiscordMember, Message, Context, TestResult, Bot
+        from .types import (
+            DiscordGuild,
+            TextChannel,
+            DiscordMember,
+            Message,
+            Context,
+            TestResult,
+            Bot,
+        )
 
         self.base_guild: DiscordGuild = DiscordGuild()
         self.base_channel: TextChannel = TextChannel(guild=self.base_guild)
         self.base_author: DiscordMember = DiscordMember()
-        self.base_message: Message = Message(author=self.base_author, channel=self.base_channel)
-        self.base_context: Context = Context(message=self.base_message, bot=Bot, view=StringView("testing"))
+        self.base_message: Message = Message(
+            author=self.base_author, channel=self.base_channel
+        )
+        self.base_context: Context = Context(
+            message=self.base_message, bot=Bot, view=StringView("testing")
+        )
         # StringView is not used in any method I use and even if it would be, I would
         # be overwriting that method anyways
         self.result: TestResult = TestResult()
@@ -53,7 +68,11 @@ class Testing:
                 command_classes.append(cls)
         # print(command_classes)
         # return [cls.test_command for cls in command_classes]
-        return [cls for cls in command_classes if cls.__name__.lower() in [n for n, _ in cog_methods]]
+        return [
+            cls
+            for cls in command_classes
+            if cls.__name__.lower() in [n for n, _ in cog_methods]
+        ]
 
     @property
     def command(self) -> Coroutine:
@@ -68,7 +87,8 @@ class Testing:
         for test in self.all_tests:
             command = test()
 
-            if only_command and command.__class__.__name__.lower() != only_command: continue # Skip if the command is not the one we want to test
+            if only_command and command.__class__.__name__.lower() != only_command:
+                continue  # Skip if the command is not the one we want to test
 
             await command.test_command()
             self.result.add_result(command.result)
@@ -91,6 +111,7 @@ class Testing:
             if child.custom_id == "confirm":
                 await child.callback(ArgumentInteraction(context))
 
+
 class test(object):
 
     def __init__(self, method):
@@ -100,24 +121,34 @@ class test(object):
         from .types import Result, ResultData
 
         try:
-            logging.debug(f"Running test {self._method.__name__} of command {obj.__class__.__name__}")
+            logging.debug(
+                f"Running test {self._method.__name__} of command {obj.__class__.__name__}"
+            )
             await self._method(obj, *args, **kwargs)
-            logging.debug("Sucessfully passed test")
+            logging.debug("successfully passed test")
             obj.result.completed_test(self._method, Result.passed)
         except Exception as e:
             _, _, var = sys.exc_info()
             traceback.print_tb(var)
-            tb_info =  traceback.extract_tb(var)
+            tb_info = traceback.extract_tb(var)
             filename, line_number, _, text = tb_info[-1]
 
             if isinstance(e, AssertionError):
                 parsed_text = text.split(",")[0]
 
-                logging.error(f"{filename}:{line_number} test \"{self._method.__name__}\" of command \"{obj.__class__.__name__.lower()}\" failed at \n{parsed_text} \nwith actual result \n\"{e}\"")
-                obj.result.completed_test(self._method, Result.failed, result_data=ResultData(error=e))
+                logging.error(
+                    f'{filename}:{line_number} test "{self._method.__name__}" of command "{obj.__class__.__name__.lower()}" failed at \n{parsed_text} \nwith actual result \n"{e}"'
+                )
+                obj.result.completed_test(
+                    self._method, Result.failed, result_data=ResultData(error=e)
+                )
             else:
-                logging.critical(f"{filename}:{line_number} test \"{self._method.__name__}\" of command \"{obj.__class__.__name__.lower()}\" raised the the following exception in the statement {text}: \n\"{e}\"")
-                obj.result.completed_test(self._method, Result.errored, ResultData(error=e))
+                logging.critical(
+                    f'{filename}:{line_number} test "{self._method.__name__}" of command "{obj.__class__.__name__.lower()}" raised the the following exception in the statement {text}: \n"{e}"'
+                )
+                obj.result.completed_test(
+                    self._method, Result.errored, ResultData(error=e)
+                )
 
     @classmethod
     def tests(cls, subject):

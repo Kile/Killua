@@ -1,0 +1,64 @@
+name: Run API Tests
+
+on:
+  push:
+  pull_request:
+
+env:
+  RUST_BACKTRACE: full
+  MONGODB: mongodb://localhost:27017/Killua
+  API_KEY: test
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.changes.outputs.api }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            api:
+              - 'api/**'
+
+  # run only if some file in 'api' folder was changed
+  test:
+    needs: setup
+    if: ${{ needs.setup.outputs.api == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start MongoDB server
+        uses: supercharge/mongodb-github-action@1.11.0
+        with:
+          mongodb-version: 'latest'
+      - name: Setup mongodb-tools
+        run: |
+          wget https://downloads.mongodb.com/compass/mongodb-mongosh_2.2.6_amd64.deb
+          sudo apt install ./mongodb-mongosh_2.2.6_amd64.deb
+          # Initialise db and collections
+          mongosh --eval "db.getSiblingDB('Killua').createCollection('api-stats')"
+          
+      # - name: Initialise MongoDB Database and Collection
+      #   run: |
+      #     mongo --host localhost:27017 << EOF
+      #     use Killua;
+      #     db.createCollection("api-stats");
+      #     EOF
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Setup Rocket.toml
+        run: mv api/Rocket.toml.template api/Rocket.toml
+      - name: Run tests
+        run: cargo test -- --test-threads=1
+        working-directory: api
+      - name: Run clippy
+        run: cargo clippy --all --all-features --tests -- -D warnings
+        working-directory: api
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+        working-directory: api

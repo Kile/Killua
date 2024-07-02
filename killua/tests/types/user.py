@@ -5,8 +5,10 @@ from random import randint
 from .asset import Asset
 from .utils import get_random_discord_id, random_name
 
+
 class TestingUser:
     """A class imulating a discord user"""
+
     __class__ = User
 
     def __init__(self, **kwargs):
@@ -17,7 +19,7 @@ class TestingUser:
         self.avatar = Asset(kwargs.pop("avatar")) if "avatar" in kwargs else Asset()
         self.bot = kwargs.pop("bot", False)
         self.premium_type = kwargs.pop("premium_type", 0)
-    
+
     @property
     def mention(self) -> str:
         return "<@{}>".format(self.id)
@@ -27,4 +29,9 @@ class TestingUser:
 
     def __random_discriminator(self) -> str:
         """Creates a random discriminator"""
-        return str(randint(0, 9)) + str(randint(0, 9)) + str(randint(0, 9)) + str(randint(0, 9))
+        return (
+            str(randint(0, 9))
+            + str(randint(0, 9))
+            + str(randint(0, 9))
+            + str(randint(0, 9))
+        )

@@ -1,5 +1,6 @@
 from typing import List
 
+
 class Permission:
     create_instant_invite = 1 << 0
     kick_members = 1 << 1
@@ -47,6 +48,7 @@ class Permission:
     use_embedded_activities = 1 << 39
     moderate_members = 1 << 40
 
+
 class PermissionOverwrite:
     def __init__(self):
         self.allow: int = 0
@@ -60,23 +62,28 @@ class PermissionOverwrite:
         for val in perms:
             self.deny |= int(val)
 
+
 class Permissions:
     def __init__(self, permissions: int = 0, **kwargs):
         self.value = permissions
         for key, value in kwargs.items():
             setattr(self, key, value)
-            
+
         self.overwrites = []
 
     def add_overwrite(self, **kwargs):
         overwrite = {}
-        
-        overwrite["type"] = kwargs.pop("type", 1) # For testing usecase it will be a member most of the time
+
+        overwrite["type"] = kwargs.pop(
+            "type", 1
+        )  # For testing usecase it will be a member most of the time
         # 0 - role
         # 1 - member
-        overwrite["id"] = kwargs.pop("id") # I raise an error here because if the id is not provided
+        overwrite["id"] = kwargs.pop(
+            "id"
+        )  # I raise an error here because if the id is not provided
         # this enitre method has no point
-        if "permissions" in kwargs: # Reads the permission from the enum shortcut
+        if "permissions" in kwargs:  # Reads the permission from the enum shortcut
             overwrite["allow"] = kwargs["permissions"].allow
             overwrite["deny"] = kwargs["permissions"].deny
         else:

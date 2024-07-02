@@ -39,7 +39,7 @@ def main():
         "class": <list>,{PrintColors.OKBLUE} Only for spell cards {PrintColors.WARNING}
         "rank": <str>,
         "description": <str>,
-        "Image": <url>,
+        "image": <url>,
         "emoji": <str>,
         "owners": <list>,
         "type": <str>

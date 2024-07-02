@@ -1,5 +1,5 @@
-# Configuration
-/config.json
+# Env file
+.env
 
 # Downloaded cards
 /cards.json
@@ -10,6 +10,11 @@
 #python stuff
 **/__pycache__
 
+# Rust build
+**/target
+
 **/env
 
 **/.DS_Store
+
+Rocket.toml

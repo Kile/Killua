@@ -10,6 +10,7 @@ from .member import TestingMember as Member
 from typing import Union
 from functools import partial
 
+
 class TestingContext:
     """A class creating a suitable testing context object"""
 
@@ -31,7 +32,9 @@ class TestingContext:
 
     async def reply(self, content: str, *args, **kwargs) -> Message:
         """Replies to the current message"""
-        message = Message(author=self.me, channel=self.channel, content=content, *args, **kwargs)
+        message = Message(
+            author=self.me, channel=self.channel, content=content, *args, **kwargs
+        )
         self.result = ResultData(message=message)
         self.current_view: Union[View, None] = kwargs.pop("view", None)
 
@@ -46,7 +49,9 @@ class TestingContext:
 
     async def send(self, content: str = None, *args, **kwargs) -> Message:
         """Sends a message"""
-        message = Message(author=self.me, channel=self.channel, content=content, *args, **kwargs)
+        message = Message(
+            author=self.me, channel=self.channel, content=content, *args, **kwargs
+        )
         self.result = ResultData(message=message)
         self.current_view: Union[View, None] = kwargs.pop("view", None)
 
