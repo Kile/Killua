@@ -92,8 +92,8 @@ class PrometheusCog(commands.Cog):
         # The main point of this is to initialise the Counter
         # with the correct labels, so that the labels are present
         # in the metrics even if no one has voted there yet.
-        VOTES.labels("topgg").reset()
-        VOTES.labels("discordbotlist").reset()
+        VOTES.labels("topgg")
+        VOTES.labels("discordbotlist")
 
         registered_users = await DB.teams.count_documents({})
         REGISTERED_USER_GAUGE.set(registered_users)

@@ -219,7 +219,7 @@ class Events(commands.Cog):
                             "date": datetime.now(),
                             "guilds": len(self.client.guilds),
                             "users": len(self.client.users),
-                            "registered_users": DB.teams.count_documents({}),
+                            "registered_users": await DB.teams.count_documents({}),
                             "daily_users": len(daily_users.users),
                         }
                     }
@@ -239,7 +239,7 @@ class Events(commands.Cog):
     async def on_guild_join(self, guild: discord.Guild):
         # Changing the status
         await self.client.update_presence()
-        Guild.add_default(guild.id)
+        await Guild.add_default(guild.id)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):

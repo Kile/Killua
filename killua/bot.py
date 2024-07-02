@@ -10,7 +10,9 @@ from datetime import date
 from PIL import Image
 from io import BytesIO
 from toml import load
-from functools import cache
+from async_lru import (
+    alru_cache as cache,
+)  # async_lru is a library that provides a cache decorator for asyncio coroutines
 from typing import Coroutine, Union, Dict, List, Optional
 
 from .migrate import migrate_requiring_bot
