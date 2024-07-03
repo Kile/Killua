@@ -19,7 +19,8 @@ from .metrics import (
     VOTES,
     TODO_LISTS,
     TODOS,
-    TAGS
+    TAGS,
+    LOCALE
 )
 
 from .logger import PrometheusLoggingHandler
@@ -46,5 +47,6 @@ __all__ = [
     "VOTES",
     "TODO_LISTS",
     "TODOS",
-    "TAGS"
+    "TAGS",
+    "LOCALE"
 ]

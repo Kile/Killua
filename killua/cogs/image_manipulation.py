@@ -169,6 +169,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         t: Any = None,
         censor: bool = False,
         validate: bool = True,
+        extra_time: int = 0,
     ) -> discord.Message:
         """Handles the command and returns the message"""
         if validate:
@@ -181,13 +182,19 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
                 )
         else:
             data = target
-
-        await ctx.channel.typing()
+        if extra_time > 0 and ctx.interaction:
+            await ctx.defer()
+        else:
+            await ctx.channel.typing()
         try:
-            r: pxl_object.PxlObject = await wait_for(function(data, t), timeout=2)
+            r: pxl_object.PxlObject = await wait_for(function(data, t), timeout=2.5 + extra_time)
         except TimeoutError:
             return await ctx.send(
-                "The API took too long to respond. Please try again later (It is likely down)."
+                discord.Embed(
+                    title="An error occured during command execution:",
+                    description=":x: The API took too long to respond. Please try again later (It is likely down).",
+                    color=discord.Color.red(),
+                )
             )
 
         if r.success:
@@ -204,10 +211,18 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
             )
         if len(r.error) > 2000:
             return await ctx.send(
-                f":x: An error occured with the API this command is using. The API is likely down. Please try again later."
+                discord.Embed(
+                    title="An error occured during command execution:",
+                    description=":x: An error occured with the service this command is using. The service is likely down. Please try again later.",
+                    color=discord.Color.red(),
+                )
             )
         return await ctx.send(
-            f":x: " + r.error, allowed_mentions=discord.AllowedMentions.none()
+            discord.Embed(
+                title="An error occured during command execution:",
+                description=":x: An error was returned by the service that powers this command: `" + r.error + "`",
+                color=discord.Color.red(),
+            )
         )
 
     async def flag_autocomplete(
@@ -233,7 +248,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         async def func(data, *_):
             return await self.pxl.emojaic([data], groupSize=6)
 
-        await self.handle_command(ctx, target, func)
+        await self.handle_command(ctx, target, func, extra_time=1)
 
     @check(5)
     @commands.hybrid_command(
@@ -265,7 +280,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         async def func(data, *_):
             return await self.pxl.glitch(images=[data], gif=True)
 
-        await self.handle_command(ctx, target, func)
+        await self.handle_command(ctx, target, func, extra_time=2)
 
     @check(10)
     @commands.hybrid_command(
@@ -426,7 +441,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         async def func(data, *_):
             return await self.pxl.screenshot(url=data)
 
-        await self.handle_command(ctx, website, func, validate=False)
+        await self.handle_command(ctx, website, func, validate=False, extra_time=4)
 
     @check(2)
     @commands.hybrid_command(

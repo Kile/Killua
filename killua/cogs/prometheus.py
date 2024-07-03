@@ -9,6 +9,7 @@ from psutil import virtual_memory, cpu_percent
 
 from killua.metrics import *
 from killua.static.constants import DB, API_ROUTES
+from killua.utils.classes import User
 from killua.bot import BaseBot as Bot
 
 log = logging.getLogger("prometheus")
@@ -84,6 +85,17 @@ class PrometheusCog(commands.Cog):
         self.spam_previous = reqs - not_spam
         API_SPAM_REQUESTS.inc(new_spam)
 
+    async def save_locales(self):
+        locales = [
+            doc["locale"]
+            async for doc in DB.teams.find({"locale": {"$exists": True}})
+            if "locale" in doc and doc["locale"]
+        ]
+        # turn into dict with locale as key and count as value
+        locale_count = {locale: locales.count(locale) for locale in locales}
+        for locale, count in locale_count.items():
+            LOCALE.labels(locale).set(count)
+
     async def init_gauges(self):
         log.debug("Initializing gauges")
         num_of_commands = len(self.get_all_commands())
@@ -100,6 +112,8 @@ class PrometheusCog(commands.Cog):
 
         dau = (await DB.const.find_one({"_id": "growth"}))["growth"][-1]["daily_users"]
         DAILY_ACTIVE_USERS.set(dau)
+
+        await self.save_locales()
 
         # Update command stats
         usage_data: Dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
@@ -148,6 +162,7 @@ class PrometheusCog(commands.Cog):
             )
             tag_amount = sum([len(v["tags"]) for v in tags])
             TAGS.set(tag_amount)
+            await self.save_locales()
             await self.update_api_stats()
         except ServerSelectionTimeoutError:
             logging.warn("Failed to save mongodb stats to DB due to connection error")
@@ -202,6 +217,14 @@ class PrometheusCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: Interaction):
+        old = await (await User.new(interaction.user.id)).log_locale(
+            cast(str, interaction.locale[-1]).split("-")[-1].upper()
+            if "-" in interaction.locale[-1]
+            else cast(str, interaction.locale[-1]).upper()
+        )
+        if old:
+            LOCALE.labels(old).dec()
+
         shard_id = interaction.guild.shard_id if interaction.guild else None
 
         # command name can be None if comming from a view (like a button click) or a modal

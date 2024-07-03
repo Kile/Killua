@@ -97,3 +97,9 @@ TAGS = Gauge(
     METRIC_PREFIX + "tags",
     "Amount of tags created",
 )
+
+LOCALE = Gauge(
+    METRIC_PREFIX + "locale",
+    "Where users are from",
+    ["country"],
+)

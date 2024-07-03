@@ -986,6 +986,169 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
+      "description": "The estimates country a user is from based on the language they set their Discord to",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "shades"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 8,
+        "y": 16
+      },
+      "id": 874,
+      "options": {
+        "basemap": {
+          "config": {
+            "showLabels": true,
+            "theme": "dark"
+          },
+          "name": "Layer 0",
+          "opacity": 1,
+          "tooltip": false,
+          "type": "carto"
+        },
+        "controls": {
+          "mouseWheelZoom": false,
+          "showAttribution": false,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "field": "Value (lastNotNull)",
+                  "fixed": "dark-green"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "field": "Value (lastNotNull)",
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "text": {
+                  "field": "Metric",
+                  "fixed": "",
+                  "mode": "fixed"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "location": {
+              "lookup": "Metric",
+              "mode": "lookup"
+            },
+            "name": "Users",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "zero",
+          "lat": 0,
+          "lon": 0,
+          "zoom": 1
+        }
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_locale{job=\"$job\"}",
+          "instant": false,
+          "legendFormat": "{{country}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "User location",
+      "transformations": [
+        {
+          "id": "seriesToRows",
+          "options": {}
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Metric": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "Value": {
+                "aggregations": [
+                  "last"
+                ],
+                "operation": "aggregate"
+              }
+            }
+          }
+        }
+      ],
+      "type": "geomap"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
       "description": "The upvotes for Killua on sites like top.gg",
       "fieldConfig": {
         "defaults": {
@@ -1031,10 +1194,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -1044,7 +1203,7 @@
       "gridPos": {
         "h": 8,
         "w": 5,
-        "x": 8,
+        "x": 14,
         "y": 16
       },
       "id": 856,
@@ -1067,7 +1226,7 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "round(delta(discord_votes_created{job=\"$job\"}[1h]))",
+          "expr": "round(delta(discord_votes_total{job=\"$job\"}[1h]))",
           "instant": false,
           "legendFormat": "{{platform}}",
           "range": true,
@@ -1136,8 +1295,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 6,
-        "x": 13,
+        "w": 5,
+        "x": 19,
         "y": 16
       },
       "id": 84,
@@ -1169,119 +1328,6 @@
       ],
       "timeFrom": "1w",
       "title": "Daily active users",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheusdatasource"
-      },
-      "description": "Users who boost the support server or have an active Patreon or Discord bot subscription",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-BlPu"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 5,
-        "x": 19,
-        "y": 16
-      },
-      "id": 817,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "expr": "discord_premium_users",
-          "instant": false,
-          "legendFormat": "Premium users",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "timeFrom": "1w",
-      "title": "Premium users",
-      "transformations": [
-        {
-          "id": "filterByValue",
-          "options": {
-            "filters": [
-              {
-                "config": {
-                  "id": "equal",
-                  "options": {
-                    "value": 0
-                  }
-                },
-                "fieldName": "Premium users"
-              }
-            ],
-            "match": "all",
-            "type": "exclude"
-          }
-        }
-      ],
       "type": "timeseries"
     },
     {
@@ -1346,7 +1392,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 6,
         "x": 0,
         "y": 24
       },
@@ -1445,8 +1491,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
+        "w": 6,
+        "x": 6,
         "y": 24
       },
       "id": 837,
@@ -1544,8 +1590,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 12,
         "y": 24
       },
       "id": 838,
@@ -1579,6 +1625,119 @@
       ],
       "timeFrom": "1w",
       "title": "Todo tasks",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "Users who boost the support server or have an active Patreon or Discord bot subscription",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlPu"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 24
+      },
+      "id": 817,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_premium_users",
+          "instant": false,
+          "legendFormat": "Premium users",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Premium users",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "Premium users"
+              }
+            ],
+            "match": "all",
+            "type": "exclude"
+          }
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -2269,6 +2428,6 @@
   "timezone": "",
   "title": "Killua statistics",
   "uid": "TGkTuzD4zA",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }

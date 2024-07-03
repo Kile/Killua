@@ -1016,6 +1016,7 @@ class User:
     weekly_cooldown: Optional[datetime]
     action_settings: Dict[str, Any]
     action_stats: Dict[str, Any]
+    locale: str
     cache: ClassVar[Dict[int, User]] = {}
 
     @classmethod
@@ -1070,6 +1071,7 @@ class User:
             weekly_cooldown=data.get("weekly_cooldown", None),
             action_settings=data.get("action_settings", {}),
             action_stats=data.get("action_stats", {}),
+            locale=data.get("locale", None),
         )
 
         cls.cache[user_id] = instance
@@ -1708,6 +1710,14 @@ class User:
         if not achievement in self.achievements:
             self.achievements.append(achievement)
             await self._update_val("achievements", achievement, "$push")
+
+    async def log_locale(self, locale: str) -> Optional[str]:
+        """Logs the locale of the user. Returns the old locale if it was different from the new one, else None"""
+        if not self.locale or self.locale != locale:
+            old = self.locale
+            self.locale = locale
+            await self._update_val("locale", locale)
+            return old
 
 
 @dataclass
