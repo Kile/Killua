@@ -846,9 +846,8 @@ class CountGame:
         msg = await self._send_solutions()
         await self._handle_game(msg)
 
-
 @discord.app_commands.allowed_installs(guilds=True, users=True)
-@discord.app_commands.allowed_contexts(discord.AppCommandContext.all())
+@discord.app_commands.allowed_contexts(guilds=True, dms=False, private_channels=False)
 class Games(commands.GroupCog, group_name="games"):
 
     def __init__(self, client: BaseBot):

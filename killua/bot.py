@@ -10,6 +10,8 @@ from datetime import date
 from PIL import Image
 from io import BytesIO
 from toml import load
+from logging import info
+from inspect import signature, Parameter
 from async_lru import (
     alru_cache as cache,
 )  # async_lru is a library that provides a cache decorator for asyncio coroutines
@@ -69,7 +71,11 @@ class BaseBot(commands.AutoShardedBot):
     async def setup_hook(self):
         await self.load_extension("jishaku")
         # await self.ipc.start()
+
+        for cog in self.cogs:
+            await self.clone_top_level_cog(self.get_cog(cog))
         await self.tree.sync()
+
         self.cached_skus = await self.fetch_skus()
         self.cached_entitlements = [
             entitlement async for entitlement in self.entitlements(limit=None)
@@ -77,6 +83,100 @@ class BaseBot(commands.AutoShardedBot):
         if (await DB.const.find_one({"_id": "migrate"}))["value"]:
             migrate_requiring_bot(self)
             await DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
+
+    async def _turn_top_level_user_installed(self, command: commands.HybridCommand):
+        """
+        This method is art.
+
+        It takes a command and turns it into a user installable command. It does this by
+
+        1) Creating a new wrapper function that takes a discord.Interaction as its first argument
+        (since user installable commands are called with an interaction, not ctx)
+        2) Modifying the command signature so dpy correctly infers argument types to the ones from the cloned command
+        3) Creating a new discord.app_commands.Command object with the new wrapper function
+        4) Modifying the command's arguments to include the correct descriptions
+        5) Adding the new command to the global command tree
+        """
+
+        async def wrapper(interaction: discord.Interaction, *args, **kwargs):
+            return await command.callback(
+                command.cog,
+                await commands.Context.from_interaction(interaction),
+                *args,
+                **kwargs,
+            )
+
+        # Retrieve the original signature
+        original_signature = signature(command.callback)
+
+        # Filter out 'self' and 'commands.Context'
+        # Turn 'commands.Context' into 'discord.Interaction'
+        new_parameters = [
+            (
+                param
+                if param.annotation is not commands.Context
+                else Parameter(
+                    "interaction",
+                    param.kind,
+                    default=param.default,
+                    annotation=discord.Interaction,
+                )
+            )
+            for name, param in original_signature.parameters.items()
+            if name != "self"
+        ]
+
+        # Create a new signature for the wrapper
+        new_signature = original_signature.replace(parameters=new_parameters)
+
+        # Apply the new signature to the wrapper
+        wrapper.__signature__ = new_signature
+
+        # All of the above is done so dpy will recognize any
+        # command arguments in the original command and annotate
+        # them in the wrapper, so dpy parses it correctly
+        # and includes it in the sync with Discord
+
+        new_command = discord.app_commands.Command(
+            name=command.name,
+            description=command.help or "No description",
+            extras=command.extras,
+            callback=wrapper,
+            allowed_installs=discord.app_commands.AppInstallationType(
+                user=True, guild=False
+            ),
+            allowed_contexts=discord.app_commands.AppCommandContext(
+                guild=True, private_channel=True, dm_channel=True
+            ),
+        )
+
+        discord.app_commands.commands._populate_descriptions(
+            new_command._params,
+            {
+                k: v.description
+                for k, v in discord.app_commands.commands._extract_parameters_from_callback(
+                    command.callback, command.callback.__globals__
+                ).items()
+            },
+        )
+        setattr(new_command, "_cloned", True)
+        self.tree.add_command(new_command)
+
+    async def clone_top_level_cog(self, cog: commands.Cog) -> None:
+        for cmd in cog.walk_commands():
+            if isinstance(cmd, commands.Group):
+                for c in cmd.walk_commands():
+                    if c.extras.get("clone_top_level", False):
+                        await self._turn_top_level_user_installed(c)
+                        info(
+                            f'Cloned command "{c.qualified_name}" to the top level as user installable'
+                        )
+            else:
+                if cmd.extras.get("clone_top_level", False):
+                    await self._turn_top_level_user_installed(cmd)
+                    info(
+                        f'Cloned command "{cmd.qualified_name}" to the top level as user installable'
+                    )
 
     async def close(self):
         await super().close()
@@ -89,7 +189,12 @@ class BaseBot(commands.AutoShardedBot):
     ) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
         """Adds a command to a dict of formatted commands"""
 
-        if "jishaku" in cmd.qualified_name or cmd.name == "help" or cmd.hidden:
+        if (
+            "jishaku" in cmd.qualified_name
+            or cmd.name == "help"
+            or cmd.hidden
+            or getattr(cmd, "_cloned", False)
+        ):
             return res
 
         # message_command = self.get_command(cmd.qualified_name)

@@ -41,6 +41,8 @@ class SettingsButton(discord.ui.Button):
         self.view.stop()
 
 
+@discord.app_commands.allowed_installs(guilds=True, users=True)
+@discord.app_commands.allowed_contexts(guilds=True, dms=False, private_channels=True)
 class Actions(commands.GroupCog, group_name="action"):
 
     def __init__(self, client: BaseBot):
@@ -98,48 +100,48 @@ class Actions(commands.GroupCog, group_name="action"):
         badge = await user.add_action(endpoint, targetted, amount)
         return badge
 
-    def generate_users(self, members: List[discord.Member], title: str) -> str:
+    def generate_users(self, users: List[discord.User], title: str) -> str:
         """
         Parses the list of members and returns a string with their names,
         making sure the string is not too long for the embed title
         """
-        if isinstance(members, str):
-            return members
-        memberlist = ""
-        for p, member in enumerate(members):
+        if isinstance(users, str):
+            return users
+        userlist = ""
+        for p, user in enumerate(users):
             if (
                 len(
-                    memberlist
-                    + member.display_name
+                    userlist
+                    + user.display_name
                     + title.replace("(a)", "").replace("(u)", "")
                 )
                 > 231
             ):  # embed titles have a max length of 256 characters.
                 # If the name list contains too many names, stuff breaks.
                 # This prevents that and displays the other people as "and x more"
-                memberlist = memberlist + f" *and {len(members)-(p+1)} more*"
+                userlist = userlist + f" *and {len(user)-(p+1)} more*"
                 break
-            if members[-1] == member and len(members) != 1:
-                memberlist = memberlist + f" and {member.display_name}"
+            if users[-1] == user and len(users) != 1:
+                userlist = userlist + f" and {user.display_name}"
             else:
-                if members[0] == member:
-                    memberlist = f"{member.display_name}"
+                if users[0] == user:
+                    userlist = f"{user.display_name}"
                 else:
-                    memberlist = memberlist + f", {member.display_name}"
-        return memberlist
+                    userlist = userlist + f", {user.display_name}"
+        return userlist
 
     async def action_embed(
         self,
         endpoint: str,
         author: Union[str, discord.User],
-        members: List[discord.Member],
+        users: List[discord.User],
         disabled: int = 0,
     ) -> Tuple[discord.Embed, Optional[discord.File]]:
         """
         Creates an embed for the action commands with the members and author provided
         as well as adding the image and action text
         """
-        if disabled == len(members):
+        if disabled == len(users):
             return "All members targetted have disabled this action.", None
 
         if endpoint == "hug":
@@ -159,7 +161,7 @@ class Actions(commands.GroupCog, group_name="action"):
         text = text.replace(
             "<author>",
             "**" + (author if isinstance(author, str) else author.name) + "**",
-        ).replace("<user>", "**" + self.generate_users(members, text) + "**")
+        ).replace("<user>", "**" + self.generate_users(users, text) + "**")
 
         embed = discord.Embed.from_dict(
             {
@@ -220,33 +222,33 @@ class Actions(commands.GroupCog, group_name="action"):
             return await self.action_embed(ctx.command.name, "Killua", ctx.author.name)
 
     async def do_action(
-        self, ctx: commands.Context, members: List[discord.Member] = None
+        self, ctx: commands.Context, users: List[discord.User] = None
     ) -> Union[discord.Message, None]:
         """
         Executes an action command with the given members
         """
-        if not members:
+        if not users:
             embed, file = await self.no_argument(ctx)
             if not embed:
                 return
-        elif ctx.author == members[0]:
+        elif ctx.author == users[0]:
             return await ctx.send("Sorry... you can't use this command on yourself")
         else:
-            first = await User.new(members[0].id)
+            first = await User.new(users[0].id)
             if (
-                len(members) == 1
+                len(users) == 1
                 and (ctx.command.name in first.action_settings)
                 and not first.action_settings[ctx.command.name]
             ):
                 return await ctx.send(
-                    f"**{members[0].display_name}** has disabled this action",
+                    f"**{users[0].display_name}** has disabled this action",
                     allowed_mentions=discord.AllowedMentions.none(),
                 )
 
-            allowed: List[discord.Member] = []
+            allowed: List[discord.User] = []
             disabled = 0
-            for member in members:
-                m = await User.new(member.id)
+            for user in users:
+                m = await User.new(user.id)
                 if (
                     m.action_settings
                     and ctx.command.name in m.action_settings
@@ -254,13 +256,13 @@ class Actions(commands.GroupCog, group_name="action"):
                 ):
                     disabled += 1
                 else:
-                    allowed.append(member)
+                    allowed.append(user)
 
-            for member in allowed:
-                badge = await self.save_stat(member, ctx.command.name, True)
+            for user in allowed:
+                badge = await self.save_stat(user, ctx.command.name, True)
                 if badge:
                     try:
-                        await member.send(
+                        await user.send(
                             f"Congratulation! You got the {KILLUA_BADGES[badge]} badge for being {ctx.command.name}ed more than 500 times! So many hugs :D. Check your shiny new badge out with `k!pofile`!"
                         )
                     except discord.Forbidden:
@@ -277,7 +279,7 @@ class Actions(commands.GroupCog, group_name="action"):
                 except discord.Forbidden:
                     pass
             embed, file = await self.action_embed(
-                ctx.command.name, ctx.author, members, disabled
+                ctx.command.name, ctx.author, users, disabled
             )
 
         if isinstance(embed, str):
@@ -289,67 +291,67 @@ class Actions(commands.GroupCog, group_name="action"):
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 1}, usage="hug <user(s)>"
     )
-    @discord.app_commands.describe(members="The people to hug")
+    @discord.app_commands.describe(users="The people to hug")
     async def hug(
-        self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None
+        self, ctx: commands.Context, users: commands.Greedy[discord.User] = None
     ):
         """Hug a user with this command"""
-        return await self.do_action(ctx, members)
+        return await self.do_action(ctx, users)
 
     @check()
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 2}, usage="pat <user(s)>"
     )
-    @discord.app_commands.describe(members="The people to pat")
+    @discord.app_commands.describe(users="The people to pat")
     async def pat(
-        self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None
+        self, ctx: commands.Context, users: commands.Greedy[discord.User] = None
     ):
         """Pat a user with this command"""
-        return await self.do_action(ctx, members)
+        return await self.do_action(ctx, users)
 
     @check()
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 3}, usage="poke <user(s)>"
     )
-    @discord.app_commands.describe(members="The people to poke")
+    @discord.app_commands.describe(users="The people to poke")
     async def poke(
-        self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None
+        self, ctx: commands.Context, users: commands.Greedy[discord.User] = None
     ):
         """Poke a user with this command"""
-        return await self.do_action(ctx, members)
+        return await self.do_action(ctx, users)
 
     @check()
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 4}, usage="tickle <user(s)>"
     )
-    @discord.app_commands.describe(members="The people to tickle")
+    @discord.app_commands.describe(users="The people to tickle")
     async def tickle(
-        self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None
+        self, ctx: commands.Context, users: commands.Greedy[discord.User] = None
     ):
         """Tickle a user wi- ha- hahaha- stop- haha"""
-        return await self.do_action(ctx, members)
+        return await self.do_action(ctx, users)
 
     @check()
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 5}, usage="slap <user(s)>"
     )
-    @discord.app_commands.describe(members="The people to slap")
+    @discord.app_commands.describe(users="The people to slap")
     async def slap(
-        self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None
+        self, ctx: commands.Context, users: commands.Greedy[discord.User] = None
     ):
         """Slap a user with this command"""
-        return await self.do_action(ctx, members)
+        return await self.do_action(ctx, users)
 
     @check()
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 6}, usage="cuddle <user(s)>"
     )
-    @discord.app_commands.describe(members="The people to cuddle with")
+    @discord.app_commands.describe(users="The people to cuddle with")
     async def cuddle(
-        self, ctx: commands.Context, members: commands.Greedy[discord.Member] = None
+        self, ctx: commands.Context, users: commands.Greedy[discord.User] = None
     ):
         """Snuggle up to a user and cuddle them with this command"""
-        return await self.do_action(ctx, members)
+        return await self.do_action(ctx, users)
 
     @check()
     @commands.hybrid_command(

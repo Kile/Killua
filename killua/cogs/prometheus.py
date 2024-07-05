@@ -94,7 +94,11 @@ class PrometheusCog(commands.Cog):
         # turn into dict with locale as key and count as value
         locale_count = {locale: locales.count(locale) for locale in locales}
         for locale, count in locale_count.items():
-            LOCALE.labels(locale).set(count)
+            LOCALE.labels(
+                cast(str, locale).split("-")[-1].upper()
+                if "-" in locale
+                else cast(str, locale).upper()
+            ).set(count)
 
     async def init_gauges(self):
         log.debug("Initializing gauges")
@@ -218,9 +222,7 @@ class PrometheusCog(commands.Cog):
     @commands.Cog.listener()
     async def on_interaction(self, interaction: Interaction):
         old = await (await User.new(interaction.user.id)).log_locale(
-            cast(str, interaction.locale[-1]).split("-")[-1].upper()
-            if "-" in interaction.locale[-1]
-            else cast(str, interaction.locale[-1]).upper()
+            interaction.locale[-1]
         )
         if old:
             LOCALE.labels(old).dec()

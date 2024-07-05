@@ -10,9 +10,6 @@ import killua.args as args
 
 args.init()
 
-# with open("config.json", "r") as config_file:
-#     config = json.loads(config_file.read())
-
 # Instead, use env variables
 CLUSTER = AsyncIOMotorClient(os.getenv("MONGODB"))
 
@@ -201,7 +198,7 @@ TIPS = [
 # TOPICS
 TOPICS = [
     "What's your least favorite genre of music?",
-    "What's the most beautiful place youve ever been to?",
+    "What's the most beautiful place you've ever been to?",
     "What's the best name for a pet dragon?",
     "What's the best name for a pet turtle?",
     "What's the best name for a pet snake?",
@@ -302,7 +299,7 @@ TOPICS = [
     "What's the cheapest gift you've ever gotten for someone else?",
     "What's your most embarrassing late night purchase?",
     "What is your greatest fear in a relationship?",
-    "Have you ever regifted a present?",
+    "Have you ever re-gifted a present?",
     "Name one thing you'd change about every person in this chat.",
     "What's one useless skill you'd love to learn anyway?",
     "How many people have you kissed?",
@@ -432,7 +429,7 @@ ANSWERS = [
     "No...actually, yes",
 ]
 
-# A list of whould you rather options
+# A list of would you rather options
 WYR = [
     (
         "Be able to see 10 minutes into the future",
@@ -481,17 +478,17 @@ WYR = [
         "Have a stranger read all texts on your phone",
     ),
     ("Have fortune", "Have fame"),
-    ("Vistit the ISS for a week", "Spend a week in a hotel at the bottom of the ocean"),
+    ("Visit the ISS for a week", "Spend a week in a hotel at the bottom of the ocean"),
     ("Be stranded in the jungle", "Be stranded in the desert"),
     (
-        "Go back to kindergarden with everything you know",
+        "Go back to kindergarten with everything you know",
         "Know everything your future self will learn now",
     ),
-    ("Be an unknown superhero", "Be an infamous villan"),
+    ("Be an unknown superhero", "Be an infamous villain"),
     ("Wear real fur", "Wear fake jewels"),
-    ("Be able to erase your memeories", "Be able to erase someone elses memories"),
+    ("Be able to erase your memories", "Be able to erase someone elses memories"),
     ("Get drunk with one sip of alcohol", "Never get drunk"),
-    ("Sell all of your possesions", "Sell one of your organs"),
+    ("Sell all of your possessions", "Sell one of your organs"),
     ("Unable to close any open door", "Unable to open any closed door"),
     ("Star in a Star Wars film", "Star in a Marvel film"),
     ("Always wear wet socks", "Always have a rock in your shoes"),
@@ -527,7 +524,7 @@ WYR = [
     ),
     (
         "Be the first person to explore a planet",
-        "Be the inventor of a drug that cures a deadly desease",
+        "Be the inventor of a drug that cures a deadly disease",
     ),
     ("Always travel first class free", "Never have to pay for food again"),
     (
@@ -544,7 +541,7 @@ WYR = [
         "Life stream what you do 24/7 for anyone to see",
     ),
     ("Be born again in the same country", "Be born again in a random country"),
-    ("Have a successful Twitch channel", "Have a successfull YouTube channel"),
+    ("Have a successful Twitch channel", "Have a successful YouTube channel"),
     ("Never be able to drink water again", "Only be able to drink water"),
     ("Control fire", "Control water"),
     (
@@ -566,10 +563,10 @@ WYR = [
     ("Clean rest stop toilets for living", "Work in a slaughterhouse for living"),
     ("Live without hot water for showers/baths", "Live without a washing machine"),
     (
-        "Accindentally be responsible for the death of a child",
-        "Accindentally be responsible for the death of three adults",
+        "Accidentally be responsible for the death of a child",
+        "Accidentally be responsible for the death of three adults",
     ),
-    ("Have evrything you eat be too salty", "Have everything you eat be too sweet"),
+    ("Have everything you eat be too salty", "Have everything you eat be too sweet"),
     (
         "Be an amazing artist but never see the art you create",
         "Be an amazing musician but never hear the music you create",
@@ -584,16 +581,16 @@ WYR = [
     ),
     (
         "Lose the 3 possessions you hold most dear",
-        "Lose everything but those 3 posessions",
+        "Lose everything but those 3 possessions",
     ),
     (
-        "Get a suitecase with $10k",
+        "Get a suitcase with $10k",
         "Get a suitcase which has the 50/50 chance of $50k or $1k",
     ),
     ("Be completely offline for the next year", "Lose a finger or toe of your choice"),
     (
         "Have a non-venomous spider infestation in your house",
-        "Have a mouse investation in your house",
+        "Have a mouse infestation in your house",
     ),
     ("Swallow 5 live worms", "Swallow one live cockroach"),
     (
@@ -612,7 +609,7 @@ WYR = [
     ),
     (
         "Live iin utopia as a normal person",
-        "Live in distopia but you're the surpreme ruler",
+        "Live in dystopia but you're the supreme ruler",
     ),
     (
         "Know all the mysteries of the universe",
@@ -623,8 +620,8 @@ WYR = [
         "Fight for a cause that you only partially believe in but have a high chance of your cause succeeding",
     ),
     (
-        "Eat at the same resturant you usually do",
-        "Eat at a new resturant that just opened",
+        "Eat at the same restaurant you usually do",
+        "Eat at a new restaurant that just opened",
     ),
     (
         "Live in a house that is incredibly unique and beautiful but plain on the inside",
@@ -658,7 +655,7 @@ HUG_TEXTS = [
     "<author> gives <user> a hug. Their face lights up brighter than a star",
     "<author> makes <user>'s day by giving them a hug",
     "<author> hugs <user> so strong they can barely breathe",
-    "<author> hugs <user> from behind like a hug-assassine :ninja:",
+    "<author> hugs <user> from behind like a hug-assassin :ninja:",
     "<user> looked like they needed one of these",
     "<author> hugs <user> as strong as they can",
     "<author> hugs <user> and makes sure to not let go",
@@ -1016,7 +1013,7 @@ LOOTBOXES: Dict[
         "name": "Booster box",
         "price": 5000,
         "emoji": "<:booster_box:1090978821592842280>",
-        "description": "This box was created by an unknwon hunter in an attempt to help fellow hunters opening lootboxes. It only contains boosters.",
+        "description": "This box was created by an unknown hunter in an attempt to help fellow hunters opening lootboxes. It only contains boosters.",
         "rewards": {
             "guaranteed": {},
             "jenny": (0, 0),

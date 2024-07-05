@@ -245,7 +245,7 @@ class Events(commands.Cog):
     async def on_guild_remove(self, guild: discord.Guild):
         # Changing Killua's status
         await self.client.update_presence()
-        (await Guild.new(guild.id)).delete()
+        await (await Guild.new(guild.id)).delete()
         await self._post_guild_count()
 
     @commands.Cog.listener()

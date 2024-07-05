@@ -107,13 +107,18 @@ class HelpCommand(commands.Cog):
             name="User installable",
             value=(
                 "Yes"
-                if command.parent
-                and cast(
-                    commands.HybridCommand, command
-                ).app_command.parent.allowed_installs
-                and cast(
-                    commands.HybridCommand, command
-                ).app_command.parent.allowed_installs.user
+                if (
+                    command.parent
+                    and cast(
+                        commands.HybridCommand, command
+                    ).app_command.parent.allowed_installs
+                    and cast(
+                        commands.HybridCommand, command
+                    ).app_command.parent.allowed_installs.user
+                )
+                or command.extras.get(
+                    "clone_top_level", False
+                )  # if a clone exists as a user installable command
                 else "No"
             ),
         )

@@ -246,7 +246,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
     @check(4)
     @commands.hybrid_command(
         aliases=["image", "i"],
-        extras={"category": Category.FUN, "id": 117},
+        extras={"category": Category.FUN, "id": 117, "clone_top_level": True},
         usage="img <query>",
     )
     @discord.app_commands.describe(query="What image to look for")

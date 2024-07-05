@@ -89,9 +89,14 @@ def premium_user_only():
                     url="https://patreon.com/kilealkuri",
                 )
             )
+            embed = discord.Embed.from_dict({
+                "title": "Premium",
+                "description": "This command is currently only a premium feature. To enable your account to use it, become a Patreon!",
+                "image": {"url": PatreonBanner.URL},
+                "color": 0x3E4A78
+            })
             await ctx.send(
-                "This command is currently only a premium feature. To enable your account to use it, become a Patreon!",
-                file=PatreonBanner.file(),
+                embed=embed,
                 view=view,
             )
             return False

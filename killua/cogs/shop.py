@@ -626,8 +626,8 @@ class Shop(commands.Cog):
             return await ctx.send(f"You can't transfer less than 1 Jenny!")
         if user.jenny < amount:
             return await ctx.send("You can't transfer more Jenny than you have")
-        o.add_jenny(amount)
-        user.remove_jenny(amount)
+        await o.add_jenny(amount)
+        await user.remove_jenny(amount)
         return await ctx.send(
             f"✉️ transferred {amount} Jenny to `{other}`!",
             allowed_mentions=discord.AllowedMentions.none(),

@@ -14,7 +14,7 @@ from killua.static.enums import Category
 from killua.static.constants import TOPICS, ANSWERS, ALIASES, UWUS, LANGS, WYR
 
 from killua.utils.checks import check
-from killua.utils.classes import Guild
+from killua.utils.classes import Guild, User
 from killua.utils.interactions import View, Button
 
 
@@ -210,7 +210,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         await msg.edit(content=str("Pong in `" + str(1000 * (end - start))) + "` ms")
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.FUN, "id": 81}, usage="topic")
+    @commands.hybrid_command(extras={"category": Category.FUN, "id": 81, "clone_top_level": True}, usage="topic")
     async def topic(self, ctx: commands.Context):
         """Sends a conversation starter"""
         await ctx.send(choice(TOPICS))
@@ -224,7 +224,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
     @check()
     @commands.hybrid_command(
         name="8ball",
-        extras={"category": Category.FUN, "id": 83},
+        extras={"category": Category.FUN, "id": 83, "clone_top_level": True},
         usage="8ball <question>",
     )
     @discord.app_commands.describe(question="The question to ask the magic 8 ball")
@@ -368,15 +368,12 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         if source.lower() in LANGS:
             source = LANGS[source.lower()]
         if hasattr(ctx, "invoked_by_context_menu") or not target:
-            target = (
-                (
-                    str(ctx.interaction.locale)
-                    if str(ctx.interaction.locale).startswith("zh")
-                    else str(ctx.interaction.locale).split("-")[0]
-                )
-                if ctx.interaction
-                else target
-            )
+            if ctx.interaction:
+                target = ctx.interaction.locale
+            elif (locale := (await User.new(ctx.author.id)).locale):
+                target = locale
+            else:
+                target = target
         elif target.lower() in LANGS:
             target = LANGS[target.lower()]
 
@@ -439,7 +436,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
 
     @check()
     @commands.hybrid_command(
-        extras={"category": Category.FUN, "id": 89}, usage="calc <math>"
+        extras={"category": Category.FUN, "id": 89, "clone_top_level": True}, usage="calc <math>"
     )
     @discord.app_commands.describe(expression="The expression to calculate")
     async def calc(self, ctx: commands.Context, *, expression: str = None):
@@ -543,7 +540,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
             )
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.FUN, "id": 91}, usage="wyr")
+    @commands.hybrid_command(extras={"category": Category.FUN, "id": 91, "clone_top_level": True}, usage="wyr")
     async def wyr(self, ctx: commands.Context):
         """Asks a random would you rather question and allows you to vote."""
 

@@ -15,7 +15,6 @@ from .metrics import PrometheusLoggingHandler
 
 import killua.args as args_file
 
-
 async def main():
     args_file.Args.get_args()
 
