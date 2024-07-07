@@ -455,6 +455,8 @@ class BaseBot(commands.AutoShardedBot):
         )
 
     def is_user_installed(self, ctx: commands.Context) -> bool:
+        if not ctx.interaction:
+            return False
         return not ctx.interaction.is_guild_integration()
 
     def get_command_from_id(self, id: int) -> Union[discord.app_commands.Command, None]:

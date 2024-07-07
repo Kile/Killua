@@ -1015,7 +1015,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 6,
+        "w": 8,
         "x": 8,
         "y": 16
       },
@@ -1149,6 +1149,101 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 16
+      },
+      "id": 892,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true,
+          "values": []
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_event_on_interaction_total{job=\"$job\", is_user_installed=\"True\"}",
+          "instant": false,
+          "legendFormat": "User installed",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_event_on_interaction_total{job=\"$job\", is_user_installed=\"False\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Slash commands",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_event_on_command_total{job=\"$job\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Message command",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "How commands are used",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
       "description": "The upvotes for Killua on sites like top.gg",
       "fieldConfig": {
         "defaults": {
@@ -1178,7 +1273,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1202,9 +1297,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 5,
-        "x": 14,
-        "y": 16
+        "w": 8,
+        "x": 0,
+        "y": 24
       },
       "id": 856,
       "options": {
@@ -1235,6 +1330,35 @@
       ],
       "timeFrom": "24h",
       "title": "Votes for the bot",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "lower",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "discordbotlist"
+              },
+              {
+                "config": {
+                  "id": "lower",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "topgg"
+              }
+            ],
+            "match": "any",
+            "type": "exclude"
+          }
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -1295,9 +1419,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 5,
-        "x": 19,
-        "y": 16
+        "w": 8,
+        "x": 8,
+        "y": 24
       },
       "id": 84,
       "options": {
@@ -1328,6 +1452,119 @@
       ],
       "timeFrom": "1w",
       "title": "Daily active users",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "Users who boost the support server or have an active Patreon or Discord bot subscription",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlPu"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 24
+      },
+      "id": 817,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_premium_users",
+          "instant": false,
+          "legendFormat": "Premium users",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Premium users",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "Premium users"
+              }
+            ],
+            "match": "all",
+            "type": "exclude"
+          }
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -1391,10 +1628,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
+        "h": 7,
+        "w": 8,
         "x": 0,
-        "y": 24
+        "y": 32
       },
       "id": 836,
       "options": {
@@ -1490,10 +1727,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 24
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 32
       },
       "id": 837,
       "options": {
@@ -1589,10 +1826,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 24
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 32
       },
       "id": 838,
       "options": {
@@ -1628,125 +1865,12 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheusdatasource"
-      },
-      "description": "Users who boost the support server or have an active Patreon or Discord bot subscription",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-BlPu"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 24
-      },
-      "id": 817,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "expr": "discord_premium_users",
-          "instant": false,
-          "legendFormat": "Premium users",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "timeFrom": "1w",
-      "title": "Premium users",
-      "transformations": [
-        {
-          "id": "filterByValue",
-          "options": {
-            "filters": [
-              {
-                "config": {
-                  "id": "equal",
-                  "options": {
-                    "value": 0
-                  }
-                },
-                "fieldName": "Premium users"
-              }
-            ],
-            "match": "all",
-            "type": "exclude"
-          }
-        }
-      ],
-      "type": "timeseries"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 39
       },
       "id": 68,
       "panels": [],
@@ -1816,7 +1940,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 33
+        "y": 40
       },
       "id": 64,
       "options": {
@@ -1913,7 +2037,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 33
+        "y": 40
       },
       "id": 72,
       "options": {
@@ -2011,7 +2135,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 33
+        "y": 40
       },
       "id": 76,
       "options": {
@@ -2053,7 +2177,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 48
       },
       "id": 60,
       "panels": [],
@@ -2125,7 +2249,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 42
+        "y": 49
       },
       "hideTimeOverride": true,
       "id": 59,
@@ -2190,7 +2314,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 57
       },
       "id": 88,
       "panels": [],
@@ -2222,7 +2346,7 @@
         "h": 11,
         "w": 8,
         "x": 0,
-        "y": 51
+        "y": 58
       },
       "id": 97,
       "maxPerRow": 3,

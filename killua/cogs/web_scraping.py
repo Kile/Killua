@@ -313,9 +313,21 @@ class WebScraping(commands.GroupCog, group_name="web"):
             )
         if len(r.error) > 2000:
             return await ctx.send(
-                f":x: An error occured with the API this command is using. The API is likely down. Please try again later."
+                discord.Embed(
+                    title="An error occurred with the service this command is using",
+                    description=":x: The service is likely down. Please try again later.",
+                    color=discord.Color.red(),
+                )
             )
-        return await ctx.send(":x: " + r.error, ephemeral=True)
+        return await ctx.send(
+            embed=discord.Embed(
+                title="An error occurred running the command",
+                description=":x: The service Killua is using responded with an error: "
+                + r.error,
+                color=discord.Color.red(),
+            ),
+            ephemeral=True,
+        )
 
 
 Cog = WebScraping

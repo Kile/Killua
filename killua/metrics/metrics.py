@@ -15,12 +15,12 @@ LATENCY_GAUGE = Gauge(
 ON_INTERACTION_COUNTER = Counter(
     METRIC_PREFIX + "event_on_interaction",
     "Amount of interactions called by users",
-    ["shard", "interaction", "command"],
+    ["is_user_installed"],
 )
+ON_INTERACTION_COUNTER._metrics.clear()
 ON_COMMAND_COUNTER = Counter(
     METRIC_PREFIX + "event_on_command",
     "Amount of commands called by users",
-    ["shard", "command"],
 )
 GUILD_GAUGE = Gauge(
     METRIC_PREFIX + "stat_total_guilds", "Amount of guild this bot is a member of"

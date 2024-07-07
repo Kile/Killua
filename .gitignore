@@ -1,6 +1,9 @@
 # Env file
 .env
 
+# VSCode config
+.vscode/
+
 # Downloaded cards
 /cards.json
 

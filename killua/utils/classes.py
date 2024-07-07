@@ -58,7 +58,7 @@ class CheckFailure(Exception):
         super().__init__(**kwargs)
 
 
-class SuccessfullDefense(CheckFailure):
+class SuccessfulDefense(CheckFailure):
     pass
 
 

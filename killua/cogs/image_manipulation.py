@@ -44,7 +44,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         return im.copy()
 
     def _create_frames(self, image: Image.Image) -> List[Image.Image]:
-        """Creates the frames for the spin, sligtly rotating each frame"""
+        """Creates the frames for the spin, slightly rotating each frame"""
         res = []
         for i in range(17):
             res.append(image.rotate(i * 20 - 1))
@@ -408,7 +408,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
     )
     @discord.app_commands.describe(target="A user, url or emoji to take the image from")
     async def flash(self, ctx: commands.Context, target: str = None):
-        """Greates a flashing GIF. WARNING FOR PEOPLE WITH EPILEPSY!"""
+        """Creates a flashing GIF. WARNING FOR PEOPLE WITH EPILEPSY!"""
 
         async def func(data, *_):
             return await self.pxl.flash(images=[data])

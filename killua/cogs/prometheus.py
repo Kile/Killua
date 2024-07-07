@@ -209,7 +209,7 @@ class PrometheusCog(commands.Cog):
     @commands.Cog.listener()
     async def on_command(self, ctx: commands.Context):
         shard_id = ctx.guild.shard_id if ctx.guild else None
-        ON_COMMAND_COUNTER.labels(shard_id, ctx.command.name).inc()
+        ON_COMMAND_COUNTER.inc()
 
         if not ctx.command.extras.get("id"):
             return
@@ -227,18 +227,13 @@ class PrometheusCog(commands.Cog):
         if old:
             LOCALE.labels(old).dec()
 
-        shard_id = interaction.guild.shard_id if interaction.guild else None
 
-        # command name can be None if comming from a view (like a button click) or a modal
-        command_name = None
-        if (
-            interaction.type == InteractionType.application_command
-            and interaction.command
-        ):
-            command_name = interaction.command.name
+        if not interaction.type in [InteractionType.application_command]:
+            # don't save just any interaction
+            return
 
         ON_INTERACTION_COUNTER.labels(
-            shard_id, interaction.type.name, command_name
+            not interaction.is_guild_integration()
         ).inc()
 
     @commands.Cog.listener()

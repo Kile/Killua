@@ -59,13 +59,13 @@ class TodoSystem(commands.Cog):
                     and todo["due_at"] < datetime.now()
                     and not todo["notified"]
                 ):
-                    to_be_notifed = []
-                    to_be_notifed.append(self.client.get_user(todo["added_by"]))
-                    to_be_notifed.extend(
+                    to_be_notified = []
+                    to_be_notified.append(self.client.get_user(todo["added_by"]))
+                    to_be_notified.extend(
                         [self.client.get_user(u) for u in todo["assigned_to"]]
                     )
 
-                    for user in to_be_notifed:
+                    for user in to_be_notified:
                         if user:
                             try:
                                 embed = discord.Embed.from_dict(

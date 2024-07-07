@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from functools import partial
 
 from .constants import (
-    INDESTRUCTABLE,
+    INDESTRUCTIBLE,
     ALLOWED_AMOUNT_MULTIPLE,
     DEF_SPELLS,
     VIEW_DEF_SPELLS,
@@ -20,7 +20,7 @@ from .constants import (
 from killua.bot import BaseBot
 from killua.utils.classes import (
     User,
-    SuccessfullDefense,
+    SuccessfulDefense,
     CheckFailure,
     CardNotFound,
     Book,
@@ -161,7 +161,7 @@ class Card:
 
         if isinstance(view.value, int):
             await other.remove_card(view.value)
-            raise SuccessfullDefense(
+            raise SuccessfulDefense(
                 f"<@{other.id}> successfully defended against your attack"
             )
         else:
@@ -188,7 +188,7 @@ class Card:
                 f"page_protection_{int((target_card-10)/18+2)}" in other.effects
                 and not target_card in [x[0] for x in other.fs_cards]
             ):
-                raise SuccessfullDefense(
+                raise SuccessfulDefense(
                     "The user has protected the page this card is in against spells!"
                 )
 
@@ -201,7 +201,7 @@ class Card:
                     await other.remove_card(1026)
                 else:
                     await other.add_effect("1026", other.effects["1026"] - 1)
-                raise SuccessfullDefense(
+                raise SuccessfulDefense(
                     "The user had remaining protection from card 1026 thus your attack failed"
                 )
 
@@ -721,7 +721,7 @@ class Card1028(Card, IndividualCard):
         self._has_cards_check(other.fs_cards, " in their free slots")
 
         target_card = random.choice(
-            [x for x in other.fs_cards if not x[0] in INDESTRUCTABLE]
+            [x for x in other.fs_cards if not x[0] in INDESTRUCTIBLE]
         )
         await author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
@@ -745,7 +745,7 @@ class Card1029(Card, IndividualCard):
         self._has_cards_check(other.rs_cards, " in their restricted slots")
 
         target_card = random.choice(
-            [x for x in other.rs_cards if not x[0] in INDESTRUCTABLE and x[0] != 0]
+            [x for x in other.rs_cards if not x[0] in INDESTRUCTIBLE and x[0] != 0]
         )
         await author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
