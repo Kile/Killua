@@ -163,7 +163,7 @@ class IPCRoutes(commands.Cog):
 
     def _get_reward(self, streak: int, weekend: bool = False) -> int:
         """A pretty simple algorithm that adjusts the reward for voting"""
-        # First loop through all lootbox streak rwards from the back and find if any of them apply
+        # First loop through all lootbox streak rewards from the back and find if any of them apply
         if streak == 0:
             return 100
 

@@ -147,32 +147,35 @@ class Buttons(View):
         disabled=True,
         custom_id="first",
     )
-    async def first_page(self, interaction: discord.Interaction, _: discord.ui.button):
+    async def first_page(self, interaction: discord.Interaction, _: discord.ui.Button):
         self.page = 1
         await self._edit_message(interaction)
 
     @discord.ui.button(
         emoji=ButtonEmoji.BACKWARDS, style=Color.BLURPLE, custom_id="previous"
     )
-    async def backwards(self, interaction: discord.Interaction, _: discord.ui.button):
+    async def backwards(self, interaction: discord.Interaction, _: discord.ui.Button):
         self.page = self.page - 1 if self.page > 1 else self.max_pages
         await self._edit_message(interaction)
 
     @discord.ui.button(emoji=ButtonEmoji.STOP, style=Color.RED, custom_id="delete")
-    async def delete(self, interaction: discord.Interaction, _: discord.ui.button):
-        await interaction.message.delete()
+    async def delete(self, interaction: discord.Interaction, _: discord.ui.Button):
+        try:
+            await interaction.message.delete()
+        except discord.Forbidden:
+            await self.disable(interaction.message)
         self.ignore = True
         self.stop()
 
     @discord.ui.button(emoji=ButtonEmoji.FORWARD, style=Color.BLURPLE, custom_id="next")
-    async def forward(self, interaction: discord.Interaction, _: discord.ui.button):
+    async def forward(self, interaction: discord.Interaction, _: discord.ui.Button):
         self.page = self.page + 1 if not self.page >= self.max_pages else 1
         await self._edit_message(interaction)
 
     @discord.ui.button(
         emoji=ButtonEmoji.LAST_PAGE, style=Color.BLURPLE, custom_id="last"
     )
-    async def last_page(self, interaction: discord.Interaction, _: discord.ui.button):
+    async def last_page(self, interaction: discord.Interaction, _: discord.ui.Button):
         self.page = self.max_pages
         await self._edit_message(interaction)
 
@@ -267,7 +270,7 @@ class Paginator:
             if self.file
             else (
                 await self.ctx.bot.send_message(
-                    self.ctx, embed=self.embed, view=self.view
+                    self.ctx, embed=self.embed, view=self.view, ephemeral=self.ephemeral
                 )
             )
         )

@@ -15,6 +15,7 @@ class HelpPaginator(Paginator):
     """A normal paginator with a button that returns to the original help command"""
 
     def __init__(self, *args, **kwargs):
+        self.is_user_installed = kwargs.get("is_user_installed")
         super().__init__(*args, **kwargs)
 
         self.view.add_item(
@@ -27,14 +28,10 @@ class HelpPaginator(Paginator):
         if view.ignore or view.timed_out:
             return
 
-        try:
+        if not self.is_user_installed:
             await self.view.message.delete()
-        except discord.errors.Forbidden:
-            pass
-        # Happens sometimes when invoked with a user installation.
-        # Idk why but since that means the response is likely ephemeral,
-        # we don't need to declutter the channel as badly. The command
-        # failing would be worse.
+        else:
+            await self.view.disable(self.view.message)
         await self.ctx.command.__call__(self.ctx)
 
 
@@ -178,7 +175,14 @@ class HelpCommand(commands.Cog):
                 embed.set_footer(text=f"Page {page}/{len(pages)}")
             return embed
 
-        return HelpPaginator(ctx, c, timeout=100, func=make_embed)
+        return HelpPaginator(
+            ctx,
+            c,
+            timeout=100,
+            func=make_embed,
+            ephemeral=self.client.is_user_installed(ctx),
+            is_user_installed=self.client.is_user_installed(ctx),
+        )
 
     async def handle_command(
         self, ctx: commands.Context, cmd: commands.Command, message_prefix: str
@@ -207,7 +211,9 @@ class HelpCommand(commands.Cog):
             )
         )
 
-        return await ctx.send(embed=embed, view=source_view)
+        return await ctx.send(
+            embed=embed, view=source_view, ephemeral=self.client.is_user_installed(ctx)
+        )
 
     def find_category(self, string: str) -> Union[Category, None]:
         for cat in Category:
@@ -292,7 +298,9 @@ class HelpCommand(commands.Cog):
                 discord.ui.Button(url="https://patreon.com/kilealkuri", label="Premium")
             )
 
-            msg = await ctx.send(embed=embed, view=view)
+            msg = await ctx.send(
+                embed=embed, view=view, ephemeral=self.client.is_user_installed(ctx)
+            )
 
             await view.wait()
             if view.timed_out:
@@ -302,7 +310,10 @@ class HelpCommand(commands.Cog):
                 return await msg.edit(view=view)
             else:
                 # await msg.edit(embed=msg.embeds[0], view=discord.ui.View())
-                await msg.delete()
+                if not self.client.is_user_installed(ctx):
+                    await msg.delete()
+                else:
+                    await view.disable(msg)
                 paginator = self.get_group_help(
                     ctx,
                     self.find_category(list(all_formatted_commands.keys())[view.value]),

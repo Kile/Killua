@@ -240,7 +240,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 )
 
         async def make_embed(page, *_) -> Tuple[discord.Embed, discord.File]:
-            return await Book(self.client.session).create(ctx.author, page, self.client)
+            return await Book(self.client.session, self.client.api_url(to_fetch=True)).create(ctx.author, page, self.client)
 
         return await Paginator(
             ctx,

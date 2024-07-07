@@ -391,7 +391,7 @@ class Rps(CompetitiveGame):
     """A class handling someone playing rps alone or with someone else"""
 
     def __init__(
-        self, ctx: commands.Context, points: int = None, other: discord.Member = None
+        self, ctx: commands.Context, points: int = None, other: discord.User = None
     ):
         self.ctx = ctx
         self.points = points
@@ -565,7 +565,7 @@ class Rps(CompetitiveGame):
                     f"{self.other.name} needs to open their dms to Killua to play"
                 )
 
-            if blcheck(self.other.id) is True:
+            if await blcheck(self.other.id) is True:
                 return await self.ctx.send("You can't play against someone blacklisted")
 
             view = ConfirmButton(self.other.id, timeout=80)
@@ -847,7 +847,7 @@ class CountGame:
         await self._handle_game(msg)
 
 @discord.app_commands.allowed_installs(guilds=True, users=True)
-@discord.app_commands.allowed_contexts(guilds=True, dms=False, private_channels=False)
+@discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 class Games(commands.GroupCog, group_name="games"):
 
     def __init__(self, client: BaseBot):
@@ -873,34 +873,41 @@ class Games(commands.GroupCog, group_name="games"):
     )
     @discord.app_commands.allowed_installs(guilds=True, users=False)
     @discord.app_commands.describe(
-        member="The person to challenge", points="The points to play for"
+        user="The person to challenge", points="The points to play for"
     )
     async def rps(
-        self, ctx: commands.Context, member: discord.Member, points: int = None
+        self, ctx: commands.Context, user: discord.User, points: int = None
     ):
         """Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun."""
 
-        if self.client.is_user_installed(ctx):
-            return await ctx.send(
-                "You cannot play this game without the bot being on the server :c",
-                ephemeral=True,
-            )
-
-        if member.id == ctx.author.id:
+        if user.id == ctx.author.id:
             return await ctx.send("Baka! You can't play against yourself")
 
-        if not member.bot:
-            opponent = await User.new(member.id)
-        elif member.bot and member != ctx.me:
+        if not user.bot:
+            opponent = await User.new(user.id)
+        elif user.bot and user != ctx.me:
             return await ctx.send(
                 "Beep-boop, if you wanna play against a bot, play against me!"
             )
+        
+        if not user.mutual_guilds:
+            view = discord.ui.View()
+            support_server_button = discord.ui.Button(
+                label="Support Server",
+                style=discord.ButtonStyle.link,
+                url=self.client.support_server_invite,
+            )
+            view.add_item(support_server_button)
+            return await ctx.send(
+                f"{user.mention} needs to share a server with me so I can dm them. Please ask them to join the support server.",
+                view=view,
+            )
 
-        p2 = opponent.jenny if member != ctx.me else False
+        p2 = opponent.jenny if user != ctx.me else False
 
-        user = await User.new(ctx.author.id)
+        db_user = await User.new(ctx.author.id)
 
-        p1 = user.jenny
+        p1 = db_user.jenny
 
         if points:
             if points <= 0 or points > 100:
@@ -915,7 +922,7 @@ class Games(commands.GroupCog, group_name="games"):
                     f"Your opponent does not have enough Jenny for that. Their current balance is `{p2}`"
                 )
 
-        game = Rps(ctx, points, member)
+        game = Rps(ctx, points, user)
         await game.start()
 
     async def _topic_autocomplete(
@@ -944,7 +951,7 @@ class Games(commands.GroupCog, group_name="games"):
         self,
         ctx: commands.Context,
         difficulty: Literal["easy", "medium", "hard"] = "easy",
-        opponent: discord.Member = None,
+        opponent: discord.User = None,
         topic: str = None,
         jenny: int = 50,
     ):
@@ -966,11 +973,6 @@ class Games(commands.GroupCog, group_name="games"):
         )
 
         if opponent:
-            if self.client.is_user_installed(ctx):
-                return await ctx.send(
-                    "You cannot play against someone else in a user integration",
-                    ephemeral=True,
-                )
 
             if jenny < 0:
                 return await ctx.send("You cannot play for a negative amount of Jenny")
@@ -990,6 +992,19 @@ class Games(commands.GroupCog, group_name="games"):
 
             elif opponent.bot:
                 return await ctx.send("You cannot play against a bot")
+            
+            elif not opponent.mutual_guilds:
+                view = discord.ui.View()
+                support_server_button = discord.ui.Button(
+                    label="Support Server",
+                    style=discord.ButtonStyle.link,
+                    url=self.client.support_server_invite,
+                )
+                view.add_item(support_server_button)
+                return await ctx.send(
+                    f"{opponent.mention} needs to share a server with me so I can dm them. Please ask them to join the support server.",
+                    view=view,
+                )
 
             await game.play_against(opponent, jenny)
         else:
@@ -1000,65 +1015,65 @@ class Games(commands.GroupCog, group_name="games"):
         extras={"category": Category.GAMES, "id": 43},
         usage="stats <game> <user(optional)>",
     )
-    @discord.app_commands.describe(member="The person to check the stats of")
+    @discord.app_commands.describe(user="The person to check the stats of")
     async def gstats(
         self,
         ctx: commands.Context,
         game_type: Literal["rps", "counting", "trivia"],
-        member: discord.Member = None,
+        user: discord.User = None,
     ):
         """Check the game stats of yourself or another user"""
-        if not member:
-            member = ctx.author
+        if not user:
+            user = ctx.author
 
         game_type = getattr(
             GameOptions, game_type
         )  # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
 
-        user = await User.new(member.id)
+        db_user = await User.new(user.id)
 
         if game_type == GameOptions.rps:
             pve_played = (
-                user.rps_stats["pve"]["tied"]
-                + user.rps_stats["pve"]["lost"]
-                + user.rps_stats["pve"]["won"]
+                db_user.rps_stats["pve"]["tied"]
+                + db_user.rps_stats["pve"]["lost"]
+                + db_user.rps_stats["pve"]["won"]
             )
             pve_win_rate = (
-                int(100 * (user.rps_stats["pve"]["won"] / pve_played))
+                int(100 * (db_user.rps_stats["pve"]["won"] / pve_played))
                 if pve_played != 0
                 else 0
             )
 
             pvp_played = (
-                user.rps_stats["pvp"]["tied"]
-                + user.rps_stats["pvp"]["lost"]
-                + user.rps_stats["pvp"]["won"]
+                db_user.rps_stats["pvp"]["tied"]
+                + db_user.rps_stats["pvp"]["lost"]
+                + db_user.rps_stats["pvp"]["won"]
             )
             pvp_win_rate = (
-                int(100 * (user.rps_stats["pvp"]["won"] / pvp_played))
+                int(100 * (db_user.rps_stats["pvp"]["won"] / pvp_played))
                 if pvp_played != 0
                 else 0
             )
 
             await ctx.send(
                 embed=discord.Embed(
-                    title=f"{member.name}'s RPS stats",
-                    description=f"**__PVE__**:\n:crown: Win rate: {pve_win_rate}%\n\n Wins: {user.rps_stats['pve']['won']}\nDraws: {user.rps_stats['pve']['tied']}\nLosses: {user.rps_stats['pve']['lost']}"
-                    + f"\n\n**__PVP__**:\n:crown: Win rate: {pvp_win_rate}%\n\n Wins: {user.rps_stats['pvp']['won']}\nDraws: {user.rps_stats['pvp']['tied']}\nLosses: {user.rps_stats['pvp']['lost']}",
+                    title=f"{user.display_name}'s RPS stats",
+                    description=f"**__PVE__**:\n:crown: Win rate: {pve_win_rate}%\n\n Wins: {db_user.rps_stats['pve']['won']}\nDraws: {db_user.rps_stats['pve']['tied']}\nLosses: {db_user.rps_stats['pve']['lost']}"
+                    + f"\n\n**__PVP__**:\n:crown: Win rate: {pvp_win_rate}%\n\n Wins: {db_user.rps_stats['pvp']['won']}\nDraws: {db_user.rps_stats['pvp']['tied']}\nLosses: {db_user.rps_stats['pvp']['lost']}",
                     color=0x3E4A78,
                 )
             )
 
         elif game_type == GameOptions.trivia:
             overall_right = (
-                user.trivia_stats["easy"]["right"]
-                + user.trivia_stats["medium"]["right"]
-                + user.trivia_stats["hard"]["right"]
+                db_user.trivia_stats["easy"]["right"]
+                + db_user.trivia_stats["medium"]["right"]
+                + db_user.trivia_stats["hard"]["right"]
             )
             overall_wrong = (
-                user.trivia_stats["easy"]["wrong"]
-                + user.trivia_stats["medium"]["wrong"]
-                + user.trivia_stats["hard"]["wrong"]
+                db_user.trivia_stats["easy"]["wrong"]
+                + db_user.trivia_stats["medium"]["wrong"]
+                + db_user.trivia_stats["hard"]["wrong"]
             )
 
             win_rate_overall = (
@@ -1068,9 +1083,9 @@ class Games(commands.GroupCog, group_name="games"):
                         overall_right
                         / (
                             overall_right
-                            + user.trivia_stats["easy"]["wrong"]
-                            + user.trivia_stats["medium"]["wrong"]
-                            + user.trivia_stats["hard"]["wrong"]
+                            + db_user.trivia_stats["easy"]["wrong"]
+                            + db_user.trivia_stats["medium"]["wrong"]
+                            + db_user.trivia_stats["hard"]["wrong"]
                         )
                     )
                 )
@@ -1079,37 +1094,37 @@ class Games(commands.GroupCog, group_name="games"):
             )
 
             easy_played = (
-                user.trivia_stats["easy"]["wrong"] + user.trivia_stats["easy"]["right"]
+                db_user.trivia_stats["easy"]["wrong"] + db_user.trivia_stats["easy"]["right"]
             )
             win_rate_easy = (
-                int(100 * (user.trivia_stats["easy"]["right"] / easy_played))
+                int(100 * (db_user.trivia_stats["easy"]["right"] / easy_played))
                 if easy_played != 0
                 else 0
             )
 
             medium_played = (
-                user.trivia_stats["medium"]["wrong"]
-                + user.trivia_stats["medium"]["right"]
+                db_user.trivia_stats["medium"]["wrong"]
+                + db_user.trivia_stats["medium"]["right"]
             )
             win_rate_medium = (
-                int(100 * (user.trivia_stats["medium"]["right"] / medium_played))
+                int(100 * (db_user.trivia_stats["medium"]["right"] / medium_played))
                 if medium_played != 0
                 else 0
             )
 
             hard_played = (
-                user.trivia_stats["hard"]["wrong"] + user.trivia_stats["hard"]["right"]
+                db_user.trivia_stats["hard"]["wrong"] + db_user.trivia_stats["hard"]["right"]
             )
             win_rate_hard = (
-                int(100 * (user.trivia_stats["hard"]["right"] / hard_played))
+                int(100 * (db_user.trivia_stats["hard"]["right"] / hard_played))
                 if hard_played != 0
                 else 0
             )
 
             await ctx.send(
                 embed=discord.Embed(
-                    title=f"{member.name}'s Trivia stats",
-                    description=f"__Overall correctness__: {win_rate_overall}%\n\n__Hard__:\nRight answers: {user.trivia_stats['hard']['right']}\nWrong answers: {user.trivia_stats['hard']['wrong']}\n{win_rate_hard}% correct\n\n__Medium__:\nRight answers: {user.trivia_stats['medium']['right']}\nWrong answers: {user.trivia_stats['medium']['wrong']}\n{win_rate_medium}% correct\n\n__Easy__:\nRight answers: {user.trivia_stats['easy']['right']}\nWrong answers: {user.trivia_stats['easy']['wrong']}\n{win_rate_easy}% correct",
+                    title=f"{user.display_name}'s Trivia stats",
+                    description=f"__Overall correctness__: {win_rate_overall}%\n\n__Hard__:\nRight answers: {db_user.trivia_stats['hard']['right']}\nWrong answers: {db_user.trivia_stats['hard']['wrong']}\n{win_rate_hard}% correct\n\n__Medium__:\nRight answers: {db_user.trivia_stats['medium']['right']}\nWrong answers: {user.trivia_stats['medium']['wrong']}\n{win_rate_medium}% correct\n\n__Easy__:\nRight answers: {user.trivia_stats['easy']['right']}\nWrong answers: {user.trivia_stats['easy']['wrong']}\n{win_rate_easy}% correct",
                     color=0x3E4A78,
                 )
             )
@@ -1117,8 +1132,8 @@ class Games(commands.GroupCog, group_name="games"):
         elif game_type == GameOptions.counting:
             await ctx.send(
                 embed=discord.Embed(
-                    title=f"{member.name}'s Counting stats",
-                    description=f"High score easy mode: {user.counting_highscore['easy']}\n\nHigh score hard mode: {user.counting_highscore['hard']}",
+                    title=f"{user.display_name}'s Counting stats",
+                    description=f"High score easy mode: {db_user.counting_highscore['easy']}\n\nHigh score hard mode: {db_user.counting_highscore['hard']}",
                     color=0x3E4A78,
                 )
             )

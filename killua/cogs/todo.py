@@ -843,7 +843,7 @@ class TodoSystem(commands.Cog):
         if user.bot:
             return await ctx.send("You can't invite a bot to your todo list")
 
-        if blcheck(user.id):
+        if await blcheck(user.id):
             return await ctx.send("You can't invite a blacklisted user")
 
         if role == "viewer" and todo_list.status == "public":

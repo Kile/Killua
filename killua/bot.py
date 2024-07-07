@@ -288,7 +288,7 @@ class BaseBot(commands.AutoShardedBot):
         """Attempts to create a member or user object from the passed string"""
         try:
             res = await commands.MemberConverter().convert(ctx, user)
-        except commands.MemberNotFound:
+        except Exception:
             if not user.isdigit():
                 return
 
@@ -455,17 +455,7 @@ class BaseBot(commands.AutoShardedBot):
         )
 
     def is_user_installed(self, ctx: commands.Context) -> bool:
-        if not ctx.interaction:
-            return False
-        if not ctx.guild:
-            return True
-        if len(ctx.guild.members) == ctx.guild.member_count:
-            return False  # Best indicator I found
-        # if not self.user.id in [m.id for m in ctx.guild.members]: return True
-        # ^ Does not work for some reason. That is really dumb. May be an issue with how
-        # dpy caches members (assuming they are members when the command is executed
-        # on a guild)
-        return True
+        return not ctx.interaction.is_guild_integration()
 
     def get_command_from_id(self, id: int) -> Union[discord.app_commands.Command, None]:
         for cmd in [*self.walk_commands(), *self.tree.walk_commands()]:

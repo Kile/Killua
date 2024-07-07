@@ -654,8 +654,9 @@ class Book:
     background_cache = {}
     card_cache = {}
 
-    def __init__(self, session: aiohttp.ClientSession):
+    def __init__(self, session: aiohttp.ClientSession, base_url: str):
         self.session = session
+        self.base_url = base_url
 
     async def _imagefunction(
         self, data: list, restricted_slots: bool, page: int
@@ -688,8 +689,8 @@ class Book:
     async def _getbackground(self, types: int) -> Image.Image:
         """Gets the background image of the book"""
         url = [
-            "https://alekeagle.me/XdYUt-P8Xv.png",
-            "https://alekeagle.me/wp2mKvzvCD.png",
+            self.base_url + "/image/misc/book_first.png",
+            self.base_url + "/image/misc/book_default.png",
         ]
         if res := self._get_from_cache(types):
             return res.convert("RGBA")

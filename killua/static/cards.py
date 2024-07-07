@@ -57,9 +57,7 @@ class Card:
         # This could be solved much easier but this allows the user to
         # have case insensitivity when looking for a card
         if not self.cached_raw:
-            self.cached_raw = [
-                (c["name"], c["_id"]) async for c in DB.items.find({})
-            ]
+            self.cached_raw = [(c["name"], c["_id"]) async for c in DB.items.find({})]
         for c in self.cached_raw:
 
             if not isinstance(name_or_id, int) and not name_or_id.isdigit():
@@ -358,12 +356,13 @@ class Card:
 
 class IndividualCard(ABC):
     """A class purely for type purposes to require subclasses to implement the exect method"""
+
     # This code sucks.
     # It was all well and good initially when `Card` could be instantiated
     # through __init__ but since it cannot be anymore (has to be .new), adding
     # the ctx and exec is not as easy as it was before.
     #
-    # Before in this init it would set all `Card` attrs to `self` and that was 
+    # Before in this init it would set all `Card` attrs to `self` and that was
     # well and good. Now `self` doesn't exist because this class cannot be instantiated
     # through __init__ anymore.
     ctx: commands.Context
@@ -400,9 +399,10 @@ class Card1001(Card, IndividualCard):
         self._has_cards_check(other.fs_cards, " in their free slots", uses_up=True)
 
         async def make_embed(page, *_):
-            return await Book(cast(BaseBot, self.ctx.bot).session).create(
-                member, page, self.ctx.bot, True
-            )
+            return await Book(
+                cast(BaseBot, self.ctx.bot).session,
+                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
+            ).create(member, page, self.ctx.bot, True)
 
         await Paginator(
             self.ctx,
@@ -431,9 +431,10 @@ class Card1002(Card, IndividualCard):
         await self._view_defense_check(self.ctx, other)
 
         async def make_embed(page, *_):
-            return await Book(cast(BaseBot, self.ctx.bot).session).create(
-                member, page, self.ctx.bot
-            )
+            return await Book(
+                cast(BaseBot, self.ctx.bot).session,
+                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
+            ).create(member, page, self.ctx.bot)
 
         await Paginator(self.ctx, max_pages=6, func=make_embed, has_file=True).start()
 
@@ -545,7 +546,10 @@ class Card1015(Card, IndividualCard):
         self._has_cards_check(other.all_cards)
 
         async def make_embed(page, embed, pages):
-            return await Book(self.ctx.bot.session).create(member, page, self.ctx.bot)
+            return await Book(
+                cast(BaseBot, self.ctx.bot).session,
+                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
+            ).create(member, page, self.ctx.bot)
 
         return await Paginator(
             self.ctx,
