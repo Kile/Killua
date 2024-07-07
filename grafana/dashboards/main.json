@@ -1203,7 +1203,7 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "discord_event_on_interaction_total{job=\"$job\", is_user_installed=\"True\"}",
+          "expr": "sum(discord_event_on_interaction_total{job=\"$job\", is_user_installed=\"True\"})",
           "instant": false,
           "legendFormat": "User installed",
           "range": true,
@@ -1215,7 +1215,7 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "discord_event_on_interaction_total{job=\"$job\", is_user_installed=\"False\"}",
+          "expr": "sum(discord_event_on_interaction_total{job=\"$job\", is_user_installed=\"False\"})",
           "hide": false,
           "instant": false,
           "legendFormat": "Slash commands",
@@ -1228,7 +1228,7 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "discord_event_on_command_total{job=\"$job\"}",
+          "expr": "sum(discord_event_on_command_total{job=\"$job\"})",
           "hide": false,
           "instant": false,
           "legendFormat": "Message command",
