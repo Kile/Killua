@@ -89,7 +89,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         self, dates: List[datetime], y_points: List[int], label: str
     ) -> BytesIO:
         """Creates a graph with y over time supplied in the dates list"""
-        plt.style.use("seaborn")  # After testing this is the best theme
+        plt.style.use("seaborn-v0_8")  # After testing this is the best theme
         # Plotting the main graph
         plt.plot(dates, y_points, color="blue")
         plt.xlabel("Time")

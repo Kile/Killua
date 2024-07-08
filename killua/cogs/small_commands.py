@@ -369,7 +369,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
             source = LANGS[source.lower()]
         if hasattr(ctx, "invoked_by_context_menu") or not target:
             if ctx.interaction:
-                target = ctx.interaction.locale
+                target = ctx.interaction.locale.value
             elif (locale := (await User.new(ctx.author.id)).locale):
                 target = locale
             else:
