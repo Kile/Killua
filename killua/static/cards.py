@@ -385,7 +385,7 @@ class Card1001(Card, IndividualCard):
         other = await User.new(member.id)
 
         self._has_met_check(
-            cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
+            await cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
                 2
             ],
             author,
@@ -419,7 +419,7 @@ class Card1002(Card, IndividualCard):
         other = await User.new(member.id)
 
         self._has_met_check(
-            cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
+            await cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
                 2
             ],
             author,
@@ -534,7 +534,7 @@ class Card1015(Card, IndividualCard):
         other = await User.new(member.id)
 
         self._has_met_check(
-            cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
+            await cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message)[
                 2
             ],
             author,
