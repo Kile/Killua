@@ -868,7 +868,7 @@ class Events(commands.Cog):
             logging.info(
                 f"------------------------------------------{PrintColors.ENDC}"
             )
-        if isinstance(error, discord.NotFound) and error.code == 10062:
+        if (isinstance(error, discord.NotFound) and error.code == 10062) or isinstance(error, discord.Forbidden):
             # This is the error code for unknown interaction. This means the error occured
             # running a slash command or button or whatever where it failed to find the interaction
             # Because of this, following up will also fail so we just return
