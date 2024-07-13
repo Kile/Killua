@@ -193,6 +193,8 @@ TIPS = [
     "Take a screenshot of any website using the `screenshot` command.",
     "Did you forget if a card you own is a fake? No problem, check it with `/cards check`",
     "Did you know you can use boosters to make lootboxes much easier? Find out more about boosters with `/econ boosterinfo <booster>",
+    "You can now install Killua to your account! This gives you access to some of his commands **ANYWHERE** on Discord like dms and servers he is not on!",
+    "Want to use this command anywhere? Install Killua to your account and use it in dms or servers he is not on!",
 ]
 
 # TOPICS
@@ -1069,6 +1071,7 @@ DEF_SPELLS = [1003, 1004, 1019]
 VIEW_DEF_SPELLS = [1025]
 INDESTRUCTIBLE = [1026, 0]
 
+PRICE_INCREASE_FOR_SPELL = 2000
 PRICES: dict = {
     "SS": 20000,
     "S": 10000,

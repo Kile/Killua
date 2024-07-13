@@ -16,6 +16,7 @@ from killua.static.constants import (
     ALLOWED_AMOUNT_MULTIPLE,
     PRICES,
     LOOTBOXES,
+    PRICE_INCREASE_FOR_SPELL,
     DB,
     editing,
 )
@@ -85,17 +86,18 @@ class Shop(commands.Cog):
     ) -> Dict[str, str]:
         """Formats a single item for the shop"""
         item = await DB.items.find_one({"_id": int(offer)})
+        price = PRICES[item["rank"]] + (PRICE_INCREASE_FOR_SPELL if item["type"] == "spell" else 0)
         if reduced_item is not None:
             # Same as mentioned above, needs to be explicitly checked if it is None
             if number == reduced_item:
                 return {
                     "name": f"**Number {item['_id']}: {item['name']}** |{item['emoji']}|",
-                    "value": f"**Description:** {item['description']}\n**Price:** {PRICES[item['rank']]-int(PRICES[item['rank']]*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item['type'].replace('normal', 'item')}\n**Rarity:** {item['rank']}",
+                    "value": f"**Description:** {item['description']}\n**Price:** {price-int(price*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item['type'].replace('normal', 'item')}\n**Rarity:** {item['rank']}",
                 }
 
         return {
             "name": f"**Number {item['_id']}: {item['name']}** |{item['emoji']}|",
-            "value": f"**Description:** {item['description']}\n**Price:** {PRICES[item['rank']]} Jenny\n**Type:** {item['type'].replace('normal', 'item')}\n**Rarity:** {item['rank']}",
+            "value": f"**Description:** {item['description']}\n**Price:** {price} Jenny\n**Type:** {item['type'].replace('normal', 'item')}\n**Rarity:** {item['rank']}",
         }
 
     async def cog_load(self):
@@ -422,18 +424,20 @@ class Shop(commands.Cog):
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
+        _price = PRICES[card.rank] + (PRICE_INCREASE_FOR_SPELL if card.type == "spell" else 0)
         if not shop_data["reduced"] is None:
             if shop_items.index(card.id) == shop_data["reduced"]["reduced_item"]:
+                
                 price = int(
-                    PRICES[card.rank]
+                    _price
                     - int(
-                        PRICES[card.rank] * (shop_data["reduced"]["reduced_by"] / 100)
+                        _price * (shop_data["reduced"]["reduced_by"] / 100)
                     )
                 )
             else:
-                price = PRICES[card.rank]
+                price = _price
         else:
-            price = PRICES[card.rank]
+            price = _price
 
         if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
             return await ctx.send(

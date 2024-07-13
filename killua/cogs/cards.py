@@ -32,6 +32,7 @@ from killua.static.constants import (
     PRICES,
     BOOK_PAGES,
     LOOTBOXES,
+    PRICE_INCREASE_FOR_SPELL,
     DB,
     BOOSTERS,
 )
@@ -310,7 +311,8 @@ class Cards(commands.GroupCog, group_name="cards"):
             to_be_gained = 0
 
             for c, _ in to_be_sold:
-                j = int(PRICES[(await Card.new(c)).rank] / 10)
+                _price = PRICES[(await Card.new(c)).rank] + (PRICE_INCREASE_FOR_SPELL if (await Card.new(c)).type == "spell" else 0)
+                j = int(_price / 10)
                 if user.is_entitled_to_double_jenny:
                     j *= 2
                 to_be_gained += j
@@ -364,7 +366,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         if card == 0:
             return await ctx.send("You cannot sell this card!")
 
-        jenny = int((PRICES[card.rank] * amount) / 10)
+        _price = PRICES[card.rank] + (PRICE_INCREASE_FOR_SPELL if card.type == "spell" else 0)
+        jenny = int((_price * amount) / 10)
         if user.is_entitled_to_double_jenny:
             jenny *= 2
         view = ConfirmButton(ctx.author.id, timeout=80)

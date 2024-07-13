@@ -8,7 +8,7 @@ import math
 from copy import deepcopy
 from aiohttp import ClientSession
 from urllib.parse import unquote
-from typing import Union, List, Tuple, Literal, Callable, cast
+from typing import Union, List, Tuple, Literal, Callable, cast, Optional
 
 from killua.bot import BaseBot
 from killua.utils.paginator import View
@@ -28,6 +28,20 @@ leaderboard_options = [
 
 class CompetitiveGame:
     """A class that includes logic for games where players need to respond to a question in dms or on the same message"""
+    def __init__(self):
+        self.played_again = 0
+
+    def _will_exceed_interaction_limit(self, ctx: commands.Context, _max: int) -> bool:
+        """
+        For user installed commands, Discord has a hard limit on interaction followups.
+        This function checks if the limit will be exceeded and if so, returns True,
+        so the game can be stopped instead os silently failing.
+        """
+        self.played_again += 1
+        if not ctx.interaction: return False
+        if ctx.interaction.is_guild_integration(): return False
+        if self.played_again < _max: return False
+        return True
 
     async def _timeout(
         self, players: List[discord.Member], data: List[Tuple[discord.Message, View]]
@@ -129,6 +143,7 @@ class Trivia(CompetitiveGame):
         session: ClientSession,
         category: int = None,
     ):
+        super().__init__()
         self.url = f"https://opentdb.com/api.php?amount=1&difficulty={difficulty}&type=multiple{'&category=' + str(category) if category else ''}"
         self.category = category
         self.difficulty = difficulty.lower()
@@ -149,7 +164,7 @@ class Trivia(CompetitiveGame):
         question = unquote(self.data["question"])
         question = re.sub(
             "&.*?;", "", question
-        )  # Yes, apparently unqote is not enough to remove all html entities
+        )  # Yes, apparently unquote is not enough to remove all html entities
         self.embed = discord.Embed.from_dict(
             {
                 "title": f"Trivia of category {self.data['category']}",
@@ -218,7 +233,7 @@ class Trivia(CompetitiveGame):
         else:
             self.result = self.view.value
 
-    async def send_result_single(self, view=None) -> Union[None, discord.Message]:
+    async def send_result_single(self, view: Optional[PlayAgainButton]) -> Optional[discord.Message]:
         """Sends the result of the trivia and hands out jenny as rewards"""
         user = await User.new(self.ctx.author.id)
 
@@ -232,7 +247,8 @@ class Trivia(CompetitiveGame):
         elif self.result != self.correct_index:
             await user.add_trivia_stat("wrong", self.difficulty)
             return await self.ctx.send(
-                f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}",
+                f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}"
+                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                 view=view,
             )
 
@@ -240,10 +256,12 @@ class Trivia(CompetitiveGame):
             rew = random.randint(*self.rewards[self.difficulty])
             if user.is_entitled_to_double_jenny:
                 rew *= 2
-            user.add_jenny(rew)
-            user.add_trivia_stat("right", self.difficulty)
+            await user.add_jenny(rew)
+            await user.add_trivia_stat("right", self.difficulty)
             return await self.ctx.send(
-                f"Correct! Here are {rew} Jenny as a reward!", view=view
+                f"Correct! Here are {rew} Jenny as a reward!" 
+                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                view=view
             )
 
     def _play_again_view(self, players: List[discord.Member]) -> View:
@@ -257,8 +275,12 @@ class Trivia(CompetitiveGame):
         """Plays a single trivia game"""
         await self.create()
         await self.send_single()
-        view = self._play_again_view([self.ctx.author])
+        if not self._will_exceed_interaction_limit(self.ctx, 3):
+            view = self._play_again_view([self.ctx.author])
+        else:
+            view = None
         msg = await self.send_result_single(view)
+        if not view: return
         if msg:
             await view.wait()
             await view.disable(msg)
@@ -267,7 +289,7 @@ class Trivia(CompetitiveGame):
             else:
                 await self.play_single()
 
-    async def send_multi(self, other: discord.Member, jenny: int, view: View) -> None:
+    async def send_multi(self, other: discord.Member, jenny: int, view: Optional[PlayAgainButton]) -> None:
         """Sends the questions in players dms"""
         self.other = other
 
@@ -279,57 +301,83 @@ class Trivia(CompetitiveGame):
             return
 
         author_response = next(
-            (r.value for r in responses if r.user == self.ctx.author), None
+            (r for r in responses if r.user == self.ctx.author), None
         )
-        other_response = next((r.value for r in responses if r.user == other), None)
+        other_response = next((r for r in responses if r.user == other), None)
         author = await User.new(self.ctx.author.id)
         opponent = await User.new(other.id)
 
-        if author_response == other_response:
-            if author_response == self.correct_index:
+        if author_response.value == other_response.value:
+            if author_response.value == self.correct_index:
                 await author.add_trivia_stat("right", self.difficulty)
                 await opponent.add_trivia_stat("right", self.difficulty)
-                return await self.ctx.send(
-                    f"Both players got the right answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}",
-                    reference=self.msg,
-                    view=view,
+                # Check who responded faster using interaction.created_at
+                faster = (
+                    self.ctx.author
+                    if author_response.interaction.created_at < other_response.interaction.created_at
+                    else other
                 )
+                faster_by = abs(
+                    author_response.interaction.created_at - other_response.interaction.created_at
+                ).seconds
+                if self.ctx.author == faster:
+                    await author.add_jenny(jenny)
+                    await opponent.remove_jenny(jenny)
+                    return await self.ctx.send(
+                        f"{self.ctx.author.mention} and {other.mention} both got the right answer! {faster.mention} was faster (by {faster_by} seconds) and won **{jenny}** Jenny from {other.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
+                        + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                        reference=self.msg,
+                        view=view,
+                    )
+                else:
+                    await author.remove_jenny(jenny)
+                    await opponent.add_jenny(jenny)
+                    return await self.ctx.send(
+                        f"{self.ctx.author.mention} and {other.mention} both got the right answer! {faster.mention} was faster (by {faster_by} seconds) and won **{jenny}** Jenny from {self.ctx.author.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
+                        + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                        reference=self.msg,
+                        view=view,
+                    )
             else:
                 await author.add_trivia_stat("wrong", self.difficulty)
                 await opponent.add_trivia_stat("wrong", self.difficulty)
                 return await self.ctx.send(
-                    f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}",
+                    f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
+                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                     reference=self.msg,
                     view=view,
                 )
 
-        elif author_response == self.correct_index:
+        elif author_response.value == self.correct_index:
             await author.add_jenny(jenny)
             await author.add_trivia_stat("right", self.difficulty)
             await opponent.remove_jenny(jenny)
             await opponent.add_trivia_stat("wrong", self.difficulty)
 
             return await self.ctx.send(
-                f"{self.ctx.author.mention} got the right answer! {other.mention} lost **{jenny}** Jenny to {self.ctx.author.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}",
+                f"{self.ctx.author.mention} got the right answer! {other.mention} lost **{jenny}** Jenny to {self.ctx.author.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
+                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                 reference=self.msg,
                 view=view,
             )
 
-        elif other_response == self.correct_index:
-            author.remove_jenny(jenny)
-            author.add_trivia_stat("wrong", self.difficulty)
-            opponent.add_jenny(jenny)
-            opponent.add_trivia_stat("right", self.difficulty)
+        elif other_response.value == self.correct_index:
+            await author.remove_jenny(jenny)
+            await author.add_trivia_stat("wrong", self.difficulty)
+            await opponent.add_jenny(jenny)
+            await opponent.add_trivia_stat("right", self.difficulty)
 
             return await self.ctx.send(
-                f"{other.mention} got the right answer! {self.ctx.author.mention} lost **{jenny}** Jenny to {other.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}",
+                f"{other.mention} got the right answer! {self.ctx.author.mention} lost **{jenny}** Jenny to {other.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
+                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                 reference=self.msg,
                 view=view,
             )
 
         else:
             return await self.ctx.send(
-                f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}",
+                f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
+                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                 reference=self.msg,
                 view=view,
             )
@@ -376,9 +424,13 @@ class Trivia(CompetitiveGame):
             reference=msg,
             embed=self.embed,
         )
-        view = self._play_again_view([self.ctx.author, other])
+        if not self._will_exceed_interaction_limit(self.ctx, 2):
+            view = self._play_again_view([self.ctx.author, other])
+        else:
+            view = None
         msg = await self.send_multi(other, jenny, view=view)
 
+        if not view: return
         await view.wait()
         await view.disable(msg)
         if not view.value or view.timed_out:
@@ -393,6 +445,7 @@ class Rps(CompetitiveGame):
     def __init__(
         self, ctx: commands.Context, points: int = None, other: discord.User = None
     ):
+        super().__init__()
         self.ctx = ctx
         self.points = points
         self.other = other
@@ -454,7 +507,7 @@ class Rps(CompetitiveGame):
         choice2: int,
         player1: discord.Member,
         player2: discord.Member,
-        view: View,
+        view: Optional[PlayAgainButton],
     ) -> discord.Message:
         """Evaluates the outcome, informs the players and handles the points"""
         p1 = await User.new(player1.id)
@@ -469,12 +522,14 @@ class Rps(CompetitiveGame):
                 if player2 != self.ctx.me:
                     await p2.remove_jenny(self.points)
                 return await self.ctx.send(
-                    f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}",
+                    f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}"
+                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                     view=view,
                 )
             else:
                 return await self.ctx.send(
-                    f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}",
+                    f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}"
+                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                     view=view,
                 )
 
@@ -483,7 +538,8 @@ class Rps(CompetitiveGame):
             if player2 != self.ctx.me:
                 await p2.add_rps_stat("tied", player1 == self.ctx.me)
             return await self.ctx.send(
-                f"{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}",
+                f"{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}"
+                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                 view=view,
             )
 
@@ -498,12 +554,14 @@ class Rps(CompetitiveGame):
                 if player2 != self.ctx.me:
                     await p2.add_jenny(self.points)
                 return await self.ctx.send(
-                    f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}",
+                    f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}"
+                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                     view=view,
                 )
             else:
                 return await self.ctx.send(
-                    f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention}",
+                    f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention}"
+                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
                     view=view,
                 )
 
@@ -540,12 +598,16 @@ class Rps(CompetitiveGame):
         c2 = random.randint(-1, 1)
         winlose = self._result(resp[0].value, c2)
 
-        view = self._play_again_view([self.ctx.author])
+        if not self._will_exceed_interaction_limit(self.ctx, 2):
+            view = self._play_again_view([self.ctx.author])
+        else:
+            view = None
 
         msg = await self._eval_outcome(
             winlose, resp[0].value, c2, self.ctx.author, self.ctx.me, view
         )
 
+        if not view: return
         await view.wait()
         await view.disable(msg)
         if not view.value or view.timed_out:
@@ -599,10 +661,15 @@ class Rps(CompetitiveGame):
             return
         winlose = self._result(res[0].value, res[1].value)
 
-        view = self._play_again_view([self.ctx.author, self.other])
+        if not self._will_exceed_interaction_limit(self.ctx, 2):
+            view = self._play_again_view([self.ctx.author, self.other])
+        else:
+            view = None
         msg = await self._eval_outcome(
             winlose, res[0].value, res[1].value, res[0].user, res[1].user, view
         )
+
+        if not view: return
         await view.wait()
         await view.disable(msg)
         if not view.value or view.timed_out:
