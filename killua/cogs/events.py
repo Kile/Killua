@@ -868,7 +868,7 @@ class Events(commands.Cog):
             logging.info(
                 f"------------------------------------------{PrintColors.ENDC}"
             )
-        if (isinstance(error, discord.NotFound) and error.code == 10062) or isinstance(error, discord.Forbidden):
+        if (isinstance(error, discord.NotFound) and error.code == 10062) or (isinstance(error, discord.HTTPException) and error.code == 50027) or isinstance(error, discord.Forbidden):
             # This is the error code for unknown interaction. This means the error occured
             # running a slash command or button or whatever where it failed to find the interaction
             # Because of this, following up will also fail so we just return
@@ -877,10 +877,14 @@ class Events(commands.Cog):
         view.add_item(
             discord.ui.Button(label="Report bug", url=self.client.support_server_invite)
         )
-        await ctx.send(
-            ":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.",
-            view=view,
-        )
+        try:
+            await ctx.send(
+                ":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.",
+                view=view,
+            )
+        except discord.Forbidden:
+            pass # This theoretically should be covered by all the cases above,
+            # but handling it again here can't hurt
 
 
 Cog = Events

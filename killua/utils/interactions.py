@@ -39,7 +39,10 @@ class View(discord.ui.View):
         if self.interaction and not self.interaction.response.is_done():
             await self.interaction.response.edit_message(view=self)
         else:
-            await msg.edit(view=self)
+            try:
+                await msg.edit(view=self)
+            except discord.HTTPException:
+                pass # Idk why but this can be Forbidden
 
 
 class Modal(discord.ui.Modal):  # lgtm [py/missing-call-to-init]
@@ -117,7 +120,10 @@ class ConfirmButton(discord.ui.View):
         if self.interaction and not self.interaction.response.is_done():
             await self.interaction.response.edit_message(view=self)
         else:
-            await msg.edit(view=self)
+            try:
+                await msg.edit(view=self)
+            except discord.HTTPException:
+                pass # Idk why but this can be Forbidden
 
     async def on_timeout(self):
         self.timed_out = True

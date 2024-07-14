@@ -12,9 +12,7 @@ from io import BytesIO
 from toml import load
 from logging import info
 from inspect import signature, Parameter
-from async_lru import (
-    alru_cache as cache,
-)  # async_lru is a library that provides a cache decorator for asyncio coroutines
+from functools import partial
 from typing import Coroutine, Union, Dict, List, Optional
 
 from .migrate import migrate_requiring_bot
@@ -22,6 +20,20 @@ from .static.enums import Category
 from .utils.interactions import Modal
 from .static.constants import TIPS, LOOTBOXES, DB
 
+cache = {}
+
+def _cached(func, cache):
+    """Cache specifically designed for the find_dominant_color function"""
+    async def inner(self, args):
+        print(cache)
+        if args in cache:
+            return cache[args]
+        res = await func(self, args)
+        cache[args] = res
+        return res
+    return inner
+
+cached = partial(_cached, cache=cache)
 
 async def get_prefix(bot: "BaseBot", message: discord.Message):
     if bot.is_dev:
@@ -254,7 +266,7 @@ class BaseBot(commands.AutoShardedBot):
                 return
             return BytesIO(await res.read())
 
-    @cache  # cpu intensive and slow but the result does not change, so it is cached
+    @cached # cpu intensive and slow but the result does not change, so it is cached
     async def find_dominant_color(self, url: str) -> int:
         """Finds the dominant color of an image and returns it as an rgb tuple"""
         # Resizing parameters

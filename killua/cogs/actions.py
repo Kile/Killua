@@ -42,7 +42,7 @@ class SettingsButton(discord.ui.Button):
 
 
 @discord.app_commands.allowed_installs(guilds=True, users=True)
-@discord.app_commands.allowed_contexts(guilds=True, dms=False, private_channels=True)
+@discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 class Actions(commands.GroupCog, group_name="action"):
 
     def __init__(self, client: BaseBot):
@@ -146,9 +146,11 @@ class Actions(commands.GroupCog, group_name="action"):
 
         if endpoint == "hug":
             chosen = random.choice(ACTIONS[endpoint]["images"])
-            chosen["url"] = (
-                self.client.api_url(to_fetch=self.client.is_dev) + chosen["url"]
-            )
+            if not cast(str, chosen["url"]).startswith("http"): 
+                # This could have already been done
+                chosen["url"] = (
+                    self.client.api_url(to_fetch=self.client.is_dev) + chosen["url"]
+                )
             image = {
                 "link": chosen
             }  # This might eventually be deprecated for copyright reasons
