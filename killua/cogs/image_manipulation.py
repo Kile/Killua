@@ -293,7 +293,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         async def func(data, *_):
             return await self.pxl.lego(images=[data], scale=True, groupSize=10)
 
-        await self.handle_command(ctx, target, func)
+        await self.handle_command(ctx, target, func, extra_time=3)
 
     @check(3)
     @commands.hybrid_command(

@@ -882,7 +882,7 @@ class Events(commands.Cog):
                 ":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.",
                 view=view,
             )
-        except discord.Forbidden:
+        except (discord.Forbidden, discord.NotFound):
             pass # This theoretically should be covered by all the cases above,
             # but handling it again here can't hurt
 

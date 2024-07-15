@@ -25,7 +25,6 @@ cache = {}
 def _cached(func, cache):
     """Cache specifically designed for the find_dominant_color function"""
     async def inner(self, args):
-        print(cache)
         if args in cache:
             return cache[args]
         res = await func(self, args)
