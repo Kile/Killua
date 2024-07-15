@@ -132,6 +132,16 @@ This file has a template in the same directory with the same name but with `.tem
 Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up. As a warning, this script is rarely run so it may not be up to date.
 
 <details>
+<summary><b>Why do I use mongoDB instead of SQL?</b></summary>
+The short answer is, it's because what I was introduced to first. 
+
+But I have come to like it and chosen not to migrate for two reasons:
+  
+  * I am bad at joining tables in SQL. I prefer every piece of data I need returned by just on request
+  * Because I am using mongoDB atlas, I don't have to worry about backups or how to migrate my db - it always stays in the same place in the cloud, making server migration insanely easy.
+</details>
+
+<details>
 <summary><b>Running from source</b></summary>
 
 While running Killua using Docker is more convenient, running from source is more flexible and allows you to make changes to the code and see them in action. To run Killua from source, follow these steps:
@@ -215,8 +225,9 @@ Contributions are MASSIVELY appreciated. A codebase this big can look a bit inti
 
 ## Grafana
 Grafana is pretty cool. The Grafana dashboard was added in version 1.1.0. You can find it in grafana/dashboards/main.json. Here are some screenshots:
-<img width="1377" alt="image" src="https://github.com/Kile/Killua/assets/69253692/75df43a9-558e-4b97-9b22-4f93e3c393e5">
-<img width="1386" alt="image" src="https://github.com/Kile/Killua/assets/69253692/83d6da9f-dba1-4e42-8f7b-ea5b7f621b47">
+<img width="1280" alt="image" src="https://github.com/user-attachments/assets/9b103b43-9428-491c-903f-7cadeb0ac7aa">
+<img width="1277" alt="image" src="https://github.com/user-attachments/assets/23c1b7b2-6818-479d-86d9-186c4498f8b6">
+<img width="1249" alt="image" src="https://github.com/user-attachments/assets/9dee6e3a-febf-4bc6-b69c-a69145fb8204">
 <img width="1376" alt="image" src="https://github.com/Kile/Killua/assets/69253692/0a0560d3-c5ba-4acf-abe9-a6cf4ef29de8">
 <img width="1379" alt="image" src="https://github.com/Kile/Killua/assets/69253692/222063c9-60ae-4f8b-8b67-cdb6a90b586c">
 <img width="1376" alt="image" src="https://github.com/Kile/Killua/assets/69253692/49926a8d-a85f-4ba0-80fc-a97c84557095">
