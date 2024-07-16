@@ -907,7 +907,7 @@ LOOTBOXES: Dict[
         "name": "Mysterious box",
         "price": 5000,
         "emoji": "<:mysterious_box:882181975367118859>",
-        "description": "This box is given to young magicians after they complete their training. It a good starter pack on spells.",
+        "description": "This box is given to young magicians after they complete their training. It's a good starter pack on spells.",
         "rewards": {
             "guaranteed": {},
             "jenny": (0, 0),
