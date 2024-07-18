@@ -216,6 +216,7 @@ Contributions are MASSIVELY appreciated. A codebase this big can look a bit inti
 * **Image generation**: I have a few commands that generate images. I rely on pxlapi for quite a few of them which is fine but if you have any other ideas (can be simple copy paste into another image) then feel free to PR them! They are always a lot of fun to use.
 * **An RPG system**: I am in the early stages of thinking about an RPG system using hxh's "Nen" system and building out the hunt command for a more interactive fun experience. I will likely work on this myself but I would love some help.
 * **Web development**: I have a website but it not very advanced. Frontend is my weak spot. If you would like to help me to build out the website, I am happy to write backend code for it. Please contact me if you are interested in this.
+* **Change text commands to generate images**: Commands such as `profile`, `gstats` and `server` all display their stats in text. This is ok for some (`profile` still looks ok) but generally would look much better as a generated image with fancy background etc. This is not a big project so this would be a good starting point for someone who wants to contribute but doesn't know where to start. The rust API could also be used for this in favour of making this more efficient and CPU friendly but it does not have to be.
 
 
 > [!NOTE]

@@ -1044,7 +1044,7 @@ BOOSTERS = {
     2: {
         "name": "Doubler",
         "emoji": "<:2x:1090982132324769885>",
-        "description": "Instantly doubles all jenny still hidden in the box.",
+        "description": "Instantly doubles all jenny still hidden in the box. Does not apply to jenny already revealed.",
         "image": "{}/image/powerups/2x.png",
         "probability": 5,
         "available": True,

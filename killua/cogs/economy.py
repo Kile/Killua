@@ -542,8 +542,9 @@ class Economy(commands.GroupCog, group_name="econ"):
                 "description": data["description"],
                 "fields": [
                     {
-                        "name": "rarity",
-                        "value": next(
+                        "name": "Rarity",
+                        "value": "-# How rare the booster is\n" +
+                        next(
                             (
                                 v
                                 for k, v in rarities.items()
@@ -560,6 +561,12 @@ class Economy(commands.GroupCog, group_name="econ"):
                             ),
                             None,
                         ),
+                        "inline": True,
+                    },
+                    {
+                        "name": "Stack-able",
+                        "value": "-# If it can be used more than once per box\n" + ("Yes" if data["stackable"] else "No"),
+                        "inline": True,
                     }
                 ],
                 "color": 0x3E4A78,

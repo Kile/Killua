@@ -839,7 +839,7 @@ class Events(commands.Cog):
             return
 
         if self.client.is_dev:  # prints the full traceback in dev enviroment
-            # CRITIAL for the dev bot instead of error is because it makes it easier spot
+            # CRITICAL for the dev bot instead of error is because it makes it easier spot
             # errors my code caused and not the library itself
             logging.critical(
                 PrintColors.FAIL
