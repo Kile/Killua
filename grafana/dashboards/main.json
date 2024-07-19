@@ -1257,9 +1257,9 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "line",
+            "drawStyle": "bars",
             "fillOpacity": 0,
-            "gradientMode": "none",
+            "gradientMode": "hue",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -1270,7 +1270,8 @@
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
-              "type": "linear"
+              "log": 2,
+              "type": "log"
             },
             "showPoints": "auto",
             "spanNulls": true,
@@ -1296,8 +1297,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
+        "h": 7,
+        "w": 12,
         "x": 0,
         "y": 24
       },
@@ -1418,9 +1419,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
+        "h": 7,
+        "w": 12,
+        "x": 12,
         "y": 24
       },
       "id": 84,
@@ -1459,11 +1460,11 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
-      "description": "Users who boost the support server or have an active Patreon or Discord bot subscription",
+      "description": "The commands (of any kind) ran in the last 24hrs",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-BlPu"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisBorderShow": false,
@@ -1483,6 +1484,129 @@
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "id": 910,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "builder",
+          "expr": "discord_event_on_interaction_total{job=\"$job\"}",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_event_on_command_total{job=\"$job\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Commands ran",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Command usage",
+            "mode": "reduceRow",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "Users who boost the support server or have an active Patreon or Discord bot subscription",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 3,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -1511,18 +1635,18 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 24
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 31
       },
       "id": 817,
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "displayMode": "hidden",
+          "placement": "right",
+          "showLegend": false
         },
         "tooltip": {
           "mode": "single",
@@ -1631,7 +1755,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 32
+        "y": 38
       },
       "id": 836,
       "options": {
@@ -1730,7 +1854,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 32
+        "y": 38
       },
       "id": 837,
       "options": {
@@ -1829,7 +1953,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 32
+        "y": 38
       },
       "id": 838,
       "options": {
@@ -1870,7 +1994,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 45
       },
       "id": 68,
       "panels": [],
@@ -1940,7 +2064,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 40
+        "y": 46
       },
       "id": 64,
       "options": {
@@ -2037,7 +2161,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 40
+        "y": 46
       },
       "id": 72,
       "options": {
@@ -2135,7 +2259,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 40
+        "y": 46
       },
       "id": 76,
       "options": {
@@ -2177,7 +2301,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 54
       },
       "id": 60,
       "panels": [],
@@ -2249,7 +2373,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 49
+        "y": 55
       },
       "hideTimeOverride": true,
       "id": 59,
@@ -2314,7 +2438,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 63
       },
       "id": 88,
       "panels": [],
@@ -2346,7 +2470,7 @@
         "h": 11,
         "w": 8,
         "x": 0,
-        "y": 58
+        "y": 64
       },
       "id": 97,
       "maxPerRow": 3,
