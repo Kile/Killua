@@ -1,6 +1,9 @@
 # Env file
 .env
 
+# SonarQube scan config
+.scannerwork/
+
 # VSCode config
 .vscode/
 

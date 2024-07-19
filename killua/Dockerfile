@@ -1,6 +1,9 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim AS base
 
+ARG MYUID=1000
+ARG MYGID=1000
+
 # Set the working directory in the container
 WORKDIR /app
 
@@ -21,6 +24,9 @@ RUN apt-get update && apt-get install -y git
 # Install C++ cause a dependency needs it
 RUN apt-get install -y g++
 
+# Clean up the cache
+RUN apt-get clean
+
 # Upgrade pip
 RUN pip3 install --no-cache-dir --upgrade pip
 
@@ -28,7 +34,15 @@ RUN pip3 install --no-cache-dir --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 FROM base AS dev
+# Create a user and group to run the application
+RUN groupadd -g "${MYGID}" python \
+&& useradd --create-home --no-log-init -u "${MYUID}" -g "${MYGID}" python
+USER python
 CMD ["python3", "-m", "killua", "--development", "--docker"]
 
-FROM base as prod
+FROM base AS prod
+# Create a user and group to run the application
+RUN groupadd -g "${MYGID}" python \
+&& useradd --create-home --no-log-init -u "${MYUID}" -g "${MYGID}" python
+USER python
 CMD ["python3", "-m", "killua", "--docker"]

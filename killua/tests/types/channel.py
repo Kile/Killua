@@ -41,7 +41,7 @@ class TestingTextChannel:
         if len(permissions) == 0:
             return []
 
-        if isinstance(permissions[0]):
+        if isinstance(permissions[0], int):
             for perm in permissions:
                 perm = PermissionOverwrite(perm)  # lgtm [py/multiple-definition]
 

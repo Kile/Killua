@@ -42,13 +42,13 @@ class PartialCard:
     cached_raw: ClassVar[List[Tuple[str, int]]] = []
 
     @classmethod
-    async def _find_card(self, name_or_id: Union[int, str]) -> Union[int, None]:
+    async def _find_card(cls, name_or_id: Union[int, str]) -> Union[int, None]:
 
         # This could be solved much easier but this allows the user to
         # have case insensitivity when looking for a card
-        if not self.cached_raw:
-            self.cached_raw = [(c["name"], c["_id"]) async for c in DB.items.find({})]
-        for c in self.cached_raw:
+        if not cls.cached_raw:
+            cls.cached_raw = [(c["name"], c["_id"]) async for c in DB.items.find({})]
+        for c in cls.cached_raw:
 
             if not isinstance(name_or_id, int) and not name_or_id.isdigit():
                 if c[0].lower() == name_or_id.lower():

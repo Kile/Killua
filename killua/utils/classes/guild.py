@@ -43,7 +43,7 @@ class Guild:
         return ("partner" in self.badges) or ("premium" in self.badges)
 
     @classmethod
-    async def add_default(self, guild_id: int) -> None:
+    async def add_default(cls, guild_id: int) -> None:
         """Adds a guild to the database"""
         await DB.guilds.insert_one(
             {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!"}

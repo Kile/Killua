@@ -3,7 +3,6 @@ from discord.ext import commands
 from typing import Union, List, Tuple, Dict, cast
 from datetime import datetime
 from random import randint
-from io import BytesIO
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -479,18 +478,13 @@ class Economy(commands.GroupCog, group_name="econ"):
                 "color": 0x3E4A78,
             }
         )
-        if self.client.is_dev:
-            data = await self.client.session.get(data["image"])
-            if data.status != 200:
-                # Ignore failure, send without image in embed
-                return await ctx.send(embed=embed)
-            embed.set_image(url="attachment://image.png")
-            await ctx.send(
-                embed=embed, file=discord.File(BytesIO(await data.read()), "image.png")
-            )
-        else:
-            embed.set_image(url=data["image"])
-            await ctx.send(embed=embed)
+        embed, file = await self.client.make_embed_from_api(
+            embed,
+            cast(str, data["image"]).format(
+                self.client.api_url(to_fetch=self.client.is_dev)
+            ),
+        )
+        await ctx.send(embed=embed, file=file)
 
     def _booster_from_name(self, name: str):
         for booster, value in BOOSTERS.items():
@@ -543,8 +537,8 @@ class Economy(commands.GroupCog, group_name="econ"):
                 "fields": [
                     {
                         "name": "Rarity",
-                        "value": "-# How rare the booster is\n" +
-                        next(
+                        "value": "-# How rare the booster is\n"
+                        + next(
                             (
                                 v
                                 for k, v in rarities.items()
@@ -565,33 +559,21 @@ class Economy(commands.GroupCog, group_name="econ"):
                     },
                     {
                         "name": "Stack-able",
-                        "value": "-# If it can be used more than once per box\n" + ("Yes" if data["stackable"] else "No"),
+                        "value": "-# If it can be used more than once per box\n"
+                        + ("Yes" if data["stackable"] else "No"),
                         "inline": True,
-                    }
+                    },
                 ],
                 "color": 0x3E4A78,
             }
         )
-        if self.client.is_dev:
-            data = await self.client.session.get(
-                cast(str, data["image"]).format(
-                    self.client.api_url(to_fetch=self.client.is_dev)
-                )
-            )
-            if data.status != 200:
-                # Ignore failure, send without image in embed
-                return await ctx.send(embed=embed)
-            embed.set_image(url="attachment://image.png")
-            await ctx.send(
-                embed=embed, file=discord.File(BytesIO(await data.read()), "image.png")
-            )
-        else:
-            embed.set_image(
-                url=cast(str, data["image"]).format(
-                    self.client.api_url(to_fetch=self.client.is_dev)
-                )
-            )
-            await ctx.send(embed=embed)
+        embed, file = await self.client.make_embed_from_api(
+            embed,
+            cast(str, data["image"]).format(
+                self.client.api_url(to_fetch=self.client.is_dev)
+            ),
+        )
+        await ctx.send(embed=embed, file=file)
 
 
 Cog = Economy

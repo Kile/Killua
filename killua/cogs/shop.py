@@ -557,7 +557,7 @@ class Shop(commands.Cog):
 
             if not view.value:
                 if view.timed_out:
-                    return await ctx.send(f"Timed out")
+                    return await ctx.send("Timed out")
                 else:
                     return await ctx.send(f"Alright, see you later then :3")
 

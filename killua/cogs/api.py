@@ -69,7 +69,7 @@ class IPCRoutes(commands.Cog):
         res = await self.client.session.get(url)
 
         if res.status != 200:
-            raise Exception(f"Failed to download image")
+            raise IOError("Failed to download image")
 
         image_bytes = await res.read()
         image = Image.open(BytesIO(image_bytes)).convert("RGBA")
@@ -104,17 +104,17 @@ class IPCRoutes(commands.Cog):
     ) -> BytesIO:
         """Creates an image of the streak path and returns it as a BytesIO"""
         if len(data) != 11:
-            return Exception("Invalid Length")
+            raise TypeError("Invalid Length")
 
         offset = 0  # Start with a 0 offset
         user_index = next(
             (i for i, x in enumerate(data) if isinstance(x, discord.User)), None
-        )  # Find at what positon the user image is
+        )  # Find at what position the user image is
         background = await self.get_background()
         drawn = ImageDraw.Draw(background)
         for position, item in enumerate(data):
             if item == "-":
-                # Thise code would be making the line before the user a straight line given that path is completed.
+                # This code would be making the line before the user a straight line given that path is completed.
                 # However I did not like how this looked so I chose to keep it like the path after the user image.
                 # if position < user_index:
                 #     drawn.line((offset+5, 50, offset+105, 50), fill="white", width=5)
@@ -183,7 +183,7 @@ class IPCRoutes(commands.Cog):
         # If no streak reward applies, just return the base reward
         return int((120 if weekend else 100) * float(f"1.{int(streak//5)}"))
 
-    def _create_path(self, streak: int, user: discord.User, url: str) -> str:
+    def _create_path(self, streak: int, user: discord.User, url: str) -> List[Union[discord.User, str]]:
         """
         Creates a path illustrating where the user currently is with vote rewards and what the next rewards are as well as already claimed ones like
         --:boxemoji:--⚫️--:boxemoji:--
@@ -427,7 +427,7 @@ class IPCRoutes(commands.Cog):
         """Registers a vote from either topgg or dbl"""
         await self.handle_vote(data)
 
-    async def heartbeat(self, _) -> None:
+    async def heartbeat(self, _) -> dict:
         """Just a simple heartbeat to see if the bot and IPC connection is alive"""
         return {"status": "ok"}
 

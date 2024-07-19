@@ -2,8 +2,7 @@ import discord
 from discord.ext import commands
 import random
 import asyncio
-from io import BytesIO
-from typing import List, Union, Optional, cast, Tuple
+from typing import List, Union, Optional, cast, Tuple, Dict
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -11,6 +10,16 @@ from killua.utils.classes import User
 from killua.static.enums import Category
 from killua.utils.interactions import View
 from killua.static.constants import ACTIONS, KILLUA_BADGES
+
+
+class ActionException(Exception):
+    def __init__(self, message: str):
+        self.message = message
+
+
+class APIException(ActionException):
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
 class SettingsSelect(discord.ui.Select):
@@ -52,6 +61,9 @@ class Actions(commands.GroupCog, group_name="action"):
     async def request_action(self, endpoint: str) -> Union[dict, str]:
         """
         Fetch an image from the API for the action commands
+
+        Raises:
+            APIException: If the API returns an error
         """
 
         r = await self.session.get(f"https://purrbot.site/api/img/sfw/{endpoint}/gif")
@@ -59,11 +71,11 @@ class Actions(commands.GroupCog, group_name="action"):
             res = await r.json()
 
             if res["error"]:
-                return res["message"]
+                raise APIException(res["message"])
 
             return res
         else:
-            return await r.text()
+            raise APIException(await r.text())
 
     async def get_image(
         self, ctx: commands.Context
@@ -74,8 +86,6 @@ class Actions(commands.GroupCog, group_name="action"):
         Get the image for one of the action commands from the API without arguments
         """
         image = await self.request_action(ctx.command.name)
-        if isinstance(image, str):
-            return await ctx.send(f":x: {image}")
         embed = discord.Embed.from_dict(
             {
                 "title": "",
@@ -87,17 +97,17 @@ class Actions(commands.GroupCog, group_name="action"):
 
     async def save_stat(
         self,
-        member: discord.Member,
+        user: discord.User,
         endpoint: str,
-        targetted: bool = False,
+        targeted: bool = False,
         amount: int = 1,
     ) -> Optional[str]:
         """
         Saves the action being done on a user and returns the badge if the user
         has reached a milestone for the action.
         """
-        user = await User.new(member.id)
-        badge = await user.add_action(endpoint, targetted, amount)
+        db_user = await User.new(user.id)
+        badge = await db_user.add_action(endpoint, targeted, amount)
         return badge
 
     def generate_users(self, users: List[discord.User], title: str) -> str:
@@ -105,8 +115,6 @@ class Actions(commands.GroupCog, group_name="action"):
         Parses the list of members and returns a string with their names,
         making sure the string is not too long for the embed title
         """
-        if isinstance(users, str):
-            return users
         userlist = ""
         for p, user in enumerate(users):
             if (
@@ -130,11 +138,43 @@ class Actions(commands.GroupCog, group_name="action"):
                     userlist = userlist + f", {user.display_name}"
         return userlist
 
+    async def _get_image_url(
+        self, endpoint: str
+    ) -> Tuple[str, Optional[Dict[str, str]]]:
+        """
+        Gets a tuple object with all image infos.
+        First element is the image URL, second is the artist info.
+
+        Either as
+        (https://example.com/image.jpg, None)
+        if returned from the API or
+
+        (https://example.com/image.jpg, {"name": "artist", "link": "https://example.com/artist"})
+        if the image is from the hug command
+
+        Raises:
+            APIException: If the API returns an error
+        """
+        if endpoint == "hug":
+            chosen = random.choice(ACTIONS[endpoint]["images"])
+            if not cast(str, chosen["url"]).startswith("http"):
+                # This could have already been done
+                chosen["url"] = (
+                    self.client.api_url(to_fetch=self.client.is_dev) + chosen["url"]
+                )
+            return (
+                chosen["url"],
+                chosen["artist"],
+            )  # This might eventually be deprecated for copyright reasons
+        else:
+            image = await self.request_action(endpoint)
+            return image, None
+
     async def action_embed(
         self,
         endpoint: str,
         author: Union[str, discord.User],
-        users: List[discord.User],
+        users: Union[str, List[discord.User]],
         disabled: int = 0,
     ) -> Tuple[discord.Embed, Optional[discord.File]]:
         """
@@ -142,59 +182,34 @@ class Actions(commands.GroupCog, group_name="action"):
         as well as adding the image and action text
         """
         if disabled == len(users):
-            return "All members targetted have disabled this action.", None
+            return "All members targeted have disabled this action.", None
 
-        if endpoint == "hug":
-            chosen = random.choice(ACTIONS[endpoint]["images"])
-            if not cast(str, chosen["url"]).startswith("http"): 
-                # This could have already been done
-                chosen["url"] = (
-                    self.client.api_url(to_fetch=self.client.is_dev) + chosen["url"]
-                )
-            image = {
-                "link": chosen
-            }  # This might eventually be deprecated for copyright reasons
-        else:
-            image = await self.request_action(endpoint)
-            if isinstance(image, str):
-                return f":x: {image}", None
+        image_url, artist = await self._get_image_url(endpoint)
 
         text: str = random.choice(ACTIONS[endpoint]["text"])
-        text = text.replace(
-            "<author>",
-            "**" + (author if isinstance(author, str) else author.name) + "**",
-        ).replace("<user>", "**" + self.generate_users(users, text) + "**")
+        text = text.format(
+            author="**"
+            + (author if isinstance(author, str) else author.display_name)
+            + "**",
+            user="**" +(users if isinstance(users, str) else self.generate_users(users, text)) + "**",
+        )
 
         embed = discord.Embed.from_dict(
             {
                 "title": text,
-                "color": await self.client.find_dominant_color(
-                    image["link"]["url"] if "url" in image["link"] else image["link"]
-                ),
+                "color": await self.client.find_dominant_color(image_url),
                 "description": (
-                    f"Art by [{image['link']['artist']['name']}]("
-                    + image["link"]["artist"]["link"]
-                    + ")"
-                    if "url" in image["link"] and image["link"]["artist"]
-                    else None
+                    f"Art by [{artist['name']}]({artist['link']})" if artist else None
                 ),
             }
         )
 
         file = None
         if endpoint == "hug":
-            if self.client.is_dev:
-                # Upload the image as attachment instead
-                data = await self.session.get(image["link"]["url"])
-                if data.status != 200:
-                    return ":x: " + await data.text(), None
-                extension = cast(str, image["link"]["url"]).split(".")[-1]
-                embed.set_image(url=f"attachment://image.{extension}")
-                file = discord.File(BytesIO(await data.read()), f"image.{extension}")
-            else:
-                embed.set_image(url=image["link"]["url"])
+            embed, file = await self.client.make_embed_from_api(image_url, embed)
         else:
-            embed.set_image(url=image["link"])
+            # Does not need to be fetched under any conditions
+            embed.set_image(url=image_url)
 
         if disabled > 0:
             embed.set_footer(
@@ -221,73 +236,102 @@ class Actions(commands.GroupCog, group_name="action"):
         except asyncio.TimeoutError:
             return None, None  # Needs to be a tuple
         else:
-            return await self.action_embed(ctx.command.name, "Killua", ctx.author.name)
+            return await self.action_embed(ctx.command.name, "Killua", ctx.author.display_name)
 
-    async def do_action(
+    def has_disabled(self, user: User, action: str) -> bool:
+        """
+        Checks if a user has disabled a specific action
+        """
+        return (
+            user.action_settings
+            and action in user.action_settings
+            and not user.action_settings[action]
+        )
+
+    async def _save_stat_for(
+        self, 
+        user: discord.User, 
+        action: str, 
+        targeted: bool = False, 
+        amount: int = 1
+    ) -> None:
+        """
+        Saves the action being done on a user and sends a message if the user has reached a milestone for the action
+        """
+        badge = await self.save_stat(user, action, targeted, amount)
+        if badge:
+            try:
+                await user.send(
+                    f"Congratulation! You got the {KILLUA_BADGES[badge]} badge for being {action}ed more than 500 times! So many hugs :D. Check your shiny new badge out with `k!pofile`!"
+                )
+            except discord.Forbidden:
+                pass
+
+    async def get_allowed_users(
+            self,
+            users: List[discord.User],
+            command_name: str,
+    ) -> Tuple[List[discord.User], int]:
+        """
+        Returns a list of users that are allowed to use the action command
+        """
+        allowed: List[discord.User] = []
+        disabled = 0
+        for user in users:
+            m = await User.new(user.id)
+            if m.action_settings and self.has_disabled(m, command_name):
+                disabled += 1
+            else:
+                allowed.append(user)
+        return allowed, disabled
+
+    async def _do_action(
         self, ctx: commands.Context, users: List[discord.User] = None
-    ) -> Union[discord.Message, None]:
+    ) -> None:
         """
         Executes an action command with the given members
+
+        Raises:
+            ActionException: If any exceptions are raised during the execution
         """
         if not users:
             embed, file = await self.no_argument(ctx)
-            if not embed:
-                return
         elif ctx.author == users[0]:
-            return await ctx.send("Sorry... you can't use this command on yourself")
+            await ctx.send("Sorry... you can't use this command on yourself")
+            return
         else:
-            first = await User.new(users[0].id)
-            if (
-                len(users) == 1
-                and (ctx.command.name in first.action_settings)
-                and not first.action_settings[ctx.command.name]
-            ):
-                return await ctx.send(
-                    f"**{users[0].display_name}** has disabled this action",
-                    allowed_mentions=discord.AllowedMentions.none(),
-                )
-
-            allowed: List[discord.User] = []
-            disabled = 0
-            for user in users:
-                m = await User.new(user.id)
-                if (
-                    m.action_settings
-                    and ctx.command.name in m.action_settings
-                    and m.action_settings[ctx.command.name] is False
-                ):
-                    disabled += 1
-                else:
-                    allowed.append(user)
+            allowed, disabled = await self.get_allowed_users(users, ctx.command.name)
 
             for user in allowed:
-                badge = await self.save_stat(user, ctx.command.name, True)
-                if badge:
-                    try:
-                        await user.send(
-                            f"Congratulation! You got the {KILLUA_BADGES[badge]} badge for being {ctx.command.name}ed more than 500 times! So many hugs :D. Check your shiny new badge out with `k!pofile`!"
-                        )
-                    except discord.Forbidden:
-                        pass
+                await self._save_stat_for(user, ctx.command.name, True)
 
-            badge = await self.save_stat(
-                ctx.author, ctx.command.name, False, len(allowed)
-            )
-            if badge:
-                try:
-                    await ctx.author.send(
-                        f"Congratulations! You got the {KILLUA_BADGES[badge]} badge for {ctx.command.name}ing someone more than 1000 times! So many hugs :D. Check your shiny new badge out with `k!pofile`!"
-                    )
-                except discord.Forbidden:
-                    pass
+            await self._save_stat_for(ctx.author, ctx.command.name, False, len(allowed))
             embed, file = await self.action_embed(
                 ctx.command.name, ctx.author, users, disabled
             )
 
         if isinstance(embed, str):
-            return await ctx.send(content=embed)
-        else:
-            return await self.client.send_message(ctx, embed=embed, file=file)
+            await self.client.send_message(ctx, content=embed)
+        elif embed is not None: # May be None from no_argument, in which case we don't want to send a message
+            await self.client.send_message(ctx, embed=embed, file=file)
+
+    async def do_action(
+        self, ctx: commands.Context, users: List[discord.User] = None
+    ) -> None:
+        """
+        Wrapper for _do_action to catch any exceptions raised
+        """
+        try:
+            await self._do_action(ctx, users)
+        except ActionException as e:
+            embed = discord.Embed.from_dict(
+                {
+                    "title": "An error occurred",
+                    "description": ":x: " + type(e).__name__ + ": " + e.message,
+                    "color": discord.Colour.red(),
+                }
+            )
+            await ctx.send(embed=embed)
 
     @check()
     @commands.hybrid_command(

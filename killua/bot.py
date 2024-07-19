@@ -13,7 +13,7 @@ from toml import load
 from logging import info
 from inspect import signature, Parameter
 from functools import partial
-from typing import Coroutine, Union, Dict, List, Optional
+from typing import Coroutine, Union, Dict, List, Optional, Tuple
 
 from .migrate import migrate_requiring_bot
 from .static.enums import Category
@@ -48,6 +48,10 @@ async def get_prefix(bot: "BaseBot", message: discord.Message):
         # in case message.guild is `None` or something went wrong getting the prefix the bot still NEEDS to react to mentions and k!
         return commands.when_mentioned_or("k!")(bot, message)
 
+class KilluaAPIException(Exception):
+    """Raised when the Killua API returns an error"""
+    def __init__(self, message: str):
+        self.message = message
 
 class BaseBot(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
@@ -342,6 +346,67 @@ class BaseBot(commands.AutoShardedBot):
 
         return callback
 
+    async def _get_text_response_modal(
+        self, 
+        ctx: commands.Context, 
+        text: str, 
+        timeout: int = None, 
+        timeout_message: str = None, 
+        interaction: discord.Interaction = None, 
+        *args, 
+        **kwargs
+    ) -> Union[str, None]:
+        """Gets a response from a textinput UI"""
+        modal = Modal(title="Answer the question and click submit", timeout=timeout)
+        textinput = discord.ui.TextInput(label=text, *args, **kwargs)
+        modal.add_item(textinput)
+
+        if interaction:
+            await interaction.response.send_modal(modal)
+        else:
+            await ctx.interaction.response.send_modal(modal)
+
+        await modal.wait()
+        if modal.timed_out:
+            if timeout_message:
+                await ctx.send(timeout_message, delete_after=5)
+            return
+        await modal.interaction.response.defer()
+        return textinput.value
+    
+    async def _get_text_response_message(
+            self,
+            ctx: commands.Context,
+            text: str,
+            timeout: int = None,
+            timeout_message: str = None,
+            *args,
+            **kwargs,
+    ) -> Union[str, None]:
+        """Gets a response by waiting a message sent by the user"""
+        def check(m: discord.Message):
+            return m.author.id == ctx.author.id
+
+        msg = await ctx.send(text)
+        try:
+            confirm_msg: discord.Message = await self.wait_for(
+                "message", check=check, timeout=timeout
+            )
+        except asyncio.TimeoutError:
+            if timeout_message:
+                await ctx.send(timeout_message, delete_after=5)
+            res = None
+        else:
+            res = confirm_msg.content
+
+        await msg.delete()
+        try:
+            await confirm_msg.delete()
+        except discord.Forbidden:
+            pass
+
+        return res
+
     async def get_text_response(
         self,
         ctx: commands.Context,
@@ -352,53 +417,45 @@ class BaseBot(commands.AutoShardedBot):
         *args,
         **kwargs,
     ) -> Union[str, None]:
-        """Gets a reponse from either a textinput UI or by waiting for a response"""
+        """Gets a response from either a textinput UI or by waiting for a response"""
 
         if (ctx.interaction and not ctx.interaction.response.is_done()) or interaction:
-            modal = Modal(
-                title="Anser the question(s) and click submit", timeout=timeout
+            return await self._get_text_response_modal(
+                ctx, text, timeout, timeout_message, interaction, *args, **kwargs
             )
-            textinput = discord.ui.TextInput(label=text, *args, **kwargs)
-            modal.add_item(textinput)
-
-            if interaction:
-                await interaction.response.send_modal(modal)
-            else:
-                await ctx.interaction.response.send_modal(modal)
-
-            await modal.wait()
-            if modal.timed_out:
-                if timeout_message:
-                    await ctx.send(timeout_message, delete_after=5)
-                return
-            await modal.interaction.response.defer()
-
-            return textinput.value
-
         else:
+            return await self._get_text_response_message(
+                ctx, text, timeout, timeout_message, *args, **kwargs
+            )
 
-            def check(m: discord.Message):
-                return m.author.id == ctx.author.id
+    async def make_embed_from_api(
+            self, 
+            image_url: str, 
+            embed: discord.Embed
+        ) -> Tuple[discord.Embed, Optional[discord.File]]:
+        """
+        Makes an embed from a Killua API image url.
 
-            msg = await ctx.send(text)
-            try:
-                confirmmsg: discord.Message = await self.wait_for(
-                    "message", check=check, timeout=timeout
-                )
-            except asyncio.TimeoutError:
-                if timeout_message:
-                    await ctx.send(timeout_message, delete_after=5)
-                res = None
-            else:
-                res = confirmmsg.content
+        If the bot is running in a dev environment, the image is downloaded 
+        and sent as a file.
 
-            await msg.delete()
-            try:
-                await confirmmsg.delete()
-            except commands.Forbidden:
-                pass
+        Raises:
+            KilluaAPIException: If the Killua API returns an error
+        """
+        file = None
+        if self.is_dev:
+            # Upload the image as attachment instead
+            data = await self.session.get(image_url)
+            if data.status != 200:
+                raise KilluaAPIException(await data.text())
+            
+            extension = image_url.split(".")[-1]
+            embed.set_image(url=f"attachment://image.{extension}")
+            file = discord.File(BytesIO(await data.read()), f"image.{extension}")
+        else:
+            embed.set_image(url=image_url)
+        return embed, file
 
-            return res
 
     async def update_presence(self):
         status = await DB.const.find_one({"_id": "presence"})

@@ -24,12 +24,13 @@ from killua.utils.classes import (
     CheckFailure,
     CardNotFound,
     Book,
-    PartialCard
+    PartialCard,
 )
 from killua.utils.paginator import Paginator
 from killua.utils.interactions import Select, View, Button, ConfirmButton
 
 background_cache = {}
+
 
 @dataclass
 class Card(PartialCard):
@@ -263,16 +264,9 @@ class Card(PartialCard):
                 "color": 0x3E4A78,
             }
         )
-        if client.is_dev:
-            image = await client.session.get(
-                card.formatted_image_url(client, to_fetch=True)
-            )
-            embed.set_image(url="attachment://image.png")
-            file = discord.File(BytesIO(await image.read()), filename="image.png")
-            return embed, file
-        else:
-            embed.set_image(url=card.formatted_image_url(client, to_fetch=False))
-            return embed, None
+        return await client.make_embed_from_api(
+            card.formatted_image_url(client, to_fetch=client.is_dev), embed
+        )
 
 
 class IndividualCard(ABC):
@@ -306,9 +300,11 @@ class Card1001(Card, IndividualCard):
         other = await User.new(member.id)
 
         self._has_met_check(
-            (await cast(BaseBot, self.ctx.bot).command_prefix(
-                self.ctx.bot, self.ctx.message
-            ))[2],
+            (
+                await cast(BaseBot, self.ctx.bot).command_prefix(
+                    self.ctx.bot, self.ctx.message
+                )
+            )[2],
             author,
             member,
         )
@@ -340,9 +336,11 @@ class Card1002(Card, IndividualCard):
         other = await User.new(member.id)
 
         self._has_met_check(
-            (await cast(BaseBot, self.ctx.bot).command_prefix(
-                self.ctx.bot, self.ctx.message
-            ))[2],
+            (
+                await cast(BaseBot, self.ctx.bot).command_prefix(
+                    self.ctx.bot, self.ctx.message
+                )
+            )[2],
             author,
             member,
         )
@@ -508,7 +506,7 @@ class Card1018(Card, IndividualCard):
                 await self._attack_defense_check(self.ctx, u, target)
                 r = await u.remove_card(target[0], target[1]["fake"])
                 stolen_cards.append(r)
-            except Exception as e:
+            except Exception:
                 continue
 
         if len(stolen_cards) > 0:

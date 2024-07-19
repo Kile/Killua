@@ -203,7 +203,7 @@ class User:
                 },
             )
         else:
-            data = await DB.teams.insert_one(
+            await DB.teams.insert_one(
                 {
                     "id": user_id,
                     "points": 0,

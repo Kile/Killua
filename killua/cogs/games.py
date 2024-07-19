@@ -20,6 +20,10 @@ from killua.static.constants import ALLOWED_AMOUNT_MULTIPLE, DB, TRIVIA_TOPICS
 from killua.utils.checks import blcheck, check
 from killua.utils.interactions import Select
 
+DISCORD_LIMITATION = (
+    "\nT o play again, you must re-use the command. This is a Discord limitation :c"
+)
+
 leaderboard_options = [
     discord.app_commands.Choice(name="global", value="global"),
     discord.app_commands.Choice(name="server", value="server"),
@@ -28,6 +32,7 @@ leaderboard_options = [
 
 class CompetitiveGame:
     """A class that includes logic for games where players need to respond to a question in dms or on the same message"""
+
     def __init__(self):
         self.played_again = 0
 
@@ -38,9 +43,12 @@ class CompetitiveGame:
         so the game can be stopped instead os silently failing.
         """
         self.played_again += 1
-        if not ctx.interaction: return False
-        if ctx.interaction.is_guild_integration(): return False
-        if self.played_again < _max: return False
+        if not ctx.interaction:
+            return False
+        if ctx.interaction.is_guild_integration():
+            return False
+        if self.played_again < _max:
+            return False
         return True
 
     async def _timeout(
@@ -233,7 +241,9 @@ class Trivia(CompetitiveGame):
         else:
             self.result = self.view.value
 
-    async def send_result_single(self, view: Optional[PlayAgainButton]) -> Optional[discord.Message]:
+    async def send_result_single(
+        self, view: Optional[PlayAgainButton]
+    ) -> Optional[discord.Message]:
         """Sends the result of the trivia and hands out jenny as rewards"""
         user = await User.new(self.ctx.author.id)
 
@@ -242,13 +252,13 @@ class Trivia(CompetitiveGame):
 
         elif self.timed_out:
             await self.ctx.send("Timed out!", reference=self.msg)
-            return
+            
 
         elif self.result != self.correct_index:
             await user.add_trivia_stat("wrong", self.difficulty)
             return await self.ctx.send(
                 f"Sadly not the right answer! The answer was {self.correct_index+1}) {self.options[self.correct_index]}"
-                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                + (DISCORD_LIMITATION if not view else ""),
                 view=view,
             )
 
@@ -259,9 +269,9 @@ class Trivia(CompetitiveGame):
             await user.add_jenny(rew)
             await user.add_trivia_stat("right", self.difficulty)
             return await self.ctx.send(
-                f"Correct! Here are {rew} Jenny as a reward!" 
-                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
-                view=view
+                f"Correct! Here are {rew} Jenny as a reward!"
+                + (DISCORD_LIMITATION if not view else ""),
+                view=view,
             )
 
     def _play_again_view(self, players: List[discord.Member]) -> View:
@@ -280,7 +290,8 @@ class Trivia(CompetitiveGame):
         else:
             view = None
         msg = await self.send_result_single(view)
-        if not view: return
+        if not view:
+            return
         if msg:
             await view.wait()
             await view.disable(msg)
@@ -289,7 +300,9 @@ class Trivia(CompetitiveGame):
             else:
                 await self.play_single()
 
-    async def send_multi(self, other: discord.Member, jenny: int, view: Optional[PlayAgainButton]) -> None:
+    async def send_multi(
+        self, other: discord.Member, jenny: int, view: Optional[PlayAgainButton]
+    ) -> None:
         """Sends the questions in players dms"""
         self.other = other
 
@@ -314,18 +327,20 @@ class Trivia(CompetitiveGame):
                 # Check who responded faster using interaction.created_at
                 faster = (
                     self.ctx.author
-                    if author_response.interaction.created_at < other_response.interaction.created_at
+                    if author_response.interaction.created_at
+                    < other_response.interaction.created_at
                     else other
                 )
                 faster_by = abs(
-                    author_response.interaction.created_at - other_response.interaction.created_at
+                    author_response.interaction.created_at
+                    - other_response.interaction.created_at
                 ).seconds
                 if self.ctx.author == faster:
                     await author.add_jenny(jenny)
                     await opponent.remove_jenny(jenny)
                     return await self.ctx.send(
                         f"{self.ctx.author.mention} and {other.mention} both got the right answer! {faster.mention} was faster (by {faster_by} seconds) and won **{jenny}** Jenny from {other.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
-                        + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                        + (DISCORD_LIMITATION if not view else ""),
                         reference=self.msg,
                         view=view,
                     )
@@ -334,7 +349,7 @@ class Trivia(CompetitiveGame):
                     await opponent.add_jenny(jenny)
                     return await self.ctx.send(
                         f"{self.ctx.author.mention} and {other.mention} both got the right answer! {faster.mention} was faster (by {faster_by} seconds) and won **{jenny}** Jenny from {self.ctx.author.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
-                        + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                        + (DISCORD_LIMITATION if not view else ""),
                         reference=self.msg,
                         view=view,
                     )
@@ -343,7 +358,7 @@ class Trivia(CompetitiveGame):
                 await opponent.add_trivia_stat("wrong", self.difficulty)
                 return await self.ctx.send(
                     f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
-                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                    + (DISCORD_LIMITATION if not view else ""),
                     reference=self.msg,
                     view=view,
                 )
@@ -356,7 +371,7 @@ class Trivia(CompetitiveGame):
 
             return await self.ctx.send(
                 f"{self.ctx.author.mention} got the right answer! {other.mention} lost **{jenny}** Jenny to {self.ctx.author.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
-                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                + (DISCORD_LIMITATION if not view else ""),
                 reference=self.msg,
                 view=view,
             )
@@ -369,7 +384,7 @@ class Trivia(CompetitiveGame):
 
             return await self.ctx.send(
                 f"{other.mention} got the right answer! {self.ctx.author.mention} lost **{jenny}** Jenny to {other.display_name}! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
-                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                + (DISCORD_LIMITATION if not view else ""),
                 reference=self.msg,
                 view=view,
             )
@@ -377,7 +392,7 @@ class Trivia(CompetitiveGame):
         else:
             return await self.ctx.send(
                 f"Both players got the wrong answer! No one gets any jenny! The correct answer was: {self.correct_index+1}) {self.options[self.correct_index]}"
-                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                + (DISCORD_LIMITATION if not view else ""),
                 reference=self.msg,
                 view=view,
             )
@@ -430,7 +445,8 @@ class Trivia(CompetitiveGame):
             view = None
         msg = await self.send_multi(other, jenny, view=view)
 
-        if not view: return
+        if not view:
+            return
         await view.wait()
         await view.disable(msg)
         if not view.value or view.timed_out:
@@ -523,13 +539,13 @@ class Rps(CompetitiveGame):
                     await p2.remove_jenny(self.points)
                 return await self.ctx.send(
                     f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention} winning {self.points} Jenny which adds to a total of {p1.jenny}"
-                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                    + (DISCORD_LIMITATION if not view else ""),
                     view=view,
                 )
             else:
                 return await self.ctx.send(
                     f"{self.emotes[choice1]} > {self.emotes[choice2]}: {player1.mention} won against {player2.mention}"
-                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                    + (DISCORD_LIMITATION if not view else ""),
                     view=view,
                 )
 
@@ -539,7 +555,7 @@ class Rps(CompetitiveGame):
                 await p2.add_rps_stat("tied", player1 == self.ctx.me)
             return await self.ctx.send(
                 f"{self.emotes[choice1]} = {self.emotes[choice2]}: {player1.mention} tied against {player2.mention}"
-                + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                + (DISCORD_LIMITATION if not view else ""),
                 view=view,
             )
 
@@ -555,13 +571,13 @@ class Rps(CompetitiveGame):
                     await p2.add_jenny(self.points)
                 return await self.ctx.send(
                     f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention} losing {self.points} Jenny which leaves them a total of {p1.jenny}"
-                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                    + (DISCORD_LIMITATION if not view else ""),
                     view=view,
                 )
             else:
                 return await self.ctx.send(
                     f"{self.emotes[choice1]} < {self.emotes[choice2]}: {player1.mention} lost against {player2.mention}"
-                    + ("\nTo play again, you must re-use the command. This is a Discord limitation :c" if not view else ""),
+                    + (DISCORD_LIMITATION if not view else ""),
                     view=view,
                 )
 
@@ -607,7 +623,8 @@ class Rps(CompetitiveGame):
             winlose, resp[0].value, c2, self.ctx.author, self.ctx.me, view
         )
 
-        if not view: return
+        if not view:
+            return
         await view.wait()
         await view.disable(msg)
         if not view.value or view.timed_out:
@@ -669,7 +686,8 @@ class Rps(CompetitiveGame):
             winlose, res[0].value, res[1].value, res[0].user, res[1].user, view
         )
 
-        if not view: return
+        if not view:
+            return
         await view.wait()
         await view.disable(msg)
         if not view.value or view.timed_out:
@@ -913,6 +931,7 @@ class CountGame:
         msg = await self._send_solutions()
         await self._handle_game(msg)
 
+
 @discord.app_commands.allowed_installs(guilds=True, users=True)
 @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 class Games(commands.GroupCog, group_name="games"):
@@ -942,9 +961,7 @@ class Games(commands.GroupCog, group_name="games"):
     @discord.app_commands.describe(
         user="The person to challenge", points="The points to play for"
     )
-    async def rps(
-        self, ctx: commands.Context, user: discord.User, points: int = None
-    ):
+    async def rps(self, ctx: commands.Context, user: discord.User, points: int = None):
         """Play Rock Paper Scissors with your friends! You can play investing Jenny or just for fun."""
 
         if user.id == ctx.author.id:
@@ -956,7 +973,7 @@ class Games(commands.GroupCog, group_name="games"):
             return await ctx.send(
                 "Beep-boop, if you wanna play against a bot, play against me!"
             )
-        
+
         if not user.mutual_guilds:
             view = discord.ui.View()
             support_server_button = discord.ui.Button(
@@ -1059,7 +1076,7 @@ class Games(commands.GroupCog, group_name="games"):
 
             elif opponent.bot:
                 return await ctx.send("You cannot play against a bot")
-            
+
             elif not opponent.mutual_guilds:
                 view = discord.ui.View()
                 support_server_button = discord.ui.Button(
@@ -1161,7 +1178,8 @@ class Games(commands.GroupCog, group_name="games"):
             )
 
             easy_played = (
-                db_user.trivia_stats["easy"]["wrong"] + db_user.trivia_stats["easy"]["right"]
+                db_user.trivia_stats["easy"]["wrong"]
+                + db_user.trivia_stats["easy"]["right"]
             )
             win_rate_easy = (
                 int(100 * (db_user.trivia_stats["easy"]["right"] / easy_played))
@@ -1180,7 +1198,8 @@ class Games(commands.GroupCog, group_name="games"):
             )
 
             hard_played = (
-                db_user.trivia_stats["hard"]["wrong"] + db_user.trivia_stats["hard"]["right"]
+                db_user.trivia_stats["hard"]["wrong"]
+                + db_user.trivia_stats["hard"]["right"]
             )
             win_rate_hard = (
                 int(100 * (db_user.trivia_stats["hard"]["right"] / hard_played))

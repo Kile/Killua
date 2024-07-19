@@ -38,11 +38,9 @@ class Book:
         if types == 0:
             if "first_page" in self.background_cache:
                 return self.background_cache["first_page"]
-            return
         else:
             if "default_background" in self.background_cache:
                 return self.background_cache["default_background"]
-            return
 
     def _set_cache(self, data: Image, first_page: bool) -> None:
         """Sets the background cache"""

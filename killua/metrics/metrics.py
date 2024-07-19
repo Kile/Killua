@@ -17,7 +17,6 @@ ON_INTERACTION_COUNTER = Counter(
     "Amount of interactions called by users",
     ["is_user_installed"],
 )
-ON_INTERACTION_COUNTER._metrics.clear()
 ON_COMMAND_COUNTER = Counter(
     METRIC_PREFIX + "event_on_command",
     "Amount of commands called by users",

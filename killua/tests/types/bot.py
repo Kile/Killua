@@ -20,7 +20,7 @@ class TestingBot(BaseBot):
 
     def __init__(self, *args, **kwargs) -> None:
         self.fail_timeout = False
-        return super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_channel(self, channel: int):
         """Returns a channel object"""

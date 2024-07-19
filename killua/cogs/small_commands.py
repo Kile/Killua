@@ -374,8 +374,6 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
                 target = ctx.interaction.locale.value
             elif (locale := (await User.new(ctx.author.id)).locale):
                 target = locale
-            else:
-                target = target
         elif target.lower() in LANGS:
             target = LANGS[target.lower()]
 

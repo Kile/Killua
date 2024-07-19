@@ -7,6 +7,7 @@ import traceback
 from datetime import datetime
 from discord.ext import commands, tasks
 from PIL import Image
+from enum import Enum
 from typing import Dict, List, Tuple
 from matplotlib import pyplot as plt
 from pymongo.errors import ServerSelectionTimeoutError
@@ -23,6 +24,16 @@ from killua.static.constants import (
     GUILD,
     MAX_VOTES_DISPLAYED,
 )
+
+
+class SaveType(Enum):
+    """
+    The 3 types of saving a poll vote
+    """
+
+    EmbedDescription = 1
+    DesignatedButton = 2
+    CloseButton = 3
 
 
 class Events(commands.Cog):
@@ -312,6 +323,580 @@ class Events(commands.Cog):
             if char == "`" and revers[i - 1] == "[":
                 return i + 1
 
+    async def _end_poll(
+        self, interaction: discord.Interaction, guild: Guild, author: int, saved: bool
+    ) -> None:
+        """
+        Ends a poll (option not on wyr)
+        """
+
+        # Create a piechart with the results
+        colours = ["#6aaae8", "#84ae62", "#a58fd0", "#e69639"]
+        if not saved:
+            data = [
+                [
+                    f"Option {pos+1}",  # Calculate the number of votes for each option
+                    (
+                        0
+                        if field.value == "No votes"
+                        else (
+                            len(field.value.split("\n"))
+                            + len(
+                                interaction.message.components[0]
+                                .children[pos]
+                                .custom_id.split(":")[2]
+                                .split(",")
+                            )
+                            - 1
+                            if len(field.value.split("\n")) > MAX_VOTES_DISPLAYED
+                            else 0
+                            + +(
+                                len(str(close_votes[0]).split(","))
+                                if (
+                                    close_votes := re.findall(
+                                        rf";{pos};[^;:]*",
+                                        interaction.message.components[0]
+                                        .children[-1]
+                                        .custom_id,
+                                    )
+                                )
+                                else 0
+                            )
+                        )
+                    ),
+                    colours[pos],
+                ]
+                for pos, field in enumerate(interaction.message.embeds[0].fields)
+            ]
+        else:
+            votes: Dict[int, list] = guild.polls[str(interaction.message.id)]["votes"]
+            data = [
+                [f"Option {pos+1}", len(votes[str(pos)]), colours[pos]]
+                for pos, _ in enumerate(interaction.message.embeds[0].fields)
+            ]
+
+        if not data:
+            return await interaction.response.send_message(
+                "There are no votes for this poll!", ephemeral=True
+            )
+
+        piechart = self._create_piechart(
+            data, interaction.message.embeds[0].description
+        )
+
+        new_embed = discord.Embed(
+            title=interaction.message.embeds[0].title + " [closed]",
+            description=interaction.message.embeds[0].description,
+            color=interaction.message.embeds[0].color,
+        )
+        new_embed.set_image(url="attachment://piechart.png")
+
+        colour_emotes = [
+            "\U0001f535",
+            "\U0001f7e2",
+            "\U0001f7e3",
+            "\U0001f7e0",
+        ]
+        for pos, field in enumerate(interaction.message.embeds[0].fields):
+            new_embed.add_field(
+                name=field.name + f" {colour_emotes[pos]}",
+                value=field.value,
+                inline=False,
+            )
+
+        new_view = discord.ui.View()
+        for button in interaction.message.components[0].children:
+            new_button = discord.ui.Button(
+                label=button.label, style=button.style, disabled=True
+            )
+            new_view.add_item(new_button)
+
+        if saved:
+            await guild.close_poll(str(interaction.message.id))
+
+        await interaction.message.delete()
+        await interaction.response.send_message(
+            embed=new_embed, file=piechart, view=new_view
+        )
+
+    def _insert_vote_in_close_button(
+        self, interaction: discord.Interaction, option: int, encrypted: str
+    ) -> str:
+        """
+        Inserts a vote into the close button custom id.
+
+        The ID of the custom ID would look something like this:
+
+        ```txt
+                          Any extra option
+                          (not necessarily
+                          opt-1, any order)
+                                 |
+                defines it to be |     Another option
+                the close button |   (any order, may not
+                       |         |       be present)
+                       |         |           |
+                poll:close:afhua:1;q3uf,uzfv;3;ioqfnq
+                  |         |          |           |
+            marks this as   |     who voted that   |
+            a poll          |   option (compressed,|
+                            |   separated by comma)|
+                            |                      |
+                      full compressed      Votes for that other
+                      ID of the author        option (if any),
+                                          same format as before
+        ```
+        """
+        # using regex it will find a free space after ;{option}; to put it in
+        # first finding the current thing after ;{option};
+        found = re.findall(
+            rf";{option};([^;:]*)",
+            interaction.message.components[0].children[-1].custom_id,
+        )
+        if not found:  # If the option has not been added yet
+            custom_id = (
+                interaction.message.components[0].children[-1].custom_id.split(":")
+            )
+            interaction.message.components[0].children[-1].custom_id = (
+                custom_id[0]
+                + ":"
+                + custom_id[1]
+                + ":"
+                + custom_id[2]
+                + ":"
+                + custom_id[3]
+                + ""
+                + f";{option};{encrypted}"
+                + ":"
+            )
+        else:
+            if len(found[0]) > 0:  # If other users have voted for this option
+                found_items = str(found[0]).split(",")
+                found_items.append(encrypted)
+                interaction.message.components[0].children[-1].custom_id = (
+                    interaction.message.components[0]
+                    .children[-1]
+                    .custom_id.replace(str(found[0]), ",".join(found_items))
+                )
+            else:  # If the number exists but with no votes
+                interaction.message.components[0].children[-1].custom_id = (
+                    interaction.message.components[0]
+                    .children[-1]
+                    .custom_id.replace(f";{option};", f";{option};{encrypted}")
+                )
+
+    def _parse_votes_for(
+        self, custom_id: str, field: "discord.embeds._EmbedFieldProxy"
+    ) -> Tuple[List[int], List[str]]:
+        """
+        Parses the votes for a poll or wyr
+        """
+        return (
+            [
+                int(v.replace("<@", "").replace(">", ""))
+                for v in field.value.split("\n")
+                if re.match(r"<@!?(\d+)>", v)
+            ],
+            (
+                [v for v in custom_id.split(":")[2].split(",") if v != ""]
+                if not custom_id.split(":")[2].isdigit()
+                else []
+            ),
+        )
+
+    def _is_room(
+        self,
+        where: SaveType,
+        interaction: discord.Interaction,
+        votes: Dict[int, Tuple[List[int], List[str]]],
+        option: int,
+        encrypted: str,
+        poll: bool = None,
+    ) -> bool:
+        """
+        Checks if there is room for a vote in the UI
+        """
+        if where == SaveType.EmbedDescription:
+            return len(votes[option - 1][0]) < MAX_VOTES_DISPLAYED
+        elif where == SaveType.DesignatedButton:
+            return len(interaction.data["custom_id"] + encrypted) <= 100
+        elif where == SaveType.CloseButton:
+            # length of the close button custom ID + length of the encrypted vote +
+            # 2 for the comma and the option number
+            return (
+                len(interaction.message.components[0].children[-1].custom_id)
+                + len(encrypted)
+                + (
+                    0
+                    if str(option)
+                    in interaction.message.components[0].children[-1].custom_id
+                    else 2
+                )
+                <= 100
+                and poll
+            )
+
+    async def _process_vote_with_compression(
+        self,
+        interaction: discord.Interaction,
+        option: int,
+        action: str,
+        poll: bool,
+        opt_votes: str,
+    ) -> Dict[int, Tuple[List[int], List[str]]]:
+        votes: Dict[int, Tuple[List[int], List[str]]] = {}
+        # This took me a bit to figure out when revisiting this
+        # code. What is actually being stored here for each option
+        # is:
+        #
+        # votes = {
+        #     0: ( # Option 1
+        #           [
+        #             # int: Votes for option 1, displayed in the UI
+        #             # IDs because it is easy to get from the UI where
+        #             # they are represented as <@ID>
+        #               1234567890,
+        #               1234567890,
+        #           ],
+        #           [
+        #             # str: Votes for option 1, not displayed in the UI,
+        #             # instead compressed in the button custom ID because
+        #             # it is not easy to save in the UI otherwise
+        #               "afhua",
+        #               "q3uf",
+        #               "uzfv"
+        #           ]
+        #       )
+        # }
+
+        old_close = (
+            interaction.message.components[0].children[-1].custom_id
+        )  # as this value is modified in the loop the original value needs to be saved to check it
+        for pos, field in enumerate(interaction.message.embeds[0].fields):
+            child = interaction.message.components[0].children[pos]
+            votes[pos] = self._parse_votes_for(child.custom_id, field)
+            encrypted = self.client._encrypt(interaction.user.id)
+
+            if (
+                interaction.user.id in votes[pos][0]
+                or encrypted in votes[pos][1]
+                or re.findall(rf";{pos+1};[^;:]*{encrypted}(.*?)[;:]", old_close)
+            ) and pos == option - 1:
+                # Already voted for this option
+                await interaction.response.send_message(
+                    f"You already {'voted for' if poll else 'chose'} this option!",
+                    ephemeral=True,
+                )
+                return
+
+            if interaction.user.id in votes[pos][0]:
+                votes[pos][0].remove(interaction.user.id)
+            elif (
+                encrypted in votes[pos][1]
+                or encrypted in interaction.message.components[0].children[-1].custom_id
+            ):
+                # find component and remove the vote if in close button
+                for component in interaction.message.components[0].children:
+
+                    if not (encrypted in component.custom_id):
+                        continue
+
+                    component.custom_id = re.sub(
+                        rf"{encrypted},?", "", component.custom_id
+                    )
+
+                    if (
+                        encrypted in votes[pos][1]
+                    ):  # Strange that I have to put this check in here again but it sometimes fails without it
+                        # Update 19/07/2024: Idk if this is still needed but I am too scared to remove it
+                        votes[pos][1].remove(encrypted)
+
+        if self._is_room(
+            SaveType.EmbedDescription, interaction, votes, option, encrypted
+        ):
+            # When there is room for more votes in the UI
+            # add the vote to the int of votes
+            # to update visually
+            votes[option - 1][0].append(interaction.user.id)
+        elif self._is_room(
+            SaveType.DesignatedButton, interaction, votes, option, encrypted
+        ):
+            # When there is no room in the UI but there is room
+            # in the close button custom ID, add the vote to the
+            # custom ID to update
+            votes[option - 1][1].append(encrypted)
+            interaction.message.components[0].children[option - 1].custom_id = (
+                "poll"
+                if poll
+                else "wyr"
+                + ":"
+                + action
+                + ":"
+                + opt_votes
+                + ("," if opt_votes else "")
+                + encrypted
+            )
+        elif self._is_room(
+            SaveType.CloseButton, interaction, votes, option, encrypted, poll
+        ):
+            # When there is no room in the UI and the designated
+            # close button custom ID but there is room in the
+            # close button custom ID, add the vote to the custom
+            # ID to update
+            self._insert_vote_in_close_button(interaction, option, encrypted)
+        else:
+            # When there is no room in the UI and the designated
+            # close button custom ID and there is no room in the
+            # close button custom ID, send a message that the
+            # poll is full
+            view = discord.ui.View()
+            view.add_item(
+                discord.ui.Button(
+                    style=discord.ButtonStyle.link,
+                    label="Get Premium",
+                    url="https://patreon.com/kilealkuri",
+                )
+            )
+            if poll:
+                await interaction.response.send_message(
+                    f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached! Make this a premium server to allow more votes! Please that votes started before becomind a premium server will still not be able to recieve more votes.",
+                    ephemeral=True,
+                    view=view,
+                )
+            else:
+                await interaction.response.send_message(
+                    f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached!",
+                    ephemeral=True,
+                )
+            return
+        return votes
+
+    async def _process_vote_with_db(
+        self,
+        interaction: discord.Interaction,
+        guild: Guild,
+        option: int,
+        poll: bool,
+    ) -> Dict[str, List[int]]:
+        """
+        If the poll is saved in the database, this function
+        processes the vote
+
+        Only available for premium guilds
+        """
+        votes: Dict[int, List[int]] = guild.polls[str(interaction.message.id)]["votes"]
+
+        for pos, _ in enumerate(interaction.message.embeds[0].fields):
+            if interaction.user.id in votes[str(pos)] and pos == option - 1:
+                return await interaction.response.send_message(
+                    f"You already {'voted for' if poll else 'chose'} this option!",
+                    ephemeral=True,
+                )
+
+            if interaction.user.id in votes[str(pos)]:
+                votes[str(pos)].remove(interaction.user.id)
+
+        votes[str(option - 1)].append(interaction.user.id)
+
+        await guild.update_poll_votes(interaction.message.id, votes)
+        return votes
+
+    # def _calc_poll_votes(
+    #         self,
+    #         interaction: discord.Interaction,
+
+    def _set_new_field_name_for_unsaved(
+        self,
+        field: "discord.embeds._EmbedFieldProxy",
+        votes: Tuple[List[int], List[str]],
+        pos: int,
+        interaction: discord.Interaction,
+        poll: bool,
+        option: int,
+    ):
+        close_votes = re.findall(
+            rf";{pos+1};(.*?)[;:]",
+            interaction.message.components[0].children[-1].custom_id,
+        )
+        num_of_votes = (
+            len(votes[pos][0])
+            + len(votes[pos][1])
+            + (
+                len([f for f in str(close_votes[0]).split(",") if f != ""])
+                if close_votes
+                else 0
+            )
+        )
+        new_name = (
+            field.name[: -self.find_counter_start(field.name)]
+            + f"`[{num_of_votes} "
+            + (
+                f"vote{'s' if num_of_votes != 1 else ''}"
+                if poll
+                else f"{'people' if num_of_votes != 1 else 'person'}"
+            )
+            + "]`"
+        )
+        if not votes[pos][1]:
+            value = (
+                "\n".join([f"<@{v}>" for v in votes[pos][0]])
+                if votes[pos][0]
+                else ("No votes" if poll else "No takers")
+            )
+        else:
+            cancel_votes = re.findall(
+                rf";{option};([^;:]*)",
+                interaction.message.components[0].children[-1].custom_id,
+            )
+            additional_votes = len(votes[pos][1]) + (
+                len(cancel_votes[0].split(",")) if cancel_votes else 0
+            )
+            value = (
+                "\n".join([f"<@{v}>" for v in votes[pos][0]])
+                + f"\n*+ {additional_votes} more...*"
+            )
+
+        return new_name, value
+
+    def _set_new_field_name_for_saved(
+        self,
+        field: "discord.embeds._EmbedFieldProxy",
+        votes: Dict[str, List[int]],
+        pos: int,
+        poll: bool,
+    ) -> Tuple[str, str]:
+        num_of_votes = len(votes[str(pos)])
+        new_name = (
+            field.name[: -self.find_counter_start(field.name)]
+            + f"`[{num_of_votes} "
+            + (
+                f"vote{'s' if num_of_votes != 1 else ''}"
+                if poll
+                else f"{'people' if num_of_votes != 1 else 'person'}"
+            )
+            + "]`"
+        )
+        if len(votes[str(pos)]) > MAX_VOTES_DISPLAYED:
+            value = (
+                "\n".join([f"<@{v}>" for v in votes[str(pos)][:MAX_VOTES_DISPLAYED]])
+                + f"\n*+ {len(votes[str(pos)])-MAX_VOTES_DISPLAYED} more...*"
+            )
+        else:
+            value = (
+                "\n".join([f"<@{v}>" for v in votes[str(pos)]])
+                if votes[str(pos)]
+                else ("No votes" if poll else "No takers")
+            )
+        return new_name, value
+
+    async def _process_vote(
+        self,
+        interaction: discord.Interaction,
+        guild: Guild,
+        action: str,
+        saved: bool,
+        poll: bool,
+        opt_votes: str,
+    ) -> None:
+        """
+        Processes a vote in a poll or wyr
+        """
+
+        option = (
+            int(action.split("-")[1])
+            if poll
+            else {"a": 1, "b": 2}[action.split("-")[1]]
+        )
+
+        if not saved:  # Determines votes etc from custom ids
+            votes = await self._process_vote_with_compression(
+                interaction, option, action, poll, opt_votes
+            )
+        else:
+            votes = await self._process_vote_with_db(interaction, guild, option, poll)
+
+        embed = interaction.message.embeds[0]
+
+        new_embed = discord.Embed(
+            title=embed.title,
+            description=embed.description,
+            color=embed.color,
+        )
+        new_embed.set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+        if embed.thumbnail:
+            new_embed.set_thumbnail(url=embed.thumbnail.url)
+
+        for pos, field in enumerate(embed.fields):
+            if not saved:  # Calculate poll votes if it is not saved
+                new_name, value = self._set_new_field_name_for_unsaved(
+                    field, votes, pos, interaction, poll, option
+                )
+            else:
+                new_name, value = self._set_new_field_name_for_saved(
+                    field, votes, pos, poll
+                )
+            new_embed.add_field(name=new_name, value=value, inline=False)
+
+        new_view = discord.ui.View()
+
+        for component in interaction.message.components[0].children:
+            d = component.to_dict()
+            del d["type"]
+            d["style"] = discord.ButtonStyle(d["style"])
+            new_view.add_item(discord.ui.Button(**d))
+        await interaction.response.edit_message(embed=new_embed, view=new_view)
+
+    def is_author(self, interaction: discord.Interaction, author: int) -> bool:
+        return (
+            self.client._encrypt(interaction.user.id, smallest=False) == author
+            or str(author).isdigit()
+            and interaction.user.id == int(author)
+        )
+
+    async def _process_votable(self, interaction: discord.Interaction) -> None:
+        """
+        Processes a wyr or poll interaction (button click)
+        """
+        if (
+            interaction.data["custom_id"].split(":")[2].isdigit()
+        ):  # Backwards compatability
+            split = interaction.data["custom_id"].split(":")
+            _p = split[0]
+            action = split[1]
+            opt_votes = ""
+        else:
+            split = interaction.data["custom_id"].split(":")
+            _p = split[0]
+            action = split[1]
+            opt_votes = split[2]
+
+        poll = (
+            _p == "poll"
+        )  # As the logic for polls and wyr overlaps we can use the same code for both, just need to differentiate for a few small things
+
+        guild = await Guild.new(interaction.guild_id)
+        saved = guild.is_premium and poll
+
+        if saved:
+            author = guild.polls[str(interaction.message.id)]["author"]
+        else:
+            author = (
+                interaction.message.components[0].children[-1].custom_id.split(":")[2]
+            )
+
+        if action.startswith("opt"):
+            if self.is_author(interaction, author):
+                return await interaction.response.send_message(
+                    "You cannot vote in your own poll!", ephemeral=True
+                )
+            await self._process_vote(interaction, guild, action, saved, poll, opt_votes)
+        elif action == "close":
+            if not self.is_author(interaction, author):
+                return await interaction.response.send_message(
+                    "Only the poll author can close this poll!", ephemeral=True
+                )
+            await self._end_poll(interaction, guild, author, saved)
+
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
         if interaction.type == discord.InteractionType.component:
@@ -319,470 +904,7 @@ class Events(commands.Cog):
                 interaction.data["custom_id"].startswith("poll:")
                 or interaction.data["custom_id"].startswith("wyr:")
             ):
-                # for component in interaction.message.components[0].children:
-                #     print("Before: ", component.custom_id)
-
-                if (
-                    interaction.data["custom_id"].split(":")[2].isdigit()
-                ):  # Backwards compatability
-                    split = interaction.data["custom_id"].split(":")
-                    _p = split[0]
-                    action = split[1]
-                    opt_votes = ""
-                else:
-                    split = interaction.data["custom_id"].split(":")
-                    _p = split[0]
-                    action = split[1]
-                    opt_votes = split[2]
-
-                poll = (
-                    _p == "poll"
-                )  # As the logic for polls and wyr overlaps we can use the same code for both, just need to differentiate for a few small things
-
-                guild = await Guild.new(interaction.guild_id)
-                saved = guild.is_premium and poll
-
-                if saved:
-                    author = guild.polls[str(interaction.message.id)]["author"]
-                else:
-                    author = (
-                        interaction.message.components[0]
-                        .children[-1]
-                        .custom_id.split(":")[2]
-                    )
-
-                if action.startswith("opt"):
-
-                    if (
-                        self.client._encrypt(interaction.user.id, smallest=False)
-                        == author
-                        or str(author).isdigit()
-                        and interaction.user.id == int(author)
-                    ):
-                        return await interaction.response.send_message(
-                            "You cannot vote in your own poll!", ephemeral=True
-                        )
-
-                    option = (
-                        int(action.split("-")[1])
-                        if poll
-                        else {"a": 1, "b": 2}[action.split("-")[1]]
-                    )
-
-                    if not saved:  # Determines votes etc from custom ids
-                        votes: Dict[int, Tuple[list, list]] = {}
-                        # Type infers as Dict[int, list] for some reason in python 3.9
-                        # This does not happen in 3.12 so I won't hotfix it
-
-                        old_close = (
-                            interaction.message.components[0].children[-1].custom_id
-                        )  # as this value is modified in the loop the original value needs to be saved to check it
-                        for pos, field in enumerate(
-                            interaction.message.embeds[0].fields
-                        ):
-                            child = interaction.message.components[0].children[pos]
-                            votes[pos] = [
-                                int(v.replace("<@", "").replace(">", ""))
-                                for v in field.value.split("\n")
-                                if re.match(r"<@!?([0-9]+)>", v)
-                            ], (
-                                [
-                                    v
-                                    for v in child.custom_id.split(":")[2].split(",")
-                                    if v != ""
-                                ]
-                                if not child.custom_id.split(":")[2].isdigit()
-                                else []
-                            )
-                            encrypted = self.client._encrypt(interaction.user.id)
-
-                            if (
-                                interaction.user.id in votes[pos][0]
-                                or encrypted in votes[pos][1]
-                                or re.findall(
-                                    rf";{pos+1};[^;:]*{encrypted}(.*?)[;:]", old_close
-                                )
-                            ) and pos == option - 1:
-                                return await interaction.response.send_message(
-                                    f"You already {'voted for' if poll else 'chose'} this option!",
-                                    ephemeral=True,
-                                )
-
-                            if interaction.user.id in votes[pos][0]:
-                                votes[pos][0].remove(interaction.user.id)
-                            elif (
-                                encrypted in votes[pos][1]
-                                or encrypted
-                                in interaction.message.components[0]
-                                .children[-1]
-                                .custom_id
-                            ):
-                                # find component and remove the vote
-                                for component in interaction.message.components[
-                                    0
-                                ].children:
-
-                                    if not (encrypted in component.custom_id):
-                                        continue
-
-                                    component.custom_id = re.sub(
-                                        rf"{encrypted},?", "", component.custom_id
-                                    )
-
-                                    if (
-                                        encrypted in votes[pos][1]
-                                    ):  # Strange that I have to put this check in here again but it sometimes fails without it
-                                        votes[pos][1].remove(encrypted)
-
-                        if len(votes[option - 1][0]) < MAX_VOTES_DISPLAYED:
-                            votes[option - 1][0].append(interaction.user.id)
-                        elif len(interaction.data["custom_id"] + encrypted) <= 100:
-                            votes[option - 1][1].append(encrypted)
-                            interaction.message.components[0].children[
-                                option - 1
-                            ].custom_id = (
-                                _p
-                                + ":"
-                                + action
-                                + ":"
-                                + opt_votes
-                                + ("," if opt_votes else "")
-                                + encrypted
-                            )
-                        elif (
-                            len(
-                                interaction.message.components[0].children[-1].custom_id
-                            )
-                            + len(encrypted)
-                            + (
-                                0
-                                if str(option)
-                                in interaction.message.components[0]
-                                .children[-1]
-                                .custom_id
-                                else 2
-                            )
-                            <= 100
-                            and poll
-                        ):
-                            # using regex it will find a free space after ;{option}; to put it in
-                            # first finding the current thing after ;{option};
-                            found = re.findall(
-                                rf";{option};([^;:]*)",
-                                interaction.message.components[0]
-                                .children[-1]
-                                .custom_id,
-                            )
-                            if not found:  # If the option has not been added yet
-                                custom_id = (
-                                    interaction.message.components[0]
-                                    .children[-1]
-                                    .custom_id.split(":")
-                                )
-                                interaction.message.components[0].children[
-                                    -1
-                                ].custom_id = (
-                                    custom_id[0]
-                                    + ":"
-                                    + custom_id[1]
-                                    + ":"
-                                    + custom_id[2]
-                                    + ":"
-                                    + custom_id[3]
-                                    + ""
-                                    + f";{option};{encrypted}"
-                                    + ":"
-                                )
-                            else:
-                                if (
-                                    len(found[0]) > 0
-                                ):  # If other users have voted for this option
-                                    found_items = str(found[0]).split(",")
-                                    found_items.append(encrypted)
-                                    interaction.message.components[0].children[
-                                        -1
-                                    ].custom_id = (
-                                        interaction.message.components[0]
-                                        .children[-1]
-                                        .custom_id.replace(
-                                            str(found[0]), ",".join(found_items)
-                                        )
-                                    )
-                                else:  # If the number exists but with no votes
-                                    interaction.message.components[0].children[
-                                        -1
-                                    ].custom_id = (
-                                        interaction.message.components[0]
-                                        .children[-1]
-                                        .custom_id.replace(
-                                            f";{option};", f";{option};{encrypted}"
-                                        )
-                                    )
-                        else:
-                            view = discord.ui.View()
-                            view.add_item(
-                                discord.ui.Button(
-                                    style=discord.ButtonStyle.link,
-                                    label="Get Premium",
-                                    url="https://patreon.com/kilealkuri",
-                                )
-                            )
-                            if poll:
-                                return await interaction.response.send_message(
-                                    f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached! Make this a premium server to allow more votes! Please that votes started before becomind a premium server will still not be able to recieve more votes.",
-                                    ephemeral=True,
-                                    view=view,
-                                )
-                            else:
-                                return await interaction.response.send_message(
-                                    f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached!",
-                                    ephemeral=True,
-                                )
-                    else:
-                        votes: Dict[int, list] = guild.polls[
-                            str(interaction.message.id)
-                        ]["votes"]
-
-                        for pos, field in enumerate(
-                            interaction.message.embeds[0].fields
-                        ):
-                            if (
-                                interaction.user.id in votes[str(pos)]
-                                and pos == option - 1
-                            ):
-                                return await interaction.response.send_message(
-                                    f"You already {'voted for' if poll else 'chose'} this option!",
-                                    ephemeral=True,
-                                )
-
-                            if interaction.user.id in votes[str(pos)]:
-                                votes[str(pos)].remove(interaction.user.id)
-
-                        votes[str(option - 1)].append(interaction.user.id)
-
-                        await guild.update_poll_votes(interaction.message.id, votes)
-
-                    embed = interaction.message.embeds[0]
-
-                    new_embed = discord.Embed(
-                        title=embed.title,
-                        description=embed.description,
-                        color=embed.color,
-                    )
-                    new_embed.set_footer(
-                        text=embed.footer.text, icon_url=embed.footer.icon_url
-                    )
-                    if embed.thumbnail:
-                        new_embed.set_thumbnail(url=embed.thumbnail.url)
-
-                    for pos, field in enumerate(embed.fields):
-                        if not saved:  # Calculate poll votes if it is not saved
-                            close_votes = re.findall(
-                                rf";{pos+1};(.*?)[;:]",
-                                interaction.message.components[0]
-                                .children[-1]
-                                .custom_id,
-                            )
-                            num_of_votes = (
-                                len(votes[pos][0])
-                                + len(votes[pos][1])
-                                + (
-                                    len(
-                                        [
-                                            f
-                                            for f in str(close_votes[0]).split(",")
-                                            if f != ""
-                                        ]
-                                    )
-                                    if close_votes
-                                    else 0
-                                )
-                            )
-                            new_name = (
-                                field.name[: -self.find_counter_start(field.name)]
-                                + f"`[{num_of_votes} "
-                                + (
-                                    f"vote{'s' if num_of_votes != 1 else ''}"
-                                    if poll
-                                    else f"{'people' if num_of_votes != 1 else 'person'}"
-                                )
-                                + "]`"
-                            )
-                            if not votes[pos][1]:
-                                value = (
-                                    "\n".join([f"<@{v}>" for v in votes[pos][0]])
-                                    if votes[pos][0]
-                                    else ("No votes" if poll else "No takers")
-                                )
-                            else:
-                                cancel_votes = re.findall(
-                                    rf";{option};([^;:]*)",
-                                    interaction.message.components[0]
-                                    .children[-1]
-                                    .custom_id,
-                                )
-                                additional_votes = len(votes[pos][1]) + (
-                                    len(cancel_votes[0].split(","))
-                                    if cancel_votes
-                                    else 0
-                                )
-                                value = (
-                                    "\n".join([f"<@{v}>" for v in votes[pos][0]])
-                                    + f"\n*+ {additional_votes} more...*"
-                                )
-                        else:
-                            num_of_votes = len(votes[str(pos)])
-                            new_name = (
-                                field.name[: -self.find_counter_start(field.name)]
-                                + f"`[{num_of_votes} "
-                                + (
-                                    f"vote{'s' if num_of_votes != 1 else ''}"
-                                    if poll
-                                    else f"{'people' if num_of_votes != 1 else 'person'}"
-                                )
-                                + "]`"
-                            )
-                            if len(votes[str(pos)]) > MAX_VOTES_DISPLAYED:
-                                value = (
-                                    "\n".join(
-                                        [
-                                            f"<@{v}>"
-                                            for v in votes[str(pos)][
-                                                :MAX_VOTES_DISPLAYED
-                                            ]
-                                        ]
-                                    )
-                                    + f"\n*+ {len(votes[str(pos)])-MAX_VOTES_DISPLAYED} more...*"
-                                )
-                            else:
-                                value = (
-                                    "\n".join([f"<@{v}>" for v in votes[str(pos)]])
-                                    if votes[str(pos)]
-                                    else ("No votes" if poll else "No takers")
-                                )
-                        new_embed.add_field(name=new_name, value=value, inline=False)
-
-                    # for component in interaction.message.components[0].children:
-                    #     print("After: ", component.custom_id)
-
-                    new_view = discord.ui.View()
-
-                    for component in interaction.message.components[0].children:
-                        d = component.to_dict()
-                        del d["type"]
-                        d["style"] = discord.ButtonStyle(d["style"])
-                        new_view.add_item(discord.ui.Button(**d))
-                    await interaction.response.edit_message(
-                        embed=new_embed, view=new_view
-                    )
-
-                elif action == "close":
-                    # poll_creator = interaction.message.components[0].children[-1].custom_id.split(":")[2]
-                    if not (
-                        self.client._encrypt(interaction.user.id, smallest=False)
-                        == author
-                        or str(author).isdigit()
-                        and interaction.user.id == int(author)
-                    ):
-                        return await interaction.response.send_message(
-                            "Only the polll author can close this poll!", ephemeral=True
-                        )
-
-                    # Create a piechart with the results
-                    colours = ["#6aaae8", "#84ae62", "#a58fd0", "#e69639"]
-                    if not saved:
-                        data = [
-                            [
-                                f"Option {pos+1}",  # Calculate the number of votes for each option
-                                (
-                                    0
-                                    if field.value == "No votes"
-                                    else (
-                                        len(field.value.split("\n"))
-                                        + len(
-                                            interaction.message.components[0]
-                                            .children[pos]
-                                            .custom_id.split(":")[2]
-                                            .split(",")
-                                        )
-                                        - 1
-                                        if len(field.value.split("\n"))
-                                        > MAX_VOTES_DISPLAYED
-                                        else 0
-                                        + +(
-                                            len(str(close_votes[0]).split(","))
-                                            if (
-                                                close_votes := re.findall(
-                                                    rf";{pos};[^;:]*",
-                                                    interaction.message.components[0]
-                                                    .children[-1]
-                                                    .custom_id,
-                                                )
-                                            )
-                                            else 0
-                                        )
-                                    )
-                                ),
-                                colours[pos],
-                            ]
-                            for pos, field in enumerate(
-                                interaction.message.embeds[0].fields
-                            )
-                        ]
-                    else:
-                        votes: Dict[int, list] = guild.polls[
-                            str(interaction.message.id)
-                        ]["votes"]
-                        data = [
-                            [f"Option {pos+1}", len(votes[str(pos)]), colours[pos]]
-                            for pos, _ in enumerate(
-                                interaction.message.embeds[0].fields
-                            )
-                        ]
-
-                    if not data:
-                        return await interaction.response.send_message(
-                            "There are no votes for this poll!", ephemeral=True
-                        )
-
-                    piechart = self._create_piechart(
-                        data, interaction.message.embeds[0].description
-                    )
-
-                    new_embed = discord.Embed(
-                        title=interaction.message.embeds[0].title + " [closed]",
-                        description=interaction.message.embeds[0].description,
-                        color=interaction.message.embeds[0].color,
-                    )
-                    new_embed.set_image(url="attachment://piechart.png")
-
-                    colour_emotes = [
-                        "\U0001f535",
-                        "\U0001f7e2",
-                        "\U0001f7e3",
-                        "\U0001f7e0",
-                    ]
-                    for pos, field in enumerate(interaction.message.embeds[0].fields):
-                        new_embed.add_field(
-                            name=field.name + f" {colour_emotes[pos]}",
-                            value=field.value,
-                            inline=False,
-                        )
-
-                    new_view = discord.ui.View()
-                    for button in interaction.message.components[0].children:
-                        new_button = discord.ui.Button(
-                            label=button.label, style=button.style, disabled=True
-                        )
-                        new_view.add_item(new_button)
-
-                    if saved:
-                        await guild.close_poll(str(interaction.message.id))
-
-                    await interaction.message.delete()
-                    await interaction.response.send_message(
-                        embed=new_embed, file=piechart, view=new_view
-                    )
+                await self._process_votable(interaction)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):
@@ -868,7 +990,11 @@ class Events(commands.Cog):
             logging.info(
                 f"------------------------------------------{PrintColors.ENDC}"
             )
-        if (isinstance(error, discord.NotFound) and error.code == 10062) or (isinstance(error, discord.HTTPException) and error.code == 50027) or isinstance(error, discord.Forbidden):
+        if (
+            (isinstance(error, discord.NotFound) and error.code == 10062)
+            or (isinstance(error, discord.HTTPException) and error.code == 50027)
+            or isinstance(error, discord.Forbidden)
+        ):
             # This is the error code for unknown interaction. This means the error occured
             # running a slash command or button or whatever where it failed to find the interaction
             # Because of this, following up will also fail so we just return
@@ -883,7 +1009,7 @@ class Events(commands.Cog):
                 view=view,
             )
         except (discord.Forbidden, discord.NotFound):
-            pass # This theoretically should be covered by all the cases above,
+            pass  # This theoretically should be covered by all the cases above,
             # but handling it again here can't hurt
 
 

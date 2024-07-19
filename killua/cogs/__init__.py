@@ -28,7 +28,7 @@ for loader, name, pkg in pkgutil.walk_packages(__path__):
             continue
         if spec.loader is None:
             continue
-        module = spec.loader.load_module()
+        module = spec.loader.load_module(name)
         # Make it a global.
         globals()[name] = module
         # Put it in the list.

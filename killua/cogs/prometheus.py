@@ -170,7 +170,7 @@ class PrometheusCog(commands.Cog):
             await self.update_api_stats()
         except ServerSelectionTimeoutError:
             logging.warn("Failed to save mongodb stats to DB due to connection error")
-            pass  # Skip this iteration
+             # Skip this iteration
 
     @tasks.loop(seconds=5)
     async def system_usage_loop(self):
@@ -208,7 +208,6 @@ class PrometheusCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command(self, ctx: commands.Context):
-        shard_id = ctx.guild.shard_id if ctx.guild else None
         ON_COMMAND_COUNTER.inc()
 
         if not ctx.command.extras.get("id"):

@@ -14,6 +14,9 @@ services:
     build:
       context: "./zmq_proxy"
       target: ${MODE:-prod} # dev/prod
+      args:
+        - "MYUID=${MYUID:-1000}"
+        - "MYGID=${MYGID:-1000}"
     environment:
       - ZMQ_CLIENT_ADDRESS=tcp://*:5559
       - ZMQ_SERVER_ADDRESS=tcp://*:5560
@@ -26,6 +29,9 @@ services:
       context: ./
       dockerfile: ./api/Dockerfile
       target: ${MODE:-prod} # dev/prod
+      args:
+        - "MYUID=${MYUID:-1000}"
+        - "MYGID=${MYGID:-1000}"
     container_name: rust_api
     ports:
       - "6060:7650"
@@ -44,6 +50,9 @@ services:
       context: ./
       dockerfile: ./killua/Dockerfile
       target: ${MODE:-prod} # dev/prod
+      args:
+        - "MYUID=${MYUID:-1000}"
+        - "MYGID=${MYGID:-1000}"
     container_name: python_bot
     restart: unless-stopped
     environment:

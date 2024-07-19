@@ -475,7 +475,7 @@ class LootBox:
         )[0]
 
     @classmethod
-    async def generate_rewards(self, box: int) -> List[Union[PartialCard, int]]:
+    async def generate_rewards(cls, box: int) -> List[Union[PartialCard, int]]:
         """Generates a list of rewards that can be used to pass to this class"""
         data = LOOTBOXES[box]
         rew = []

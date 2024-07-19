@@ -176,7 +176,7 @@ class Dev(commands.GroupCog, group_name="dev"):
     async def all_top(self, ctx: commands.Context, top: List[tuple]) -> None:
         """Shows a list of all top commands"""
 
-        def make_embed(page, embed, pages):
+        def make_embed(page, embed: discord.Embed, pages):
             embed.title = "Top command usage"
 
             if len(pages) - page * 10 + 10 > 10:
@@ -252,10 +252,9 @@ class Dev(commands.GroupCog, group_name="dev"):
             if view.timed_out:
                 await view.disable()
 
-            if view.value:
-                if view.value == "back":
-                    await msg.delete()
-                    await self.initial_top(ctx)
+            if view.value and view.value == "back":
+                await msg.delete()
+                await self.initial_top(ctx)
 
     def get_command_extras(self, cmd: str):
         c = self.client.get_command(cmd)
@@ -744,7 +743,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                         },
                     ],
                     "color": 0x3E4A78,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now().isoformat(),
                 }
             )
 

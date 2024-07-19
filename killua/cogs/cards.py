@@ -241,7 +241,9 @@ class Cards(commands.GroupCog, group_name="cards"):
                 )
 
         async def make_embed(page, *_) -> Tuple[discord.Embed, discord.File]:
-            return await Book(self.client.session, self.client.api_url(to_fetch=True)).create(ctx.author, page, self.client)
+            return await Book(
+                self.client.session, self.client.api_url(to_fetch=True)
+            ).create(ctx.author, page, self.client)
 
         return await Paginator(
             ctx,
@@ -251,6 +253,123 @@ class Cards(commands.GroupCog, group_name="cards"):
             has_file=True,
         ).start()
 
+    async def _gen_to_be_sold(self, user: User, sell_opt: SellOptions) -> List[Tuple[int, Any]]:
+        """
+        Decides which cards to be sold based on the sell option
+        """
+        to_be_sold = []
+        if sell_opt == SellOptions.all:
+            to_be_sold = [
+                x for x in user.fs_cards if not x[1]["clone"] and not x[1]["fake"]
+            ]
+        elif sell_opt == SellOptions.spells:
+            to_be_sold = [
+                x
+                for x in user.fs_cards
+                if (await Card.new(x[0])).type == "spell"
+                and not x[1]["clone"]
+                and not x[1]["fake"]
+            ]
+        elif sell_opt == SellOptions.monsters:
+            to_be_sold = [
+                x
+                for x in user.fs_cards
+                if (await Card.new(x[0])).type == "monster"
+                and not x[1]["clone"]
+                and not x[1]["fake"]
+            ]
+        return to_be_sold
+    
+    async def _find_to_be_gained(self, to_be_sold: List[Tuple[int, Any]], entitled_to_double: bool) -> int:
+        """Finds the money to be gained from selling the cards"""
+        to_be_gained = 0
+        for c, _ in to_be_sold:
+            _price = PRICES[(await Card.new(c)).rank] + (
+                PRICE_INCREASE_FOR_SPELL
+                if (await Card.new(c)).type == "spell"
+                else 0
+            )
+            j = int(_price / 10)
+            if entitled_to_double:
+                j *= 2
+            to_be_gained += j
+        return to_be_gained
+    
+    async def _sell_confirm_view(self, ctx: commands.Context, to_be_gained: int, selling_what: str) -> bool:
+        """
+        Asks the user if they want to sell the cards. 
+        Returns True if the user wants to sell the cards, False if they don't
+        """
+        view = ConfirmButton(ctx.author.id, timeout=80)
+        msg = await ctx.send(
+            f"You will receive {to_be_gained} Jenny for selling {selling_what} cards, do you want to proceed?",
+            view=view,
+        )
+        await view.wait()
+        await view.disable(msg)
+
+        if not view.value:
+            if view.timed_out:
+                await ctx.send("Timed out!")
+            else:
+                await ctx.send("Successfully canceled!")
+            return False
+        return True
+
+    async def _sell_bulk(self, ctx: commands.Context, user: User, sell_opt: SellOptions) -> None:
+        """
+        Sells all cards based on the sell option
+        """
+        to_be_sold = await self._gen_to_be_sold(user, sell_opt)
+        to_be_gained = await self._find_to_be_gained(to_be_sold, user.is_entitled_to_double_jenny)
+
+        if to_be_gained == 0:
+            return await ctx.send(
+                "You don't have any cards of that type to sell!", ephemeral=True
+            )
+
+        confirmed = await self._sell_confirm_view(ctx, to_be_gained, "all " + (sell_opt.name if not sell_opt.name == 'all' else 'free slots') + " cards")
+        if not confirmed:
+            return
+        
+        await user.bulk_remove(to_be_sold)
+        await user.add_jenny(to_be_gained)
+        await ctx.send(
+            f"You sold all your {sell_opt.name if not sell_opt.name == 'all' else 'free slots cards'} for {to_be_gained} Jenny!"
+        )
+
+    async def _sell_single(self, ctx: commands.Context, user: User, card: Card, amount: int) -> None:
+        """
+        Sells a single card (X times)
+        """
+        in_possesion = user.count_card(card.id, including_fakes=False)
+
+        if in_possesion < amount:
+            return await ctx.send(
+                f"Seems you don't own enough copies of this card. You own {in_possesion} cop{'y' if in_possesion == 1 else 'ies'} of this card"
+            )
+
+        if card == 0:
+            return await ctx.send("You cannot sell this card!")
+
+        _price = PRICES[card.rank] + (
+            PRICE_INCREASE_FOR_SPELL if card.type == "spell" else 0
+        )
+        jenny = int((_price * amount) / 10)
+        if user.is_entitled_to_double_jenny:
+            jenny *= 2
+
+        confirmed = await self._sell_confirm_view(ctx, jenny, f"{amount} cop{'y' if amount == 1 else 'ies'} of card {card.id}")
+        if not confirmed:
+            return
+
+        for _ in range(amount):
+            await user.remove_card(card.id, False)
+        await user.add_jenny(jenny)
+        await ctx.send(
+            f"Successfully sold {amount} cop{'y' if amount == 1 else 'ies'} of card {card.id} for {jenny} Jenny!"
+        )
+
     @check(2)
     @commands.hybrid_command(
         extras={"category": Category.CARDS, "id": 14},
@@ -258,7 +377,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     )
     @discord.app_commands.describe(
         card="The card to sell",
-        type="The type of card to bulk sell",
+        sell_opt="The type of card to bulk sell",
         amount="The amount of the specified card to sell",
     )
     @discord.app_commands.autocomplete(card=all_cards_autocomplete)
@@ -267,80 +386,27 @@ class Cards(commands.GroupCog, group_name="cards"):
         ctx: commands.Context,
         card: str = None,
         amount: int = 1,
-        type: Literal["all", "spells", "monsters"] = None,
+        sell_opt: Literal["all", "spells", "monsters"] = None,
     ):
         """Sell any amount of cards you own"""
-        if type:
-            type: SellOptions = getattr(
+        if sell_opt:
+            sell_opt: SellOptions = getattr(
                 SellOptions, type
             )  # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
 
         user = await User.new(ctx.author.id)
 
-        if not type and not card:
+        if not sell_opt and not card:
             return await ctx.send(
                 "You need to specify what exactly to sell", ephemeral=True
             )
 
         if (
-            type
+            sell_opt
         ):  # always prefers if a type argument was given. However if both a type argument and card argument was given,
             # both will be attempted to be executed.
-            to_be_sold = []
-            if type == SellOptions.all:
-                to_be_sold = [
-                    x for x in user.fs_cards if not x[1]["clone"] and not x[1]["fake"]
-                ]
-            elif type == SellOptions.spells:
-                to_be_sold = [
-                    x
-                    for x in user.fs_cards
-                    if (await Card.new(x[0])).type == "spell"
-                    and not x[1]["clone"]
-                    and not x[1]["fake"]
-                ]
-            elif type == SellOptions.monsters:
-                to_be_sold = [
-                    x
-                    for x in user.fs_cards
-                    if (await Card.new(x[0])).type == "monster"
-                    and not x[1]["clone"]
-                    and not x[1]["fake"]
-                ]
+            await self._sell_bulk(ctx, user, sell_opt)
 
-            to_be_gained = 0
-
-            for c, _ in to_be_sold:
-                _price = PRICES[(await Card.new(c)).rank] + (PRICE_INCREASE_FOR_SPELL if (await Card.new(c)).type == "spell" else 0)
-                j = int(_price / 10)
-                if user.is_entitled_to_double_jenny:
-                    j *= 2
-                to_be_gained += j
-
-            if to_be_gained == 0:
-                return await ctx.send(
-                    "You don't have any cards of that type to sell!", ephemeral=True
-                )
-
-            view = ConfirmButton(ctx.author.id, timeout=80)
-            msg = await ctx.send(
-                f"You will receive {to_be_gained} Jenny for selling all {type.name if not type.name == 'all' else 'free slots'} cards, do you want to proceed?",
-                view=view,
-            )
-            await view.wait()
-            await view.disable(msg)
-
-            if not view.value:
-                if view.timed_out:
-                    return await ctx.send(f"Timed out!")
-                else:
-                    return await ctx.send(f"Successfully canceled!")
-            else:
-                await user.bulk_remove(to_be_sold)
-                await user.add_jenny(to_be_gained)
-                return await ctx.send(
-                    f"You sold all your {type.name if not type.name == 'all' else 'free slots cards'} for {to_be_gained} Jenny!"
-                )
         if not card:
             return
 
@@ -356,40 +422,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
-        in_possesion = user.count_card(card.id, including_fakes=False)
-
-        if in_possesion < amount:
-            return await ctx.send(
-                f"Seems you don't own enough copies of this card. You own {in_possesion} cop{'y' if in_possesion == 1 else 'ies'} of this card"
-            )
-
-        if card == 0:
-            return await ctx.send("You cannot sell this card!")
-
-        _price = PRICES[card.rank] + (PRICE_INCREASE_FOR_SPELL if card.type == "spell" else 0)
-        jenny = int((_price * amount) / 10)
-        if user.is_entitled_to_double_jenny:
-            jenny *= 2
-        view = ConfirmButton(ctx.author.id, timeout=80)
-        msg = await ctx.send(
-            f"You will receive {jenny} Jenny for selling {'this card' if amount == 1 else 'those cards'}, do you want to proceed?",
-            view=view,
-        )
-        await view.wait()
-        await view.disable(msg)
-
-        if not view.value:
-            if view.timed_out:
-                return await ctx.send(f"Timed out!")
-            else:
-                return await ctx.send(f"Successfully canceled!")
-
-        for _ in range(amount):
-            await user.remove_card(card.id, False)
-        await user.add_jenny(jenny)
-        await ctx.send(
-            f"Successfully sold {amount} cop{'y' if amount == 1 else 'ies'} of card {card.id} for {jenny} Jenny!"
-        )
+        await self._sell_single(ctx, user, card, amount)
 
     async def swap_cards_autocomplete(
         self,
@@ -539,13 +572,13 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         elif option == "end" and not has_effect:
             return await ctx.send(
-                f"You aren't on a hunt yet! Start one with `/cards hunt`",
+                "You aren't on a hunt yet! Start one with `/cards hunt`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
         if has_effect:
             return await ctx.send(
-                f"You are already on a hunt! Get the results with `/cards hunt end`",
+                "You are already on a hunt! Get the results with `/cards hunt end`",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
         await user.add_effect("hunting", datetime.now())
@@ -555,7 +588,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     @check(120)
     @discord.app_commands.describe(
-        user="The user to meet. Must have sent a mesage recently."
+        user="The user to meet. Must have sent a message recently."
     )
     @commands.hybrid_command(
         aliases=["approach"],
@@ -639,9 +672,9 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         if not view.value:
             if view.timed_out:
-                return await ctx.send(f"Timed out!")
+                return await ctx.send("Timed out!")
             else:
-                return await ctx.send(f"Successfully cancelled!")
+                return await ctx.send("Successfully cancelled!")
 
         try:
             await user.remove_card(card.id, remove_fake=True, restricted_slot=False)
@@ -674,7 +707,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         embed, file = await c._get_analysis_embed(c.id, self.client)
         if c.type == "spell" and c.id not in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
             card_class: IndividualCard = next(
-                (_c for _c in Card.__subclasses__() if _c.__name__ == f"Card{c.id}"), None
+                (_c for _c in Card.__subclasses__() if _c.__name__ == f"Card{c.id}"),
+                None,
             )
             usage = (
                 f"`{(await self.client.command_prefix(self.client, ctx.message))[2]}use {card} "
@@ -790,13 +824,11 @@ class Cards(commands.GroupCog, group_name="cards"):
                 elif args.bot:
                     raise CheckFailure("You can't use spell cards on bots")
 
-            if isinstance(args, int):
-                if int(args) < 1:
+            if isinstance(args, int) and int(args) < 1:
                     raise CheckFailure("You can't use an integer less than 1")
 
-        if add_args:
-            if add_args < 1:
-                raise CheckFailure("You can't use an integer less than 1")
+        if add_args and add_args < 1:
+            raise CheckFailure("You can't use an integer less than 1")
 
         return card
 
