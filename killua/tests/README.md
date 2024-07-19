@@ -1,3 +1,6 @@
+# ⛔️ THIS SYSTEM IS NOT FULLY IMPLEMENTED YET
+The codebase has moved on since the initial batch of tests. This system needs a bunch of rewriting before being viable again.
+
 # Explanation of how testing works with Killua
 
 Index

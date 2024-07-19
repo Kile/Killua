@@ -1,0 +1,29 @@
+name: Docker deploy
+
+on:
+  # workflow_run:
+  #   workflows: ["Run API Tests"]
+  #   branches: [main, api-rewrite]
+  #   types: 
+  #     - completed
+  push:
+    # Publish `main` as Docker `latest` image.
+    branches:
+      - main
+
+jobs:
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  push:
+    # Ensure test job passes before pushing image.
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+        - uses: actions/checkout@v4
+
+        - name: Log into registry
+          run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+        - name: Build image
+          run: docker compose build --push

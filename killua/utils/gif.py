@@ -23,19 +23,25 @@ class TransparentAnimatedGifConverter(object):
     def _process_pixels(self):
         """Set the transparent pixels to the color 0."""
         self._transparent_pixels = set(
-            idx for idx, alpha in enumerate(
-                self._img_rgba.getchannel(channel="A").getdata())
-            if alpha <= self._alpha_threshold)
+            idx
+            for idx, alpha in enumerate(
+                self._img_rgba.getchannel(channel="A").getdata()
+            )
+            if alpha <= self._alpha_threshold
+        )
 
     def _set_parsed_palette(self):
         """Parse the RGB palette color `tuple`s from the palette."""
         palette = self._img_p.getpalette()
         self._img_p_used_palette_idxs = set(
-            idx for pal_idx, idx in enumerate(self._img_p_data)
-            if pal_idx not in self._transparent_pixels)
+            idx
+            for pal_idx, idx in enumerate(self._img_p_data)
+            if pal_idx not in self._transparent_pixels
+        )
         self._img_p_parsedpalette = dict(
-            (idx, tuple(palette[idx * 3:idx * 3 + 3]))
-            for idx in self._img_p_used_palette_idxs)
+            (idx, tuple(palette[idx * 3 : idx * 3 + 3]))
+            for idx in self._img_p_used_palette_idxs
+        )
 
     def _get_similar_color_idx(self):
         """Return a palette index with the closest similar color."""
@@ -45,26 +51,28 @@ class TransparentAnimatedGifConverter(object):
             color_item = self._img_p_parsedpalette[idx]
             if color_item == old_color:
                 return idx
-            distance = sum((
-                abs(old_color[0] - color_item[0]),  # Red
-                abs(old_color[1] - color_item[1]),  # Green
-                abs(old_color[2] - color_item[2])))  # Blue
+            distance = sum(
+                (
+                    abs(old_color[0] - color_item[0]),  # Red
+                    abs(old_color[1] - color_item[1]),  # Green
+                    abs(old_color[2] - color_item[2]),
+                )
+            )  # Blue
             dict_distance[distance].append(idx)
         return dict_distance[sorted(dict_distance)[0]][0]
 
     def _remap_palette_idx_zero(self):
         """Since the first color is used in the palette, remap it."""
         free_slots = self._PALETTE_SLOTSET - self._img_p_used_palette_idxs
-        new_idx = free_slots.pop() if free_slots else \
-            self._get_similar_color_idx()
+        new_idx = free_slots.pop() if free_slots else self._get_similar_color_idx()
         self._img_p_used_palette_idxs.add(new_idx)
         self._palette_replaces["idx_from"].append(0)
         self._palette_replaces["idx_to"].append(new_idx)
         self._img_p_parsedpalette[new_idx] = self._img_p_parsedpalette[0]
-        del(self._img_p_parsedpalette[0])
+        del self._img_p_parsedpalette[0]
 
     def _get_unused_color(self) -> tuple:
-        """ Return a color for the palette that does not collide with any other already in the palette."""
+        """Return a color for the palette that does not collide with any other already in the palette."""
         used_colors = set(self._img_p_parsedpalette.values())
         while True:
             new_color = (randrange(256), randrange(256), randrange(256))
@@ -84,7 +92,8 @@ class TransparentAnimatedGifConverter(object):
         if self._palette_replaces["idx_from"]:
             trans_table = bytearray.maketrans(
                 bytes(self._palette_replaces["idx_from"]),
-                bytes(self._palette_replaces["idx_to"]))
+                bytes(self._palette_replaces["idx_to"]),
+            )
             self._img_p_data = self._img_p_data.translate(trans_table)
         for idx_pixel in self._transparent_pixels:
             self._img_p_data[idx_pixel] = 0
@@ -94,10 +103,13 @@ class TransparentAnimatedGifConverter(object):
         """Modify the palette in the new `Image`."""
         unused_color = self._get_unused_color()
         final_palette = chain.from_iterable(
-            self._img_p_parsedpalette.get(x, unused_color) for x in range(256))
+            self._img_p_parsedpalette.get(x, unused_color) for x in range(256)
+        )
         try:
             self._img_p.putpalette(data=final_palette)
-        except Exception: # for some weird reason this sometimes raises an exception that can just be ignored
+        except (
+            Exception
+        ):  # for some weird reason this sometimes raises an exception that can just be ignored
             pass
 
     def process(self) -> Image:
@@ -114,7 +126,9 @@ class TransparentAnimatedGifConverter(object):
         return self._img_p
 
 
-def _create_animated_gif(images: List[Image], durations: Union[int, List[int]]) -> Tuple[Image, dict]:
+def _create_animated_gif(
+    images: List[Image], durations: Union[int, List[int]]
+) -> Tuple[Image, dict]:
     """If the image is a GIF, create an its thumbnail here."""
     save_kwargs = dict()
     new_images: List[Image] = []
@@ -135,11 +149,14 @@ def _create_animated_gif(images: List[Image], durations: Union[int, List[int]]) 
         append_images=new_images[1:],
         duration=durations,
         disposal=2,  # Other disposals don't work
-        loop=0)
+        loop=0,
+    )
     return output_image, save_kwargs
 
 
-def save_transparent_gif(images: List[Image], durations: Union[int, List[int]], save_file):
+def save_transparent_gif(
+    images: List[Image], durations: Union[int, List[int]], save_file
+):
     """Creates a transparent GIF, adjusting to avoid transparency issues that are present in the PIL library
 
     Note that this does NOT work for partial alpha. The partial alpha gets discarded and replaced by solid colors.

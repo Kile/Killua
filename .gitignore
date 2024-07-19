@@ -1,5 +1,11 @@
-# Configuration
-/config.json
+# Env file
+.env
+
+# SonarQube scan config
+.scannerwork/
+
+# VSCode config
+.vscode/
 
 # Downloaded cards
 /cards.json
@@ -10,6 +16,11 @@
 #python stuff
 **/__pycache__
 
+# Rust build
+**/target
+
 **/env
 
 **/.DS_Store
+
+Rocket.toml

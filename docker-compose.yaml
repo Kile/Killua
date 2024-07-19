@@ -1,0 +1,93 @@
+x-common-labels: &common-labels
+  labels:
+    # Labels to be applied to all services
+    org.opencontainers.image.source: https://github.com/kile/Killua
+    org.opencontainers.image.title: "Killua"
+    org.opencontainers.image.description: "The Killua Discord bot with Rust API and ZMQ Proxy"
+    org.opencontainers.image.version: "1.1.0"
+    org.opencontainers.image.authors: "kile@killua.dev"
+    
+services:
+  proxy:
+    container_name: zmq_proxy
+    image: ghcr.io/kile/zmq-proxy:latest
+    build:
+      context: "./zmq_proxy"
+      target: ${MODE:-prod} # dev/prod
+      args:
+        - "MYUID=${MYUID:-1000}"
+        - "MYGID=${MYGID:-1000}"
+    environment:
+      - ZMQ_CLIENT_ADDRESS=tcp://*:5559
+      - ZMQ_SERVER_ADDRESS=tcp://*:5560
+    restart: unless-stopped
+    <<: *common-labels
+
+  api:
+    image: ghcr.io/kile/killua-api:latest
+    build:
+      context: ./
+      dockerfile: ./api/Dockerfile
+      target: ${MODE:-prod} # dev/prod
+      args:
+        - "MYUID=${MYUID:-1000}"
+        - "MYGID=${MYGID:-1000}"
+    container_name: rust_api
+    ports:
+      - "6060:7650"
+    environment:
+      - ZMQ_ADDRESS=tcp://proxy:5559
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      - proxy
+    <<: *common-labels
+
+  bot:
+    image: ghcr.io/kile/killua-bot:latest
+    build:
+      context: ./
+      dockerfile: ./killua/Dockerfile
+      target: ${MODE:-prod} # dev/prod
+      args:
+        - "MYUID=${MYUID:-1000}"
+        - "MYGID=${MYGID:-1000}"
+    container_name: python_bot
+    restart: unless-stopped
+    environment:
+      - PORT=6060
+      - ZMQ_ADDRESS=tcp://proxy:5560
+    env_file:
+      - .env
+    depends_on:
+      - api
+      - proxy
+    <<: *common-labels
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana:/etc/grafana/provisioning/datasources
+    env_file:
+      - .env
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+
+volumes:
+  prom_data:

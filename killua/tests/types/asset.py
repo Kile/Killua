@@ -1,5 +1,6 @@
 from discord import Asset
 
+
 class Asset:
 
     __class__ = Asset

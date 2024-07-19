@@ -14,12 +14,13 @@ from .user import TestingUser
 from typing import Any, Optional, Callable
 from asyncio import get_event_loop, TimeoutError, sleep
 
+
 class TestingBot(BaseBot):
     """A class simulating a discord.py bot instance"""
 
     def __init__(self, *args, **kwargs) -> None:
         self.fail_timeout = False
-        return super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_channel(self, channel: int):
         """Returns a channel object"""
@@ -33,11 +34,10 @@ class TestingBot(BaseBot):
         return get_event_loop()
 
     @loop.setter
-    def loop(self, _): # This attribute cannot be changed
+    def loop(self, _):  # This attribute cannot be changed
         ...
 
-    def _schedule_event(self, *args, **kwargs):
-        ...
+    def _schedule_event(self, *args, **kwargs): ...
 
     def wait_for(
         self,
@@ -52,7 +52,7 @@ class TestingBot(BaseBot):
         return BaseBot.wait_for(self, event, check=check, timeout=timeout)
 
     async def resolve(self, event: str, /, *args: Any) -> None:
-        await sleep(0.1) # waiting for the command to set up the listener
+        await sleep(0.1)  # waiting for the command to set up the listener
         listeners = self._listeners.get(event)
         if listeners:
             removed = []
@@ -84,9 +84,12 @@ class TestingBot(BaseBot):
 
     async def send_message(self, messageable: Messageable, *args, **kwargs) -> Message:
         """We do not want a tip sent which would ruin the test checks so this is overwritten"""
-        return await messageable.send(content=kwargs.pop("content", None), *args, **kwargs)
+        return await messageable.send(
+            content=kwargs.pop("content", None), *args, **kwargs
+        )
 
     async def setup_hook(self) -> None:
         self.session = ClientSession()
+
 
 BOT = TestingBot(command_prefix="k!", intents=Intents.all())

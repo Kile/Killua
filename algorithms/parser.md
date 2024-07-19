@@ -1,4 +1,4 @@
-A challange presented itself when I wanted to implement the mechanic for actually *using* spell cards.
+A challenge presented itself when I wanted to implement the mechanic for actually *using* spell cards.
 
 I couldn't create 20 commands being named `/use1001`, `/use1002`... instead I had to come up with something better.
 
@@ -22,14 +22,22 @@ As for how arguments would work and be validated? I took inspiration from the ve
 This would eventually enable the command to boil down to:
 ```py
 
-    def _use_check(self, ctx: commands.Context, card: str, args: Optional[Union[discord.Member, int, str]], add_args: Optional[int]) -> None:
+    async def _use_check(
+        self,
+        ctx: commands.Context,
+        card: str,
+        args: Optional[Union[discord.Member, int, str]],
+        add_args: Optional[int],
+    ) -> Card:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card: Card = Card(card)
+            card: Card = await Card.new(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
-        if not card.id in [x[0] for x in User(ctx.author.id).fs_cards] and not card.id in [1036]:
+        if not card.id in [
+            x[0] for x in (await User.new(ctx.author.id)).fs_cards
+        ] and not card.id in [1036]:
             raise CheckFailure("You are not in possesion of this card!")
 
         if card.type != "spell":
@@ -53,87 +61,153 @@ This would eventually enable the command to boil down to:
             if add_args < 1:
                 raise CheckFailure("You can't use an integer less than 1")
 
-    async def _use_core(self, ctx: commands.Context, item: int, *args) -> None:
-        """This passes the execution to the right class """
-        card_class = [c for c in Card.__subclasses__() if c.__name__ == f"Card{item}"][0]
-        
-        l = []
-        for p, (k, v) in enumerate([x for x in card_class.exec.__annotations__.items() if not str(x[0]) == "return"]):
+        return card
+
+    async def _use_core(self, ctx: commands.Context, card: Card, *args) -> None:
+        """This passes the execution to the right class"""
+        card_class: Type[IndividualCard] = next(
+            (c for c in Card.__subclasses__() if c.__name__ == f"Card{card.id}")
+        )
+
+        l: List[Dict[str, Any]] = []
+        for p, (k, v) in enumerate(
+            [
+                x
+                for x in card_class.exec.__annotations__.items()
+                if not str(x[0]) == "return"
+            ]
+        ):
             if len(args) > p and isinstance(args[p], v):
                 l.append({k: args[p]})
             else:
                 l.append(None)
 
         if None in l:
-            return await ctx.send(f"Invalid arguments provided! Usage: `{self.client.command_prefix(self.client, ctx.message)[2]}use {item} " + " ".join([f"[{k}: {v.__name__}]" for k, v in card_class.exec.__annotations__.items() if not str(k) == "return"]) + "`", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(
+                f"Invalid arguments provided! Usage: `{(await self.client.command_prefix(self.client, ctx.message))[2]}use {card.id} "
+                + " ".join(
+                    [
+                        f"[{k}: {v.__name__}]"
+                        for k, v in card_class.exec.__annotations__.items()
+                        if not str(k) == "return"
+                    ]
+                )
+                + "`",
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
         kwargs = {k: v for d in l for k, v in d.items()}
         try:
-            await card_class(ctx, name_or_id=item).exec(**kwargs)
-        except Exception as e:
+            await cast(
+                IndividualCard, await card_class._new(name_or_id=str(card.id), ctx=ctx)
+            ).exec(**kwargs)
+            # It should be able to infert the type but for some reason it is not able to do so
+        except CheckFailure as e:
             await ctx.send(e.message, allowed_mentions=discord.AllowedMentions.none())
 
-    @commands.hybrid_command(extras={"category":Category.CARDS, "id": 21}, usage="use <card_id> <required_arguments>")
-    async def use(self, ctx: commands.Context, item: str, target: str = None, args: int = None):
+    @check()
+    @commands.hybrid_command(
+        extras={"category": Category.CARDS, "id": 21},
+        usage="use <card_id> <required_arguments>",
+    )
+    @discord.app_commands.describe(
+        item="The card or item to use",
+        target="The target of the spell",
+        args="Additional required arguments by the card",
+    )
+    @discord.app_commands.autocomplete(item=use_cards_autocomplete)
+    async def use(
+        self, ctx: commands.Context, item: str, target: str = None, args: int = None
+    ):
         """Use spell cards you own with this command! Check with cardinfo what arguments are required."""
-        
+
         if item.lower() == "booklet":
 
-            def make_embed(page, embed, pages):
+            def make_embed(page, embed: discord.Embed, pages):
                 embed.title = "Introduction booklet"
-                embed.description = pages[page-1]
-                embed.set_image(url="https://cdn.discordapp.com/attachments/759863805567565925/834794115148546058/image0.jpg")
+                embed.description = pages[page - 1]
+                embed.set_image(
+                    url="https://cdn.discordapp.com/attachments/759863805567565925/834794115148546058/image0.jpg"
+                )
                 return embed
 
             return await Paginator(ctx, BOOK_PAGES, func=make_embed).start()
 
         try:
-            self._use_check(ctx, item, target, args)
+            card = await self._use_check(ctx, item, target, args)
         except CheckFailure as e:
             return await ctx.send(e.message)
 
-        args = await self._use_converter(ctx, args)
-        args = [x for x in [target, args] if x]
+        args = [
+            x
+            for x in [
+                await self._use_converter(ctx, target),
+                await self._use_converter(ctx, args),
+            ]
+            if x
+        ]
 
-        await self._use_core(ctx, item, *args)
+        await self._use_core(ctx, card, *args)
 ```
 This would
 1) Check all arguments were provided correctly
 2) Handle all check failures inside of the code of the card
 
-Here is an example of how a card class would be structured:
+As for the actual class, all individual class subclass two classes. 
+### 1) Card
 ```py
 # Base class
+@dataclass
 class Card:
-    def __init__(self, name_or_id: str):
+    async def new(self, name_or_id: str) -> Card:
         ...
 
-    def _is_maxed_check(self, card: int) -> None:
-        c = Card(card)
+    async def _is_maxed_check(self, card: int) -> None:
+        c = await Card.new(card)
         if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
             raise CheckFailure(f"The maximum amount of existing cards with id {card} is reached!")
-            
- # Subclass
- class Card1010(Card):
+```
+This class is the base class for all cards and contains all shared subroutines like checks for maxed cards (the example here). It also contains all information about the card like its name, id, type, etc.
 
-    def __init__(self, name_or_id: str, ctx: commands.Context, **kwargs) -> None:
-        self.ctx = ctx
-        base = super().__new__(self, name_or_id=name_or_id, **kwargs)
-        # Add all properties of base.__dict__ to self.__dict__
-        self.__dict__.update(base.__dict__)
-        
-    def __new__(cls, *args, **kwargs) -> None:
-        return object.__new__(cls)
+### 2) IndividualCard
+```py
+# ABC abstract class IndividualCard
+class IndividualCard(ABC):
+    """A class purely for type purposes to require subclasses to implement the exect method"""
+    ctx: commands.Context
 
-    async def exec(self, card_id:int) -> None:
-        user = User(self.ctx.author.id)
+    @classmethod
+    async def _new(cls, name_or_id: str, ctx: commands.Context) -> Card:
+        base = await Card.new(name_or_id=name_or_id)
+        setattr(base, "ctx", ctx)
+        setattr(base, "exec", partial(cls.exec, self=base))
+        return base
+
+    @abstractmethod
+    async def exec(self, *args, **kwargs) -> None: ...
+```
+Before the async rewrite, this class was much cleaner and merely served the purpose of type hinting that individual card classes had to implement the `exec` method. However, after the async rewrite, `Card.new` always returned an instance of `Card`, not implementing the `exec` method. So I had to come up with a way to dynamically add the `exec` method to the instance of `Card` that was returned by `Card.new`. This was done by using a class method `_new` which would return an instance of `Card` with the `exec` method added to it. This was done by using the `partial` function from the `functools` module to bind the `exec` method of the subclass to the instance of `Card` that was returned by `Card.new`. 
+
+This code is not clean, it doesn't follow the idea of an abstract class and I much preffered the old version. However, it was the only way I could find to make it work.
+
+### The subclass
+```py
+# Subclass
+class Card1010(Card, IndividualCard):
+
+    async def exec(self, card_id: int) -> None:
+        user = await User.new(self.ctx.author.id)
 
         if not user.has_any_card(card_id, False):
-            raise CheckFailure("Seems like you don't own this card You already need to own a (non-fake) copy of the card you want to duplicate")
+            raise CheckFailure(
+                "Seems like you don't own this card You already need to own a (non-fake) copy of the card you want to duplicate"
+            )
 
-        self._is_maxed_check(card_id)
-        user.remove_card(self.id)
-        user.add_card(card_id, clone=True)
+        await self._is_maxed_check(card_id)
+        await user.remove_card(self.id)
+        await user.add_card(card_id, clone=True)
 
-        await self.ctx.send(f"Successfully added another copy of {card_id} to your book!") 
+        await self.ctx.send(
+            f"Successfully added another copy of {card_id} to your book!"
+        )
  ```
- This allowed for everything to be more dynamic and after a while of testing work flawlessly together. It was a lot of work but it definitely payed off.
+The main idea of this system is to make subclasses as easy to add and worry free as possible. Most checks are implemented in the `Card` class and just require one line of code in the subclass. The `exec` method is the only method that is required to be implemented in the subclass and it is the method that is called when the card is used. As a bonus, each subclass is added to `Card.__subclasses__()` so that the `_use_core` method can find the correct class to call the `exec` method on without it being hardcoded.

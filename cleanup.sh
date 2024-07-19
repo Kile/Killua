@@ -1,18 +1,10 @@
-# Kill gunicorn daemon
-pkill -f "gunicorn"
-
-# Clear the content of the api.log file
-> api.log
-
-# Make sure the port defined in constants.py is not in use
-lsof -ti:$(python -c "from killua.static.constants import PORT; print(PORT)") | xargs kill -9
-
-# Pull the latest changes from the repository
-git pull
-
-# Install the latest dependencies
-pip install -r requirements.txt
-
-# Clear the console and print the message
-clear
+# Kill what is running on the port specified docker-compose.yaml services.api.ports: x:y
+port=$(python3 -c "import yaml; print(yaml.safe_load(open('docker-compose.yaml'))['services']['api']['ports'][0].split(':')[0])")
+echo $port
+pid=$(lsof -t -i:$port)
+if [ -n "$pid" ]; then
+  kill $pid
+else
+  echo "No process found running on port $port"
+fi
 echo "Cleanup complete"
