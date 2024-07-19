@@ -3,7 +3,7 @@ FROM rust:1.78 as base
 ARG MYUID=1000
 ARG MYGID=1000
 
-COPY zmq_proxy/ zmq_proxy/
+COPY . .
 
 FROM base AS prod
 
