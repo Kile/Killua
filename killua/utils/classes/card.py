@@ -36,7 +36,7 @@ class PartialCard:
     available: bool
     type: str = "normal"
     range: str = None
-    cls: List[str] = None
+    _cls: List[str] = None
 
     cache: ClassVar[Dict[int, PartialCard]] = {}
     cached_raw: ClassVar[List[Tuple[str, int]]] = []
@@ -84,7 +84,7 @@ class PartialCard:
             available=raw.get("available", True),
             type=raw.get("type", "normal"),
             range=raw.get("range", None),
-            cls=raw.get("class", None),
+            _cls=raw.get("class", None),
         )
 
         cls.cache[cards_id] = card

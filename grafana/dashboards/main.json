@@ -1058,7 +1058,7 @@
                 "size": {
                   "field": "Value (lastNotNull)",
                   "fixed": 5,
-                  "max": 15,
+                  "max": 30,
                   "min": 2
                 },
                 "symbol": {
@@ -1464,7 +1464,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "continuous-purples"
           },
           "custom": {
             "axisBorderShow": false,
@@ -1474,7 +1474,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -1489,7 +1489,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1505,10 +1505,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -1540,8 +1536,8 @@
             "type": "prometheus",
             "uid": "prometheusdatasource"
           },
-          "editorMode": "builder",
-          "expr": "discord_event_on_interaction_total{job=\"$job\"}",
+          "editorMode": "code",
+          "expr": "round(delta(discord_event_on_interaction_total{job=\"$job\"}[1h]))",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -1553,7 +1549,7 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "discord_event_on_command_total{job=\"$job\"}",
+          "expr": "round(delta(discord_event_on_command_total{job=\"$job\"}[1h]))",
           "hide": false,
           "instant": false,
           "legendFormat": "__auto",
@@ -1573,6 +1569,24 @@
               "reducer": "sum"
             },
             "replaceFields": true
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "lower",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "Command usage"
+              }
+            ],
+            "match": "any",
+            "type": "exclude"
           }
         }
       ],
@@ -2676,6 +2690,6 @@
   "timezone": "",
   "title": "Killua statistics",
   "uid": "TGkTuzD4zA",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

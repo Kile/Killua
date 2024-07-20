@@ -694,7 +694,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def cardinfo(self, ctx: commands.Context, card: str):
         """Check card info out about any card you own"""
         try:
-            c = await Card.new(card)
+            c: Card = await Card.new(card)
         except CardNotFound:
             return await ctx.send("Invalid card")
 

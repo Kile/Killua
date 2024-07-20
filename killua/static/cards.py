@@ -222,7 +222,7 @@ class Card(PartialCard):
         ]
         if card.type == "spell":
             fields.append(
-                {"name": "Class", "value": ", ".join(card.cls), "inline": True}
+                {"name": "Class", "value": ", ".join(card._cls), "inline": True}
             )
             fields.append({"name": "Range", "value": card.range, "inline": True})
 
