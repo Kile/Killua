@@ -168,7 +168,7 @@ class Actions(commands.GroupCog, group_name="action"):
             )  # This might eventually be deprecated for copyright reasons
         else:
             image = await self.request_action(endpoint)
-            return image, None
+            return image["link"], None
 
     async def action_embed(
         self,

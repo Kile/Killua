@@ -391,7 +391,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         """Sell any amount of cards you own"""
         if sell_opt:
             sell_opt: SellOptions = getattr(
-                SellOptions, type
+                SellOptions, sell_opt
             )  # I cannot use the enum directly due to a library limitation with enums as annotations in message commands
 
         user = await User.new(ctx.author.id)

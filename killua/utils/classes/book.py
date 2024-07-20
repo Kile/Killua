@@ -261,7 +261,7 @@ class Book:
             ],
         ]
 
-        font = self._getfont(35)
+        font = self._get_font(35)
         draw = ImageDraw.Draw(image)
         for n, i in enumerate(data):
             if i[1] is None:
