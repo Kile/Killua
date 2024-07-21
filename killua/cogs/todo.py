@@ -298,7 +298,7 @@ class TodoSystem(commands.Cog):
         """Lets you create your todo list in an interactive menu"""
 
         user_todo_lists = [
-            x async for x in await DB.todo.find({"owner": ctx.author.id})
+            x async for x in DB.todo.find({"owner": ctx.author.id})
         ]
 
         if len(user_todo_lists) == 5:

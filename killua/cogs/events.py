@@ -708,7 +708,7 @@ class Events(commands.Cog):
     def _set_new_field_name_for_unsaved(
         self,
         field: "discord.embeds._EmbedFieldProxy",
-        votes: Tuple[List[int], List[str]],
+        votes: Dict[int, Tuple[List[int], List[str]]],
         pos: int,
         interaction: discord.Interaction,
         poll: bool,

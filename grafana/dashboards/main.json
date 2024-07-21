@@ -1464,7 +1464,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-purples"
+            "fixedColor": "semi-dark-purple",
+            "mode": "fixed"
           },
           "custom": {
             "axisBorderShow": false,
