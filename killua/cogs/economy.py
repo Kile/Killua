@@ -479,10 +479,10 @@ class Economy(commands.GroupCog, group_name="econ"):
             }
         )
         embed, file = await self.client.make_embed_from_api(
-            embed,
             cast(str, data["image"]).format(
                 self.client.api_url(to_fetch=self.client.is_dev)
             ),
+            embed
         )
         await ctx.send(embed=embed, file=file)
 
@@ -568,10 +568,10 @@ class Economy(commands.GroupCog, group_name="econ"):
             }
         )
         embed, file = await self.client.make_embed_from_api(
-            embed,
             cast(str, data["image"]).format(
                 self.client.api_url(to_fetch=self.client.is_dev)
             ),
+            embed,
         )
         await ctx.send(embed=embed, file=file)
 

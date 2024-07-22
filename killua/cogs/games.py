@@ -1210,7 +1210,16 @@ class Games(commands.GroupCog, group_name="games"):
             await ctx.send(
                 embed=discord.Embed(
                     title=f"{user.display_name}'s Trivia stats",
-                    description=f"__Overall correctness__: {win_rate_overall}%\n\n__Hard__:\nRight answers: {db_user.trivia_stats['hard']['right']}\nWrong answers: {db_user.trivia_stats['hard']['wrong']}\n{win_rate_hard}% correct\n\n__Medium__:\nRight answers: {db_user.trivia_stats['medium']['right']}\nWrong answers: {user.trivia_stats['medium']['wrong']}\n{win_rate_medium}% correct\n\n__Easy__:\nRight answers: {user.trivia_stats['easy']['right']}\nWrong answers: {user.trivia_stats['easy']['wrong']}\n{win_rate_easy}% correct",
+                    description=f"__Overall correctness__: {win_rate_overall}%\n\n__Hard__:\n" + 
+                    f"Right answers: {db_user.trivia_stats['hard']['right']}\n" +
+                    f"Wrong answers: {db_user.trivia_stats['hard']['wrong']}\n" +
+                    f"{win_rate_hard}% correct\n\n__Medium__:\n" +
+                    f"Right answers: {db_user.trivia_stats['medium']['right']}\n" +
+                    f"Wrong answers: {db_user.trivia_stats['medium']['wrong']}\n" +
+                    f"{win_rate_medium}% correct\n\n__Easy__:\n" +
+                    f"Right answers: {db_user.trivia_stats['easy']['right']}\n" +
+                    f"Wrong answers: {db_user.trivia_stats['easy']['wrong']}\n" +
+                    f"{win_rate_easy}% correct",
                     color=0x3E4A78,
                 )
             )
