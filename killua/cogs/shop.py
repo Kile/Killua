@@ -770,8 +770,8 @@ class Shop(commands.Cog):
 
         if int(box) not in user.lootboxes:
             return await ctx.send("You don't own this lootbox!")
-        user.remove_lootbox(int(box))
-        o.add_lootbox(int(box))
+        await user.remove_lootbox(int(box))
+        await o.add_lootbox(int(box))
         await ctx.send(
             f"✉️ gave {other.display_name} the box '{LOOTBOXES[int(box)]['name']}'",
             allowed_mentions=discord.AllowedMentions.none(),

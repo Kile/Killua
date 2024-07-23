@@ -147,7 +147,7 @@ class TodoList:
                 "views": 0,
             }
         )
-        return TodoList(list_id)
+        return await TodoList.new(list_id)
 
     async def delete(self) -> None:
         """Deletes a todo list"""

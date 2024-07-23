@@ -8,7 +8,7 @@ from datetime import datetime
 from discord.ext import commands, tasks
 from PIL import Image
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional, cast
 from matplotlib import pyplot as plt
 from pymongo.errors import ServerSelectionTimeoutError
 
@@ -126,7 +126,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        if not self.save_guilds.is_running():
+        if not self.save_guilds.is_running() and not self.client.is_dev:
             self.save_guilds.start()
         if not self.vote_reminders.is_running():
             self.vote_reminders.start()
@@ -171,10 +171,13 @@ class Events(commands.Cog):
                     if (
                         self._date_helper(data["last_vote"].hour)
                         == self._date_helper(datetime.now().hour)
-                        and data["last_vote"].minute == datetime.now().minute
+                        and cast(datetime, data["last_vote"]).minute
+                        == datetime.now().minute
                         and not (
                             int(int(datetime.now().timestamp()) / 60)
-                            == int(int(data["last_vote"].timestamp()) / 60)
+                            == int(
+                                int(cast(datetime, data["last_vote"]).timestamp()) / 60
+                            )
                         )
                     ):  # If they are the same amounts of minutes away from the unix epoch
 
@@ -221,7 +224,30 @@ class Events(commands.Cog):
     async def save_guilds(self):
         from killua.static.constants import daily_users
 
-        if not self.client.is_dev and self.skipped_first:
+        # Arguably this is a much better way of doing this as otherwise
+        # if the bot restarts this will be ignored for a day.
+        # While that's true, this could lead to daily users being
+        # 0 if it just ran after 24hrs since it is only saved during
+        # runtime. I don't want this so I will keep it as it is.
+        #
+        # Check when the last stats were saved
+        # last = await DB.const.find_one({"_id": "growth"})
+        # if not last:
+        #     return
+        # last = last["growth"][-1]["date"]
+
+        # If it has been more than 24 hours since the last save
+        if self.skipped_first:
+            logging.debug(PrintColors.OKBLUE + "Saving stats:")
+            logging.debug(
+                "Guilds: {} | Users: {} | Registered Users: {} | Daily Users: {}{}".format(
+                    len(self.client.guilds),
+                    len(self.client.users),
+                    await DB.teams.count_documents({}),
+                    len(daily_users.users),
+                    PrintColors.ENDC,
+                )
+            )
             await DB.const.update_one(
                 {"_id": "growth"},
                 {
@@ -238,12 +264,8 @@ class Events(commands.Cog):
             )
             if self.client.run_in_docker:
                 DAILY_ACTIVE_USERS.set(len(daily_users.users))
-            daily_users.users = (
-                []
-            )  # Resetting the daily users list lgtm [py/unused-local-variable]
-        elif (
-            not self.skipped_first
-        ):  # We want to avoid saving data each time the bot restarts, start 24h after one
+            daily_users.users = []  # Resetting the daily users list
+        else:  # We want to avoid saving data each time the bot restarts, start 24h after one
             self.skipped_first = True
 
     @commands.Cog.listener()
@@ -269,7 +291,7 @@ class Events(commands.Cog):
                 {
                     "title": "Welcome to the Killua support server a.k.a. Kile's dev!",
                     "description": "You joined. What now?\n\n**Where to go**\n"
-                    + "┗ <#1019657047568035841> to recieve help or report bugs\n"
+                    + "┗ <#1019657047568035841> to receive help or report bugs\n"
                     + "┗ <#787819439596896288> To get some ping roles\n"
                     + "┗ <#886546434663538728> Good place to check before asking questions\n"
                     + "┗ <#754063177553150002> To see newest announcements\n"
@@ -499,7 +521,7 @@ class Events(commands.Cog):
             ],
             (
                 [v for v in custom_id.split(":")[2].split(",") if v != ""]
-                if not custom_id.split(":")[2].isdigit()
+                if len(custom_id.split(":")) > 2
                 else []
             ),
         )
@@ -543,7 +565,11 @@ class Events(commands.Cog):
         action: str,
         poll: bool,
         opt_votes: str,
-    ) -> Dict[int, Tuple[List[int], List[str]]]:
+    ) -> Optional[Dict[int, Tuple[List[int], List[str]]]]:
+        """
+        If a None is returned, an error was sent and the execution should stop.
+        Else the votes are returned.
+        """
         votes: Dict[int, Tuple[List[int], List[str]]] = {}
         # This took me a bit to figure out when revisiting this
         # code. What is actually being stored here for each option
@@ -583,11 +609,10 @@ class Events(commands.Cog):
                 or re.findall(rf";{pos+1};[^;:]*{encrypted}(.*?)[;:]", old_close)
             ) and pos == option - 1:
                 # Already voted for this option
-                await interaction.response.send_message(
+                return await interaction.response.send_message(
                     f"You already {'voted for' if poll else 'chose'} this option!",
                     ephemeral=True,
                 )
-                return
 
             if interaction.user.id in votes[pos][0]:
                 votes[pos][0].remove(interaction.user.id)
@@ -626,9 +651,7 @@ class Events(commands.Cog):
             # custom ID to update
             votes[option - 1][1].append(encrypted)
             interaction.message.components[0].children[option - 1].custom_id = (
-                "poll"
-                if poll
-                else "wyr"
+                ("poll" if poll else "wyr")
                 + ":"
                 + action
                 + ":"
@@ -658,17 +681,16 @@ class Events(commands.Cog):
                 )
             )
             if poll:
-                await interaction.response.send_message(
+                return await interaction.response.send_message(
                     f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached! Make this a premium server to allow more votes! Please that votes started before becomind a premium server will still not be able to recieve more votes.",
                     ephemeral=True,
                     view=view,
                 )
             else:
-                await interaction.response.send_message(
+                return await interaction.response.send_message(
                     f"The maximum votes on this {'poll' if poll else 'wyr'} has been reached!",
                     ephemeral=True,
                 )
-            return
         return votes
 
     async def _process_vote_with_db(
@@ -713,7 +735,7 @@ class Events(commands.Cog):
         interaction: discord.Interaction,
         poll: bool,
         option: int,
-    ):
+    ) -> Tuple[str, str]:
         close_votes = re.findall(
             rf";{pos+1};(.*?)[;:]",
             interaction.message.components[0].children[-1].custom_id,
@@ -815,6 +837,9 @@ class Events(commands.Cog):
         else:
             votes = await self._process_vote_with_db(interaction, guild, option, poll)
 
+        if votes is None:
+            return
+
         embed = interaction.message.embeds[0]
 
         new_embed = discord.Embed(
@@ -859,7 +884,7 @@ class Events(commands.Cog):
         """
         if (
             interaction.data["custom_id"].split(":")[2].isdigit()
-        ):  # Backwards compatability
+        ):  # Backwards compatibility
             split = interaction.data["custom_id"].split(":")
             _p = split[0]
             action = split[1]
@@ -899,12 +924,15 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
-        if interaction.type == discord.InteractionType.component:
-            if interaction.data["custom_id"] and (
+        if (
+            interaction.type == discord.InteractionType.component
+            and interaction.data["custom_id"]
+            and (
                 interaction.data["custom_id"].startswith("poll:")
                 or interaction.data["custom_id"].startswith("wyr:")
-            ):
-                await self._process_votable(interaction)
+            )
+        ):
+            await self._process_votable(interaction)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error):
