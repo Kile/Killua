@@ -336,7 +336,7 @@ class TodoSystem(commands.Cog):
             else:
                 return await ctx.send("This custom id is already taken", ephemeral=True)
 
-        l = TodoList.create(
+        l = await TodoList.create(
             owner=ctx.author.id,
             title=name,
             status=status,
