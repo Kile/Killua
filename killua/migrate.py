@@ -10,14 +10,14 @@ from discord.ext.commands import AutoShardedBot, HybridGroup
 from killua.static.constants import DB
 
 
-def migrate_requiring_bot(bot: Type[AutoShardedBot]):
+async def migrate_requiring_bot(bot: Type[AutoShardedBot]):
     """
     Migrates the database from one version to another, requiring a bot instance. Automatically called when the bot starts if `--migrate` was run before.
     """
     logging.info("Migrating database...")
     const: Collection = DB._DB["const"]
 
-    usage: dict = const.find_one({"_id": "usage"})["command_usage"]
+    usage: dict = (await const.find_one({"_id": "usage"}))["command_usage"]
 
     logging.info("Attemping to migrate edge cases...")
     usage["games gstats"] = usage.get("games stats", 0)

@@ -96,7 +96,7 @@ class BaseBot(commands.AutoShardedBot):
             entitlement async for entitlement in self.entitlements(limit=None)
         ]
         if (await DB.const.find_one({"_id": "migrate"}))["value"]:
-            migrate_requiring_bot(self)
+            await migrate_requiring_bot(self)
             await DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
 
     async def _turn_top_level_user_installed(self, command: commands.HybridCommand):
