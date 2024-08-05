@@ -4,8 +4,14 @@ from datetime import datetime, timedelta
 from typing import Any, ClassVar, Dict, List, Optional, Union, cast, Literal, Tuple
 from dataclasses import dataclass
 
-from killua.static.constants import DB, FREE_SLOTS, DEF_SPELLS, PREMIUM_ALIASES, PATREON_TIERS
-from killua.utils.classes.card import PartialCard
+from killua.static.constants import (
+    DB,
+    FREE_SLOTS,
+    DEF_SPELLS,
+    PREMIUM_ALIASES,
+    PATREON_TIERS,
+)
+from killua.utils.classes.card import Card
 from killua.utils.classes.exceptions import NoMatches, NotInPossession, CardLimitReached
 
 @dataclass
@@ -277,7 +283,12 @@ class User:
             site in self.voting_streak
             and self.voting_streak[site]["last_vote"] is not None
         ):
-            if cast(timedelta, datetime.now() - self.voting_streak[site]["last_vote"]).days > 1:
+            if (
+                cast(
+                    timedelta, datetime.now() - self.voting_streak[site]["last_vote"]
+                ).days
+                > 1
+            ):
                 self.voting_streak[site]["streak"] = 1
 
         self.voting_streak[site]["last_vote"] = datetime.now()
@@ -437,7 +448,7 @@ class User:
             ):
 
                 if not data["fake"]:
-                    await (await PartialCard.new(id)).remove_owner(self.id)
+                    await (await Card.new(id)).remove_owner(self.id)
 
                 del cards[
                     counter
@@ -480,7 +491,9 @@ class User:
     ) -> List[int, dict]:
         """Removes a card from a user"""
         if self.has_any_card(card_id) is False:
-            raise NotInPossession("This card is not in possesion of the specified user!")
+            raise NotInPossession(
+                "This card is not in possesion of the specified user!"
+            )
 
         if restricted_slot:
             return await self._remove_logic("rs", card_id, remove_fake, clone)
@@ -523,7 +536,7 @@ class User:
 
     async def _add_card_owner(self, card: int, fake: bool) -> None:
         if not fake:
-            await (await PartialCard.new(card)).add_owner(self.id)
+            await (await Card.new(card)).add_owner(self.id)
 
     async def add_card(self, card_id: int, fake: bool = False, clone: bool = False):
         """Adds a card to the the user"""
@@ -568,7 +581,7 @@ class User:
 
         for item in args:
             if not item[1]["fake"]:
-                await (await PartialCard.new(item[0])).add_owner(self.id)
+                await (await Card.new(item[0])).add_owner(self.id)
             if item[0] < 100:
                 if not self.has_rs_card(item[0]):
                     if not item[0] in [x[0] for x in rs_cards]:
@@ -665,7 +678,7 @@ class User:
     async def _remove(self, cards: str) -> None:
         for card in [x[0] for x in getattr(self, cards)]:
             try:
-                await (await PartialCard.new(card)).remove_owner(self.id)
+                await (await Card.new(card)).remove_owner(self.id)
             except Exception:
                 pass
 

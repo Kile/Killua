@@ -15,7 +15,7 @@ from .interaction import ArgumentInteraction, ArgumentResponseInteraction
 # from .db_objects import TestingGuild as Guild
 # from .db_objects import TestingTodo as Todo
 # from .db_objects import TestingTodoList as TodoList
-# from .db_objects import TestingPartialCard as PartialCard
+# from .db_objects import TestingCard as Card
 from .testing_results import TestResult, Result, ResultData
 from .utils import random_date, get_random_discord_id, random_name
 from typing import TYPE_CHECKING
@@ -40,7 +40,7 @@ __all__ = [
     "ArgumentResponseInteraction",
     # "Todo",
     # "TodoList",
-    # "PartialCard",
+    # "Card",
     "TestResult",
     "Result",
     "ResultData",

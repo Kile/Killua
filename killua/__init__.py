@@ -23,8 +23,9 @@ async def main():
     # Set up logger from command line arguments
     logging.basicConfig(
         level=getattr(logging, args.log.upper()),
+        
         datefmt="%I:%M:%S",
-        format="[%(asctime)s] %(levelname)s: %(message)s",
+        format="[%(asctime)s:%(msecs)03d] %(levelname)s: %(message)s",
         handlers=[PrometheusLoggingHandler()],
     )
 

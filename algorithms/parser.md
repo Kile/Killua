@@ -152,6 +152,8 @@ This would
 1) Check all arguments were provided correctly
 2) Handle all check failures inside of the code of the card
 
+## THIS SYSTEM IS OUTDATED. I improved it but too lazy to update the classes below rn. 
+
 As for the actual class, all individual class subclass two classes. 
 ### 1) Card
 ```py

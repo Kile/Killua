@@ -10,7 +10,7 @@ from killua.static.enums import Booster
 from killua.static.constants import BOOSTERS, LOOTBOXES, PRICES
 from killua.utils.classes.user import User
 from killua.utils.interactions import View
-from killua.utils.classes.card import PartialCard
+from killua.utils.classes.card import Card
 
 
 class _BoosterSelect(discord.ui.Select):
@@ -133,7 +133,7 @@ class _LootBoxButton(discord.ui.Button):
     def __init__(
         self,
         index: int,
-        rewards: List[Union[PartialCard, Booster, int, None]] = None,
+        rewards: List[Union[Card, Booster, int, None]] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -146,12 +146,12 @@ class _LootBoxButton(discord.ui.Button):
         self.bomb = "<:bomb:1091111339226824776>"
 
     @property
-    def rewards(self) -> List[Union[PartialCard, Booster, int, None]]:
+    def rewards(self) -> List[Union[Card, Booster, int, None]]:
         """Returns the rewards"""
         return self._rewards or self.view.rewards
 
     @property
-    def reward(self) -> Union[PartialCard, Booster, int, None]:
+    def reward(self) -> Union[Card, Booster, int, None]:
         """Returns the reward of this button"""
         if self.index == 24:
             return None
@@ -172,7 +172,7 @@ class _LootBoxButton(discord.ui.Button):
                 c.label = (
                     (
                         ""
-                        if isinstance(self.reward, PartialCard)
+                        if isinstance(self.reward, Card)
                         else (
                             "" if isinstance(self.reward, Booster) else str(self.reward)
                         )
@@ -188,7 +188,7 @@ class _LootBoxButton(discord.ui.Button):
                 c.emoji = (
                     (
                         self.reward.emoji
-                        if isinstance(self.reward, PartialCard)
+                        if isinstance(self.reward, Card)
                         else (
                             BOOSTERS[int(self.reward.value)]["emoji"]
                             if isinstance(self.reward, Booster)
@@ -206,7 +206,7 @@ class _LootBoxButton(discord.ui.Button):
                     (
                         (
                             ""
-                            if isinstance(c.reward, PartialCard)
+                            if isinstance(c.reward, Card)
                             else (
                                 "" if isinstance(c.reward, Booster) else str(c.reward)
                             )
@@ -221,7 +221,7 @@ class _LootBoxButton(discord.ui.Button):
                     (
                         (
                             c.reward.emoji
-                            if isinstance(c.reward, PartialCard)
+                            if isinstance(c.reward, Card)
                             else (
                                 BOOSTERS[int(c.reward.value)]["emoji"]
                                 if isinstance(c.reward, Booster)
@@ -266,9 +266,7 @@ class _LootBoxButton(discord.ui.Button):
             (
                 "cards " + ", ".join(cards) + (" and " if jenny > 0 else "")
                 if len(
-                    cards := [
-                        c.emoji for c in self.view.claimed if isinstance(c, PartialCard)
-                    ]
+                    cards := [c.emoji for c in self.view.claimed if isinstance(c, Card)]
                 )
                 > 0
                 else ""
@@ -293,9 +291,9 @@ class _LootBoxButton(discord.ui.Button):
         if booster == 1:
             # Treasure map. Find most valuable reward and highlight it by looking in self.rewards
             # and self.view.claimed
-            def _monetary_value(x: Union[PartialCard, Booster, int, None]) -> int:
+            def _monetary_value(x: Union[Card, Booster, int, None]) -> int:
                 """Returns the monetary value of a reward"""
-                if isinstance(x, PartialCard):
+                if isinstance(x, Card):
                     return PRICES[x.rank]
                 elif isinstance(x, Booster):
                     return (20 - BOOSTERS[x.value]["probability"]) * 100
@@ -322,7 +320,11 @@ class _LootBoxButton(discord.ui.Button):
         elif booster == 2:
             # 2x booster. Double all jenny rewards of hidden fields
             self.view.rewards = [
-                (r * 2 if isinstance(r, int) and not self.view.children[p].disabled else r)
+                (
+                    r * 2
+                    if isinstance(r, int) and not self.view.children[p].disabled
+                    else r
+                )
                 for p, r in enumerate(self.rewards)
             ]
 
@@ -424,9 +426,7 @@ class _LootBoxButton(discord.ui.Button):
 class LootBox:
     """A class which contains infos about a lootbox and can open one"""
 
-    def __init__(
-        self, ctx: commands.Context, rewards: List[Union[None, PartialCard, int]]
-    ):
+    def __init__(self, ctx: commands.Context, rewards: List[Union[None, Card, int]]):
         self.ctx = ctx
         self.rewards = rewards
 
@@ -475,7 +475,7 @@ class LootBox:
         )[0]
 
     @classmethod
-    async def generate_rewards(cls, box: int) -> List[Union[PartialCard, int]]:
+    async def generate_rewards(cls, box: int) -> List[Union[Card, int]]:
         """Generates a list of rewards that can be used to pass to this class"""
         data = LOOTBOXES[box]
         rew = []
@@ -487,9 +487,7 @@ class LootBox:
             ]:  # if a card is guaranteed it is added here, it will count as one of the total_cards though
                 for card, amount in data["rewards"]["guaranteed"].items():
                     if [r.id for r in rew].count(card) < amount:
-                        rew.append(
-                            PartialCard.new((await DB.items.find_one(card))["_id"])
-                        )
+                        rew.append(Card.new((await DB.items.find_one(card))["_id"]))
                         skip = True
                         break
 
@@ -506,7 +504,7 @@ class LootBox:
                 )
                 if x["_id"] != 0
             ]
-            rew.append(await PartialCard.new(choice(r)))
+            rew.append(await Card.new(choice(r)))
 
         for _ in range(boosters := randint(*data["boosters_total"])):
             if isinstance(data["rewards"]["boosters"], int):
@@ -544,7 +542,7 @@ class LootBox:
 
         user = await User.new(self.ctx.author.id)
         for r in view.claimed:
-            if isinstance(r, PartialCard):
+            if isinstance(r, Card):
                 await user.add_card(r.id)
             elif isinstance(r, Booster):
                 await user.add_booster(r.value)

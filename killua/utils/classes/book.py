@@ -9,7 +9,7 @@ from typing import Tuple, Union
 
 from killua.bot import BaseBot
 from killua.utils.classes.user import User
-from killua.utils.classes.card import PartialCard
+from killua.utils.classes.card import Card
 
 
 # pillow logic contributed by DerUSBstick (Thank you!)
@@ -299,7 +299,7 @@ class Book:
                     rs_cards.append(
                         [
                             i,
-                            (await PartialCard.new(i)).formatted_image_url(
+                            (await Card.new(i)).formatted_image_url(
                                 client, to_fetch=True
                             ),
                         ]
@@ -314,9 +314,9 @@ class Book:
                     fs_cards.append(
                         [
                             person.fs_cards[i][0],
-                            (
-                                await PartialCard.new(person.fs_cards[i][0])
-                            ).formatted_image_url(client, to_fetch=True),
+                            (await Card.new(person.fs_cards[i][0])).formatted_image_url(
+                                client, to_fetch=True
+                            ),
                         ]
                     )
                 except IndexError:

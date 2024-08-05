@@ -23,7 +23,8 @@ from killua.utils.paginator import Paginator
 from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches
 from killua.static.enums import Category, SellOptions
 from killua.utils.interactions import ConfirmButton
-from killua.static.cards import Card, CardNotFound, IndividualCard
+from killua.utils.classes import Card, CardNotFound, Card
+from killua.static.cards import IndividualCard
 from killua.static.constants import (
     ALLOWED_AMOUNT_MULTIPLE,
     FREE_SLOTS,
@@ -706,7 +707,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         embed, file = await c._get_analysis_embed(c.id, self.client)
         if c.type == "spell" and c.id not in [*DEF_SPELLS, *VIEW_DEF_SPELLS]:
-            card_class: IndividualCard = next(
+            card_class: Card = next(
                 (_c for _c in Card.__subclasses__() if _c.__name__ == f"Card{c.id}"),
                 None,
             )
@@ -802,7 +803,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     ) -> Card:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card: Card = await Card.new(card)
+            card: Union[IndividualCard, Card] = await Card.new(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
@@ -834,7 +835,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     async def _use_core(self, ctx: commands.Context, card: Card, *args) -> None:
         """This passes the execution to the right class"""
-        card_class: Type[IndividualCard] = next(
+        card_class: Union[Card, IndividualCard] = next(
             (c for c in Card.__subclasses__() if c.__name__ == f"Card{card.id}")
         )
 
@@ -867,7 +868,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         kwargs = {k: v for d in l for k, v in d.items()}
         try:
             await cast(
-                IndividualCard, await card_class._new(name_or_id=str(card.id), ctx=ctx)
+                IndividualCard, await card_class.new(name_or_id=str(card.id), ctx=ctx)
             ).exec(**kwargs)
             # It should be able to infert the type but for some reason it is not able to do so
         except CheckFailure as e:
