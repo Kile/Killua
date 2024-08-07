@@ -132,10 +132,6 @@ class Card:
             ctx=ctx,
         )
 
-        print("Instance: ", cls, type(cls))
-        print(getattr(card, "exec", None))
-        print("Passed type: ", type(cls), cls)
-
         cls.cache[cards_id] = card
         return card
 
