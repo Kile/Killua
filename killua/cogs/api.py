@@ -417,11 +417,11 @@ class IPCRoutes(commands.Cog):
             "created_at": res.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
-    async def update_guild_cache(self, data) -> None:
-        """Makes sure the local cache is up to date with the db"""
-        guild = await Guild.new(data["id"])
-        guild.prefix = data["prefix"]
-        guild.commands = {v for _, v in data.commands.items()}
+    # async def update_guild_cache(self, data) -> None:
+    #     """Makes sure the local cache is up to date with the db"""
+    #     guild = await Guild.new(data["id"])
+    #     guild.prefix = data["prefix"]
+    #     guild.commands = {v for _, v in data.commands.items()}
 
     async def vote(self, data) -> None:
         """Registers a vote from either topgg or dbl"""

@@ -13,6 +13,7 @@ class Guild:
 
     id: int
     prefix: str
+    approximate_member_count: int = 0
     badges: List[str] = field(default_factory=list)
     commands: dict = field(
         default_factory=dict
@@ -26,16 +27,32 @@ class Guild:
         return cls(
             **{k: v for k, v in raw.items() if k in signature(cls).parameters}
         )
+    
+    @classmethod
+    async def update_member_count(cls, raw: dict, member_count: int) -> int:
+        """If saved member count is inaccurate by > 5%, update it"""
+        saved = raw.get("approximate_member_count", 0)
+        if member_count > saved * 1.05 or member_count < saved * 0.95:
+            await DB.guilds.update_one(
+                {"id": raw["id"]}, {"$set": {"approximate_member_count": member_count}}
+            )
+            return member_count
+        return saved
 
     @classmethod
-    async def new(cls, guild_id: int) -> Guild:
-        raw = await DB.guilds.find_one({"id": guild_id})
+    async def new(cls, guild_id: int, member_count: int = None) -> Guild:
+        raw: dict = await DB.guilds.find_one({"id": guild_id})
         if not raw:
-            await cls.add_default(guild_id)
+            await cls.add_default(guild_id, member_count)
             raw = await DB.guilds.find_one({"id": guild_id})
         del raw["_id"]
+        if member_count:
+            raw["approximate_member_count"] = await cls.update_member_count(raw, member_count)
+        else:
+            raw["approximate_member_count"] = raw.get("approximate_member_count", 0)
         guild = cls.from_dict(raw)
         cls.cache[guild_id] = guild
+
         return guild
 
     @property
@@ -43,10 +60,10 @@ class Guild:
         return ("partner" in self.badges) or ("premium" in self.badges)
 
     @classmethod
-    async def add_default(cls, guild_id: int) -> None:
+    async def add_default(cls, guild_id: int, member_count: int) -> None:
         """Adds a guild to the database"""
         await DB.guilds.insert_one(
-            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!"}
+            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count}
         )
 
     @classmethod

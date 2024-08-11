@@ -54,7 +54,7 @@ def premium_guild_only():
 
     async def predicate(ctx: commands.Context) -> bool:
 
-        if not (await Guild.new(ctx.guild.id)).is_premium:
+        if not (await Guild.new(ctx.guild.id, ctx.guild.member_count)).is_premium:
             view = discord.ui.View()
             view.add_item(
                 discord.ui.Button(
@@ -151,7 +151,7 @@ def check(time: int = 0):
         diff = cd.seconds
 
         user = await User.new(ctx.author.id)
-        guild = (await Guild.new(ctx.guild.id)) if ctx.guild else None
+        guild = (await Guild.new(ctx.guild.id, ctx.guild.member_count)) if ctx.guild else None
         view = discord.ui.View()
         view.add_item(
             discord.ui.Button(
@@ -189,7 +189,7 @@ def check(time: int = 0):
         if not ctx.guild:
             return True
 
-        guild = await Guild.new(ctx.guild.id)
+        guild = await Guild.new(ctx.guild.id, ctx.guild.member_count)
 
         if not ctx.command.name in guild.commands:
             return True
@@ -260,6 +260,7 @@ def check(time: int = 0):
 
     async def predicate(ctx: commands.Context) -> bool:
         if ctx.guild and not ctx.guild.chunked:
+            await ctx.defer() # Chunking can take a while
             await ctx.guild.chunk()
 
         if await blcheck(ctx.author.id):

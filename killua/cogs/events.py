@@ -4,7 +4,8 @@ import discord
 
 import logging
 import traceback
-from datetime import datetime
+from asyncio import sleep, run_coroutine_threadsafe
+from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from PIL import Image
 from enum import Enum
@@ -272,7 +273,7 @@ class Events(commands.Cog):
     async def on_guild_join(self, guild: discord.Guild):
         # Changing the status
         await self.client.update_presence()
-        await Guild.add_default(guild.id)
+        await Guild.add_default(guild.id, guild.member_count)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):

@@ -21,7 +21,7 @@ from killua.utils.checks import blcheck, check
 from killua.utils.interactions import Select
 
 DISCORD_LIMITATION = (
-    "\nT o play again, you must re-use the command. This is a Discord limitation :c"
+    "\nTo play again, you must re-use the command. This is a Discord limitation :c"
 )
 
 leaderboard_options = [
@@ -45,7 +45,7 @@ class CompetitiveGame:
         self.played_again += 1
         if not ctx.interaction:
             return False
-        if ctx.interaction.is_guild_integration():
+        if not ctx.interaction.is_user_integration():
             return False
         if self.played_again < _max:
             return False

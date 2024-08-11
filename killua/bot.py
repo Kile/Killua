@@ -40,7 +40,7 @@ async def get_prefix(bot: "BaseBot", message: discord.Message):
     try:
         from .utils.classes import Guild
 
-        g = await Guild.new(message.guild.id)
+        g = await Guild.new(message.guild.id, message.guild.member_count)
         if g is None:
             return commands.when_mentioned_or("k!")(bot, message)
         return commands.when_mentioned_or(g.prefix)(bot, message)
