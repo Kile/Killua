@@ -182,7 +182,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
                 )
         else:
             data = target
-        if extra_time > 0 and ctx.interaction:
+        if extra_time > 0 and ctx.interaction and not ctx.interaction.response.is_done():
             await ctx.defer()
         else:
             await ctx.channel.typing()

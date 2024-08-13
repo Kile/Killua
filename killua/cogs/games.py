@@ -1045,8 +1045,8 @@ class Games(commands.GroupCog, group_name="games"):
                 "That is not a valid topic. Please choose from the following: "
                 + ", ".join(TRIVIA_TOPICS)
             )
-
-        await ctx.defer()
+        if ctx.interaction and not ctx.interaction.response.is_done():
+            await ctx.defer()
         topic = (
             next((v for k, v in TRIVIA_TOPICS.items() if topic.lower() == k.lower()))
             if topic

@@ -257,7 +257,6 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         guild_avatar: Literal["yes", "no"] = "no",
     ):
         """Shows the avatar of a user"""
-        await ctx.defer() 
         # Yeah... idk I get some log errors from this taking a while so
         user = user or ctx.author
         avatar = user.avatar if guild_avatar == "no" else user.display_avatar

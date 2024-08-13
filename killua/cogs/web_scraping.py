@@ -252,7 +252,8 @@ class WebScraping(commands.GroupCog, group_name="web"):
     @discord.app_commands.describe(query="What image to look for")
     async def img(self, ctx: commands.Context, *, query: str):
         """Search for any image you want"""
-        await ctx.defer() # I don't want this to fail, even if it takes < 3 secs most of the time
+        if ctx.interaction and not ctx.interaction.response.is_done():
+            await ctx.defer() # I don't want this to fail, even if it takes < 3 secs most of the time
 
         links = await self.get_bing_images(query)
 
