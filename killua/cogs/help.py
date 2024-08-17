@@ -83,15 +83,14 @@ class HelpCommand(commands.Cog):
 
         premium_guild, premium_user, cooldown = False, False, False
 
-        if [c for c in checks if hasattr(c, "premium_guild_only")]:
+        if any(c for c in checks if hasattr(c, "premium_guild_only")):
             premium_guild = True
 
-        if [c for c in checks if hasattr(c, "premium_user_only")]:
+        if any(c for c in checks if hasattr(c, "premium_user_only")):
             premium_user = True
 
-        if res := [c for c in checks if hasattr(c, "cooldown")]:
-            check = res[0]
-            cooldown = getattr(check, "cooldown", False)
+        if res := next((c for c in checks if hasattr(c, "cooldown")), None):
+            cooldown = getattr(res, "cooldown", False)
 
         if premium_guild or premium_user:
             embed.description += f"\n{'<:premium_guild_badge:883473807292121149>' if premium_guild else '<:tier_one_badge:879390548857880597>'} `[Premium {'servers' if premium_guild else 'users'} only]`"
@@ -303,7 +302,7 @@ class HelpCommand(commands.Cog):
             )
 
             await view.wait()
-            if view.timed_out:
+            if view.timed_out or view.value is None:
                 view.children[0].disabled = (
                     True  # Instead of looping through all the children, we just disable the select menu since we want the links to remain clickable
                 )

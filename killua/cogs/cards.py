@@ -532,7 +532,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             ):  # I don't think timedelta has an hours or minutes property :c
                 return await ctx.send("You must be at least hunting for twelve hours!")
 
-            if not ctx.interaction.response.is_done():
+            if ctx.interaction and not ctx.interaction.response.is_done():
                 await ctx.defer()  # The following part may take longer than 3 secons
 
             minutes = int(difference.seconds / 60 + difference.days * 24 * 60)

@@ -162,7 +162,7 @@ class Buttons(View):
     async def delete(self, interaction: discord.Interaction, _: discord.ui.Button):
         try:
             await interaction.message.delete()
-        except discord.Forbidden:
+        except discord.HTTPException:
             await self.disable(interaction.message)
         self.ignore = True
         self.stop()

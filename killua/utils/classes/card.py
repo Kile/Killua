@@ -21,7 +21,7 @@ from killua.static.constants import (
 )
 from killua.bot import BaseBot
 
-if TYPE_CHECKING:
+if TYPE_CHECKING: # Circular import my beloved
     from killua.utils.classes import User
 
 from killua.utils.interactions import Select, View, Button
@@ -37,21 +37,6 @@ class SuccessfulDefense(CheckFailure):
 
 class CardNotFound(Exception):
     pass
-
-# TODO this below is not true I am too lazy to rephrase need to do later.
-#
-# Unfortunately, for the Card class that provides useful methods for spell cards
-# needs to import the User class which in turn needs to import the Card class.
-# The actual methods of that spell card base class are not needed in the User class,
-# so I created a partial class that only contains the necessary methods and properties
-# to prevent a circular import. This is only used in this module.
-#
-# Circular import:
-#             ⏤⏤⏤⏤⏤⏤
-#           /             ↘︎
-#       User                Card
-#           ↖︎             /
-#             ⏤⏤⏤⏤⏤⏤
 
 
 @dataclass

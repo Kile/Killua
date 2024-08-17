@@ -152,7 +152,6 @@ This would
 1) Check all arguments were provided correctly
 2) Handle all check failures inside of the code of the card
 
-## THIS SYSTEM IS OUTDATED. I improved it but too lazy to update the classes below rn. 
 
 As for the actual class, all individual class subclass two classes. 
 ### 1) Card
@@ -177,19 +176,10 @@ class IndividualCard(ABC):
     """A class purely for type purposes to require subclasses to implement the exect method"""
     ctx: commands.Context
 
-    @classmethod
-    async def _new(cls, name_or_id: str, ctx: commands.Context) -> Card:
-        base = await Card.new(name_or_id=name_or_id)
-        setattr(base, "ctx", ctx)
-        setattr(base, "exec", partial(cls.exec, self=base))
-        return base
-
     @abstractmethod
     async def exec(self, *args, **kwargs) -> None: ...
 ```
-Before the async rewrite, this class was much cleaner and merely served the purpose of type hinting that individual card classes had to implement the `exec` method. However, after the async rewrite, `Card.new` always returned an instance of `Card`, not implementing the `exec` method. So I had to come up with a way to dynamically add the `exec` method to the instance of `Card` that was returned by `Card.new`. This was done by using a class method `_new` which would return an instance of `Card` with the `exec` method added to it. This was done by using the `partial` function from the `functools` module to bind the `exec` method of the subclass to the instance of `Card` that was returned by `Card.new`. 
-
-This code is not clean, it doesn't follow the idea of an abstract class and I much preffered the old version. However, it was the only way I could find to make it work.
+This class merely serves the purpose of type hinting that individual card classes had to implement the `exec` method.
 
 ### The subclass
 ```py
