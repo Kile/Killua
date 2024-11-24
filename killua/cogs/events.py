@@ -70,6 +70,16 @@ class Events(commands.Cog):
             return logging.error(
                 f"{PrintColors.WARNING}No cards in the database, could not load cache{PrintColors.ENDC}"
             )
+        
+        ids = [card["_id"] for card in cards]
+        card_endpoints = [f"cards/{x}.png" for x in ids]
+        response = await self.client.session.post(
+            f"{self.client.api_url(to_fetch=True)}/allow-image", 
+            json={"endpoints": card_endpoints}, 
+            headers={"Authorization": self.client.secret_api_key}
+        )
+        token = (await response.json())["token"]
+        logging.info(f"{PrintColors.OKGREEN}Created token to load cards cache{PrintColors.ENDC}")
 
         logging.info(f"{PrintColors.WARNING}Loading cards cache....{PrintColors.ENDC}")
         percentages = [25, 50, 75]
@@ -79,7 +89,7 @@ class Events(commands.Cog):
                     continue  # in case the event fires multiple times this avoids using unnecessary cpu power
 
                 async with self.client.session.get(
-                    self.client.api_url(to_fetch=True) + item["image"]
+                    self.client.api_url(to_fetch=True) + item["image"] + f"?token={token}"
                 ) as res:
                     image_bytes = await res.read()
                     image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")

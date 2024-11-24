@@ -235,7 +235,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
                 "title": f"8ball has spoken 🎱",
                 "description": f"You asked:\n```\n{question}\n```\nMy answer is:\n```\n{choice(ANSWERS)}```",
                 "footer": {
-                    "icon_url": str(ctx.author.avatar.url),
+                    "icon_url": str(ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url),
                     "text": f"Asked by {ctx.author}",
                 },
                 "color": 0x3E4A78,
@@ -257,7 +257,6 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         guild_avatar: Literal["yes", "no"] = "no",
     ):
         """Shows the avatar of a user"""
-        # Yeah... idk I get some log errors from this taking a while so
         user = user or ctx.author
         avatar = user.avatar if guild_avatar == "no" else user.display_avatar
 

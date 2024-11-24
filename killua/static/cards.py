@@ -56,6 +56,8 @@ class Card1001(Card, IndividualCard):
             return await Book(
                 cast(BaseBot, self.ctx.bot).session,
                 cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
+                cast(BaseBot, self.ctx.bot).secret_api_key,
+                cast(BaseBot, self.ctx.bot).is_dev
             ).create(member, page, self.ctx.bot, True)
 
         await Paginator(
@@ -90,6 +92,8 @@ class Card1002(Card, IndividualCard):
             return await Book(
                 cast(BaseBot, self.ctx.bot).session,
                 cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
+                cast(BaseBot, self.ctx.bot).secret_api_key,
+                cast(BaseBot, self.ctx.bot).is_dev
             ).create(member, page, self.ctx.bot)
 
         await Paginator(self.ctx, max_pages=6, func=make_embed, has_file=True).start()
@@ -207,6 +211,8 @@ class Card1015(Card, IndividualCard):
             return await Book(
                 cast(BaseBot, self.ctx.bot).session,
                 cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
+                cast(BaseBot, self.ctx.bot).secret_api_key,
+                cast(BaseBot, self.ctx.bot).is_dev
             ).create(member, page, self.ctx.bot)
 
         return await Paginator(

@@ -458,7 +458,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
 
     @check(20)  # long check because this is exhausting for the poor computer
     @commands.hybrid_command(
-        alises=["s"],
+        aliases=["s"],
         extras={"category": Category.FUN, "id": 59},
         usage="spin <user/url>",
     )

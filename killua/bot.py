@@ -431,7 +431,8 @@ class BaseBot(commands.AutoShardedBot):
     async def make_embed_from_api(
             self, 
             image_url: str, 
-            embed: discord.Embed
+            embed: discord.Embed,
+            token: str = None
         ) -> Tuple[discord.Embed, Optional[discord.File]]:
         """
         Makes an embed from a Killua API image url.
@@ -443,9 +444,22 @@ class BaseBot(commands.AutoShardedBot):
             KilluaAPIException: If the Killua API returns an error
         """
         file = None
+        if token is None:
+            base_url = self.api_url(to_fetch=True)
+            image_path = image_url.split(base_url)[1].split("image/")[1]
+            response = await self.session.post(
+                f"{base_url}/allow-image", 
+                json={"endpoints": [image_path]}, 
+                headers={"Authorization": self.secret_api_key}
+            )
+            if response.status != 200:
+                raise KilluaAPIException(await response.text())
+            
+            token = (await response.json())["token"]
+
         if self.is_dev:
             # Upload the image as attachment instead
-            data = await self.session.get(image_url)
+            data = await self.session.get(image_url + f"?token={token}")
             if data.status != 200:
                 raise KilluaAPIException(await data.text())
             
@@ -453,7 +467,7 @@ class BaseBot(commands.AutoShardedBot):
             embed.set_image(url=f"attachment://image.{extension}")
             file = discord.File(BytesIO(await data.read()), f"image.{extension}")
         else:
-            embed.set_image(url=image_url)
+            embed.set_image(url=image_url + f"?token={token}")
         return embed, file
 
 

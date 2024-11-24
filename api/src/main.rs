@@ -12,7 +12,7 @@ mod tests;
 // import routes
 use routes::commands::get_commands;
 use routes::diagnostics::get_diagnostics;
-use routes::image::image;
+use routes::image::{allow_image, image, image_without_token};
 use routes::stats::get_stats;
 use routes::vote::register_vote;
 
@@ -30,6 +30,8 @@ fn rocket() -> _ {
                 register_vote,
                 get_stats,
                 image,
+                allow_image,
+                image_without_token,
                 get_diagnostics
             ],
         )

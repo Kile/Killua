@@ -1,7 +1,17 @@
+use std::str::FromStr;
+
 use mongodb::Client;
 use mongodb::{bson, bson::DateTime, error::Error, options::UpdateOptions};
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+#[serde(crate = "rocket::serde")]
+pub struct ImageToken {
+    pub created_at: DateTime,
+    pub endpoints: Vec<String>,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct StatsStruct {
@@ -25,8 +35,58 @@ pub struct StatsStruct {
 // }
 
 #[derive(Clone)]
+pub struct ImageTokens {
+    pub collection: mongodb::Collection<mongodb::bson::Document>,
+}
+
+#[derive(Clone)]
 pub struct ApiStats {
     pub collection: mongodb::Collection<mongodb::bson::Document>,
+}
+
+impl ImageTokens {
+    pub fn new(client: &Client) -> Self {
+        Self {
+            collection: client.database("Killua").collection("image-tokens"),
+        }
+    }
+
+    pub async fn allows_endpoint(&self, id: &str, endpoint: &str) -> bool {
+        let filter = mongodb::bson::doc! { "_id": bson::oid::ObjectId::from_str(id).unwrap() };
+        let result = self.collection.find_one(filter, None).await.unwrap();
+
+        match result {
+            Some(doc) => {
+                let image_token: ImageToken = mongodb::bson::from_document(doc).unwrap();
+                if image_token.endpoints.contains(&endpoint.to_string()) {
+                    return true;
+                }
+                false
+            }
+            None => false,
+        }
+    }
+
+    pub async fn generate_endpoint_token(&self, endpoints: &Vec<String>) -> String {
+        let image_token = ImageToken {
+            created_at: DateTime::now(),
+            endpoints: endpoints.to_vec(),
+        };
+        let result = self
+            .collection
+            .insert_one(mongodb::bson::to_document(&image_token).unwrap(), None)
+            .await
+            .unwrap();
+
+        let raw_string = result.inserted_id.to_string();
+        // regex out ObjectId("...") to just ...
+        let id = raw_string
+            .chars()
+            .skip(10)
+            .take(raw_string.len() - 12)
+            .collect::<String>();
+        id
+    }
 }
 
 impl ApiStats {
@@ -44,7 +104,7 @@ impl ApiStats {
             },
             // Add 0 to successful_responses.
             // The reason I am doing this is for the first time the document is created.
-            // This won't rly happen in production but it does in testsin a new environment
+            // This won't rly happen in production but it does in tests in a new environment
             "$inc": {
                 "successful_responses": 0,
             },

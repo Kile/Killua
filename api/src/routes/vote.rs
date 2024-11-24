@@ -1,9 +1,8 @@
-use serde::Serialize;
 use serde_json::Value;
 
 use rocket::response::status::BadRequest;
 use rocket::serde::json::Json;
-use rocket::serde::Deserialize;
+use rocket::serde::{Deserialize, Serialize};
 
 use super::common::keys::ApiKey;
 use super::common::utils::{make_request, ResultExt};

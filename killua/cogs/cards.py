@@ -239,11 +239,11 @@ class Cards(commands.GroupCog, group_name="cards"):
             if page > 7 + math.ceil(len(user.fs_cards) / 18) or page < 1:
                 return await ctx.send(
                     f"Please choose a page number between 1 and {6+math.ceil(len(user.fs_cards)/18)}"
-                )
+                ) 
 
         async def make_embed(page, *_) -> Tuple[discord.Embed, discord.File]:
             return await Book(
-                self.client.session, self.client.api_url(to_fetch=True)
+                self.client.session, self.client.api_url(to_fetch=True), self.client.secret_api_key, self.client.is_dev
             ).create(ctx.author, page, self.client)
 
         return await Paginator(

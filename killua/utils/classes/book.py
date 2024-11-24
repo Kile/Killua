@@ -10,6 +10,7 @@ from typing import Tuple, Union
 from killua.bot import BaseBot
 from killua.utils.classes.user import User
 from killua.utils.classes.card import Card
+from killua.static.constants import DB
 
 
 # pillow logic contributed by DerUSBstick (Thank you!)
@@ -18,9 +19,12 @@ class Book:
     background_cache = {}
     card_cache = {}
 
-    def __init__(self, session: ClientSession, base_url: str):
+    def __init__(self, session: ClientSession, base_url: str, secret_api_key: str, is_dev: bool):
         self.session = session
         self.base_url = base_url
+        self.secret_api_key = secret_api_key
+        self.is_dev = is_dev
+        self.token_cache = None
 
     async def create_image(
         self, data: list, restricted_slots: bool, page: int
@@ -50,10 +54,28 @@ class Book:
 
     async def _get_background(self, types: int) -> Image.Image:
         """Gets the background image of the book"""
-        url = [
-            self.base_url + "/image/misc/book_first.png",
-            self.base_url + "/image/misc/book_default.png",
+
+        endpoints = [
+            "misc/book_first.png",
+            "misc/book_default.png",
         ]
+        if self.token_cache is None:
+            if self.is_dev:
+                # Get all card IDs
+                ids = [entry["_id"] async for entry in DB.items.find()]
+                card_endpoints = [f"cards/{x}.png" for x in ids]
+                to_whitelist = [*endpoints, *card_endpoints]
+            else:
+                to_whitelist = endpoints
+            response = await self.session.post(
+                    f"{self.base_url}/allow-image", 
+                    json={"endpoints": to_whitelist}, 
+                    headers={"Authorization": self.secret_api_key}
+                )
+                
+            self.token_cache = (await response.json())["token"]
+        url = [(self.base_url + "/image/" + x + "?token=" + self.token_cache) for x in endpoints]
+
         if res := self._get_from_cache(types):
             return res.convert("RGBA")
 
@@ -66,7 +88,7 @@ class Book:
 
     async def _get_card(self, url: str) -> Image.Image:
         """Gets a card image from the url"""
-        async with self.session.get(url) as res:
+        async with self.session.get(url + "?token=" + self.token_cache) as res:
             image_bytes = await res.read()
             image_card = Image.open(BytesIO(image_bytes)).convert("RGBA")
             image_card = image_card.resize((84, 115), Image.LANCZOS)

@@ -183,7 +183,9 @@ class IPCRoutes(commands.Cog):
         # If no streak reward applies, just return the base reward
         return int((120 if weekend else 100) * float(f"1.{int(streak//5)}"))
 
-    def _create_path(self, streak: int, user: discord.User, url: str) -> List[Union[discord.User, str]]:
+    def _create_path(
+        self, streak: int, user: discord.User, url: str
+    ) -> List[Union[discord.User, str]]:
         """
         Creates a path illustrating where the user currently is with vote rewards and what the next rewards are as well as already claimed ones like
         --:boxemoji:--⚫️--:boxemoji:--
@@ -252,24 +254,45 @@ class IPCRoutes(commands.Cog):
             # Could exist but be None so it needs an or False
         )
 
+        reward_image = (
+            cast(str, LOOTBOXES[reward]["image"]).format(
+                self.client.api_url(to_fetch=True)
+            )
+            if isinstance(reward, int) and reward < 100
+            else (
+                BOOSTER_LOGO_IMG.format(self.client.api_url(to_fetch=True))
+                if isinstance(reward, Booster)
+                else None
+            )
+        )
+
         usr = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
 
         path = self._create_path(streak, usr, self.client.api_url(to_fetch=True))
+
+        # Whitelist images for token
+        image_endpoints = [
+            cast(str, item).split("image/")[1]
+            for item in path
+            if isinstance(item, str) and item != "-"
+        ]
+        if reward_image:
+            image_endpoints.append(reward_image.split("image/")[1])
+        response = await self.client.session.post(
+            f"{self.client.api_url(to_fetch=True)}/allow-image",
+            json={"endpoints": image_endpoints},
+            headers={"Authorization": self.client.secret_api_key},
+        )
+        token = (await response.json())["token"]
+
+        # Add token to the image endpoints
+        path = [
+            item if not isinstance(item, str) or item == "-" else item + f"?token={token}" for item in path
+        ]
+
         image = await self.streak_image(
             path,
-            (
-                cast(str, LOOTBOXES[reward]["image"]).format(
-                    self.client.api_url(to_fetch=True)
-                )
-                if isinstance(reward, int) and reward < 100
-                else (
-                    cast(str, BOOSTERS[reward.value]["image"]).format(
-                        self.client.api_url(to_fetch=True)
-                    )
-                    if isinstance(reward, Booster)
-                    else None
-                )
-            ),
+            reward_image + f"?token={token}" if reward_image else None,
         )
         file = discord.File(image, filename="streak.png")
 

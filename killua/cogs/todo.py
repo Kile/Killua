@@ -1073,7 +1073,7 @@ class TodoSystem(commands.Cog):
         extras={"category": Category.TODO, "id": 114}, usage="delete <list_id>"
     )
     @discord.app_commands.describe(todo_id="The todo list to delete")
-    async def delete(self, ctx: commands.Context, todo_id: str):
+    async def delete(self, ctx: commands.Context):
         """Use this command to delete your todo list. Make sure to say goodbye a last time"""
         todo_list = await self._edit_check(ctx)
         if todo_list is None:
@@ -1082,7 +1082,7 @@ class TodoSystem(commands.Cog):
         if not ctx.author.id == todo_list.owner:
             return await ctx.send("Only the owner of a todo list can delete it")
 
-        todo_list.delete()
+        await todo_list.delete()
         return await ctx.send(
             f"Done! Deleted todo list {todo_list.name}",
             allowed_mentions=discord.AllowedMentions.none(),
