@@ -18,17 +18,23 @@ pub struct AllowImage {
 }
 
 #[get("/image/<images..>?<token>")]
-pub async fn image(images: PathBuf, token: &str, client: &State<Client>) -> Option<NamedFile> {
+pub async fn image(
+    images: PathBuf,
+    token: &str,
+    client: &State<Client>,
+) -> Result<Option<NamedFile>, Forbidden<Json<Value>>> {
     let tokendb = ImageTokens::new(client);
     if !tokendb
         .allows_endpoint(token, &images.to_string_lossy())
         .await
     {
-        return None;
-    }
-    NamedFile::open(Path::new("src/images").join(images))
+        return Err(Forbidden(Json(
+            serde_json::json!({"error": "Invalid token"}),
+        )));
+    };
+    Ok(NamedFile::open(Path::new("src/images").join(images))
         .await
-        .ok()
+        .ok())
 }
 
 #[get("/image/<_images..>")]

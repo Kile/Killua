@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use mongodb::Client;
 use mongodb::{bson, bson::DateTime, error::Error, options::UpdateOptions};
+use regex::Regex;
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
@@ -52,8 +53,15 @@ impl ImageTokens {
     }
 
     pub async fn allows_endpoint(&self, id: &str, endpoint: &str) -> bool {
-        let filter = mongodb::bson::doc! { "_id": bson::oid::ObjectId::from_str(id).unwrap() };
-        let result = self.collection.find_one(filter, None).await.unwrap();
+        // Check if id is a valid 24 character hex string
+        // (for some reason bson::oid::ObjectId::from_str will PANIC if it's not)
+        if !Regex::new(r"^[0-9a-fA-F]{24}$").unwrap().is_match(id) {
+            return false;
+        }
+        let filter = mongodb::bson::doc! { "_id": bson::oid::ObjectId::from_str(id).unwrap()};
+        let Ok(result) = self.collection.find_one(filter, None).await else {
+            return false;
+        };
 
         match result {
             Some(doc) => {
@@ -67,7 +75,7 @@ impl ImageTokens {
         }
     }
 
-    pub async fn generate_endpoint_token(&self, endpoints: &Vec<String>) -> String {
+    pub async fn generate_endpoint_token(&self, endpoints: &[String]) -> String {
         let image_token = ImageToken {
             created_at: DateTime::now(),
             endpoints: endpoints.to_vec(),
@@ -79,13 +87,12 @@ impl ImageTokens {
             .unwrap();
 
         let raw_string = result.inserted_id.to_string();
-        // regex out ObjectId("...") to just ...
-        let id = raw_string
-            .chars()
-            .skip(10)
-            .take(raw_string.len() - 12)
-            .collect::<String>();
-        id
+        // regex out ObjectId("...") to just ... using regex
+        let id = Regex::new("ObjectId\\(\"([0-9a-fA-F]+)\"\\)")
+            .unwrap()
+            .captures(&raw_string)
+            .unwrap();
+        id.get(1).unwrap().as_str().to_string()
     }
 }
 

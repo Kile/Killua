@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 mongodb = "2.8.2"
+regex = "1.11.1"
 rocket = { version = "0.5.0", features = ["json"] }
 serde = "1.0.202"
 serde_json = "1.0.117"
