@@ -10,6 +10,7 @@ mod routes;
 mod tests;
 
 // import routes
+use routes::cards::{get_cards, get_public_cards};
 use routes::commands::get_commands;
 use routes::diagnostics::get_diagnostics;
 use routes::image::{allow_image, image, image_without_token};
@@ -32,7 +33,9 @@ fn rocket() -> _ {
                 image,
                 allow_image,
                 image_without_token,
-                get_diagnostics
+                get_diagnostics,
+                get_cards,
+                get_public_cards
             ],
         )
         .attach(db::init())

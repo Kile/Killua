@@ -8,7 +8,7 @@
 .vscode/
 
 # Downloaded cards
-/cards.json
+cards.json
 
 # API log
 /api.log
