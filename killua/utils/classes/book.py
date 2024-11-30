@@ -19,7 +19,9 @@ class Book:
     background_cache = {}
     card_cache = {}
 
-    def __init__(self, session: ClientSession, base_url: str, secret_api_key: str, is_dev: bool):
+    def __init__(
+        self, session: ClientSession, base_url: str, secret_api_key: str, is_dev: bool
+    ):
         self.session = session
         self.base_url = base_url
         self.secret_api_key = secret_api_key
@@ -62,19 +64,23 @@ class Book:
         if self.token_cache is None:
             if self.is_dev:
                 # Get all card IDs
-                ids = [entry["_id"] async for entry in DB.items.find()]
-                card_endpoints = [f"cards/{x}.png" for x in ids]
-                to_whitelist = [*endpoints, *card_endpoints]
+                # ids = [entry["_id"] async for entry in DB.items.find()]
+                # card_endpoints = [f"cards/{x}.png" for x in ids]
+                # to_whitelist = [*endpoints, *card_endpoints]
+                to_whitelist = ["cards/PLACEHOLDER.png", *endpoints]
             else:
                 to_whitelist = endpoints
             response = await self.session.post(
-                    f"{self.base_url}/allow-image", 
-                    json={"endpoints": to_whitelist}, 
-                    headers={"Authorization": self.secret_api_key}
-                )
-                
+                f"{self.base_url}/allow-image",
+                json={"endpoints": to_whitelist},
+                headers={"Authorization": self.secret_api_key},
+            )
+
             self.token_cache = (await response.json())["token"]
-        url = [(self.base_url + "/image/" + x + "?token=" + self.token_cache) for x in endpoints]
+        url = [
+            (self.base_url + "/image/" + x + "?token=" + self.token_cache)
+            for x in endpoints
+        ]
 
         if res := self._get_from_cache(types):
             return res.convert("RGBA")
@@ -321,9 +327,7 @@ class Book:
                     rs_cards.append(
                         [
                             i,
-                            (await Card.new(i)).formatted_image_url(
-                                client, to_fetch=True
-                            ),
+                            (Card(i)).formatted_image_url(client, to_fetch=True),
                         ]
                     )
                 if page == 1 and len(rs_cards) == 10:
@@ -336,7 +340,7 @@ class Book:
                     fs_cards.append(
                         [
                             person.fs_cards[i][0],
-                            (await Card.new(person.fs_cards[i][0])).formatted_image_url(
+                            (Card(person.fs_cards[i][0])).formatted_image_url(
                                 client, to_fetch=True
                             ),
                         ]

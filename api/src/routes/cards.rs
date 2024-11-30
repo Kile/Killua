@@ -44,7 +44,8 @@ pub async fn get_cards(_key: ApiKey) -> Result<Json<Vec<Card<'static>>>, BadRequ
             let cards = parse_file()?;
             Ok(Json(cards))
         })
-        .await.cloned()
+        .await
+        .cloned()
 }
 
 #[get("/cards.json?public=true")]
@@ -53,8 +54,11 @@ pub async fn get_public_cards() -> Result<Json<Vec<Card<'static>>>, BadRequest<J
         let cards = parse_file()?;
         // Censor the description, emoji and image
         let cards = cards.into_iter().map(|mut card| {
+            if card.id == 0 {
+                card.name = Cow::Borrowed("[REDACTED]");
+            }
             card.description = Cow::Borrowed("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam nec purus nec nunc");
-            card.emoji = Cow::Borrowed("[REDACTED]");
+            card.emoji = Cow::Borrowed("<:badge_one_star_hunter:788935576836374548>");
             card.image = Cow::Borrowed("/image/cards/PLACEHOLDER.png");
             card
         }).collect();

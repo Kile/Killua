@@ -24,7 +24,7 @@ CONST_DEFAULT = [  # The default values for the const collection
 
 MAX_VOTES_DISPLAYED = 5
 
-CARDS_URL = "https://json.extendsclass.com/bin/7d2c78bde0cd"
+CARDS_URL = "https://api.killua.dev/cards.json?public=true"
 
 API_ROUTES = ["/diagnostics", "/commands", "/stats", "/image", "/vote"]
 
@@ -52,23 +52,6 @@ class DB:
     @DBProperty
     def teams(self) -> Union[AsyncIOMotorCollection, Database]:
         return self._DB["teams"] if args.Args.test is None else Database("teams")
-
-    @DBProperty
-    def items(self) -> Union[AsyncIOMotorCollection, Database]:
-        if args.Args.test is not None:
-            if exists("cards.json"):
-                with open("cards.json", "r") as file:
-                    res = json.loads(file.read())
-                    db = Database("items")
-                    db.db["items"] = res["data"]
-                    file.close()
-                    return db
-            else:
-                raise FileNotFoundError(
-                    "cards.json does not exist. Run `python3 -m killua -dl` to download the cards first."
-                )
-        else:
-            return self._DB["items"]
 
     @DBProperty
     def guilds(self) -> Union[AsyncIOMotorCollection, Database]:

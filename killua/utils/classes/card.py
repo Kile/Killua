@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import List, ClassVar, Dict, Tuple, Union, Tuple, TYPE_CHECKING, Type
-from dataclasses import dataclass
 
 from killua.static.constants import DB
 from killua.bot import BaseBot
@@ -9,8 +8,7 @@ from killua.bot import BaseBot
 import discord
 from io import BytesIO
 from discord.ext import commands
-from typing import List, Tuple, Optional
-from dataclasses import dataclass
+from typing import List, Tuple, Optional, Callable
 
 from killua.static.constants import (
     ALLOWED_AMOUNT_MULTIPLE,
@@ -21,10 +19,10 @@ from killua.static.constants import (
 )
 from killua.bot import BaseBot
 
-if TYPE_CHECKING: # Circular import my beloved
-    from killua.utils.classes import User
 
+from killua.utils.classes import User
 from killua.utils.interactions import Select, View, Button
+
 
 class CheckFailure(Exception):
     def __init__(self, message: str, **kwargs):
@@ -35,18 +33,19 @@ class CheckFailure(Exception):
 class SuccessfulDefense(CheckFailure):
     pass
 
+
 class CardNotFound(Exception):
     pass
 
 
-@dataclass
 class Card:
     """A class preventing a circular import by providing the bare minimum of methods and properties. Only used in this module"""
+
+    raw: ClassVar[List[Dict[str, Union[str, int, bool]]]] = []  # Raw data from API
 
     id: int
     name: str
     image_url: str
-    owners: List[int]
     description: str
     emoji: str
     rank: str
@@ -57,8 +56,8 @@ class Card:
     ctx: Optional[commands.Context] = None
     _cls: List[str] = None
 
-    cache: ClassVar[Dict[int, Union[Card]]] = {}
-    cached_raw: ClassVar[List[Tuple[str, int]]] = []
+    cache: ClassVar[Dict[int, Card]] = {}  # Cached objects
+    cached_raw: ClassVar[List[Tuple[str, int]]] = []  # String to int ID mapping
 
     @classmethod
     def _should_ignore(cls, cached: Type[Card]) -> bool:
@@ -66,16 +65,30 @@ class Card:
         In this case a card is cached but a spell is requested. Cache spell instead
         because a spell has all the class has but not the other way around
         """
-        return isinstance(cached, Card) and (issubclass(type(cls), type(cached)) or not isinstance(cls, type(cached)))
+        return isinstance(cached, Card) and (
+            issubclass(type(cls), type(cached)) or not isinstance(cls, type(cached))
+        )
 
     @classmethod
-    async def _find_card(cls, name_or_id: Union[int, str]) -> Union[int, None]:
+    def __get_cache(cls, cards_id: int):
+        """Returns a cached object"""
+        if cards_id in cls.cache and not cls._should_ignore(cls.cache[cards_id]):
+            return cls.cache[cards_id]
+
+    def __new__(cls, name_or_id: int, *args, **kwargs):
+        existing = cls.__get_cache(name_or_id)
+        if existing:
+            return existing
+        return super().__new__(cls)
+
+    @classmethod
+    def _find_card(cls, name_or_id: Union[int, str]) -> Union[int, None]:
 
         # This could be solved much easier but this allows the user to
         # have case insensitivity when looking for a card
         if not cls.cached_raw:
-            cls.cached_raw = [(c["name"], c["_id"]) async for c in DB.items.find({})]
-        
+            cls.cached_raw = [(c["name"], c["id"]) for c in cls.raw]
+
         for c in cls.cached_raw:
 
             if not isinstance(name_or_id, int) and not name_or_id.isdigit():
@@ -88,55 +101,66 @@ class Card:
                 if c[1] == int(name_or_id):
                     return c[1]
 
+    def __init__(self, name_or_id: str, ctx: commands.Context = None) -> Card:
+        cards_id = self._find_card(name_or_id)
 
-    @classmethod
-    async def new(cls, name_or_id: str, ctx: commands.Context = None) -> Card:
-        cards_id = await cls._find_card(name_or_id)
-
-        if cards_id in cls.cache and not cls._should_ignore(cls.cache[cards_id]):
-            return cls.cache[cards_id]
+        if cards_id in self.cache and not self._should_ignore(self.cache[cards_id]):
+            self.ctx = ctx
+            return
 
         if not cards_id:
             raise CardNotFound
 
-        raw = dict(await DB.items.find_one({"_id": cards_id}))
+        raw = next(c for c in self.raw if c["id"] == cards_id)
 
-        card = cls(
-            id=cards_id,
-            name=raw["name"],
-            image_url=raw["image"],
-            owners=raw["owners"],
-            description=raw["description"],
-            emoji=raw["emoji"],
-            rank=raw["rank"],
-            limit=raw["limit"],
-            available=raw.get("available", True),
-            type=raw.get("type", "normal"),
-            range=raw.get("range", None),
-            _cls=raw.get("class", None),
-            ctx=ctx,
-        )
+        self.id = cards_id
+        self.name = raw["name"]
+        self.image_url = raw["image"]
+        self.description = raw["description"]
+        self.emoji = raw["emoji"]
+        self.rank = raw["rank"]
+        self.limit = raw["limit"]
+        self.available = raw.get("available", True)
+        self.type = raw.get("type", "normal")
+        self.range = raw.get("range", None)
+        self._cls = raw.get("class", None)
+        self.ctx = ctx
 
-        cls.cache[cards_id] = card
-        return card
+        self.cache[cards_id] = self
+
+    @classmethod
+    def find(cls, conditions: Callable[dict, bool]) -> List[Card]:  # type: ignore
+        """
+        Finds all cards that match the given conditions, replacing mongo's find method.
+        Already parses the cards to Card classes in the return value
+        """
+        return [cls(c["id"]) for c in cls.raw if conditions(c)]
+
+    async def owners(self) -> List[int]:
+        return [
+            entry["id"]
+            async for entry in DB.teams.find(
+                {
+                    "$or": [
+                        {
+                            "cards.fs": {
+                                "$elemMatch": {
+                                    "0": self.id,  # Match the first element of the subarray
+                                    "1.fake": False,  # Match the 'fake' field in the second element
+                                }
+                            }
+                        },
+                        {"cards.rs": {"$elemMatch": {"0": self.id, "1.fake": False}}},
+                    ]
+                }
+            )
+        ]
 
     def formatted_image_url(self, client: BaseBot, *, to_fetch: bool) -> str:
         if to_fetch:
-            return (
-                f"http://{'api' if client.run_in_docker else '0.0.0.0'}:{client.dev_port}"
-                + self.image_url
-            )
+            return f"http://{'api' if client.run_in_docker else '0.0.0.0'}:{client.dev_port}{self.image_url}"
+
         return client.url + self.image_url
-
-    async def add_owner(self, user_id: int):
-        """Adds an owner to a card entry in my db. Only used in Card().add_card()"""
-        self.owners.append(user_id)
-        await DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
-
-    async def remove_owner(self, user_id: int):
-        """Removes an owner from a card entry in my db. Only used in Card().remove_card()"""
-        self.owners.remove(user_id)
-        await DB.items.update_one({"_id": self.id}, {"$set": {"owners": self.owners}})
 
     async def _wait_for_defense(
         self, ctx: commands.Context, other: "User", effects: list
@@ -145,7 +169,7 @@ class Card:
         if len(effects) == 0:
             return
 
-        effects: List["Card"] = [await Card.new(c) for c in effects]
+        effects: List["Card"] = [Card(c) for c in effects]
         view = View(other.id, timeout=20)
         view.add_item(
             Select(
@@ -264,7 +288,9 @@ class Card:
         if not user.has_any_card(card_id):
             raise CheckFailure("The specified user doesn't have this card")
 
-    def _has_met_check(self, prefix: str, author: "User", other: discord.Member) -> None:
+    def _has_met_check(
+        self, prefix: str, author: "User", other: discord.Member
+    ) -> None:
         if not author.has_met(other.id):
             raise CheckFailure(
                 f"You haven't met this user yet! Use `{prefix}meet <@someone>` if they send a message in a channel to be able to use this card on them"
@@ -275,8 +301,8 @@ class Card:
             raise CheckFailure(f"You don't have any cards other than card {self.name}!")
 
     async def _is_maxed_check(self, card: int) -> None:
-        c = await Card.new(card)
-        if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
+        c = Card(card)
+        if len(await c.owners()) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
             raise CheckFailure(
                 f"The maximum amount of existing cards with id {card} is reached!"
             )
@@ -287,7 +313,7 @@ class Card:
 
     async def _is_valid_card_check(self, card_id: int) -> None:
         try:
-            await Card.new(card_id)
+            Card(card_id)
         except CardNotFound:
             raise CheckFailure("Specified card is invalid!")
 
@@ -298,7 +324,7 @@ class Card:
     async def _get_analysis_embed(
         self, card_id: int, client: BaseBot
     ) -> Tuple[discord.Embed, Optional[discord.File]]:
-        card = await Card.new(card_id)
+        card = Card(card_id)
         fields = [
             {"name": "Name", "value": card.name + " " + card.emoji, "inline": True},
             {
@@ -347,17 +373,17 @@ class Card:
     async def _get_list_embed(
         self, card_id: int, client: BaseBot
     ) -> Tuple[discord.Embed, Optional[discord.File]]:
-        card = await Card.new(card_id)
+        card = Card(card_id)
 
         real_owners = []
-        for o in card.owners:
+        async for o in card.owners():
             # Get the total number of owners
             if not o in real_owners:
                 real_owners.append(o)
         embed = discord.Embed.from_dict(
             {
                 "title": f"Infos about card {card.name}",
-                "description": f"**Total copies in circulation**: {len(card.owners)}\n\n**Total owners**: {len(real_owners)}",
+                "description": f"**Total copies in circulation**: {len(await card.owners())}\n\n**Total owners**: {len(real_owners)}",
                 "image": {"url": card.formatted_image_url(client, to_fetch=False)},
                 "color": 0x3E4A78,
             }

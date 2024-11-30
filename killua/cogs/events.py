@@ -4,8 +4,8 @@ import discord
 
 import logging
 import traceback
-from asyncio import sleep, run_coroutine_threadsafe
-from datetime import datetime, timedelta
+from asyncio import sleep
+from datetime import datetime
 from discord.ext import commands, tasks
 from PIL import Image
 from enum import Enum
@@ -15,7 +15,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 
 from killua.metrics import DAILY_ACTIVE_USERS
 from killua.bot import BaseBot
-from killua.utils.classes import Guild, Book, User
+from killua.utils.classes import Guild, Book, User, Card
 from killua.static.enums import PrintColors
 from killua.static.constants import (
     TOPGG_TOKEN,
@@ -49,6 +49,44 @@ class Events(commands.Cog):
     def log_channel(self):
         return self.client.get_guild(GUILD).get_channel(self.log_channel_id)
 
+    async def _initialize_card_json(self, retry_timeout=5) -> None:
+        """Initializes the card json"""
+        status = None
+        while status != 200:
+            result = await self.client.session.get(
+                self.client.api_url(to_fetch=True, is_for_cards=True)
+                + "/cards.json"
+                + ("?public=true" if self.client.is_dev else ""),
+                headers={"Authorization": self.client.secret_api_key},
+            )
+            status = result.status
+            if result.status != 200:
+                retry_timeout *= 2
+                logging.warning(
+                    f"{PrintColors.WARNING}Failed to fetch cards with status code: {result.status}. Will try again in {retry_timeout}s...{PrintColors.ENDC}"
+                )
+                # If the status code is not 200, wait for a bit and try again
+                await sleep(retry_timeout)
+            else:
+                cards = await result.json()
+                Card.raw = cards
+                logging.info(
+                    PrintColors.OKGREEN
+                    + "Successfully fetched and cached cards from "
+                    + ("local" if self.client.force_local else "remote")
+                    + " using the "
+                    + (
+                        "public (censored)"
+                        if self.client.is_dev
+                        else "secret (uncensored)"
+                    )
+                    + " version"
+                    + PrintColors.ENDC
+                )
+                self.client.dispatch(
+                    "cards_loaded"
+                )  # Dispatches the event that the cards are loaded
+
     async def _post_guild_count(self) -> None:
         """Posts relevant stats to the botlists Killua is on"""
         await self.client.session.post(
@@ -64,39 +102,42 @@ class Events(commands.Cog):
 
     async def _load_cards_cache(self) -> None:
         """Downloads all the card images so the image manipulation is fairly fast"""
-        cards = [x async for x in DB.items.find()]
 
-        if len(cards) == 0:
+        if len(Card.raw) == 0:
             return logging.error(
-                f"{PrintColors.WARNING}No cards in the database, could not load cache{PrintColors.ENDC}"
+                f"{PrintColors.WARNING}No cards cached, could not load image cache{PrintColors.ENDC}"
             )
-        
-        ids = [card["_id"] for card in cards]
+
+        ids = [card["id"] for card in Card.raw]
         card_endpoints = [f"cards/{x}.png" for x in ids]
         response = await self.client.session.post(
-            f"{self.client.api_url(to_fetch=True)}/allow-image", 
-            json={"endpoints": card_endpoints}, 
-            headers={"Authorization": self.client.secret_api_key}
+            f"{self.client.api_url(to_fetch=True)}/allow-image",
+            json={"endpoints": card_endpoints},
+            headers={"Authorization": self.client.secret_api_key},
         )
         token = (await response.json())["token"]
-        logging.info(f"{PrintColors.OKGREEN}Created token to load cards cache{PrintColors.ENDC}")
+        logging.info(
+            f"{PrintColors.OKGREEN}Created token to load cards cache{PrintColors.ENDC}"
+        )
 
         logging.info(f"{PrintColors.WARNING}Loading cards cache....{PrintColors.ENDC}")
         percentages = [25, 50, 75]
-        for p, item in enumerate(cards):
+        for p, item in enumerate(Card.raw):
             try:
-                if item["_id"] in Book.card_cache:
+                if item["id"] in Book.card_cache:
                     continue  # in case the event fires multiple times this avoids using unnecessary cpu power
 
-                async with self.client.session.get(
-                    self.client.api_url(to_fetch=True) + item["image"] + f"?token={token}"
-                ) as res:
-                    image_bytes = await res.read()
-                    image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
-                    image_card = image_card.resize((84, 115), Image.LANCZOS)
+                res = await self.client.session.get(
+                    self.client.api_url(to_fetch=True)
+                    + item["image"]
+                    + f"?token={token}"
+                )
+                image_bytes = await res.read()
+                image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
+                image_card = image_card.resize((84, 115), Image.LANCZOS)
 
                 Book.card_cache[str(item["_id"])] = image_card
-                if len(percentages) >= 1 and (p / len(cards)) * 100 > (
+                if len(percentages) >= 1 and (p / len(Card.raw)) * 100 > (
                     percent := percentages[0]
                 ):
                     logging.info(
@@ -133,10 +174,16 @@ class Events(commands.Cog):
             self.print_dev_text()
         else:
             await self._post_guild_count()
+
+    @commands.Cog.listener()
+    async def on_card_cache_loaded(self):
+        if not self.client.is_dev:
             await self._load_cards_cache()
 
     @commands.Cog.listener()
     async def on_ready(self):
+        if len(Card.raw) == 0:
+            await self._initialize_card_json()
         if not self.save_guilds.is_running() and not self.client.is_dev:
             self.save_guilds.start()
         if not self.vote_reminders.is_running():

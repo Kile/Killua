@@ -252,7 +252,6 @@ class Trivia(CompetitiveGame):
 
         elif self.timed_out:
             await self.ctx.send("Timed out!", reference=self.msg)
-            
 
         elif self.result != self.correct_index:
             await user.add_trivia_stat("wrong", self.difficulty)
@@ -498,9 +497,9 @@ class Rps(CompetitiveGame):
         user = await User.new(player.id)
         if not "rps_master" in user.achievements and user.rps_stats["pve"]["won"] >= 25:
             user.add_achievement("rps_master")
-            card = await Card.new(83)
+            card = Card(83)
             try:
-                if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
+                if len(await card.owners()) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
                     await user.add_jenny(1000)
                     await player.send(
                         f'By defeating me 25 times you have earned the **RPS Master** achievemt! Sadly the normal reward, the card "{card.name}" {card.emoji}, is currently owned by too many people, so insead you get **1000 Jenny** as a reward! You also now own the **RPS Master** badge!'
@@ -1210,16 +1209,16 @@ class Games(commands.GroupCog, group_name="games"):
             await ctx.send(
                 embed=discord.Embed(
                     title=f"{user.display_name}'s Trivia stats",
-                    description=f"__Overall correctness__: {win_rate_overall}%\n\n__Hard__:\n" + 
-                    f"Right answers: {db_user.trivia_stats['hard']['right']}\n" +
-                    f"Wrong answers: {db_user.trivia_stats['hard']['wrong']}\n" +
-                    f"{win_rate_hard}% correct\n\n__Medium__:\n" +
-                    f"Right answers: {db_user.trivia_stats['medium']['right']}\n" +
-                    f"Wrong answers: {db_user.trivia_stats['medium']['wrong']}\n" +
-                    f"{win_rate_medium}% correct\n\n__Easy__:\n" +
-                    f"Right answers: {db_user.trivia_stats['easy']['right']}\n" +
-                    f"Wrong answers: {db_user.trivia_stats['easy']['wrong']}\n" +
-                    f"{win_rate_easy}% correct",
+                    description=f"__Overall correctness__: {win_rate_overall}%\n\n__Hard__:\n"
+                    + f"Right answers: {db_user.trivia_stats['hard']['right']}\n"
+                    + f"Wrong answers: {db_user.trivia_stats['hard']['wrong']}\n"
+                    + f"{win_rate_hard}% correct\n\n__Medium__:\n"
+                    + f"Right answers: {db_user.trivia_stats['medium']['right']}\n"
+                    + f"Wrong answers: {db_user.trivia_stats['medium']['wrong']}\n"
+                    + f"{win_rate_medium}% correct\n\n__Easy__:\n"
+                    + f"Right answers: {db_user.trivia_stats['easy']['right']}\n"
+                    + f"Wrong answers: {db_user.trivia_stats['easy']['wrong']}\n"
+                    + f"{win_rate_easy}% correct",
                     color=0x3E4A78,
                 )
             )

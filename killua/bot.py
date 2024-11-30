@@ -64,6 +64,7 @@ class BaseBot(commands.AutoShardedBot):
         # self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
         self.is_dev = False
         self.run_in_docker = False
+        self.force_local = False
         self.startup_datetime = datetime.now()
         self.__cached_formatted_commands: List[commands.Command] = []
         self.cached_skus: List[discord.SKU] = []
@@ -76,8 +77,8 @@ class BaseBot(commands.AutoShardedBot):
 
         self.secret_api_key = os.getenv("API_KEY")
 
-    def api_url(self, *, to_fetch=False):
-        if to_fetch:
+    def api_url(self, *, to_fetch=False, is_for_cards=False):
+        if to_fetch or (is_for_cards and self.force_local):
             return (
                 f"http://{'api' if self.run_in_docker else '0.0.0.0'}:{self.dev_port}"
             )

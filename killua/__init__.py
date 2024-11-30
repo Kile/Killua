@@ -58,6 +58,7 @@ async def main():
     # Checks if the bot is a dev bot
     bot.is_dev = args.development
     bot.run_in_docker = args.docker
+    bot.force_local = args.force_local
 
     # Setup cogs.
     for cog in cogs.all_cogs:

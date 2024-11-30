@@ -31,7 +31,7 @@ This would eventually enable the command to boil down to:
     ) -> Card:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card: Card = await Card.new(card)
+            card: Card = Card(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
@@ -163,8 +163,8 @@ class Card:
         ...
 
     async def _is_maxed_check(self, card: int) -> None:
-        c = await Card.new(card)
-        if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
+        c = Card(card)
+        if len(await c.owners()) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
             raise CheckFailure(f"The maximum amount of existing cards with id {card} is reached!")
 ```
 This class is the base class for all cards and contains all shared subroutines like checks for maxed cards (the example here). It also contains all information about the card like its name, id, type, etc.

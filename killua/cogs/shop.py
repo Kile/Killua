@@ -85,22 +85,25 @@ class Shop(commands.Cog):
         number: int = None,
     ) -> Dict[str, str]:
         """Formats a single item for the shop"""
-        item = await DB.items.find_one({"_id": int(offer)})
-        price = PRICES[item["rank"]] + (PRICE_INCREASE_FOR_SPELL if item["type"] == "spell" else 0)
+        item = Card(offer)
+        price = PRICES[item.rank] + (
+            PRICE_INCREASE_FOR_SPELL if item.type == "spell" else 0
+        )
         if reduced_item is not None:
             # Same as mentioned above, needs to be explicitly checked if it is None
             if number == reduced_item:
                 return {
-                    "name": f"**Number {item['_id']}: {item['name']}** |{item['emoji']}|",
-                    "value": f"**Description:** {item['description']}\n**Price:** {price-int(price*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item['type'].replace('normal', 'item')}\n**Rarity:** {item['rank']}",
+                    "name": f"**Number {item.id}: {item.name}** |{item.emoji}|",
+                    "value": f"**Description:** {item['description']}\n**Price:** {price-int(price*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item.type.replace('normal', 'item')}\n**Rarity:** {item.rank}",
                 }
 
         return {
-            "name": f"**Number {item['_id']}: {item['name']}** |{item['emoji']}|",
-            "value": f"**Description:** {item['description']}\n**Price:** {price} Jenny\n**Type:** {item['type'].replace('normal', 'item')}\n**Rarity:** {item['rank']}",
+            "name": f"**Number {item.id}: {item.name}** |{item.emoji}|",
+            "value": f"**Description:** {item.description}\n**Price:** {price} Jenny\n**Type:** {item.type.replace('normal', 'item')}\n**Rarity:** {item.rank}",
         }
 
-    async def cog_load(self):
+    @commands.Cog.listener()
+    async def on_cards_loaded(self):
         if not self.cards_shop_update.is_running():
             self.cards_shop_update.start()
 
@@ -113,67 +116,46 @@ class Shop(commands.Cog):
             number_of_items = randint(3, 5)  # How many items the shop has
             if randint(1, 100) > 95:
                 # Add a S/A card to the shop
-                thing = [
-                    i["_id"]
-                    async for i in DB.items.find(
-                        {
-                            "type": "normal",
-                            "rank": {"$in": ["A", "S"]},
-                            "available": True,
-                        }
-                    )
-                ]
-                shop_items.append(choice(thing))
+                cards = Card.find(
+                    lambda c: c["type"] == "normal"
+                    and c["rank"] in ["A", "S"]
+                    and c["available"]
+                )
+                shop_items.append(choice(cards).id)
             if randint(1, 100) > 20:  # 80% chance for spell
                 if randint(1, 100) > 95:  # 5% chance for a good spell (they are rare)
-                    spells = [
-                        s["_id"]
-                        async for s in DB.items.find(
-                            {"type": "spell", "rank": "A", "available": True}
-                        )
-                    ]
-                    shop_items.append(choice(spells))
+                    spells = Card.find(
+                        lambda c: c["type"] == "spell"
+                        and c["rank"] in ["A"]
+                        and c["available"]
+                    )
+                    shop_items.append(choice(spells).id)
                 elif randint(1, 10) > 5:  # 50% chance of getting a medium good card
-                    spells = [
-                        s["_id"]
-                        async for s in DB.items.find(
-                            {
-                                "type": "spell",
-                                "rank": {"$in": ["B", "C"]},
-                                "available": True,
-                            }
-                        )
-                    ]
-                    shop_items.append(choice(spells))
+                    spells = Card.find(
+                        lambda c: c["type"] == "spell"
+                        and c["rank"] in ["B", "C"]
+                        and c["available"]
+                    )
+                    shop_items.append(choice(spells).id)
                 else:  # otherwise getting a fairly normal card
-                    spells = [
-                        s["_id"]
-                        async for s in DB.items.find(
-                            {
-                                "type": "spell",
-                                "rank": {"$in": ["D", "E", "F", "G"]},
-                                "available": True,
-                            }
-                        )
-                    ]
-                    shop_items.append(choice(spells))
+                    spells = Card.find(
+                        lambda c: c["type"] == "spell"
+                        and c["rank"] in ["D", "E", "F", "G"]
+                        and c["available"]
+                    )
+                    shop_items.append(choice(spells).id)
 
                 while len(shop_items) != number_of_items:  # Filling remaining spots
-                    thing = [
-                        t["_id"]
-                        async for t in DB.items.find(
-                            {
-                                "type": "normal",
-                                "rank": {"$in": ["D", "B"]},
-                                "available": True,
-                            }
-                        )
-                    ]
+                    cards = Card.find(
+                        lambda c: c["type"] == "normal"
+                        and c["rank"] in ["D", "B"]
+                        and c["available"]
+                    )
                     # There is just one D item so there is a really high
                     # probability of it being in the shop EVERY TIME
-                    t = choice(thing)
-                    if not t in shop_items:
-                        shop_items.append(t)
+                    card = choice(cards)
+                    if not card.id in shop_items:
+                        shop_items.append(card.id)
 
                 if randint(1, 10) > 6:  # 40% to have an item in the shop reduced
                     reduced_item = randint(0, len(shop_items) - 1)
@@ -205,11 +187,11 @@ class Shop(commands.Cog):
                     )
             self.last_update = datetime.now()
         except (IndexError, TypeError):
-            logging.warn(
+            logging.warning(
                 f"{PrintColors.WARNING}Shop could not be loaded, card data is missing{PrintColors.ENDC}"
             )
         except ServerSelectionTimeoutError:
-            logging.warn(
+            logging.warning(
                 f"{PrintColors.WARNING}Failed to update shop due to database error{PrintColors.ENDC}"
             )
 
@@ -290,7 +272,7 @@ class Shop(commands.Cog):
             formatted = await self._format_offers(shop_items, reduced_item, reduced_by)
             embed = discord.Embed(
                 title="Current Card shop",
-                description=f"**{(await Card.new(shop_items[reduced_item])).name} is reduced by {reduced_by}%**",
+                description=f"**{(Card(shop_items[reduced_item])).name} is reduced by {reduced_by}%**",
             )
         else:
             formatted = await self._format_offers(shop_items)
@@ -411,7 +393,7 @@ class Shop(commands.Cog):
         user = await User.new(ctx.author.id)
 
         try:
-            card = await Card.new(item)
+            card = Card(item)
         except CardNotFound:
             return await ctx.send(
                 f"This card is not for sale at the moment! Find what cards are in the shop with `{(await self.client.command_prefix(self.client, ctx.message))[2]}shop`",
@@ -424,22 +406,21 @@ class Shop(commands.Cog):
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
-        _price = PRICES[card.rank] + (PRICE_INCREASE_FOR_SPELL if card.type == "spell" else 0)
+        _price = PRICES[card.rank] + (
+            PRICE_INCREASE_FOR_SPELL if card.type == "spell" else 0
+        )
         if not shop_data["reduced"] is None:
             if shop_items.index(card.id) == shop_data["reduced"]["reduced_item"]:
-                
+
                 price = int(
-                    _price
-                    - int(
-                        _price * (shop_data["reduced"]["reduced_by"] / 100)
-                    )
+                    _price - int(_price * (shop_data["reduced"]["reduced_by"] / 100))
                 )
             else:
                 price = _price
         else:
             price = _price
 
-        if len(card.owners) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
+        if len(await card.owners()) >= (card.limit * ALLOWED_AMOUNT_MULTIPLE):
             return await ctx.send(
                 "Unfortunately the global maximal limit of this card is reached! Someone needs to sell their card for you to buy one or trade/give it to you"
             )
@@ -644,8 +625,8 @@ class Shop(commands.Cog):
     ) -> List[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         if not self.cardname_cache:
-            async for card in DB.items.find({}):
-                self.cardname_cache[card["_id"]] = card["name"], card["type"]
+            for card in Card.raw:
+                self.cardname_cache[card["id"]] = card["name"], card["type"]
 
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
@@ -662,7 +643,7 @@ class Shop(commands.Cog):
             dict.fromkeys(id_cards)
         )  # removing all duplicates from the list
 
-        if current == "":  # No ids AND names if the user hasn"t typed anything yet
+        if current == "":  # No ids AND names if the user hasn't typed anything yet
             return [
                 discord.app_commands.Choice(name=x[1], value=str(x[0]))
                 for x in name_cards
@@ -694,7 +675,7 @@ class Shop(commands.Cog):
             user, o = val
 
         try:
-            item = (await Card.new(card)).id
+            item = (Card(card)).id
         except CardNotFound:
             return await ctx.send("Invalid card number")
         if user.has_any_card(item, False) is False:

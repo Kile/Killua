@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from datetime import datetime
-import math, logging, re
+import math, re
 from typing import Union, Optional, List, Literal, cast
 
 from killua.bot import BaseBot
@@ -1073,11 +1073,12 @@ class TodoSystem(commands.Cog):
         extras={"category": Category.TODO, "id": 114}, usage="delete <list_id>"
     )
     @discord.app_commands.describe(todo_id="The todo list to delete")
-    async def delete(self, ctx: commands.Context):
+    async def delete(self, ctx: commands.Context, todo_id: str):
         """Use this command to delete your todo list. Make sure to say goodbye a last time"""
-        todo_list = await self._edit_check(ctx)
-        if todo_list is None:
-            return
+        try:
+            todo_list = await TodoList.new(todo_id)
+        except TodoListNotFound:
+            return await ctx.send("No todo list with this id exists")
 
         if not ctx.author.id == todo_list.owner:
             return await ctx.send("Only the owner of a todo list can delete it")

@@ -2,9 +2,7 @@ import argparse
 
 from typing import Optional
 
-
 class _Args:
-
     development: Optional[bool] = None
     migrate: Optional[bool] = None
     test: Optional[bool] = None
@@ -58,6 +56,13 @@ class _Args:
             action="store_const",
             const=True,
         )
+        parser.add_argument(
+            "-fl",
+            "--force-local",
+            help="Force the bot to download the cards data from the local API. Only relevant for development. Useful if server is down or you want to test new cards defined locally.",
+            action="store_const",
+            const=True,
+        )
 
         parsed = parser.parse_args()
 
@@ -67,6 +72,7 @@ class _Args:
         cls.log = parsed.log
         cls.download = parsed.download
         cls.docker = parsed.docker
+        cls.force_local = parsed.force_local
 
 
 def init():

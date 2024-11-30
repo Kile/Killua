@@ -487,24 +487,19 @@ class LootBox:
             ]:  # if a card is guaranteed it is added here, it will count as one of the total_cards though
                 for card, amount in data["rewards"]["guaranteed"].items():
                     if [r.id for r in rew].count(card) < amount:
-                        rew.append(Card.new((await DB.items.find_one(card))["_id"]))
+                        rew.append(Card(card))
                         skip = True
                         break
 
             if skip:
                 continue
-            r = [
-                x["_id"]
-                async for x in DB.items.find(
-                    {
-                        "rank": {"$in": data["rewards"]["cards"]["rarities"]},
-                        "type": {"$in": data["rewards"]["cards"]["types"]},
-                        "available": True,
-                    }
-                )
-                if x["_id"] != 0
-            ]
-            rew.append(await Card.new(choice(r)))
+            card_pool = Card.find(
+                lambda c: c["rank"] in data["rewards"]["cards"]["rarities"]
+                and c["type"] in data["rewards"]["cards"]["types"]
+                and c["available"]
+                and c["id"] != 0
+            )
+            rew.append(choice(card_pool))
 
         for _ in range(boosters := randint(*data["boosters_total"])):
             if isinstance(data["rewards"]["boosters"], int):

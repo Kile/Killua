@@ -1,7 +1,7 @@
 use crate::rocket;
-use crate::routes::cards::{Card, parse_file};
+use crate::routes::cards::{parse_file, Card};
 use crate::tests::common::get_key;
-use rocket::http::{ContentType, Status};
+use rocket::http::Status;
 use rocket::local::blocking::Client;
 
 #[test]
@@ -16,7 +16,7 @@ fn get_private_cards_with_invalid_token() {
     let client = Client::tracked(rocket()).unwrap();
     let response = client
         .get("/cards.json")
-        .header(rocket::http::Header::new("Authorization" , "invalid_token"))
+        .header(rocket::http::Header::new("Authorization", "invalid_token"))
         .dispatch();
     assert_eq!(response.status(), Status::Forbidden);
 }
@@ -34,7 +34,6 @@ fn get_private_cards() {
     let real_cards = parse_file();
     assert_eq!(cards.len(), real_cards.expect("Parsing failed").len());
 }
-
 
 #[test]
 fn get_public_cards() {
