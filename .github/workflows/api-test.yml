@@ -8,6 +8,7 @@ env:
   RUST_BACKTRACE: full
   MONGODB: mongodb://localhost:27017/Killua
   API_KEY: test
+  HASH_SECRET: supersecretpassword
 
 jobs:
   setup:
