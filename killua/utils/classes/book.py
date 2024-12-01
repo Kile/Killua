@@ -4,13 +4,13 @@ import discord
 from aiohttp import ClientSession
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
+from datetime import datetime
 from pathlib import Path
 from typing import Tuple, Union
 
-from killua.bot import BaseBot
 from killua.utils.classes.user import User
 from killua.utils.classes.card import Card
-from killua.static.constants import DB
+from killua.bot import BaseBot as Bot
 
 
 # pillow logic contributed by DerUSBstick (Thank you!)
@@ -20,13 +20,27 @@ class Book:
     card_cache = {}
 
     def __init__(
-        self, session: ClientSession, base_url: str, secret_api_key: str, is_dev: bool
+        self, client: Bot
     ):
-        self.session = session
-        self.base_url = base_url
-        self.secret_api_key = secret_api_key
-        self.is_dev = is_dev
-        self.token_cache = None
+        self.session = client.session
+        self.base_url = client.api_url(to_fetch=True)
+        self.client = client
+        self._book_token_cache: Tuple[str, str] = None
+        self._card_token_cache: Tuple[str, str] = None
+
+    @property
+    def book_token_cache(self) -> Tuple[str, str]:
+        # No token is permanent, so it may need to be refreshed if the token is older than 24 hours
+        if self._book_token_cache is None or datetime.fromtimestamp(float(self._book_token_cache[1])) < datetime.now():
+            self._book_token_cache = self.client.sha256_for_api("book", 60 * 60 * 24)
+        return self._book_token_cache
+    
+    @property
+    def card_token_cache(self) -> Tuple[str, str]:
+        # No token is permanent, so it may need to be refreshed if the token is older than 24 hours
+        if self._card_token_cache is None or datetime.fromtimestamp(float(self._card_token_cache[1])) < datetime.now():
+            self._card_token_cache = self.client.sha256_for_api("all_cards", 60 * 60 * 24)
+        return self._card_token_cache
 
     async def create_image(
         self, data: list, restricted_slots: bool, page: int
@@ -61,43 +75,27 @@ class Book:
             "misc/book_first.png",
             "misc/book_default.png",
         ]
-        if self.token_cache is None:
-            if self.is_dev:
-                # Get all card IDs
-                # ids = [entry["_id"] async for entry in DB.items.find()]
-                # card_endpoints = [f"cards/{x}.png" for x in ids]
-                # to_whitelist = [*endpoints, *card_endpoints]
-                to_whitelist = ["cards/PLACEHOLDER.png", *endpoints]
-            else:
-                to_whitelist = endpoints
-            response = await self.session.post(
-                f"{self.base_url}/allow-image",
-                json={"endpoints": to_whitelist},
-                headers={"Authorization": self.secret_api_key},
-            )
-
-            self.token_cache = (await response.json())["token"]
         url = [
-            (self.base_url + "/image/" + x + "?token=" + self.token_cache)
+            (self.base_url + "/image/" + x + "?token=" + self.book_token_cache[0] + "&expiry=" + self.book_token_cache[1])
             for x in endpoints
         ]
 
         if res := self._get_from_cache(types):
             return res.convert("RGBA")
 
-        async with self.session.get(url[types]) as res:
-            image_bytes = await res.read()
-            background = (img := Image.open(BytesIO(image_bytes))).convert("RGBA")
+        res = await self.session.get(url[types])
+        image_bytes = await res.read()
+        background = (img := Image.open(BytesIO(image_bytes))).convert("RGBA")
 
         self._set_cache(img, types == 0)
         return background
 
     async def _get_card(self, url: str) -> Image.Image:
         """Gets a card image from the url"""
-        async with self.session.get(url + "?token=" + self.token_cache) as res:
-            image_bytes = await res.read()
-            image_card = Image.open(BytesIO(image_bytes)).convert("RGBA")
-            image_card = image_card.resize((84, 115), Image.LANCZOS)
+        res = await self.session.get(url + "?token=" + self.card_token_cache[0] + "&expiry=" + self.card_token_cache[1])
+        image_bytes = await res.read()
+        image_card = Image.open(BytesIO(image_bytes)).convert("RGBA")
+        image_card = image_card.resize((84, 115), Image.LANCZOS)
         # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp"s "Response payload is not completed" bug
         return image_card
 
@@ -374,7 +372,6 @@ class Book:
         self,
         user: discord.Member,
         page: int,
-        client: BaseBot,
         just_fs_cards: bool = False,
     ) -> Tuple[discord.Embed, discord.File]:
-        return await self._get_book(user, page, client, just_fs_cards)
+        return await self._get_book(user, page, self.client, just_fs_cards)

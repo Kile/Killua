@@ -24,4 +24,4 @@ async def download():
                 f.close()
                 info(f"{PrintColors.OKGREEN}Cards saved to file (api/src/cards.json){PrintColors.ENDC}")
                 info("These cards are now available for offline testing. To use the locally downloaded cards, run the bot with the -fl flag.")
-            await session.close()
+        await session.close()

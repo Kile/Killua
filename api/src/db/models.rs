@@ -1,8 +1,5 @@
-use std::str::FromStr;
-
 use mongodb::Client;
 use mongodb::{bson, bson::DateTime, error::Error, options::UpdateOptions};
-use regex::Regex;
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
@@ -36,64 +33,8 @@ pub struct StatsStruct {
 // }
 
 #[derive(Clone)]
-pub struct ImageTokens {
-    pub collection: mongodb::Collection<mongodb::bson::Document>,
-}
-
-#[derive(Clone)]
 pub struct ApiStats {
     pub collection: mongodb::Collection<mongodb::bson::Document>,
-}
-
-impl ImageTokens {
-    pub fn new(client: &Client) -> Self {
-        Self {
-            collection: client.database("Killua").collection("image-tokens"),
-        }
-    }
-
-    pub async fn allows_endpoint(&self, id: &str, endpoint: &str) -> bool {
-        // Check if id is a valid 24 character hex string
-        // (for some reason bson::oid::ObjectId::from_str will PANIC if it's not)
-        if !Regex::new(r"^[0-9a-fA-F]{24}$").unwrap().is_match(id) {
-            return false;
-        }
-        let filter = mongodb::bson::doc! { "_id": bson::oid::ObjectId::from_str(id).unwrap()};
-        let Ok(result) = self.collection.find_one(filter, None).await else {
-            return false;
-        };
-
-        match result {
-            Some(doc) => {
-                let image_token: ImageToken = mongodb::bson::from_document(doc).unwrap();
-                if image_token.endpoints.contains(&endpoint.to_string()) {
-                    return true;
-                }
-                false
-            }
-            None => false,
-        }
-    }
-
-    pub async fn generate_endpoint_token(&self, endpoints: &[String]) -> String {
-        let image_token = ImageToken {
-            created_at: DateTime::now(),
-            endpoints: endpoints.to_vec(),
-        };
-        let result = self
-            .collection
-            .insert_one(mongodb::bson::to_document(&image_token).unwrap(), None)
-            .await
-            .unwrap();
-
-        let raw_string = result.inserted_id.to_string();
-        // regex out ObjectId("...") to just ... using regex
-        let id = Regex::new("ObjectId\\(\"([0-9a-fA-F]+)\"\\)")
-            .unwrap()
-            .captures(&raw_string)
-            .unwrap();
-        id.get(1).unwrap().as_str().to_string()
-    }
 }
 
 impl ApiStats {

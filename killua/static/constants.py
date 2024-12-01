@@ -604,7 +604,7 @@ WYR = [
         "Have an administrative branch that is free of corruption",
     ),
     (
-        "Live iin utopia as a normal person",
+        "Live in utopia as a normal person",
         "Live in dystopia but you're the supreme ruler",
     ),
     (

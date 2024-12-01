@@ -713,6 +713,11 @@ class User:
             self.achievements.append(achievement)
             await self._update_val("achievements", achievement, "$push")
 
+    async def toggle_votereminder(self) -> None:
+        """Toggles the voting reminder"""
+        self.voting_reminder = not self.voting_reminder
+        await self._update_val("voting_reminder", not self.voting_reminder)
+
     async def log_locale(self, locale: str) -> Optional[str]:
         """Logs the locale of the user. Returns the old locale if it was different from the new one, else None"""
         if not self.locale or self.locale != locale:

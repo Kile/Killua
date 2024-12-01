@@ -271,28 +271,16 @@ class IPCRoutes(commands.Cog):
         path = self._create_path(streak, usr, self.client.api_url(to_fetch=True))
 
         # Whitelist images for token
-        image_endpoints = [
-            cast(str, item).split("image/")[1]
-            for item in path
-            if isinstance(item, str) and item != "-"
-        ]
-        if reward_image:
-            image_endpoints.append(reward_image.split("image/")[1])
-        response = await self.client.session.post(
-            f"{self.client.api_url(to_fetch=True)}/allow-image",
-            json={"endpoints": image_endpoints},
-            headers={"Authorization": self.client.secret_api_key},
-        )
-        token = (await response.json())["token"]
+        token, expiry = self.client.sha256_for_api("vote_rewards", 60)
 
         # Add token to the image endpoints
         path = [
-            item if not isinstance(item, str) or item == "-" else item + f"?token={token}" for item in path
+            item if not isinstance(item, str) or item == "-" else item + f"?token={token}&expiry={expiry}" for item in path
         ]
 
         image = await self.streak_image(
             path,
-            reward_image + f"?token={token}" if reward_image else None,
+            reward_image + f"?token={token}&expiry={expiry}" if reward_image else None,
         )
         file = discord.File(image, filename="streak.png")
 

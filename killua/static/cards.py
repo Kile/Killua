@@ -56,11 +56,8 @@ class Card1001(Card, IndividualCard):
 
         async def make_embed(page, *_):
             return await Book(
-                cast(BaseBot, self.ctx.bot).session,
-                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
-                cast(BaseBot, self.ctx.bot).secret_api_key,
-                cast(BaseBot, self.ctx.bot).is_dev,
-            ).create(member, page, self.ctx.bot, True)
+                cast(BaseBot, self.ctx.bot)
+            ).create(member, page,True)
 
         await Paginator(
             self.ctx,
@@ -92,11 +89,8 @@ class Card1002(Card, IndividualCard):
 
         async def make_embed(page, *_):
             return await Book(
-                cast(BaseBot, self.ctx.bot).session,
-                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
-                cast(BaseBot, self.ctx.bot).secret_api_key,
-                cast(BaseBot, self.ctx.bot).is_dev,
-            ).create(member, page, self.ctx.bot)
+                cast(BaseBot, self.ctx.bot)
+            ).create(member, page)
 
         await Paginator(self.ctx, max_pages=6, func=make_embed, has_file=True).start()
 
@@ -211,11 +205,8 @@ class Card1015(Card, IndividualCard):
 
         async def make_embed(page, embed, pages):
             return await Book(
-                cast(BaseBot, self.ctx.bot).session,
-                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
-                cast(BaseBot, self.ctx.bot).secret_api_key,
-                cast(BaseBot, self.ctx.bot).is_dev,
-            ).create(member, page, self.ctx.bot)
+                cast(BaseBot, self.ctx.bot)
+            ).create(member, page)
 
         return await Paginator(
             self.ctx,

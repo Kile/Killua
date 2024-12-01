@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 import asyncio, os
-from datetime import datetime
+from datetime import datetime, timedelta
 from aiohttp import ClientSession
 from random import randint, choice
 from discord.ext import commands
@@ -11,6 +11,7 @@ from PIL import Image
 from io import BytesIO
 from toml import load
 from logging import info
+from hashlib import sha256
 from inspect import signature, Parameter
 from functools import partial
 from typing import Coroutine, Union, Dict, List, Optional, Tuple
@@ -22,17 +23,22 @@ from .static.constants import TIPS, LOOTBOXES, DB
 
 cache = {}
 
+
 def _cached(func, cache):
     """Cache specifically designed for the find_dominant_color function"""
+
     async def inner(self, args):
         if args in cache:
             return cache[args]
         res = await func(self, args)
         cache[args] = res
         return res
+
     return inner
 
+
 cached = partial(_cached, cache=cache)
+
 
 async def get_prefix(bot: "BaseBot", message: discord.Message):
     if bot.is_dev:
@@ -48,10 +54,13 @@ async def get_prefix(bot: "BaseBot", message: discord.Message):
         # in case message.guild is `None` or something went wrong getting the prefix the bot still NEEDS to react to mentions and k!
         return commands.when_mentioned_or("k!")(bot, message)
 
+
 class KilluaAPIException(Exception):
     """Raised when the Killua API returns an error"""
+
     def __init__(self, message: str):
         self.message = message
+
 
 class BaseBot(commands.AutoShardedBot):
     def __init__(self, *args, **kwargs):
@@ -76,6 +85,7 @@ class BaseBot(commands.AutoShardedBot):
             self.dev_port = loaded["debug"]["port"]
 
         self.secret_api_key = os.getenv("API_KEY")
+        self.hash_secret = os.getenv("HASH_SECRET")
 
     def api_url(self, *, to_fetch=False, is_for_cards=False):
         if to_fetch or (is_for_cards and self.force_local):
@@ -270,7 +280,7 @@ class BaseBot(commands.AutoShardedBot):
                 return
             return BytesIO(await res.read())
 
-    @cached # cpu intensive and slow but the result does not change, so it is cached
+    @cached  # cpu intensive and slow but the result does not change, so it is cached
     async def find_dominant_color(self, url: str) -> int:
         """Finds the dominant color of an image and returns it as an rgb tuple"""
         # Resizing parameters
@@ -348,14 +358,14 @@ class BaseBot(commands.AutoShardedBot):
         return callback
 
     async def _get_text_response_modal(
-        self, 
-        ctx: commands.Context, 
-        text: str, 
-        timeout: int = None, 
-        timeout_message: str = None, 
-        interaction: discord.Interaction = None, 
-        *args, 
-        **kwargs
+        self,
+        ctx: commands.Context,
+        text: str,
+        timeout: int = None,
+        timeout_message: str = None,
+        interaction: discord.Interaction = None,
+        *args,
+        **kwargs,
     ) -> Union[str, None]:
         """Gets a response from a textinput UI"""
         modal = Modal(title="Answer the question and click submit", timeout=timeout)
@@ -374,17 +384,18 @@ class BaseBot(commands.AutoShardedBot):
             return
         await modal.interaction.response.defer()
         return textinput.value
-    
+
     async def _get_text_response_message(
-            self,
-            ctx: commands.Context,
-            text: str,
-            timeout: int = None,
-            timeout_message: str = None,
-            *args,
-            **kwargs,
+        self,
+        ctx: commands.Context,
+        text: str,
+        timeout: int = None,
+        timeout_message: str = None,
+        *args,
+        **kwargs,
     ) -> Union[str, None]:
         """Gets a response by waiting a message sent by the user"""
+
         def check(m: discord.Message):
             return m.author.id == ctx.author.id
 
@@ -429,48 +440,45 @@ class BaseBot(commands.AutoShardedBot):
                 ctx, text, timeout, timeout_message, *args, **kwargs
             )
 
+    def sha256_for_api(self, endpoint: str, expires_in_seconds: int) -> Tuple[str, str]:
+        """Generates a sha256 hash for the Killua API"""
+        expiry = str(
+            int((datetime.now() + timedelta(seconds=expires_in_seconds)).timestamp())
+        )
+        return (
+            sha256(f"{endpoint}{expiry}{self.hash_secret}".encode()).hexdigest(),
+            expiry,
+        )
+
     async def make_embed_from_api(
-            self, 
-            image_url: str, 
-            embed: discord.Embed,
-            token: str = None
-        ) -> Tuple[discord.Embed, Optional[discord.File]]:
+        self, image_url: str, embed: discord.Embed, expire_in: int = 60 * 60 * 24 * 7
+    ) -> Tuple[discord.Embed, Optional[discord.File]]:
         """
         Makes an embed from a Killua API image url.
 
-        If the bot is running in a dev environment, the image is downloaded 
+        If the bot is running in a dev environment, the image is downloaded
         and sent as a file.
 
         Raises:
             KilluaAPIException: If the Killua API returns an error
         """
         file = None
-        if token is None:
-            base_url = self.api_url(to_fetch=True)
-            image_path = image_url.split(base_url)[1].split("image/")[1]
-            response = await self.session.post(
-                f"{base_url}/allow-image", 
-                json={"endpoints": [image_path]}, 
-                headers={"Authorization": self.secret_api_key}
-            )
-            if response.status != 200:
-                raise KilluaAPIException(await response.text())
-            
-            token = (await response.json())["token"]
+        base_url = self.api_url(to_fetch=True)
+        image_path = image_url.split(base_url)[1].split("image/")[1]
+        token, expiry = self.sha256_for_api(image_path, expires_in_seconds=expire_in)
 
         if self.is_dev:
             # Upload the image as attachment instead
-            data = await self.session.get(image_url + f"?token={token}")
+            data = await self.session.get(image_url + f"?token={token}&expiry={expiry}")
             if data.status != 200:
                 raise KilluaAPIException(await data.text())
-            
+
             extension = image_url.split(".")[-1]
             embed.set_image(url=f"attachment://image.{extension}")
             file = discord.File(BytesIO(await data.read()), f"image.{extension}")
         else:
-            embed.set_image(url=image_url + f"?token={token}")
+            embed.set_image(url=image_url + f"?token={token}&expiry={expiry}")
         return embed, file
-
 
     async def update_presence(self):
         status = await DB.const.find_one({"_id": "presence"})

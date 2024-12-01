@@ -108,14 +108,7 @@ class Events(commands.Cog):
                 f"{PrintColors.WARNING}No cards cached, could not load image cache{PrintColors.ENDC}"
             )
 
-        ids = [card["id"] for card in Card.raw]
-        card_endpoints = [f"cards/{x}.png" for x in ids]
-        response = await self.client.session.post(
-            f"{self.client.api_url(to_fetch=True)}/allow-image",
-            json={"endpoints": card_endpoints},
-            headers={"Authorization": self.client.secret_api_key},
-        )
-        token = (await response.json())["token"]
+        token, expiry = self.client.sha256_for_api("all_cards", 180)
         logging.info(
             f"{PrintColors.OKGREEN}Created token to load cards cache{PrintColors.ENDC}"
         )
@@ -130,7 +123,7 @@ class Events(commands.Cog):
                 res = await self.client.session.get(
                     self.client.api_url(to_fetch=True)
                     + item["image"]
-                    + f"?token={token}"
+                    + f"?token={token}&expiry={expiry}"
                 )
                 image_bytes = await res.read()
                 image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")

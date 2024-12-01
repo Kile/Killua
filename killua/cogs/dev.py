@@ -772,7 +772,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                 return await ctx.send(
                     "You already have the voteremind enabled!", ephemeral=True
                 )
-            await user._update_val("voting_reminder", True)
+            await user.toggle_votereminder()
             await ctx.send(
                 "Enabled the voteremind! You can turn it off any time with this command!",
                 ephemeral=True,
@@ -782,7 +782,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                 return await ctx.send(
                     "You already have the voteremind disabled!", ephemeral=True
                 )
-            await user._update_val("voting_reminder", False)
+            await user.toggle_votereminder()
             await ctx.send(
                 "Disabled the voteremind! You can turn it back on any time with this command!",
                 ephemeral=True,
