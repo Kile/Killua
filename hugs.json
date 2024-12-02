@@ -177,8 +177,8 @@
     {
         "url": "/image/hugs/25.jpeg",
         "artist": {
-            "name": "smcms-m",
-            "link": "https://smcms-m.tumblr.com/"
+            "name": "たらこのこ",
+            "link": "https://www.pixiv.net/en/users/489866"
         }
     },
     {
@@ -655,7 +655,10 @@
     },
     {
         "url": "/image/hugs/99.jpg",
-        "artist": null
+        "artist": {
+            "name": "たらこのこ",
+            "link": "https://www.pixiv.net/en/users/489866"
+        }
     },
     {
         "url": "/image/hugs/100.jpg",

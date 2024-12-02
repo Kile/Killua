@@ -27,6 +27,7 @@ class Book:
         self.client = client
         self._book_token_cache: Tuple[str, str] = None
         self._card_token_cache: Tuple[str, str] = None
+        self.scalar = 2
 
     @property
     def book_token_cache(self) -> Tuple[str, str]:
@@ -85,8 +86,10 @@ class Book:
 
         res = await self.session.get(url[types])
         image_bytes = await res.read()
-        background = (img := Image.open(BytesIO(image_bytes))).convert("RGBA")
+        img = Image.open(BytesIO(image_bytes))
+        img = img.resize((img.size[0] * self.scalar, img.size[1] * self.scalar))
 
+        background = img.convert("RGBA")
         self._set_cache(img, types == 0)
         return background
 
@@ -95,16 +98,16 @@ class Book:
         res = await self.session.get(url + "?token=" + self.card_token_cache[0] + "&expiry=" + self.card_token_cache[1])
         image_bytes = await res.read()
         image_card = Image.open(BytesIO(image_bytes)).convert("RGBA")
-        image_card = image_card.resize((84, 115), Image.LANCZOS)
-        # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp"s "Response payload is not completed" bug
+        image_card = image_card.resize((84 * self.scalar, 115 * self.scalar), Image.LANCZOS)
+        # await asyncio.sleep(0.4) # This is to hopefully prevent aiohtts's "Response payload is not completed" bug
         return image_card
 
     def _set_page(self, image: Image.Image, page: int) -> Image.Image:
         """Gets the plain page background and sets the page number"""
-        font = self._get_font(20)
+        font = self._get_font(20 * self.scalar)
         draw = ImageDraw.Draw(image)
-        draw.text((5, 385), f"{page*2-1}", (0, 0, 0), font=font)
-        draw.text((595, 385), f"{page*2}", (0, 0, 0), font=font)
+        draw.text((5 * self.scalar, 385 * self.scalar), f"{page*2-1}", (0, 0, 0), font=font)
+        draw.text((595 * self.scalar, 385 * self.scalar), f"{page*2}", (0, 0, 0), font=font)
         return image
 
     def _get_font(self, size: int) -> ImageFont.ImageFont:
@@ -151,6 +154,8 @@ class Book:
                 (514, 269),
             ],
         ]
+        # Multiply all by scalar
+        card_pos = [[(x * self.scalar, y * self.scalar) for x, y in i] for i in card_pos]
         for n, i in enumerate(data):
             if i:
                 if i[1]:
@@ -286,19 +291,20 @@ class Book:
                 (535, 317),
             ],
         ]
+        numbers_pos = [[(x * self.scalar, y * self.scalar) for x, y in i] for i in numbers_pos]
 
-        font = self._get_font(35)
+        font = self._get_font(35 * self.scalar)
         draw = ImageDraw.Draw(image)
         for n, i in enumerate(data):
             if i[1] is None:
-                draw.text(numbers_pos[page][n], f"0{i[0]}", (165, 165, 165), font=font)
+                draw.text(numbers_pos[page][n], f"0{i[0]}", (165 * self.scalar, 165 * self.scalar, 165 * self.scalar), font=font)
         return image
 
     async def _get_book(
         self,
         user: discord.Member,
         page: int,
-        client: BaseBot,
+        client: Bot,
         just_fs_cards: bool = False,
     ) -> Tuple[discord.Embed, discord.File]:
         """Gets a formatted embed containing the book for the user"""

@@ -612,7 +612,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             except discord.HTTPException:
                 pass
             return await ctx.send(
-                f"You already have `{user}` in the list of users you met, {ctx.author.name}",
+                f"You already have `{user}` in the list of users you met, {ctx.author.display_name}",
                 delete_after=2,
                 allowed_mentions=discord.AllowedMentions.none(),
                 ephemeral=True,

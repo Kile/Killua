@@ -8,7 +8,7 @@ from .migrate import migrate
 from .download import download
 from .bot import BaseBot as Bot, get_prefix
 
-# This needs to be in a seperate file from the __init__ file to
+# This needs to be in a separate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
 from .static.constants import TOKEN
 from .metrics import PrometheusLoggingHandler

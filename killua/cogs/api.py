@@ -331,7 +331,7 @@ class IPCRoutes(commands.Cog):
             u = self.client.get_user(t["id"])
             res.append(
                 {
-                    "name": u.name,
+                    "name": u.display_name,
                     "tag": u.discriminator,
                     "avatar": str(u.avatar.url),
                     "jenny": t["points"],
@@ -422,8 +422,8 @@ class IPCRoutes(commands.Cog):
         """Getting additional info about a user with their id"""
         res = self.client.get_user(data["user"])
         return {
-            "name": res.name,
-            "tag": res.discriminator,
+            "name": res.display_name,
+            "username": res.name,
             "avatar": str(res.avatar.url),
             "created_at": res.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }

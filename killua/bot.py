@@ -88,7 +88,7 @@ class BaseBot(commands.AutoShardedBot):
         self.hash_secret = os.getenv("HASH_SECRET")
 
     def api_url(self, *, to_fetch=False, is_for_cards=False):
-        if to_fetch or (is_for_cards and self.force_local):
+        if to_fetch or (self.force_local and is_for_cards):
             return (
                 f"http://{'api' if self.run_in_docker else '0.0.0.0'}:{self.dev_port}"
             )

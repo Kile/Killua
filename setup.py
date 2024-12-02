@@ -26,25 +26,7 @@ def _try(coll: collection, args: List[dict]):
 def main():
     
     _try(DB.const, CONST_DEFAULT)
-    
-    logging.info(f"""
-    {PrintColors.OKGREEN} Successfully added all collections {PrintColors.WARNING}
-
-     The "item" items have to be added manually. Structure:
-     {'{'}
-        "_id": <int>,
-        "name": <str>,
-        "limit": <int>,
-        "range": <str>, {PrintColors.OKBLUE} Only for spell cards {PrintColors.WARNING}
-        "class": <list>,{PrintColors.OKBLUE} Only for spell cards {PrintColors.WARNING}
-        "rank": <str>,
-        "description": <str>,
-        "image": <url>,
-        "emoji": <str>,
-        "owners": <list>,
-        "type": <str>
-     {'}'}{PrintColors.ENDC}
-    """)
+    logging.info(f"{PrintColors.OKGREEN} Successfully added all collections {PrintColors.WARNING}")
 
 if __name__ == "__main__":
     main()

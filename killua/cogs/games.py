@@ -640,7 +640,7 @@ class Rps(CompetitiveGame):
                 )
             if await cast(BaseBot, self.ctx.bot)._dm_check(self.other) is False:
                 return await self.ctx.send(
-                    f"{self.other.name} needs to open their dms to Killua to play"
+                    f"{self.other.display_name} needs to open their dms to Killua to play"
                 )
 
             if await blcheck(self.other.id) is True:

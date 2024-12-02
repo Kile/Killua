@@ -64,7 +64,7 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] IPC (Inter Process Communication)
 *   [x] Providing and requesting REST-APIs
 *   [x] Image manipulation
-*   [x] Asyncronous Programming
+*   [x] Asynchronous Programming
 *   [x] logging
 *   [x] NonSQL databases
 *   [x] Python `typing` library
@@ -129,6 +129,14 @@ Regardless of how you decide to run Killua, you need to edit the `.env` file. Th
 
 This file has a template in the same directory with the same name but with `.template` at the end. You can copy it and edit it to your liking.
 
+### If you want to use/edit the "Greed Island" game locally
+The default behavior for where the bot gets all the card data from is a censored list from the remote API `api.killua.dev/cards.json?public=true`. (The public list if it is run in dev mode, the non-censored list requires authorization). This is intended to work out of the box when you first run Killua locally. If you would like to edit the list of cards though, you can instead force Killua to instead request that endpoint from your local instance of the API. To do this, run Killua with the `--force-local` or `-fl` flag. This will instead request localhost or the Docker container the API runs in.
+> [!INFO] 
+> Even when using `--forcel-local`, your local cards will still be censored if in dev mode. To prevent this, omit the `--development` or `-d` flag when running the bot.
+
+There even is a handy way to download the cards in the right directory rather than having to copy paste the censored version. This should be done before forcing the bot to use the local API. To do this, run `python3 -m killua --download`. This will download the (censored) cards from the remote API and save them in the right directory (`api/src/cards.json`). You can edit these freely, however spell cards and their effects are in the code and not that file, so using a spell card ID will still behave as a spell card.
+
+### MongoDB Atlas
 Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up. As a warning, this script is rarely run so it may not be up to date.
 
 <details>
@@ -205,7 +213,7 @@ Note: if you want to expose Grafana on nginx, you need to add `proxy_set_header 
 </details>
 
 ## Contributing
-Before I start talking about contributing, I want to mention an area of Killua of which traces can be found of but it is not yet complete. This is due to me working on it for a few while and not enjoying it to a point where I decided to postpone development. This is my own testing framework for dpy. This can be found in [`killua/tests`](./killua/tests/). A part of this is also downloading all card data from somewhere so these tests can be run by someone who does not have them in their mongodb database like me. Both of these are incomplete. 
+Before I start talking about contributing, I want to mention an area of Killua of which traces can be found of but it is not yet complete. This is due to me working on it for a few while and not enjoying it to a point where I decided to postpone development. This is my own testing framework for dpy. This can be found in [`killua/tests`](./killua/tests/). This system is incomplete though occasionally some structural changes are made to offer better support to it. 
 
 
 ### What to work on

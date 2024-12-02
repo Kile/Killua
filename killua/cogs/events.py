@@ -54,7 +54,7 @@ class Events(commands.Cog):
         status = None
         while status != 200:
             result = await self.client.session.get(
-                self.client.api_url(to_fetch=True, is_for_cards=True)
+                self.client.api_url(to_fetch=False, is_for_cards=True)
                 + "/cards.json"
                 + ("?public=true" if self.client.is_dev else ""),
                 headers={"Authorization": self.client.secret_api_key},
@@ -240,7 +240,7 @@ class Events(commands.Cog):
                         embed = discord.Embed.from_dict(
                             {
                                 "title": "Vote Reminder",
-                                "description": f"Hey {user.name}, you voted the last time <t:{int(data['last_vote'].timestamp())}:R> for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
+                                "description": f"Hey {user.display_name}, you voted the last time <t:{int(data['last_vote'].timestamp())}:R> for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
                                 "color": 0x3E4A78,
                             }
                         )

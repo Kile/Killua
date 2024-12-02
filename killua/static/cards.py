@@ -8,7 +8,6 @@ from typing import List, cast
 
 from .constants import (
     INDESTRUCTIBLE,
-    DB,
 )
 from killua.bot import BaseBot
 from killua.utils.classes import (

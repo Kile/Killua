@@ -120,13 +120,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
     )
     @discord.app_commands.describe(member="The member to be unbanned")
     async def unban(self, ctx: commands.Context, *, member: str):
-        """Unbans a user by ID or by tag, meaning `unban Kile#0606` will also work"""
-        banned_users = []
-        async for ban in ctx.guild.bans(
-            limit=100
-        ):  # The last 100 band should be enough
-            banned_users.append(ban.user)
-
+        """Unbans a user by ID or by username, meaning `unban k1le` will also work"""
         if member.isdigit():
             try:
                 user = discord.Object(id=int(member))
@@ -139,27 +133,16 @@ class Moderation(commands.GroupCog, group_name="mod"):
                     return await ctx.send(f"No user with the user ID {member} found")
                 if e.code == 10026:
                     return await ctx.send("The user is not currently banned")
-
         else:
-            data = member.split("#")
-            if len(data) != 2:
-                return await ctx.send(
-                    "Invalid user specified! (Did you not use the User#0000 format or does the user have a # in their name?)"
-                )
-            member_name, member_discriminator = data
-
-            for ban_entry in banned_users:
-
-                if (ban_entry.name, ban_entry.discriminator) == (
-                    member_name,
-                    member_discriminator,
-                ):
-                    await ctx.guild.unban(ban_entry)
+            async for ban in ctx.guild.bans(
+                limit=100
+            ):
+                if ban.user.name == member:
+                    await ctx.guild.unban(ban)
                     return await ctx.send(
-                        f":ok_hand: Unbanned {ban_entry.mention}\nOperating moderator: **{ctx.author}**"
+                        f":ok_hand: Unbanned {ban.user.mention}\nOperating moderator: **{ctx.author}**"
                     )
-
-            return await ctx.send("User is not currently banned")
+            return await ctx.send("User is not currently banned (are you sure it is the username and not display name?)")
 
     @check()
     @commands.has_permissions(kick_members=True)

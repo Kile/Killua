@@ -922,7 +922,7 @@ class TodoSystem(commands.Cog):
                         },
                         {
                             "name": "Reported user",
-                            "value": f"ID: {ctx.author.id}\nName: {ctx.author.name}",
+                            "value": f"ID: {ctx.author.id}\nName: {ctx.author.display_name}",
                         },
                         {
                             "name": "Todo list",
@@ -936,7 +936,7 @@ class TodoSystem(commands.Cog):
             )
             await channel.send(embed=embed)
             await ctx.author.send(f"{user} reported your invite to your todo list")
-            return await user.send(f"Successfully reported {ctx.author.name}!")
+            return await user.send(f"Successfully reported {ctx.author.display_name}!")
 
         if role == "viewer":
             todo_list.add_viewer(user.id)
