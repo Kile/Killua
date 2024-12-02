@@ -171,7 +171,7 @@ class Book:
         page -= 1
         numbers_pos: list = [
             [
-                (138, 188),
+                (130, 188),
                 (338, 60),
                 (436, 60),
                 (536, 60),
@@ -309,7 +309,7 @@ class Book:
         draw = ImageDraw.Draw(image)
         for n, i in enumerate(data):
             if i[1] is None:
-                draw.text(numbers_pos[page][n], f"0{i[0]}", (165 * self.scalar, 165 * self.scalar, 165 * self.scalar), font=font)
+                draw.text(numbers_pos[page][n], f"0{i[0]}" if i[0] > 9 else f"00{i[0]}", (165 * self.scalar, 165 * self.scalar, 165 * self.scalar), font=font)
         return image
 
     async def _get_book(
