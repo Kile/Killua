@@ -57,9 +57,15 @@ pub async fn get_public_cards() -> Result<Json<Vec<Card<'static>>>, BadRequest<J
             if card.id == 0 {
                 card.name = Cow::Borrowed("[REDACTED]");
             }
-            card.description = Cow::Borrowed("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam nec purus nec nunc");
+            card.description = Cow::Borrowed("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat");
             card.emoji = Cow::Borrowed("<:badge_one_star_hunter:788935576836374548>");
-            card.image = Cow::Borrowed("/image/cards/PLACEHOLDER.png");
+            card.image = match card.r#type {
+                ref t if t == "normal" => if card.id < 100 {Cow::Borrowed("/image/cards/PLACEHOLDER_RESTRICTED_SLOT.png")} else {Cow::Borrowed("/image/cards/PLACEHOLDER_NORMAL.png")},
+                ref t if t == "spell" => Cow::Borrowed("/image/cards/PLACEHOLDER_SPELL.png"),
+                ref t if t == "ruler" => Cow::Borrowed("/image/cards/PLACEHOLDER_RULER.png"),
+                ref t if t =="monster" => Cow::Borrowed("/image/cards/PLACEHOLDER_NORMAL.png"),
+                _ => Cow::Borrowed("/image/cards/PLACEHOLDER_NORMAL.png")
+            };
             card
         }).collect();
         Ok(Json(cards))

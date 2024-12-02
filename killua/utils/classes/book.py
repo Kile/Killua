@@ -48,7 +48,7 @@ class Book:
     ) -> Image.Image:
         """Creates the book image of the current page and returns it"""
         background = await self._get_background(0 if len(data) == 10 else 1)
-        if len(data) == 18 and restricted_slots:
+        if restricted_slots:
             background = await self._numbers(background, data, page)
         background = await self._cards(background, data, 0 if len(data) == 10 else 1)
         background = self._set_page(background, page)
@@ -168,8 +168,20 @@ class Book:
 
     async def _numbers(self, image: Image.Image, data: list, page: int) -> Image.Image:
         """Puts the numbers on the restricted slots in the book"""
-        page -= 2
+        page -= 1
         numbers_pos: list = [
+            [
+                (130, 188),
+                (338, 60),
+                (436, 60),
+                (536, 60),
+                (338, 188),
+                (436, 188),
+                (536, 188),
+                (338, 317),
+                (436, 317),
+                (536, 317),
+            ],
             [
                 (35, 60),
                 (138, 60),
@@ -297,7 +309,7 @@ class Book:
         draw = ImageDraw.Draw(image)
         for n, i in enumerate(data):
             if i[1] is None:
-                draw.text(numbers_pos[page][n], f"0{i[0]}", (165 * self.scalar, 165 * self.scalar, 165 * self.scalar), font=font)
+                draw.text(numbers_pos[page][n], f"0{i[0]}" if i[0] > 9 else f"00{i[0]}", (165 * self.scalar, 165 * self.scalar, 165 * self.scalar), font=font)
         return image
 
     async def _get_book(
