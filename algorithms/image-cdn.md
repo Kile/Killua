@@ -3,7 +3,7 @@
 For version `v1.2.0`, I spent a *lot* of time finding new hug images and the artists who made them. Given my they are all publicily hosted (they have be if they are set as embed images on Discord) and my image naming was not particularly secretive (1.png, 2.png, 3.png etc) I wanted to prevent other people from using the API to just get the images because
 
 1) I had spent a lot of time and effort on this and if used, I would like it be used though the bot directly and not copied by another bot
-2) I went through quite a lot of lenghts to find credit for artists and if re-used, people could just ignore the credit
+2) I went through quite a lot of lengths to find credit for artists and if re-used, people could just ignore the credit
 3) I am planning on adding more content to the Greed Island system and I do not want people able to see new cards throuh the API like the already new (and secret) card 0.
 
 > [!NOTE]
@@ -163,4 +163,4 @@ which I can then use to request any card (the hash is different because I change
 but I will still be denied if I try to access an image not allowed by the token:
 <img width="896" alt="image" src="https://github.com/user-attachments/assets/ece6bc7e-6233-4451-8d43-18004a318eeb">
 
-Hurray! I am quite proud of this and I hope it helps if you ever decide to design something similar. Thanks a lot to [@luke]((https://github.com/itslukej) for suggesting this in the first place!
+Hurray! I am quite proud of this and I hope it helps if you ever decide to design something similar. Thanks a lot to [@luke](https://github.com/itslukej) for suggesting this in the first place!

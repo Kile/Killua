@@ -49,9 +49,8 @@ fn allows_endpoint(token: &str, endpoint: &str, expiry: &str) -> bool {
     {
         return false;
     }
-    let set = REGEX_SET.matches(endpoint);
     sha256(endpoint, expiry, &HASH_SECRET) == token
-        || set.iter().any(|x| {
+        || REGEX_SET.matches(endpoint).iter().any(|x| {
             sha256(
                 SPECIAL_ENDPOINT_MAPPING.get(&x).unwrap(),
                 expiry,
