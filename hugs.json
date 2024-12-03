@@ -1,10 +1,7 @@
 [
     {
-        "url": "/image/hugs/0.jpeg",
-        "artist": {
-            "name": "smcms-m",
-            "link": "https://smcms-m.tumblr.com/tagged/HH"
-        }
+        "url": "/image/hugs/0.jpg",
+        "artist": null
     },
     {
         "url": "/image/hugs/1.jpeg",
@@ -196,7 +193,7 @@
         }
     },
     {
-        "url": "/image/hugs/28.jpeg",
+        "url": "/image/hugs/28.png",
         "artist": {
             "name": "HoneyDeep",
             "link": "https://twitter.com/HDSzzZ"
@@ -558,11 +555,17 @@
     },
     {
         "url": "/image/hugs/80.png",
-        "artist": null
+        "artist": {
+            "name": "kidd!",
+            "link": "https://www.pixiv.net/en/users/16678760"
+        }
     },
     {
         "url": "/image/hugs/81.jpeg",
-        "artist": null
+        "artist": {
+            "name": "さよならさんがつ",
+            "link": "https://www.pixiv.net/en/users/3942480"
+        }
     },
     {
         "url": "/image/hugs/82.jpeg",
@@ -570,7 +573,10 @@
     },
     {
         "url": "/image/hugs/83.jpeg",
-        "artist": null
+        "artist": {
+            "name": "ボー",
+            "link": "https://www.pixiv.net/en/users/21592771"
+        }
     },
     {
         "url": "/image/hugs/84.jpeg",
@@ -582,7 +588,10 @@
     },
     {
         "url": "/image/hugs/86.jpeg",
-        "artist": null
+        "artist": {
+            "name": "车",
+            "link": "https://www.pixiv.net/en/users/7035762"
+        }
     },
     {
         "url": "/image/hugs/87.jpeg",
@@ -590,15 +599,24 @@
     },
     {
         "url": "/image/hugs/88.jpeg",
-        "artist": null
+        "artist": {
+            "name": "クンジュ",
+            "link": "https://www.pixiv.net/en/users/7878892"
+        }
     },
     {
         "url": "/image/hugs/89.jpeg",
-        "artist": null
+        "artist": {
+            "name": "shizaya-kun",
+            "link": "https://www.pixiv.net/en/users/3111216"
+        }
     },
     {
         "url": "/image/hugs/90.jpeg",
-        "artist": null
+        "artist": {
+            "name": "ばこ",
+            "link": "https://www.pixiv.net/en/users/9867236"
+        }
     },
     {
         "url": "/image/hugs/91.jpg",
@@ -644,7 +662,10 @@
     },
     {
         "url": "/image/hugs/97.jpg",
-        "artist": null
+        "artist": {
+            "name": "V",
+            "link": "https://www.pixiv.net/en/users/1155777"
+        }
     },
     {
         "url": "/image/hugs/98.jpg",
@@ -670,7 +691,10 @@
     },
     {
         "url": "/image/hugs/102.jpg",
-        "artist": null
+        "artist": {
+            "name": "YE",
+            "link": "https://www.pixiv.net/en/users/5585039"
+        }
     },
     {
         "url": "/image/hugs/103.jpeg",
@@ -695,7 +719,10 @@
     },
     {
         "url": "/image/hugs/106.jpg",
-        "artist": null
+        "artist": {
+            "name": "たらこのこ",
+            "link": "https://www.pixiv.net/en/users/489866"
+        }
     },
     {
         "url": "/image/hugs/107.jpg",
@@ -703,7 +730,10 @@
     },
     {
         "url": "/image/hugs/108.jpg",
-        "artist": null
+        "artist": {
+            "name": "にわ",
+            "link": "https://www.pixiv.net/en/users/6976932"
+        }
     },
     {
         "url": "/image/hugs/109.jpg",
@@ -728,7 +758,10 @@
     },
     {
         "url": "/image/hugs/112.jpg",
-        "artist": null
+        "artist": {
+            "name": "さの",
+            "link": "https://www.pixiv.net/en/users/22609074"
+        }
     },
     {
         "url": "/image/hugs/113.jpg",
@@ -749,6 +782,151 @@
         "artist": {
             "name": "HoneyDeep",
             "link": "https://x.com/HDSzzZ"
+        }
+    },
+    {
+        "url": "/image/hugs/116.jpg",
+        "artist": {
+            "name": "世界星语",
+            "link": "https://www.pixiv.net/en/users/42790458"
+        }
+    },
+    {
+        "url": "/image/hugs/117.jpg",
+        "artist": {
+            "name": "はすの",
+            "link": "https://www.pixiv.net/en/users/1300262"
+        }
+    },
+    {
+        "url": "/image/hugs/118.jpg",
+        "artist": {
+            "name": "kasurias",
+            "link": "https://x.com/kasurias"
+        }
+    },
+    {
+        "url": "/image/hugs/119.jpg",
+        "artist": {
+            "name": "V",
+            "link": "https://www.pixiv.net/en/users/1155777"
+        }
+    },
+    {
+        "url": "/image/hugs/120.jpg",
+        "artist": {
+            "name": "ばこ",
+            "link": "https://www.pixiv.net/en/users/9867236"
+        }
+    },
+    {
+        "url": "/image/hugs/121.jpg",
+        "artist": {
+            "name": "zw_mob",
+            "link": "https://x.com/zw_mob"
+        }
+    },
+    {
+        "_comment": "This was crazy hard to find lol, had to get the ID from a wayback machine Twitter API snapshot.",
+        "url": "/image/hugs/122.jpg",
+        "artist": {
+            "name": "eedldn",
+            "link": "https://twitter.com/intent/user?user_id=1501517809599528961"
+        }
+    },
+    {
+        "url": "/image/hugs/123.jpg",
+        "artist": {
+            "name": "eedldn",
+            "link": "https://twitter.com/intent/user?user_id=1501517809599528961"
+        }
+    },
+    {
+        "url": "/image/hugs/124.jpeg",
+        "artist": {
+            "name": "くもすずめ",
+            "link": "https://www.pixiv.net/en/users/2421496"
+        }
+    },
+    {
+        "url": "/image/hugs/125.jpg",
+        "artist": null
+    },
+    {
+        "url": "/image/hugs/126.jpg",
+        "artist": {
+            "name": "菜",
+            "link": "https://www.pixiv.net/en/users/10448432"
+        }
+    },
+    {
+        "url": "/image/hugs/127.jpg",
+        "artist": {
+            "name": "菜",
+            "link": "https://www.pixiv.net/en/users/10448432"
+        }
+    },
+    {
+        "url": "/image/hugs/128.jpg",
+        "artist": {
+            "name": "瀬上",
+            "link": "https://x.com/segami_poyo"
+        }
+    },
+    {
+        "url": "/image/hugs/129.jpg",
+        "artist": {
+            "name": "Dengdeng",
+            "link": "https://www.pixiv.net/en/users/3243282"
+        }
+    },
+    {
+        "url": "/image/hugs/130.png",
+        "artist": {
+            "name": "April",
+            "link": "https://www.pixiv.net/en/users/4537765"
+        }
+    },
+    {
+        "url": "/image/hugs/131.png",
+        "artist": {
+            "name": "ﾊﾞﾗﾊﾞﾗﾊﾞｶﾗ",
+            "link": "https://www.pixiv.net/en/users/81145559"
+        }
+    },
+    {
+        "url": "/image/hugs/132.jpg",
+        "artist": {
+            "name": "さよならさんがつ",
+            "link": "https://www.pixiv.net/en/users/3942480"
+        }
+    },
+    {
+        "url": "/image/hugs/133.jpg",
+        "artist": {
+            "name": "车",
+            "link": "https://www.pixiv.net/en/users/7035762"
+        }
+    },
+    {
+        "url": "/image/hugs/134.jpg",
+        "artist": {
+            "name": "车",
+            "link": "https://www.pixiv.net/en/users/7035762"
+        }
+    },
+    {
+        "url": "/image/hugs/135.jpg",
+        "artist": {
+            "name": "ばこ",
+            "link": "https://www.pixiv.net/en/users/9867236"
+        }
+    },
+    {
+        "url": "/image/hugs/136.png",
+        "artist": {
+            "name": "にわ",
+            "link": "https://www.pixiv.net/en/users/6976932"
         }
     }
 ]
