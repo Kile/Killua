@@ -197,7 +197,6 @@ class Actions(commands.GroupCog, group_name="action"):
         embed = discord.Embed.from_dict(
             {
                 "title": text,
-                "color": await self.client.find_dominant_color(image_url),
                 "description": (
                     f"Art by [{artist['name']}]({artist['link']})" if artist else None
                 ),
@@ -206,11 +205,15 @@ class Actions(commands.GroupCog, group_name="action"):
 
         file = None
         if endpoint == "hug":
-            embed, file = await self.client.make_embed_from_api(image_url, embed)
+            image_path = image_url.split("image/")[1]
+            token, expiry = self.client.sha256_for_api(image_path, expires_in_seconds=60 * 60 * 24 * 7)
+            image_url += f"?token={token}&expiry={expiry}"
+            embed, file = await self.client.make_embed_from_api(image_url, embed, no_token=True)
         else:
             # Does not need to be fetched under any conditions
             embed.set_image(url=image_url)
 
+        embed.color = await self.client.find_dominant_color(image_url)
         if disabled > 0:
             embed.set_footer(
                 text=f"{disabled} user{'s' if disabled > 1 else ''} disabled being targetted with this action"

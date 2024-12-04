@@ -131,13 +131,16 @@ This file has a template in the same directory with the same name but with `.tem
 
 ### If you want to use/edit the "Greed Island" game locally
 The default behavior for where the bot gets all the card data from is a censored list from the remote API `api.killua.dev/cards.json?public=true`. (The public list if it is run in dev mode, the non-censored list requires authorization). This is intended to work out of the box when you first run Killua locally. If you would like to edit the list of cards though, you can instead force Killua to instead request that endpoint from your local instance of the API. To do this, run Killua with the `--force-local` or `-fl` flag. This will instead request localhost or the Docker container the API runs in.
+
+If you are running the bot using Docker (and build it locally with the `--build` flag), the default behavior is to use the remote API if in dev mode, and the local API in production mode. This is so development is plug and play and production runs faster by directly requesting another container rather than the internet. To change this, go into the `Dockerfile` in the `killua` directory and edit the arguments passed to the bot in the last line (`CMD`). You can add the `--force-local` flag to force the bot to use the local which will then request the API container instead.
+
 > [!INFO] 
-> Even when using `--forcel-local`, your local cards will still be censored if in dev mode. To prevent this, omit the `--development` or `-d` flag when running the bot.
+> Even when using `--forcel-local`, your local cards will still be censored if in dev mode. To prevent this, omit the `--development` or `-d` flag when running the bot. The censored version is still designed in a way that will let you test most of the functionality (eg name autocomplete, images in the book command etc) so most of the time this will not really be necessary. You may need to replace the emoji though as some code needs it to be a custom emoji.
 
 There even is a handy way to download the cards in the right directory rather than having to copy paste the censored version. This should be done before forcing the bot to use the local API. To do this, run `python3 -m killua --download`. This will download the (censored) cards from the remote API and save them in the right directory (`api/src/cards.json`). You can edit these freely, however spell cards and their effects are in the code and not that file, so using a spell card ID will still behave as a spell card.
 
 ### MongoDB Atlas
-Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up. As a warning, this script is rarely run so it may not be up to date.
+Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then create a collection called "Killua". You can then create a user with read and write permissions to this collection. You can then add the connection string to the `.env` file. Killua should automatically create the needed collections and indexes on startup. However this is rarely tested so please contact me if you encounter any issues.
 
 <details>
 <summary><b>Why do I use mongoDB instead of SQL?</b></summary>
@@ -185,7 +188,7 @@ There are a number of command line options, you can see them by running
 ```sh
 python3 -m killua --help
 ```
-most notabily the `--development` flag which will prevent the bot from caching all it needs on startup and requests local API versions instead of the server. This is useful for development.
+most notably the `--development` flag which will prevent the bot from caching all it needs on startup and requests local API versions instead of the server. This is useful for development.
 
 ### API
 To start the API, ideally you should use a different Terminal or screen/tmux session and run `cd api; cargo run`

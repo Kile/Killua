@@ -24,6 +24,7 @@ from killua.static.constants import (
     DB,
     GUILD,
     MAX_VOTES_DISPLAYED,
+    CONST_DEFAULT,
 )
 
 
@@ -155,13 +156,30 @@ class Events(commands.Cog):
             f"{PrintColors.OKGREEN}Successfully loaded patreon banner{PrintColors.ENDC}"
         )
 
+    async def _insert_const_to_db(self) -> None:
+        """If it doesn't exist, insert some constants into the db"""
+        # Check if the constants are already in the db
+        made_changes = False
+        _all = await DB.const.find({}).to_list(length=None)
+        for value in CONST_DEFAULT:
+            if not any([value["_id"] == x["_id"] for x in _all]):
+                made_changes = True
+                await DB.const.insert_one(value)
+                logging.info(
+                    f"{PrintColors.OKGREEN}Inserted constant {value['_id']} into the db because it previously did not exist{PrintColors.ENDC}"
+                )
+        if not made_changes:
+            logging.info(
+                f"{PrintColors.OKGREEN}All constants are already in the db, no need for extra inserts{PrintColors.ENDC}"
+            )
+
     def print_dev_text(self) -> None:
         logging.info(
             f"{PrintColors.OKGREEN}Running bot in dev enviroment...{PrintColors.ENDC}"
         )
 
     async def cog_load(self):
-        # Changing Killua's status
+        await self._insert_const_to_db()
         await self._set_patreon_banner()
         if self.client.is_dev:
             self.print_dev_text()
@@ -267,7 +285,7 @@ class Events(commands.Cog):
                         except discord.Forbidden:
                             continue
         except ServerSelectionTimeoutError:
-            return logging.warn(
+            return logging.warning(
                 f"{PrintColors.WARNING}Could not send vote reminders because the database is not available{PrintColors.ENDC}"
             )
 
@@ -289,13 +307,17 @@ class Events(commands.Cog):
 
         # If it has been more than 24 hours since the last save
         if self.skipped_first:
-            logging.debug(PrintColors.OKBLUE + "Saving stats:")
-            logging.debug(
-                "Guilds: {} | Users: {} | Registered Users: {} | Daily Users: {}{}".format(
+            approx_users = await self.client.get_approximate_user_count()
+            approximate_user_install_count = (await self.client.application_info()).approximate_user_install_count
+            logging.info(PrintColors.OKBLUE + "Saving stats:")
+            logging.info(
+                "Guilds: {} | Users: {} | Registered Users: {} | Daily Users: {} | Approximate Users: {} | User Installs: {}{}".format(
                     len(self.client.guilds),
                     len(self.client.users),
                     await DB.teams.count_documents({}),
                     len(daily_users.users),
+                    approx_users,
+                    approximate_user_install_count,
                     PrintColors.ENDC,
                 )
             )
@@ -309,6 +331,8 @@ class Events(commands.Cog):
                             "users": len(self.client.users),
                             "registered_users": await DB.teams.count_documents({}),
                             "daily_users": len(daily_users.users),
+                            "approximate_users": approx_users,
+                            "user_installs": approximate_user_install_count,
                         }
                     }
                 },
@@ -322,13 +346,15 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         # Changing the status
-        await self.client.update_presence()
+        if self.client.guilds % 7 == 0: # Different number than on_guild_remove so if someone keeps re-adding the bot it doesn't spam the status
+            await self.client.update_presence()
         await Guild.add_default(guild.id, guild.member_count)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):
         # Changing Killua's status
-        await self.client.update_presence()
+        if self.client.guilds % 10 == 0:
+            await self.client.update_presence()
         await (await Guild.new(guild.id)).delete()
         await self._post_guild_count()
 
@@ -1038,6 +1064,9 @@ class Events(commands.Cog):
             error, commands.CheckFailure
         ):  # I don't care if this happens
             return
+        
+        if isinstance(error, discord.HTTPException) and error.code == 200000:
+            return await ctx.send("The content of this message was blocked by automod. Please respect the rules of the server.", ephemeral=True)
 
         if self.client.is_dev:  # prints the full traceback in dev enviroment
             # CRITICAL for the dev bot instead of error is because it makes it easier spot

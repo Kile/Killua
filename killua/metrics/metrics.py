@@ -68,6 +68,14 @@ DAILY_ACTIVE_USERS = Gauge(
     METRIC_PREFIX + "daily_active_users", "Amount of users that use the bot daily"
 )
 
+APPROXIMATE_USER_COUNT = Gauge(
+    METRIC_PREFIX + "approximate_user_count", "Combined amount of users in all guilds the bot is on"
+)
+
+USER_INSTALLS = Gauge(
+    METRIC_PREFIX + "user_installs", "Amount of users that have installed the bot to their account"
+)
+
 COMMAND_USAGE = Gauge(
     METRIC_PREFIX + "command_usage",
     "Amount of times a command was used",

@@ -157,10 +157,12 @@ class Card:
         ]
 
     def formatted_image_url(self, client: BaseBot, *, to_fetch: bool) -> str:
+        endpoint = self.image_url.split("image/")[1]
+        token, expiry = client.sha256_for_api(endpoint, 60 * 60 * 24)
         if to_fetch:
-            return f"http://{'api' if client.run_in_docker else '0.0.0.0'}:{client.dev_port}{self.image_url}"
+            return f"http://{'api' if client.run_in_docker else '0.0.0.0'}:{client.dev_port}{self.image_url}?token={token}&expiry={expiry}"
 
-        return client.url + self.image_url
+        return client.url + self.image_url + f"?token={token}&expiry={expiry}"
 
     async def _wait_for_defense(
         self, ctx: commands.Context, other: "User", effects: list
@@ -358,17 +360,9 @@ class Card:
                 "fields": fields,
             }
         )
-        if client.is_dev:
-            # Fetch the image from the api
-            image = await client.session.get(
-                card.formatted_image_url(client, to_fetch=True)
-            )
-            embed.set_thumbnail(url="attachment://image.png")
-            file = discord.File(BytesIO(await image.read()), filename="image.png")
-            return embed, file
-        else:
-            embed.set_thumbnail(url=card.formatted_image_url(client, to_fetch=False))
-            return embed, None
+        return await client.make_embed_from_api(
+            card.formatted_image_url(client, to_fetch=client.is_dev), embed, no_token=True, thumbnail=True
+        )
 
     async def _get_list_embed(
         self, card_id: int, client: BaseBot
@@ -376,7 +370,7 @@ class Card:
         card = Card(card_id)
 
         real_owners = []
-        async for o in card.owners():
+        for o in await card.owners():
             # Get the total number of owners
             if not o in real_owners:
                 real_owners.append(o)
@@ -384,10 +378,9 @@ class Card:
             {
                 "title": f"Infos about card {card.name}",
                 "description": f"**Total copies in circulation**: {len(await card.owners())}\n\n**Total owners**: {len(real_owners)}",
-                "image": {"url": card.formatted_image_url(client, to_fetch=False)},
                 "color": 0x3E4A78,
             }
         )
         return await client.make_embed_from_api(
-            card.formatted_image_url(client, to_fetch=client.is_dev), embed
+            card.formatted_image_url(client, to_fetch=client.is_dev), embed, no_token=True
         )

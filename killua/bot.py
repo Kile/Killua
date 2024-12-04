@@ -14,7 +14,7 @@ from logging import info
 from hashlib import sha256
 from inspect import signature, Parameter
 from functools import partial
-from typing import Coroutine, Union, Dict, List, Optional, Tuple
+from typing import Coroutine, Union, Dict, List, Optional, Tuple, cast
 
 from .migrate import migrate_requiring_bot
 from .static.enums import Category
@@ -450,8 +450,26 @@ class BaseBot(commands.AutoShardedBot):
             expiry,
         )
 
+    async def get_approximate_user_count(self) -> int:
+        return cast(
+            dict,
+            (
+                await DB.guilds.aggregate(
+                    [
+                        {"$match": {"approximate_member_count": {"$exists": True}}},
+                        {
+                            "$group": {
+                                "_id": None,
+                                "total": {"$sum": "$approximate_member_count"},
+                            }
+                        },
+                    ]
+                ).to_list(length=None)
+            )[0],
+        ).get("total", 0)
+
     async def make_embed_from_api(
-        self, image_url: str, embed: discord.Embed, expire_in: int = 60 * 60 * 24 * 7
+        self, image_url: str, embed: discord.Embed, expire_in: int = 60 * 60 * 24 * 7, no_token: bool = False, thumbnail: bool = False
     ) -> Tuple[discord.Embed, Optional[discord.File]]:
         """
         Makes an embed from a Killua API image url.
@@ -464,20 +482,27 @@ class BaseBot(commands.AutoShardedBot):
         """
         file = None
         base_url = self.api_url(to_fetch=True)
-        image_path = image_url.split(base_url)[1].split("image/")[1]
-        token, expiry = self.sha256_for_api(image_path, expires_in_seconds=expire_in)
+        if no_token is False:
+            image_path = image_url.split(base_url)[1].split("image/")[1]
+            token, expiry = self.sha256_for_api(image_path, expires_in_seconds=expire_in)
 
         if self.is_dev:
             # Upload the image as attachment instead
-            data = await self.session.get(image_url + f"?token={token}&expiry={expiry}")
+            data = await self.session.get(image_url + ("" if no_token else f"?token={token}&expiry={expiry}"))
             if data.status != 200:
                 raise KilluaAPIException(await data.text())
 
-            extension = image_url.split(".")[-1]
-            embed.set_image(url=f"attachment://image.{extension}")
+            extension = image_url.split(".")[-1].split("?")[0]
+            if thumbnail:
+                embed.set_thumbnail(url=f"attachment://image.{extension}")
+            else:
+                embed.set_image(url=f"attachment://image.{extension}")
             file = discord.File(BytesIO(await data.read()), f"image.{extension}")
         else:
-            embed.set_image(url=image_url + f"?token={token}&expiry={expiry}")
+            if thumbnail:
+                embed.set_thumbnail(url=image_url + ("" if no_token else f"?token={token}&expiry={expiry}"))
+            else:
+                embed.set_image(url=image_url + ("" if no_token else f"?token={token}&expiry={expiry}"))
         return embed, file
 
     async def update_presence(self):

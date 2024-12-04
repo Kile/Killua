@@ -443,7 +443,7 @@ class Card1032(Card, IndividualCard):
         await self._is_maxed_check(target.id)
         await author.add_card(target.id)
 
-        await self.ctx.send(f"Successfully added card No. {target} to your inventory")
+        await self.ctx.send(f"Successfully added card No. {target} to your inventory")
 
 
 class Card1035(Card, IndividualCard):

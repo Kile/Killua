@@ -95,11 +95,11 @@ class Book:
 
     async def _get_card(self, url: str) -> Image.Image:
         """Gets a card image from the url"""
-        res = await self.session.get(url + "?token=" + self.card_token_cache[0] + "&expiry=" + self.card_token_cache[1])
+        res = await self.session.get(url)
         image_bytes = await res.read()
         image_card = Image.open(BytesIO(image_bytes)).convert("RGBA")
         image_card = image_card.resize((84 * self.scalar, 115 * self.scalar), Image.LANCZOS)
-        # await asyncio.sleep(0.4) # This is to hopefully prevent aiohtts's "Response payload is not completed" bug
+        # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
         return image_card
 
     def _set_page(self, image: Image.Image, page: int) -> Image.Image:

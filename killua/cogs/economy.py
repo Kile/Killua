@@ -149,7 +149,7 @@ class Economy(commands.GroupCog, group_name="econ"):
                         "inline": False,
                     },
                 ],
-                "thumbnail": {"url": str(user.avatar.url) if user.avatar else None},
+                "thumbnail": {"url": str(user.display_avatar.url) if user.avatar else None},
                 "image": {"url": user.banner.url if user.banner else None},
                 "color": 0x3E4A78,
             }

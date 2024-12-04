@@ -265,7 +265,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
 
         embed = discord.Embed.from_dict(
             {
-                "title": f"Avatar of {user}",
+                "title": f"Avatar of {user.display_name}",
                 "image": {"url": str(avatar.url)},
                 "color": await self.client.find_dominant_color(avatar.url),
             }

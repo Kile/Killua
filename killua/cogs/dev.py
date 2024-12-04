@@ -263,7 +263,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         return c.extras
 
     async def initial_top(self, ctx: commands.Context) -> None:
-        # Convert the ids to actualy command names
+        # Convert the ids to actually command names
         usage_data: Dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
             "command_usage"
         ]
@@ -672,9 +672,15 @@ class Dev(commands.GroupCog, group_name="dev"):
                 elif page == 4:
                     # Daily users
                     return self._get_stats_embed(data, embed, "daily_users")
+                elif page == 5:
+                    # Approximate users
+                    return self._get_stats_embed(data, embed, "approximate_users")
+                elif page == 6:
+                    # User installs
+                    return self._get_stats_embed(data, embed, "user_installs")
 
             return await Paginator(
-                ctx, func=make_embed, max_pages=4, has_file=True
+                ctx, func=make_embed, max_pages=6, has_file=True
             ).start()
         else:
             n_of_commands = 0

@@ -45,4 +45,4 @@ FROM base AS prod
 RUN groupadd -g "${MYGID}" python \
 && useradd --create-home --no-log-init -u "${MYUID}" -g "${MYGID}" python
 USER python
-CMD ["python3", "-m", "killua", "--docker"]
+CMD ["python3", "-m", "killua", "--docker", "--force-local"]

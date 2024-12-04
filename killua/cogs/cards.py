@@ -223,9 +223,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 )
 
         async def make_embed(page, *_) -> Tuple[discord.Embed, discord.File]:
-            return await Book(
-                self.client
-            ).create(ctx.author, page)
+            return await Book(self.client).create(ctx.author, page)
 
         return await Paginator(
             ctx,
@@ -705,7 +703,9 @@ class Cards(commands.GroupCog, group_name="cards"):
                 + " ".join(
                     [
                         f"[{k}: {v.__name__}]"
-                        for k, v in card_class.exec.__annotations__.items()
+                        for k, v in cast(
+                            IndividualCard, card_class
+                        ).exec.__annotations__.items()
                         if not str(k) == "return"
                     ]
                 )
