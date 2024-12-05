@@ -1,7 +1,10 @@
 [
     {
-        "url": "/image/hugs/0.jpg",
-        "artist": null
+        "url": "/image/hugs/0.gif",
+        "artist": {
+            "name": "Madhouse",
+            "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
+        }
     },
     {
         "url": "/image/hugs/1.jpeg",
@@ -46,11 +49,8 @@
         }
     },
     {
-        "url": "/image/hugs/7.gif",
-        "artist": {
-            "name": "Madhouse",
-            "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
-        }
+        "url": "/image/hugs/0.jpg",
+        "artist": null
     },
     {
         "url": "/image/hugs/8.gif",
@@ -172,7 +172,7 @@
         }
     },
     {
-        "url": "/image/hugs/25.jpeg",
+        "url": "/image/hugs/25.jpg",
         "artist": {
             "name": "たらこのこ",
             "link": "https://www.pixiv.net/en/users/489866"

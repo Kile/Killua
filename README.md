@@ -129,6 +129,9 @@ Regardless of how you decide to run Killua, you need to edit the `.env` file. Th
 
 This file has a template in the same directory with the same name but with `.template` at the end. You can copy it and edit it to your liking.
 
+### Assets
+Killua uses a lot of images. These are stored in the `assets` folder. Some assets are gitignored and will not be in this folder. These are mainly all `cards` images except the `PLACEHOLDER`s and all hugs except `0.gif`. This is to avoid revealing secrets about the game and to avoid yoinking people's art for the hug images. The bot should still run out of the box without these. For local development, you should not need these images. However if you do want to use them, you need to edit `cards.json` or `hugs.json` respectively to point to the correct image you upload. The bot is not designed to handle a card url that does not have an asset associated with it, so if you want to use the `private` cards, you need to supply all images. More about this in the next section. Similarly if you change the only hug image that is not gitignored but not its data in `hugs.json`, it will not work.
+
 ### If you want to use/edit the "Greed Island" game locally
 The default behavior for where the bot gets all the card data from is a censored list from the remote API `api.killua.dev/cards.json?public=true`. (The public list if it is run in dev mode, the non-censored list requires authorization). This is intended to work out of the box when you first run Killua locally. If you would like to edit the list of cards though, you can instead force Killua to instead request that endpoint from your local instance of the API. To do this, run Killua with the `--force-local` or `-fl` flag. This will instead request localhost or the Docker container the API runs in.
 

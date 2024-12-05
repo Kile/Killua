@@ -120,10 +120,10 @@ fn get_single_image_with_wrong_token() {
 #[test]
 fn get_multiple_images() {
     let client = Client::tracked(rocket()).unwrap();
-    let (token, expiry) = get_valid_token("all_cards".to_string(), None);
+    let (token, expiry) = get_valid_token("vote_rewards".to_string(), None);
     let image_response = client
         .get(format!(
-            "/image/cards/1.png?token={}&expiry={}",
+            "/image/boxes/big_box.png?token={}&expiry={}",
             token, expiry
         ))
         .dispatch();
@@ -131,7 +131,7 @@ fn get_multiple_images() {
     assert_eq!(image_response.content_type(), Some(ContentType::PNG));
     let image_response = client
         .get(format!(
-            "/image/cards/2.png?token={}&expiry={}",
+            "/image/boxes/booster_box.png?token={}&expiry={}",
             token, expiry
         ))
         .dispatch();

@@ -75,7 +75,7 @@ pub async fn image(
             serde_json::json!({"error": "Invalid token"}),
         )));
     };
-    Ok(NamedFile::open(Path::new("src/images").join(images))
+    Ok(NamedFile::open(Path::new("../assets").join(images))
         .await
         .ok())
 }

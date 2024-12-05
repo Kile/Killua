@@ -4,7 +4,6 @@ import discord
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from typing import Any, Callable, TypeVar, Generic, Union, Dict, List, Tuple
 
-from os.path import exists
 from killua.utils.test_db import TestingDatabase as Database
 import killua.args as args
 
@@ -765,6 +764,8 @@ ACTIONS = {
     "tickle": {"text": TICKLE_TEXTS, "images": "not used"},
     "cuddle": {"text": CUDDLE_TEXTS, "images": "not used"},
 }
+
+LIMITED_HUGS_ENDPOINT = HUG_IMGS[0]
 
 
 # the patreon banner being a discord.File in the cache because it's unnecessary to fetch every time I need it. The current value is the url to be fetched

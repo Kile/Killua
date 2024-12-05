@@ -37,6 +37,7 @@ services:
       - "6060:7650"
     volumes:
       - ./cards.json:/app/cards.json
+      - ./assets:/app/assets
     environment:
       - ZMQ_ADDRESS=tcp://proxy:5559
     env_file:

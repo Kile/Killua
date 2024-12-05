@@ -7,6 +7,7 @@ class _Args:
     migrate: Optional[bool] = None
     test: Optional[bool] = None
     log: Optional[str] = None
+    download: Optional[str] = None
 
     @classmethod
     def get_args(cls) -> None:

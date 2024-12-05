@@ -1,15 +1,16 @@
 import discord
 from discord.ext import commands
-import random
-import asyncio
+import asyncio, os, random
+from pathlib import Path
+from logging import info, warning
 from typing import List, Union, Optional, cast, Tuple, Dict
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.classes import User
-from killua.static.enums import Category
+from killua.static.enums import Category, PrintColors
 from killua.utils.interactions import View
-from killua.static.constants import ACTIONS, KILLUA_BADGES
+from killua.static.constants import ACTIONS, KILLUA_BADGES, LIMITED_HUGS_ENDPOINT
 
 
 class ActionException(Exception):
@@ -53,10 +54,42 @@ class SettingsButton(discord.ui.Button):
 @discord.app_commands.allowed_installs(guilds=True, users=True)
 @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 class Actions(commands.GroupCog, group_name="action"):
-
     def __init__(self, client: BaseBot):
         self.client = client
         self.session = self.client.session
+        self.limited_hugs = False
+
+    async def cog_load(self):
+        # Get number of files in assets/hugs
+        DIR = Path(__file__).parent.parent.parent.joinpath("assets/hugs")
+ 
+        files = [
+            name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name)) and not name.startswith(".")
+        ]
+        number_of_hug_imgs = len(files)
+
+        if number_of_hug_imgs != len(ACTIONS["hug"]["images"]):
+            first_filename = cast(str, LIMITED_HUGS_ENDPOINT["url"]).split("/")[-1]
+            info(
+                f"{PrintColors.WARNING}Number of hug images do not match expected number (expected: {len(ACTIONS['hug']['images'])}, actual: {number_of_hug_imgs}). Will attempt to use {first_filename} every time instead. You can ignore this warning for dev mode.{PrintColors.ENDC}"
+            )
+            self.limited_hugs = True
+            return
+        
+        # Constant will be sorted, the files variable will not
+        files.sort(key=lambda f: int(cast(str, f).split(".")[0]))
+        for filename, expected_filename in zip(files, ACTIONS["hug"]["images"]):
+            if (
+                filename.split(".")[-1]
+                != cast(str, expected_filename["url"]).split(".")[-1]
+            ):
+                warning(
+                    f"{PrintColors.WARNING}Hug image {filename} does not match expected file type. Make sure to edit hugs.json to avoid errors.{PrintColors.ENDC}"
+                )
+
+        info(
+            f"{PrintColors.OKGREEN}{number_of_hug_imgs} hugs loaded.{PrintColors.ENDC}"
+        )
 
     async def request_action(self, endpoint: str) -> Union[dict, str]:
         """
@@ -156,9 +189,9 @@ class Actions(commands.GroupCog, group_name="action"):
             APIException: If the API returns an error
         """
         if endpoint == "hug":
-            chosen = random.choice(ACTIONS[endpoint]["images"])
+            chosen = LIMITED_HUGS_ENDPOINT if self.limited_hugs else random.choice(ACTIONS[endpoint]["images"])
             if not cast(str, chosen["url"]).startswith("http"):
-                # This could have already been done
+                # This could have already been done (Python mutability my beloved)
                 chosen["url"] = (
                     self.client.api_url(to_fetch=self.client.is_dev) + chosen["url"]
                 )
@@ -191,7 +224,9 @@ class Actions(commands.GroupCog, group_name="action"):
             author="**"
             + (author if isinstance(author, str) else author.display_name)
             + "**",
-            user="**" +(users if isinstance(users, str) else self.generate_users(users, text)) + "**",
+            user="**"
+            + (users if isinstance(users, str) else self.generate_users(users, text))
+            + "**",
         )
 
         embed = discord.Embed.from_dict(
@@ -206,9 +241,13 @@ class Actions(commands.GroupCog, group_name="action"):
         file = None
         if endpoint == "hug":
             image_path = image_url.split("image/")[1]
-            token, expiry = self.client.sha256_for_api(image_path, expires_in_seconds=60 * 60 * 24 * 7)
+            token, expiry = self.client.sha256_for_api(
+                image_path, expires_in_seconds=60 * 60 * 24 * 7
+            )
             image_url += f"?token={token}&expiry={expiry}"
-            embed, file = await self.client.make_embed_from_api(image_url, embed, no_token=True)
+            embed, file = await self.client.make_embed_from_api(
+                image_url, embed, no_token=True
+            )
         else:
             # Does not need to be fetched under any conditions
             embed.set_image(url=image_url)
@@ -239,7 +278,9 @@ class Actions(commands.GroupCog, group_name="action"):
         except asyncio.TimeoutError:
             return None, None  # Needs to be a tuple
         else:
-            return await self.action_embed(ctx.command.name, "Killua", ctx.author.display_name)
+            return await self.action_embed(
+                ctx.command.name, "Killua", ctx.author.display_name
+            )
 
     def has_disabled(self, user: User, action: str) -> bool:
         """
@@ -252,11 +293,7 @@ class Actions(commands.GroupCog, group_name="action"):
         )
 
     async def _save_stat_for(
-        self, 
-        user: discord.User, 
-        action: str, 
-        targeted: bool = False, 
-        amount: int = 1
+        self, user: discord.User, action: str, targeted: bool = False, amount: int = 1
     ) -> None:
         """
         Saves the action being done on a user and sends a message if the user has reached a milestone for the action
@@ -271,9 +308,9 @@ class Actions(commands.GroupCog, group_name="action"):
                 pass
 
     async def get_allowed_users(
-            self,
-            users: List[discord.User],
-            command_name: str,
+        self,
+        users: List[discord.User],
+        command_name: str,
     ) -> Tuple[List[discord.User], int]:
         """
         Returns a list of users that are allowed to use the action command
@@ -315,7 +352,9 @@ class Actions(commands.GroupCog, group_name="action"):
 
         if isinstance(embed, str):
             await self.client.send_message(ctx, content=embed)
-        elif embed is not None: # May be None from no_argument, in which case we don't want to send a message
+        elif (
+            embed is not None
+        ):  # May be None from no_argument, in which case we don't want to send a message
             await self.client.send_message(ctx, embed=embed, file=file)
 
     async def do_action(
