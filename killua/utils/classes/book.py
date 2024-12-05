@@ -26,7 +26,6 @@ class Book:
         self.base_url = client.api_url(to_fetch=True)
         self.client = client
         self._book_token_cache: Tuple[str, str] = None
-        self._card_token_cache: Tuple[str, str] = None
         self.scalar = 2
 
     @property
@@ -35,13 +34,6 @@ class Book:
         if self._book_token_cache is None or datetime.fromtimestamp(float(self._book_token_cache[1])) < datetime.now():
             self._book_token_cache = self.client.sha256_for_api("book", 60 * 60 * 24)
         return self._book_token_cache
-    
-    @property
-    def card_token_cache(self) -> Tuple[str, str]:
-        # No token is permanent, so it may need to be refreshed if the token is older than 24 hours
-        if self._card_token_cache is None or datetime.fromtimestamp(float(self._card_token_cache[1])) < datetime.now():
-            self._card_token_cache = self.client.sha256_for_api("all_cards", 60 * 60 * 24)
-        return self._card_token_cache
 
     async def create_image(
         self, data: list, restricted_slots: bool, page: int

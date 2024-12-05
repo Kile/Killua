@@ -1,4 +1,5 @@
 use super::common::keys::ApiKey;
+use load_file::load_str;
 use rocket::response::status::BadRequest;
 use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
@@ -24,7 +25,7 @@ static CENSORED_CACHE: OnceCell<Json<Vec<Card<'static>>>> = OnceCell::const_new(
 static CACHE: OnceCell<Json<Vec<Card<'static>>>> = OnceCell::const_new();
 
 pub fn parse_file() -> Result<Vec<Card<'static>>, BadRequest<Json<Value>>> {
-    let cards = include_str!("../cards.json");
+    let cards = load_str!("../../../cards.json");
     let cards: Vec<Card<'static>> = match serde_json::from_str(cards) {
         Ok(cards) => cards,
         Err(_) => {

@@ -7,7 +7,7 @@ For version `v1.2.0`, I spent a *lot* of time finding new hug images and the art
 3) I am planning on adding more content to the Greed Island system and I do not want people able to see new cards throuh the API like the already new (and secret) card 0.
 
 > [!NOTE]
-> Obviously all of this is kinda naive. Since I am publishing these images on GitHub, people can still just go and steal my work. But I am not going to change my bot to closed source so this is a tradeoff I will have to live with.
+> Obviously all of this is kinda naive. Since I am publishing these images on GitHub, people can still just go and steal my work without credit to the artists. But I am not going to change my bot to closed source so this is a tradeoff I will have to live with.
 
 Inspired by Discord, I wanted to now add a token to the request which would only be valid for 1) a certain amount of time and 2) certain whitlisted endpoint. So with token `abcdefg` you could only access `image/hugs/10.png` and only for 1 day. This would be enough to display it when the command was used but would prevent people from re-using that link and to request any images without a token.
 

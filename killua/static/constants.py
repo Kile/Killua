@@ -24,7 +24,7 @@ CONST_DEFAULT = [  # The default values for the const collection
 
 MAX_VOTES_DISPLAYED = 5
 
-CARDS_URL = "https://api.killua.dev/cards.json?public=true"
+CARDS_URL = "https://api.killua.dev/cards.json?public="
 
 API_ROUTES = ["/diagnostics", "/commands", "/stats", "/image", "/vote"]
 

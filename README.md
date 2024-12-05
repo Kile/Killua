@@ -1,6 +1,6 @@
 ## Killua Discord Bot
 <p align="center">
-  <a href"https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
+  <a href="https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
      <img src="https://i.imgur.com/diOmUcl.png">
   </a>
 </p>
@@ -78,8 +78,8 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] Rust
 *   [x] Prometheus
 *   [x] Grafana
-*   [ ] Dynamically deploying docker containers
-*   [ ] Multithreading the bot (related to the above but can be static)
+*   [ ] Dynamically deploying docker containers/Kubernetes
+*   [ ] Custom sharding the bot (related to the above)
 
 ## Contributors
 
@@ -132,12 +132,12 @@ This file has a template in the same directory with the same name but with `.tem
 ### If you want to use/edit the "Greed Island" game locally
 The default behavior for where the bot gets all the card data from is a censored list from the remote API `api.killua.dev/cards.json?public=true`. (The public list if it is run in dev mode, the non-censored list requires authorization). This is intended to work out of the box when you first run Killua locally. If you would like to edit the list of cards though, you can instead force Killua to instead request that endpoint from your local instance of the API. To do this, run Killua with the `--force-local` or `-fl` flag. This will instead request localhost or the Docker container the API runs in.
 
+To use the local cards endpoint, you need to download the `cards.json` file. You can do this by running `python3 -m killua --download <public/private>` where `<public/private>` is the type of cards you want to download (private will require the API_KEY env variable set as it is the uncensored version). This will download the cards from the remote API and save them in the right directory (`cards.json`). You can edit these freely, however spell cards and their effects are in the code and not that file, so using a spell card ID will still behave as a spell card.
+
 If you are running the bot using Docker (and build it locally with the `--build` flag), the default behavior is to use the remote API if in dev mode, and the local API in production mode. This is so development is plug and play and production runs faster by directly requesting another container rather than the internet. To change this, go into the `Dockerfile` in the `killua` directory and edit the arguments passed to the bot in the last line (`CMD`). You can add the `--force-local` flag to force the bot to use the local which will then request the API container instead.
 
 > [!INFO] 
-> Even when using `--forcel-local`, your local cards will still be censored if in dev mode. To prevent this, omit the `--development` or `-d` flag when running the bot. The censored version is still designed in a way that will let you test most of the functionality (eg name autocomplete, images in the book command etc) so most of the time this will not really be necessary. You may need to replace the emoji though as some code needs it to be a custom emoji.
-
-There even is a handy way to download the cards in the right directory rather than having to copy paste the censored version. This should be done before forcing the bot to use the local API. To do this, run `python3 -m killua --download`. This will download the (censored) cards from the remote API and save them in the right directory (`api/src/cards.json`). You can edit these freely, however spell cards and their effects are in the code and not that file, so using a spell card ID will still behave as a spell card.
+> Even when using `--force-local`, your local cards will still be censored if in dev mode. To prevent this, omit the `--development` or `-d` flag when running the bot. The censored version is still designed in a way that will let you test most of the functionality (eg name autocomplete, images in the book command etc) so most of the time this will not really be necessary. You may need to replace the emoji though as some code needs it to be a custom emoji.
 
 ### MongoDB Atlas
 Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then create a collection called "Killua". You can then create a user with read and write permissions to this collection. You can then add the connection string to the `.env` file. Killua should automatically create the needed collections and indexes on startup. However this is rarely tested so please contact me if you encounter any issues.
@@ -250,7 +250,7 @@ If you use Docker to run Killua, this would work without any additional setup. I
 
 
 ## Thanks for checking this repo out!
-If you don't like me using one of your images for the hug command, please contact me on discord `k1le` or on `kile@killua.dev`
+If you don't like me using one of your images for the hug command, please contact me on Discord `k1le` or at `kile@killua.dev`
 
 If you have any further questions, join my discord server or dm me!
 

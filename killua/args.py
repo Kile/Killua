@@ -45,9 +45,10 @@ class _Args:
         parser.add_argument(
             "-dl",
             "--download",
-            help="Download all cards into a file for offline testing",
-            action="store_const",
-            const=True,
+            help="Download all cards into a file for testing and modifying cards",
+            default=None,
+            choices=["public", "private"],
+            metavar="type",
         )
         parser.add_argument(
             "-dc",

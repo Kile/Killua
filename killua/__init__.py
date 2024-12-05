@@ -36,7 +36,7 @@ async def main():
         return await run_tests(args.test)
 
     if args.download:
-        return await download()
+        return await download(args.download.lower())
 
     session = aiohttp.ClientSession()
     intents = discord.Intents(

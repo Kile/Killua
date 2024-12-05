@@ -35,6 +35,8 @@ services:
     container_name: rust_api
     ports:
       - "6060:7650"
+    volumes:
+      - ./cards.json:/app/cards.json
     environment:
       - ZMQ_ADDRESS=tcp://proxy:5559
     env_file:
