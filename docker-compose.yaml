@@ -66,6 +66,8 @@ services:
     depends_on:
       - api
       - proxy
+    volumes:
+      - ./assets:/app/assets
     <<: *common-labels
 
   grafana:
