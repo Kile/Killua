@@ -4,8 +4,8 @@ import discord
 
 import logging
 import traceback
-from asyncio import sleep, run_coroutine_threadsafe
-from datetime import datetime, timedelta
+from asyncio import sleep
+from datetime import datetime
 from discord.ext import commands, tasks
 from PIL import Image
 from enum import Enum
@@ -15,7 +15,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 
 from killua.metrics import DAILY_ACTIVE_USERS
 from killua.bot import BaseBot
-from killua.utils.classes import Guild, Book, User
+from killua.utils.classes import Guild, Book, User, Card
 from killua.static.enums import PrintColors
 from killua.static.constants import (
     TOPGG_TOKEN,
@@ -24,6 +24,7 @@ from killua.static.constants import (
     DB,
     GUILD,
     MAX_VOTES_DISPLAYED,
+    CONST_DEFAULT,
 )
 
 
@@ -49,6 +50,44 @@ class Events(commands.Cog):
     def log_channel(self):
         return self.client.get_guild(GUILD).get_channel(self.log_channel_id)
 
+    async def _initialize_card_json(self, retry_timeout=5) -> None:
+        """Initializes the card json"""
+        status = None
+        while status != 200:
+            result = await self.client.session.get(
+                self.client.api_url(to_fetch=False, is_for_cards=True)
+                + "/cards.json"
+                + ("?public=true" if self.client.is_dev else ""),
+                headers={"Authorization": self.client.secret_api_key},
+            )
+            status = result.status
+            if result.status != 200:
+                retry_timeout *= 2
+                logging.warning(
+                    f"{PrintColors.WARNING}Failed to fetch cards with status code: {result.status}. Will try again in {retry_timeout}s...{PrintColors.ENDC}"
+                )
+                # If the status code is not 200, wait for a bit and try again
+                await sleep(retry_timeout)
+            else:
+                cards = await result.json()
+                Card.raw = cards
+                logging.info(
+                    PrintColors.OKGREEN
+                    + "Successfully fetched and cached cards from "
+                    + ("local" if self.client.force_local else "remote")
+                    + " using the "
+                    + (
+                        "public (censored)"
+                        if self.client.is_dev
+                        else "secret (uncensored)"
+                    )
+                    + " version"
+                    + PrintColors.ENDC
+                )
+                self.client.dispatch(
+                    "cards_loaded"
+                )  # Dispatches the event that the cards are loaded
+
     async def _post_guild_count(self) -> None:
         """Posts relevant stats to the botlists Killua is on"""
         await self.client.session.post(
@@ -64,29 +103,35 @@ class Events(commands.Cog):
 
     async def _load_cards_cache(self) -> None:
         """Downloads all the card images so the image manipulation is fairly fast"""
-        cards = [x async for x in DB.items.find()]
 
-        if len(cards) == 0:
+        if len(Card.raw) == 0:
             return logging.error(
-                f"{PrintColors.WARNING}No cards in the database, could not load cache{PrintColors.ENDC}"
+                f"{PrintColors.WARNING}No cards cached, could not load image cache{PrintColors.ENDC}"
             )
+
+        token, expiry = self.client.sha256_for_api("all_cards", 180)
+        logging.info(
+            f"{PrintColors.OKGREEN}Created token to load cards cache{PrintColors.ENDC}"
+        )
 
         logging.info(f"{PrintColors.WARNING}Loading cards cache....{PrintColors.ENDC}")
         percentages = [25, 50, 75]
-        for p, item in enumerate(cards):
+        for p, item in enumerate(Card.raw):
             try:
-                if item["_id"] in Book.card_cache:
+                if item["id"] in Book.card_cache:
                     continue  # in case the event fires multiple times this avoids using unnecessary cpu power
 
-                async with self.client.session.get(
-                    self.client.api_url(to_fetch=True) + item["image"]
-                ) as res:
-                    image_bytes = await res.read()
-                    image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
-                    image_card = image_card.resize((84, 115), Image.LANCZOS)
+                res = await self.client.session.get(
+                    self.client.api_url(to_fetch=True)
+                    + item["image"]
+                    + f"?token={token}&expiry={expiry}"
+                )
+                image_bytes = await res.read()
+                image_card = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
+                image_card = image_card.resize((84, 115), Image.LANCZOS)
 
                 Book.card_cache[str(item["_id"])] = image_card
-                if len(percentages) >= 1 and (p / len(cards)) * 100 > (
+                if len(percentages) >= 1 and (p / len(Card.raw)) * 100 > (
                     percent := percentages[0]
                 ):
                     logging.info(
@@ -111,22 +156,45 @@ class Events(commands.Cog):
             f"{PrintColors.OKGREEN}Successfully loaded patreon banner{PrintColors.ENDC}"
         )
 
+    async def _insert_const_to_db(self) -> None:
+        """If it doesn't exist, insert some constants into the db"""
+        # Check if the constants are already in the db
+        made_changes = False
+        _all = await DB.const.find({}).to_list(length=None)
+        for value in CONST_DEFAULT:
+            if not any([value["_id"] == x["_id"] for x in _all]):
+                made_changes = True
+                await DB.const.insert_one(value)
+                logging.info(
+                    f"{PrintColors.OKGREEN}Inserted constant {value['_id']} into the db because it previously did not exist{PrintColors.ENDC}"
+                )
+        if not made_changes:
+            logging.info(
+                f"{PrintColors.OKGREEN}All constants are already in the db, no need for extra inserts{PrintColors.ENDC}"
+            )
+
     def print_dev_text(self) -> None:
         logging.info(
             f"{PrintColors.OKGREEN}Running bot in dev enviroment...{PrintColors.ENDC}"
         )
 
     async def cog_load(self):
-        # Changing Killua's status
+        await self._insert_const_to_db()
         await self._set_patreon_banner()
         if self.client.is_dev:
             self.print_dev_text()
         else:
             await self._post_guild_count()
+
+    @commands.Cog.listener()
+    async def on_card_cache_loaded(self):
+        if not self.client.is_dev:
             await self._load_cards_cache()
 
     @commands.Cog.listener()
     async def on_ready(self):
+        if len(Card.raw) == 0:
+            await self._initialize_card_json()
         if not self.save_guilds.is_running() and not self.client.is_dev:
             self.save_guilds.start()
         if not self.vote_reminders.is_running():
@@ -190,7 +258,7 @@ class Events(commands.Cog):
                         embed = discord.Embed.from_dict(
                             {
                                 "title": "Vote Reminder",
-                                "description": f"Hey {user.name}, you voted the last time <t:{int(data['last_vote'].timestamp())}:R> for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
+                                "description": f"Hey {user.display_name}, you voted the last time <t:{int(data['last_vote'].timestamp())}:R> for Killua on __{site}__. Please consider voting for Killua so you can get your daily rewards and help the bot grow and keep your voting streak 🔥 going! You can toggle these reminders with `/dev voteremind`",
                                 "color": 0x3E4A78,
                             }
                         )
@@ -217,7 +285,7 @@ class Events(commands.Cog):
                         except discord.Forbidden:
                             continue
         except ServerSelectionTimeoutError:
-            return logging.warn(
+            return logging.warning(
                 f"{PrintColors.WARNING}Could not send vote reminders because the database is not available{PrintColors.ENDC}"
             )
 
@@ -239,13 +307,17 @@ class Events(commands.Cog):
 
         # If it has been more than 24 hours since the last save
         if self.skipped_first:
-            logging.debug(PrintColors.OKBLUE + "Saving stats:")
-            logging.debug(
-                "Guilds: {} | Users: {} | Registered Users: {} | Daily Users: {}{}".format(
+            approx_users = await self.client.get_approximate_user_count()
+            approximate_user_install_count = (await self.client.application_info()).approximate_user_install_count
+            logging.info(PrintColors.OKBLUE + "Saving stats:")
+            logging.info(
+                "Guilds: {} | Users: {} | Registered Users: {} | Daily Users: {} | Approximate Users: {} | User Installs: {}{}".format(
                     len(self.client.guilds),
                     len(self.client.users),
                     await DB.teams.count_documents({}),
                     len(daily_users.users),
+                    approx_users,
+                    approximate_user_install_count,
                     PrintColors.ENDC,
                 )
             )
@@ -259,6 +331,8 @@ class Events(commands.Cog):
                             "users": len(self.client.users),
                             "registered_users": await DB.teams.count_documents({}),
                             "daily_users": len(daily_users.users),
+                            "approximate_users": approx_users,
+                            "user_installs": approximate_user_install_count,
                         }
                     }
                 },
@@ -272,13 +346,15 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         # Changing the status
-        await self.client.update_presence()
+        if self.client.guilds % 7 == 0: # Different number than on_guild_remove so if someone keeps re-adding the bot it doesn't spam the status
+            await self.client.update_presence()
         await Guild.add_default(guild.id, guild.member_count)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):
         # Changing Killua's status
-        await self.client.update_presence()
+        if self.client.guilds % 10 == 0:
+            await self.client.update_presence()
         await (await Guild.new(guild.id)).delete()
         await self._post_guild_count()
 
@@ -988,6 +1064,9 @@ class Events(commands.Cog):
             error, commands.CheckFailure
         ):  # I don't care if this happens
             return
+        
+        if isinstance(error, discord.HTTPException) and error.code == 200000:
+            return await ctx.send("The content of this message was blocked by automod. Please respect the rules of the server.", ephemeral=True)
 
         if self.client.is_dev:  # prints the full traceback in dev enviroment
             # CRITICAL for the dev bot instead of error is because it makes it easier spot

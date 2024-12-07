@@ -8,6 +8,7 @@ env:
   RUST_BACKTRACE: full
   MONGODB: mongodb://localhost:27017/Killua
   API_KEY: test
+  HASH_SECRET: supersecretpassword
 
 jobs:
   setup:
@@ -21,9 +22,9 @@ jobs:
         with:
           filters: |
             api:
-              - 'api/**'
+              - 'api/**/*.rs'
 
-  # run only if some file in 'api' folder was changed
+  # run only if some file in 'api' folder was changed ending with .rs
   test:
     needs: setup
     if: ${{ needs.setup.outputs.api == 'true' }}
@@ -53,12 +54,14 @@ jobs:
 
       - name: Setup Rocket.toml
         run: mv api/Rocket.toml.template api/Rocket.toml
-      - name: Run tests
-        run: cargo test -- --test-threads=1
-        working-directory: api
+      - name: Setup local cards
+        run: "echo '[{\"id\": 0, \"name\": \"Name\", \"description\": \"One two\", \"image\": \"/image/image.png\", \"emoji\": \":pensive\", \"rank\": \"S\", \"limit\": 10, \"type\": \"monster\", \"available\": true}]' > cards.json"
       - name: Run clippy
         run: cargo clippy --all --all-features --tests -- -D warnings
         working-directory: api
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
+        working-directory: api
+      - name: Run tests
+        run: cargo test -- --test-threads=1
         working-directory: api

@@ -8,7 +8,15 @@
 .vscode/
 
 # Downloaded cards
-/cards.json
+cards.json
+
+# Some assets
+assets/hugs/*
+# Still allow an "official" hug for development
+!assets/hugs/0.gif
+assets/cards/*
+# Still allow the placeholder cards for development
+!assets/cards/PLACEHOLDER*.png
 
 # API log
 /api.log

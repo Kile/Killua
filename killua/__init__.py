@@ -8,7 +8,7 @@ from .migrate import migrate
 from .download import download
 from .bot import BaseBot as Bot, get_prefix
 
-# This needs to be in a seperate file from the __init__ file to
+# This needs to be in a separate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
 from .static.constants import TOKEN
 from .metrics import PrometheusLoggingHandler
@@ -36,7 +36,7 @@ async def main():
         return await run_tests(args.test)
 
     if args.download:
-        return await download()
+        return await download(args.download.lower())
 
     session = aiohttp.ClientSession()
     intents = discord.Intents(
@@ -58,6 +58,7 @@ async def main():
     # Checks if the bot is a dev bot
     bot.is_dev = args.development
     bot.run_in_docker = args.docker
+    bot.force_local = args.force_local
 
     # Setup cogs.
     for cog in cogs.all_cogs:

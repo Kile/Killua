@@ -1,6 +1,6 @@
 ## Killua Discord Bot
 <p align="center">
-  <a href"https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
+  <a href="https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414">
      <img src="https://i.imgur.com/diOmUcl.png">
   </a>
 </p>
@@ -64,7 +64,7 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] IPC (Inter Process Communication)
 *   [x] Providing and requesting REST-APIs
 *   [x] Image manipulation
-*   [x] Asyncronous Programming
+*   [x] Asynchronous Programming
 *   [x] logging
 *   [x] NonSQL databases
 *   [x] Python `typing` library
@@ -78,8 +78,8 @@ As explained previously, I use Killua as a tool to learn more about python and p
 *   [x] Rust
 *   [x] Prometheus
 *   [x] Grafana
-*   [ ] Dynamically deploying docker containers
-*   [ ] Multithreading the bot (related to the above but can be static)
+*   [ ] Dynamically deploying docker containers/Kubernetes
+*   [ ] Custom sharding the bot (related to the above)
 
 ## Contributors
 
@@ -129,7 +129,21 @@ Regardless of how you decide to run Killua, you need to edit the `.env` file. Th
 
 This file has a template in the same directory with the same name but with `.template` at the end. You can copy it and edit it to your liking.
 
-Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then follow the instructions in [`setup.py`](https://github/Kile/Killua/blob/main/setup.py) and then run `python3 setup.py` or choose the "setup database" option in the menu to get the database set up. As a warning, this script is rarely run so it may not be up to date.
+### Assets
+Killua uses a lot of images. These are stored in the `assets` folder. Some assets are gitignored and will not be in this folder. These are mainly all `cards` images except the `PLACEHOLDER`s and all hugs except `0.gif`. This is to avoid revealing secrets about the game and to avoid yoinking people's art for the hug images. The bot should still run out of the box without these. For local development, you should not need these images. However if you do want to use them, you need to edit `cards.json` or `hugs.json` respectively to point to the correct image you upload. The bot is not designed to handle a card url that does not have an asset associated with it, so if you want to use the `private` cards, you need to supply all images. More about this in the next section. Similarly if you change the only hug image that is not gitignored but not its data in `hugs.json`, it will not work.
+
+### If you want to use/edit the "Greed Island" game locally
+The default behavior for where the bot gets all the card data from is a censored list from the remote API `api.killua.dev/cards.json?public=true`. (The public list if it is run in dev mode, the non-censored list requires authorization). This is intended to work out of the box when you first run Killua locally. If you would like to edit the list of cards though, you can instead force Killua to instead request that endpoint from your local instance of the API. To do this, run Killua with the `--force-local` or `-fl` flag. This will instead request localhost or the Docker container the API runs in.
+
+To use the local cards endpoint, you need to download the `cards.json` file. You can do this by running `python3 -m killua --download <public/private>` where `<public/private>` is the type of cards you want to download (private will require the API_KEY env variable set as it is the uncensored version). This will download the cards from the remote API and save them in the right directory (`cards.json`). You can edit these freely, however spell cards and their effects are in the code and not that file, so using a spell card ID will still behave as a spell card.
+
+If you are running the bot using Docker (and build it locally with the `--build` flag), the default behavior is to use the remote API if in dev mode, and the local API in production mode. This is so development is plug and play and production runs faster by directly requesting another container rather than the internet. To change this, go into the `Dockerfile` in the `killua` directory and edit the arguments passed to the bot in the last line (`CMD`). You can add the `--force-local` flag to force the bot to use the local which will then request the API container instead.
+
+> [!INFO] 
+> Even when using `--force-local`, your local cards will still be censored if in dev mode. To prevent this, omit the `--development` or `-d` flag when running the bot. The censored version is still designed in a way that will let you test most of the functionality (eg name autocomplete, images in the book command etc) so most of the time this will not really be necessary. You may need to replace the emoji though as some code needs it to be a custom emoji.
+
+### MongoDB Atlas
+Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then create a collection called "Killua". You can then create a user with read and write permissions to this collection. You can then add the connection string to the `.env` file. Killua should automatically create the needed collections and indexes on startup. However this is rarely tested so please contact me if you encounter any issues.
 
 <details>
 <summary><b>Why do I use mongoDB instead of SQL?</b></summary>
@@ -177,7 +191,7 @@ There are a number of command line options, you can see them by running
 ```sh
 python3 -m killua --help
 ```
-most notabily the `--development` flag which will prevent the bot from caching all it needs on startup and requests local API versions instead of the server. This is useful for development.
+most notably the `--development` flag which will prevent the bot from caching all it needs on startup and requests local API versions instead of the server. This is useful for development.
 
 ### API
 To start the API, ideally you should use a different Terminal or screen/tmux session and run `cd api; cargo run`
@@ -205,7 +219,7 @@ Note: if you want to expose Grafana on nginx, you need to add `proxy_set_header 
 </details>
 
 ## Contributing
-Before I start talking about contributing, I want to mention an area of Killua of which traces can be found of but it is not yet complete. This is due to me working on it for a few while and not enjoying it to a point where I decided to postpone development. This is my own testing framework for dpy. This can be found in [`killua/tests`](./killua/tests/). A part of this is also downloading all card data from somewhere so these tests can be run by someone who does not have them in their mongodb database like me. Both of these are incomplete. 
+Before I start talking about contributing, I want to mention an area of Killua of which traces can be found of but it is not yet complete. This is due to me working on it for a few while and not enjoying it to a point where I decided to postpone development. This is my own testing framework for dpy. This can be found in [`killua/tests`](./killua/tests/). This system is incomplete though occasionally some structural changes are made to offer better support to it. 
 
 
 ### What to work on
@@ -239,7 +253,7 @@ If you use Docker to run Killua, this would work without any additional setup. I
 
 
 ## Thanks for checking this repo out!
-If you don't like me using one of your images for the hug command, please contact me on discord `k1le` or on `kile@killua.dev`
+If you don't like me using one of your images for the hug command, please contact me on Discord `k1le` or at `kile@killua.dev`
 
 If you have any further questions, join my discord server or dm me!
 

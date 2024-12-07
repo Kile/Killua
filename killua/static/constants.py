@@ -4,7 +4,6 @@ import discord
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from typing import Any, Callable, TypeVar, Generic, Union, Dict, List, Tuple
 
-from os.path import exists
 from killua.utils.test_db import TestingDatabase as Database
 import killua.args as args
 
@@ -24,7 +23,7 @@ CONST_DEFAULT = [  # The default values for the const collection
 
 MAX_VOTES_DISPLAYED = 5
 
-CARDS_URL = "https://json.extendsclass.com/bin/7d2c78bde0cd"
+CARDS_URL = "https://api.killua.dev/cards.json?public="
 
 API_ROUTES = ["/diagnostics", "/commands", "/stats", "/image", "/vote"]
 
@@ -52,23 +51,6 @@ class DB:
     @DBProperty
     def teams(self) -> Union[AsyncIOMotorCollection, Database]:
         return self._DB["teams"] if args.Args.test is None else Database("teams")
-
-    @DBProperty
-    def items(self) -> Union[AsyncIOMotorCollection, Database]:
-        if args.Args.test is not None:
-            if exists("cards.json"):
-                with open("cards.json", "r") as file:
-                    res = json.loads(file.read())
-                    db = Database("items")
-                    db.db["items"] = res["data"]
-                    file.close()
-                    return db
-            else:
-                raise FileNotFoundError(
-                    "cards.json does not exist. Run `python3 -m killua -dl` to download the cards first."
-                )
-        else:
-            return self._DB["items"]
 
     @DBProperty
     def guilds(self) -> Union[AsyncIOMotorCollection, Database]:
@@ -391,7 +373,7 @@ TOPICS = [
     "What is one thing you wish you had learned earlier in life?",
     "When it comes to dating, what is your biggest turn off?",
     "What makes you lose trust in someone?",
-    "Do you think I follow my heart or mind more?",
+    "Do you follow your heart or mind more?",
     "If your life could be told in a single photograph, what would be happening in it?",
     "Is there a moment you wish you could relive, not to change it, but to experience it again?",
     "What's one thing in the world you'll never get tired of doing?",
@@ -402,6 +384,17 @@ TOPICS = [
     "What's your biggest fear about your future?",
     "What have been the best and worst parts about getting older?",
     "What do you want or wish most for your kids?",
+    "What's the most important lesson you've learned from your parents?",
+    "What do other people get wrong about you?",
+    "If you could erase one memory, what would it be?",
+    "What fictional character do you relate to the most?",
+    "What's a question you'd like to ask your future self?",
+    "What's a popular trend you never understood?",
+    "What is a fear you had as a child that you've outgrown?",
+    "If you could instantly be fluent in any language, which would you choose?",
+    "What would you do differently if you knew no one would judge you?",
+    "What's a movie or book that changed the way you see the world?",
+    "What's something you once believed as a kid that you now find hilarious?"
 ]
 ANSWERS = [
     "What would jesus do?",
@@ -610,7 +603,7 @@ WYR = [
         "Have an administrative branch that is free of corruption",
     ),
     (
-        "Live iin utopia as a normal person",
+        "Live in utopia as a normal person",
         "Live in dystopia but you're the supreme ruler",
     ),
     (
@@ -662,18 +655,28 @@ HUG_TEXTS = [
     "{author} hugs {user} as strong as they can",
     "{author} hugs {user} and makes sure to not let go",
     "{author} gives {user} the longest hug they have ever seen",
-    "{author} cuddles {user}",
     "{author} uses {user} as a teddybear",
     "{author} hugs {user} until all their worries are gone and 5 minutes longer",
-    "{author} clones themself and together they hug {user}",
+    "{author} clones themselves and together they hug {user}",
     "{author} jumps in {user}'s arms",
     "{author} gives {user} a bearhug",
     "{author} finds a lamp with a Jinn and gets a wish. So they wish to hug {user}",
     "{user} asks {author} for motivation and gets a hug",
-    "{author} looks at the floor, then up, then at the floor again and finally hugs {user} with passion",
+    "{author} nervously looks at the floor, then up, then at the floor again and finally hugs {user} with passion",
     "{author} looks deep into {user}'s eyes and then gives them a hug",
     "{author} could do their homework but instead they decide to hug {user}",
     "{user} wanted to go get food but {author} wouldn't let go",
+    "{author} wraps {user} in a hug so cozy, it feels like sunshine in winter",
+    "{author} and {user} share a hug that feels like the world just paused for a moment",
+    "{author} gives {user} a gentle, warm hug, like a kitten cuddling up",
+    "{author} gives {user} a surprise hug from the side, making them giggle",
+    "{author} hugs {user} like they're hugging their favorite pillow",
+    "{author} rests their head on {user}'s shoulder mid-hug, feeling at peace",
+    "{author} and {user} hug, both secretly hoping it never ends",
+    "{author} hugs {user} like they're wrapping up a treasured memory",
+    "{author} wraps {user} up in a hug that feels like coming home after a long journey",
+    "{author} hugs {user} so warmly, it's like a gentle sunrise",
+    "{author} and {user} share a hug so pure, it's like a warm hug from the universe itself",
 ]
 PAT_TEXTS = [
     "{author} reaches over to pat {user} lovingly",
@@ -688,6 +691,7 @@ PAT_TEXTS = [
     "{author} thinks {user} is a cat and starts to pat them",
     "{author} looks at {user}'s fluffy hair and starts to pat them",
     "{author} didn't get pet so they pat {user} instead",
+    "{author}'s hand falls and lands on {user}'s head"
 ]
 SLAP_TEXTS = [
     "{author} slaps {user} for stealing the last cookie",
@@ -699,6 +703,7 @@ SLAP_TEXTS = [
     "{author} stares at {user} for a long time and then slaps them",
     "{author} has no mercy; they slap {user}",
     "{author} is unsure how to react so they slap {user}",
+    "{author} attacks a mosquito on {user}'s cheek"
 ]
 POKE_TEXTS = [
     "{user} is needed here",
@@ -734,6 +739,7 @@ CUDDLE_TEXTS = [
     "{author} cannot resist {user}'s face, so they cuddle them",
     "{author} uses cuddle-attack on {user}. It is very effective",
     "{author} can't stop thinking about it... so they cuddle {user}",
+    "{author} cuddles {user} to conserve body heat"
 ]
 
 DEFAULT_AVATAR = "https://i.imgur.com/fehQCjC.png"
@@ -758,6 +764,8 @@ ACTIONS = {
     "tickle": {"text": TICKLE_TEXTS, "images": "not used"},
     "cuddle": {"text": CUDDLE_TEXTS, "images": "not used"},
 }
+
+LIMITED_HUGS_ENDPOINT = HUG_IMGS[0]
 
 
 # the patreon banner being a discord.File in the cache because it's unnecessary to fetch every time I need it. The current value is the url to be fetched

@@ -8,7 +8,6 @@ from typing import List, cast
 
 from .constants import (
     INDESTRUCTIBLE,
-    DB,
 )
 from killua.bot import BaseBot
 from killua.utils.classes import (
@@ -22,8 +21,10 @@ from killua.utils.interactions import ConfirmButton
 
 background_cache = {}
 
+
 class IndividualCard(ABC):
     """A class purely for type purposes to require subclasses to implement the exect method"""
+
     ctx: commands.Context
 
     @abstractmethod
@@ -54,9 +55,8 @@ class Card1001(Card, IndividualCard):
 
         async def make_embed(page, *_):
             return await Book(
-                cast(BaseBot, self.ctx.bot).session,
-                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
-            ).create(member, page, self.ctx.bot, True)
+                cast(BaseBot, self.ctx.bot)
+            ).create(member, page,True)
 
         await Paginator(
             self.ctx,
@@ -88,9 +88,8 @@ class Card1002(Card, IndividualCard):
 
         async def make_embed(page, *_):
             return await Book(
-                cast(BaseBot, self.ctx.bot).session,
-                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
-            ).create(member, page, self.ctx.bot)
+                cast(BaseBot, self.ctx.bot)
+            ).create(member, page)
 
         await Paginator(self.ctx, max_pages=6, func=make_embed, has_file=True).start()
 
@@ -205,9 +204,8 @@ class Card1015(Card, IndividualCard):
 
         async def make_embed(page, embed, pages):
             return await Book(
-                cast(BaseBot, self.ctx.bot).session,
-                cast(BaseBot, self.ctx.bot).api_url(to_fetch=True),
-            ).create(member, page, self.ctx.bot)
+                cast(BaseBot, self.ctx.bot)
+            ).create(member, page)
 
         return await Paginator(
             self.ctx,
@@ -434,19 +432,18 @@ class Card1032(Card, IndividualCard):
         self._is_full_check(author)
 
         target = random.choice(
-            [
-                x["_id"]
-                async for x in await DB.items.find(
-                    {"type": "normal", "available": True}
-                )
-                if x["rank"] != "SS" and x["_id"] != 0
-            ]
+            Card.find(
+                lambda c: c["type"] == "normal"
+                and c["available"] is True
+                and c["rank"] != "SS"
+                and c["id"] != 0
+            )
         )  # random card for lottery
         await author.remove_card(self.id)
-        await self._is_maxed_check(target)
-        await author.add_card(target)
+        await self._is_maxed_check(target.id)
+        await author.add_card(target.id)
 
-        await self.ctx.send(f"Successfully added card No. {target} to your inventory")
+        await self.ctx.send(f"Successfully added card No. {target} to your inventory")
 
 
 class Card1035(Card, IndividualCard):

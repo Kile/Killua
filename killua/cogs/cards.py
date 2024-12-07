@@ -14,7 +14,6 @@ from typing import (
     Literal,
     Any,
     cast,
-    Type,
 )
 
 from killua.bot import BaseBot
@@ -62,39 +61,25 @@ class Cards(commands.GroupCog, group_name="cards"):
             except discord.app_commands.errors.CommandAlreadyRegistered:
                 pass  # Ignoring this
 
-    async def cog_load(self) -> None:
+    @commands.Cog.listener()
+    async def on_cards_loaded(self) -> None:
         self.reward_cache = {
-            "item": [
-                x["_id"]
-                async for x in DB.items.find(
-                    {"type": "normal", "rank": {"$in": ["A", "B", "C"]}}
-                )
-            ],
-            "spell": [
-                x["_id"]
-                async for x in DB.items.find(
-                    {"type": "spell", "rank": {"$in": ["B", "C"]}}
-                )
-            ],
+            "item": Card.find(
+                lambda c: c["type"] == "normal" and c["rank"] in ["A", "B", "C"]
+            ),
+            "spell": Card.find(
+                lambda c: c["type"] == "spell" and c["rank"] in ["B", "C"]
+            ),
             "monster": {
-                "E": [
-                    x["_id"]
-                    async for x in DB.items.find(
-                        {"type": "monster", "rank": {"$in": ["E", "G", "H"]}}
-                    )
-                ],
-                "D": [
-                    x["_id"]
-                    async for x in DB.items.find(
-                        {"type": "monster", "rank": {"$in": ["D", "E", "F"]}}
-                    )
-                ],
-                "C": [
-                    x["_id"]
-                    async for x in DB.items.find(
-                        {"type": "monster", "rank": {"$in": ["C", "D", "E"]}}
-                    )
-                ],
+                "E": Card.find(
+                    lambda c: c["type"] == "monster" and c["rank"] in ["E", "G", "H"]
+                ),
+                "D": Card.find(
+                    lambda c: c["type"] == "monster" and c["rank"] in ["D", "E", "F"]
+                ),
+                "C": Card.find(
+                    lambda c: c["type"] == "monster" and c["rank"] in ["C", "D", "E"]
+                ),
             },
         }
 
@@ -105,8 +90,8 @@ class Cards(commands.GroupCog, group_name="cards"):
     ) -> List[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         if not self.cardname_cache:
-            async for card in DB.items.find({}):
-                self.cardname_cache[card["_id"]] = card["name"], card["type"]
+            for card in Card.raw:
+                self.cardname_cache[card["id"]] = card["name"], card["type"]
 
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
@@ -123,7 +108,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             dict.fromkeys(id_cards)
         )  # removing all duplicates from the list
 
-        if current == "":  # No ids AND names if the user hasn"t typed anything yet
+        if current == "":  # No ids AND names if the user hasn't typed anything yet
             return [
                 discord.app_commands.Choice(name=x[1], value=str(x[0]))
                 for x in name_cards
@@ -154,9 +139,9 @@ class Cards(commands.GroupCog, group_name="cards"):
         card = random.choice(self.reward_cache["monster"][rarities])
         return amount, card
 
-    def _construct_rewards(self, score: int) -> List[Tuple[int, int]]:
+    def _construct_rewards(self, score: int) -> List[Tuple[int, Card]]:
         # reward_score will be minutes/10080 which equals a week. Max rewards will get returned once a user has hunted for a week
-        rewards: List[Tuple[int, int]] = []
+        rewards: List[Tuple[int, Card]] = []
 
         if score >= 1:
             rewards.append(self._get_single_reward(1))
@@ -166,7 +151,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             r = self._get_single_reward(score)
             rewards.append(r)
 
-        final_rewards: List[Tuple[int, int]] = []
+        final_rewards: List[Tuple[int, Card]] = []
         for reward in rewards:
             # This avoid duplicates e.g. 4xPaladins Necklace, 2xPaladins Necklace => 6xPaladins Necklace
             if reward[1] in (l := [y for _, y in final_rewards]):
@@ -180,47 +165,43 @@ class Cards(commands.GroupCog, group_name="cards"):
         return final_rewards
 
     async def _format_rewards(
-        self, rewards: List[Tuple[int, int]], user: User
-    ) -> Tuple[List[list], List[str], bool]:
+        self, rewards: List[Tuple[int, Card]], user: User
+    ) -> Tuple[List[List[Union[int, Dict[str, bool]]]], List[str], bool]:
         """Formats the generated rewards for further use"""
-        formatted_rewards: List[List[int, Dict[str, bool]]] = []
+        formatted_rewards: List[List[Union[int, Dict[str, bool]]]] = []
         formatted_text: List[str] = []
 
-        maxed = False
-        for pos, reward in enumerate(rewards):
+        added_in_jenny = 0
+        for reward in rewards:
             for i in range(reward[0]):
-                if len(
-                    [
-                        *user.fs_cards,
-                        *[
-                            x
-                            for x in rewards
-                            if x[1] > 99 and not user.has_rs_card(x[0])
-                        ],
-                    ]
-                ) >= 40 and (
-                    reward[1] > 99
-                    or (not user.has_rs_card(reward[1]) and reward[1] < 100)
+                if (
+                    len(user.fs_cards)
+                    + (
+                        (1 if user.has_rs_card(reward[1].id) else 0)
+                        if reward[1].id < 100
+                        else 1
+                    )
+                    + i
+                    > FREE_SLOTS
                 ):
-                    # return formatted_rewards, formatted_text, True # if the free slots are full the process stops
-                    maxed = (
-                        pos,
-                        i,
-                    )  # Returning the exact position where the cards are too much
+                    # if the free slots are full the process instead adds jenny
+                    price = int(PRICES[reward[1].rank] / 10)
+                    added_in_jenny += price
+                    if i > 0:  # If there isn't 0 of that card that will be added
+                        formatted_text.append(
+                            f"{i}x **{reward[1].name}**{reward[1].emoji}"
+                        )
                 else:
                     formatted_rewards.append(
-                        [reward[1], {"fake": False, "clone": False}]
+                        [reward[1].id, {"fake": False, "clone": False}]
                     )
-            card = await Card.new(reward[1])
-            if maxed:
-                if (
-                    not maxed[1] == 0
-                ):  # If there isn"t 0 of that card that will be added
-                    formatted_text.append(f"{maxed[1]}x **{card.name}**{card.emoji}")
-            else:
-                formatted_text.append(f"{reward[0]}x **{card.name}**{card.emoji}")
 
-        return formatted_rewards, formatted_text, maxed
+        unique_rewards = set([x[0] for x in formatted_rewards])
+        formatted_text = [
+            f"{[x for x, _ in formatted_rewards].count(c)}x **{Card(c).name}**{Card(c).emoji}"
+            for c in unique_rewards
+        ]
+        return formatted_rewards, formatted_text, added_in_jenny
 
     @check(3)
     @commands.bot_has_permissions(attach_files=True, embed_links=True)
@@ -242,9 +223,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 )
 
         async def make_embed(page, *_) -> Tuple[discord.Embed, discord.File]:
-            return await Book(
-                self.client.session, self.client.api_url(to_fetch=True)
-            ).create(ctx.author, page, self.client)
+            return await Book(self.client).create(ctx.author, page)
 
         return await Paginator(
             ctx,
@@ -254,7 +233,9 @@ class Cards(commands.GroupCog, group_name="cards"):
             has_file=True,
         ).start()
 
-    async def _gen_to_be_sold(self, user: User, sell_opt: SellOptions) -> List[Tuple[int, Any]]:
+    async def _gen_to_be_sold(
+        self, user: User, sell_opt: SellOptions
+    ) -> List[Tuple[int, Any]]:
         """
         Decides which cards to be sold based on the sell option
         """
@@ -267,7 +248,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             to_be_sold = [
                 x
                 for x in user.fs_cards
-                if (await Card.new(x[0])).type == "spell"
+                if (Card(x[0])).type == "spell"
                 and not x[1]["clone"]
                 and not x[1]["fake"]
             ]
@@ -275,30 +256,32 @@ class Cards(commands.GroupCog, group_name="cards"):
             to_be_sold = [
                 x
                 for x in user.fs_cards
-                if (await Card.new(x[0])).type == "monster"
+                if (Card(x[0])).type == "monster"
                 and not x[1]["clone"]
                 and not x[1]["fake"]
             ]
         return to_be_sold
-    
-    async def _find_to_be_gained(self, to_be_sold: List[Tuple[int, Any]], entitled_to_double: bool) -> int:
+
+    async def _find_to_be_gained(
+        self, to_be_sold: List[Tuple[int, Any]], entitled_to_double: bool
+    ) -> int:
         """Finds the money to be gained from selling the cards"""
         to_be_gained = 0
         for c, _ in to_be_sold:
-            _price = PRICES[(await Card.new(c)).rank] + (
-                PRICE_INCREASE_FOR_SPELL
-                if (await Card.new(c)).type == "spell"
-                else 0
+            _price = PRICES[(Card(c)).rank] + (
+                PRICE_INCREASE_FOR_SPELL if (Card(c)).type == "spell" else 0
             )
             j = int(_price / 10)
             if entitled_to_double:
                 j *= 2
             to_be_gained += j
         return to_be_gained
-    
-    async def _sell_confirm_view(self, ctx: commands.Context, to_be_gained: int, selling_what: str) -> bool:
+
+    async def _sell_confirm_view(
+        self, ctx: commands.Context, to_be_gained: int, selling_what: str
+    ) -> bool:
         """
-        Asks the user if they want to sell the cards. 
+        Asks the user if they want to sell the cards.
         Returns True if the user wants to sell the cards, False if they don't
         """
         view = ConfirmButton(ctx.author.id, timeout=80)
@@ -317,29 +300,41 @@ class Cards(commands.GroupCog, group_name="cards"):
             return False
         return True
 
-    async def _sell_bulk(self, ctx: commands.Context, user: User, sell_opt: SellOptions) -> None:
+    async def _sell_bulk(
+        self, ctx: commands.Context, user: User, sell_opt: SellOptions
+    ) -> None:
         """
         Sells all cards based on the sell option
         """
         to_be_sold = await self._gen_to_be_sold(user, sell_opt)
-        to_be_gained = await self._find_to_be_gained(to_be_sold, user.is_entitled_to_double_jenny)
+        to_be_gained = await self._find_to_be_gained(
+            to_be_sold, user.is_entitled_to_double_jenny
+        )
 
         if to_be_gained == 0:
             return await ctx.send(
                 "You don't have any cards of that type to sell!", ephemeral=True
             )
 
-        confirmed = await self._sell_confirm_view(ctx, to_be_gained, "all " + (sell_opt.name if not sell_opt.name == 'all' else 'free slots') + " cards")
+        confirmed = await self._sell_confirm_view(
+            ctx,
+            to_be_gained,
+            "all "
+            + (sell_opt.name if not sell_opt.name == "all" else "free slots")
+            + " cards",
+        )
         if not confirmed:
             return
-        
+
         await user.bulk_remove(to_be_sold)
         await user.add_jenny(to_be_gained)
         await ctx.send(
             f"You sold all your {sell_opt.name if not sell_opt.name == 'all' else 'free slots cards'} for {to_be_gained} Jenny!"
         )
 
-    async def _sell_single(self, ctx: commands.Context, user: User, card: Card, amount: int) -> None:
+    async def _sell_single(
+        self, ctx: commands.Context, user: User, card: Card, amount: int
+    ) -> None:
         """
         Sells a single card (X times)
         """
@@ -360,7 +355,9 @@ class Cards(commands.GroupCog, group_name="cards"):
         if user.is_entitled_to_double_jenny:
             jenny *= 2
 
-        confirmed = await self._sell_confirm_view(ctx, jenny, f"{amount} cop{'y' if amount == 1 else 'ies'} of card {card.id}")
+        confirmed = await self._sell_confirm_view(
+            ctx, jenny, f"{amount} cop{'y' if amount == 1 else 'ies'} of card {card.id}"
+        )
         if not confirmed:
             return
 
@@ -416,7 +413,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         if len(user.all_cards) == 0:
             return await ctx.send("You don't have any cards yet!")
         try:
-            card: Card = await Card.new(card)
+            card: Card = Card(card)
         except CardNotFound:
             return await ctx.send(
                 f"A card with the id `{card}` does not exist",
@@ -433,8 +430,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         """Autocomplete for the swap command"""
 
         if not self.cardname_cache:
-            async for card in DB.items.find({}):
-                self.cardname_cache[card["_id"]] = card["name"], card["type"]
+            for card in Card.raw:
+                self.cardname_cache[card["id"]] = card["name"], card["type"]
 
         user = await User.new(interaction.user.id)
         name_cards = [
@@ -458,7 +455,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             if user.can_swap(id) and (id, name) not in id_duplicates:
                 id_duplicates.append((id, name))
 
-        if current == "":  # No ids AND names if the user hasn"t typed anything yet
+        if current == "":  # No ids AND names if the user hasn't typed anything yet
             return [
                 discord.app_commands.Choice(name=x[1], value=str(x[0]))
                 for x in name_duplicates
@@ -487,7 +484,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         if len(user.all_cards) == 0:
             return await ctx.send("You don't have any cards yet!")
         try:
-            card: Card = await Card.new(card)
+            card: Card = Card(card)
         except CardNotFound:
             return await ctx.send("Please use a valid card number!")
 
@@ -541,23 +538,13 @@ class Cards(commands.GroupCog, group_name="cards"):
             )  # There are 10080 minutes in a week if I'm not completely wrong
 
             rewards = self._construct_rewards(score)
-            formatted_rewards, formatted_text, hit_limit = await self._format_rewards(
-                rewards, user
+            formatted_rewards, formatted_text, jenny_to_add = (
+                await self._format_rewards(rewards, user)
             )
-
-            jenny = 0
-            if hit_limit:
-                c, n = hit_limit
-                for pos, card in enumerate(rewards):
-                    if pos == c:
-                        jenny += PRICES[(await Card.new(card[1])).rank] * (card[0] - n)
-                    elif pos >= c:
-                        jenny += PRICES[(await Card.new(card[1])).rank] * card[0]
-
             text = f"You've started hunting <t:{int(value.timestamp())}:R>. You brought back the following items from your hunt: \n\n"
 
-            if hit_limit:
-                text += f":warning: Your free slot limit has been reached! Make sure you free it up before hunting again. The excess cards have been automatically sold bringing you `{jenny}` Jenny\n\n"
+            if jenny_to_add > 0:
+                text += f":warning: Your free slot limit has been reached! Make sure you free it up before hunting again. The excess cards have been automatically sold bringing you `{jenny_to_add}` Jenny\n\n"
 
             embed = discord.Embed.from_dict(
                 {
@@ -568,7 +555,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             )
             await user.remove_effect("hunting")
             await user.add_multi(*formatted_rewards)
-            await user.add_jenny(jenny)
+            await user.add_jenny(jenny_to_add)
             return await ctx.send(embed=embed)
 
         elif option == "end" and not has_effect:
@@ -623,7 +610,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             except discord.HTTPException:
                 pass
             return await ctx.send(
-                f"You already have `{user}` in the list of users you met, {ctx.author.name}",
+                f"You already have `{user}` in the list of users you met, {ctx.author.display_name}",
                 delete_after=2,
                 allowed_mentions=discord.AllowedMentions.none(),
                 ephemeral=True,
@@ -652,7 +639,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         user = await User.new(ctx.author.id)
         try:
-            card: Card = await Card.new(card)
+            card: Card = Card(card)
         except CardNotFound:
             return await ctx.send("This card does not exist!")
 
@@ -695,7 +682,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def cardinfo(self, ctx: commands.Context, card: str):
         """Check card info out about any card you own"""
         try:
-            c: Card = await Card.new(card)
+            c: Card = Card(card)
         except CardNotFound:
             return await ctx.send("Invalid card")
 
@@ -716,7 +703,9 @@ class Cards(commands.GroupCog, group_name="cards"):
                 + " ".join(
                     [
                         f"[{k}: {v.__name__}]"
-                        for k, v in card_class.exec.__annotations__.items()
+                        for k, v in cast(
+                            IndividualCard, card_class
+                        ).exec.__annotations__.items()
                         if not str(k) == "return"
                     ]
                 )
@@ -737,7 +726,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     async def _check(self, ctx: commands.Context, card: str):
         """Lets you see how many copies of the specified card are fakes"""
         try:
-            card: Card = await Card.new(card)
+            card: Card = Card(card)
         except CardNotFound:
             return await ctx.send("Invalid card")
 
@@ -803,7 +792,7 @@ class Cards(commands.GroupCog, group_name="cards"):
     ) -> Card:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card: Union[IndividualCard, Card] = await Card.new(card)
+            card: Union[IndividualCard, Card] = Card(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
@@ -826,7 +815,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                     raise CheckFailure("You can't use spell cards on bots")
 
             if isinstance(args, int) and int(args) < 1:
-                    raise CheckFailure("You can't use an integer less than 1")
+                raise CheckFailure("You can't use an integer less than 1")
 
         if add_args and add_args < 1:
             raise CheckFailure("You can't use an integer less than 1")
@@ -868,9 +857,9 @@ class Cards(commands.GroupCog, group_name="cards"):
         kwargs = {k: v for d in l for k, v in d.items()}
         try:
             await cast(
-                IndividualCard, await card_class.new(name_or_id=str(card.id), ctx=ctx)
+                IndividualCard, card_class(name_or_id=str(card.id), ctx=ctx)
             ).exec(**kwargs)
-            # It should be able to infert the type but for some reason it is not able to do so
+            # It should be able to infer the type but for some reason it is not able to do so
         except CheckFailure as e:
             await ctx.send(e.message, allowed_mentions=discord.AllowedMentions.none())
 
@@ -880,8 +869,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         current: str,
     ) -> List[discord.app_commands.Choice[str]]:
         if not self.cardname_cache:
-            async for card in DB.items.find({}):
-                self.cardname_cache[card["_id"]] = card["name"], card["type"]
+            for card in Card.raw:
+                self.cardname_cache[card["id"]] = card["name"], card["type"]
 
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
@@ -899,7 +888,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             dict.fromkeys(id_cards)
         )  # removing all duplicates from the list
 
-        if current == "":  # No ids AND names if the user hasn"t typed anything yet
+        if current == "":  # No ids AND names if the user hasn't typed anything yet
             res = [
                 discord.app_commands.Choice(name=x[1], value=str(x[0]))
                 for x in name_cards
@@ -989,12 +978,12 @@ class Cards(commands.GroupCog, group_name="cards"):
 
         if type == "card":
             try:
-                card = await Card.new(item)
+                card = Card(item)
             except CardNotFound:
                 return await ctx.send("Invalid card id")
             if card.id == 0:
                 return await ctx.send("No")
-            if len(card.owners) + amount > card.limit * ALLOWED_AMOUNT_MULTIPLE:
+            if len(await card.owners()) + amount > card.limit * ALLOWED_AMOUNT_MULTIPLE:
                 return await ctx.send("Sorry! Global card limit reached!")
             if len(user.fs_cards) + amount > FREE_SLOTS and (
                 card.id > 99 or card.id in [x[0] for x in user.rs_cards]

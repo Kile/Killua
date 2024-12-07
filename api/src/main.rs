@@ -10,6 +10,7 @@ mod routes;
 mod tests;
 
 // import routes
+use routes::cards::{get_cards, get_public_cards};
 use routes::commands::get_commands;
 use routes::diagnostics::get_diagnostics;
 use routes::image::image;
@@ -30,7 +31,9 @@ fn rocket() -> _ {
                 register_vote,
                 get_stats,
                 image,
-                get_diagnostics
+                get_diagnostics,
+                get_cards,
+                get_public_cards
             ],
         )
         .attach(db::init())

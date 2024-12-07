@@ -31,7 +31,7 @@ This would eventually enable the command to boil down to:
     ) -> Card:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card: Card = await Card.new(card)
+            card: Card = Card(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
@@ -100,7 +100,7 @@ This would eventually enable the command to boil down to:
             await cast(
                 IndividualCard, await card_class._new(name_or_id=str(card.id), ctx=ctx)
             ).exec(**kwargs)
-            # It should be able to infert the type but for some reason it is not able to do so
+            # It should be able to infer the type but for some reason it is not able to do so
         except CheckFailure as e:
             await ctx.send(e.message, allowed_mentions=discord.AllowedMentions.none())
 
@@ -121,16 +121,7 @@ This would eventually enable the command to boil down to:
         """Use spell cards you own with this command! Check with cardinfo what arguments are required."""
 
         if item.lower() == "booklet":
-
-            def make_embed(page, embed: discord.Embed, pages):
-                embed.title = "Introduction booklet"
-                embed.description = pages[page - 1]
-                embed.set_image(
-                    url="https://cdn.discordapp.com/attachments/759863805567565925/834794115148546058/image0.jpg"
-                )
-                return embed
-
-            return await Paginator(ctx, BOOK_PAGES, func=make_embed).start()
+            ... # (Opens the booklet paginator)
 
         try:
             card = await self._use_check(ctx, item, target, args)
@@ -159,12 +150,12 @@ As for the actual class, all individual class subclass two classes.
 # Base class
 @dataclass
 class Card:
-    async def new(self, name_or_id: str) -> Card:
+    def __init__(self, name_or_id: str):
         ...
 
     async def _is_maxed_check(self, card: int) -> None:
-        c = await Card.new(card)
-        if len(c.owners) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
+        c = Card(card)
+        if len(await c.owners()) >= c.limit * ALLOWED_AMOUNT_MULTIPLE:
             raise CheckFailure(f"The maximum amount of existing cards with id {card} is reached!")
 ```
 This class is the base class for all cards and contains all shared subroutines like checks for maxed cards (the example here). It also contains all information about the card like its name, id, type, etc.

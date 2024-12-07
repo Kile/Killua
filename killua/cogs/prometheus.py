@@ -117,6 +117,11 @@ class PrometheusCog(commands.Cog):
         dau = (await DB.const.find_one({"_id": "growth"}))["growth"][-1]["daily_users"]
         DAILY_ACTIVE_USERS.set(dau)
 
+        APPROXIMATE_USER_COUNT.set(await self.client.get_approximate_user_count())
+        USER_INSTALLS.set(
+            (await self.client.application_info()).approximate_user_install_count
+        )
+
         await self.save_locales()
 
         # Update command stats
@@ -156,6 +161,12 @@ class PrometheusCog(commands.Cog):
             registered_users = await DB.teams.count_documents({})
             REGISTERED_USER_GAUGE.set(registered_users)
 
+            APPROXIMATE_USER_COUNT.set(await self.client.get_approximate_user_count())
+            # This is not a db stat but to my knowledge no event exists for it so we have to do it here
+            USER_INSTALLS.set(
+                (await self.client.application_info()).approximate_user_install_count
+            )
+
             todo_list_amount = await DB.todo.count_documents({})
             TODO_LISTS.set(todo_list_amount)
             todos = sum([len(todo["todos"]) async for todo in DB.todo.find({})])
@@ -169,8 +180,14 @@ class PrometheusCog(commands.Cog):
             await self.save_locales()
             await self.update_api_stats()
         except ServerSelectionTimeoutError:
-            logging.warn("Failed to save mongodb stats to DB due to connection error")
-             # Skip this iteration
+            logging.warning(
+                "Failed to save mongodb stats to DB due to connection error"
+            )
+            # Skip this iteration
+        except Exception as e:  # The loop should not be stopped due to an error
+            logging.critical(
+                f"Failed to save mongodb stats to DB due to an unexpected error: {e}"
+            )
 
     @tasks.loop(seconds=5)
     async def system_usage_loop(self):
@@ -226,14 +243,11 @@ class PrometheusCog(commands.Cog):
         if old:
             LOCALE.labels(old).dec()
 
-
         if not interaction.type in [InteractionType.application_command]:
             # don't save just any interaction
             return
 
-        ON_INTERACTION_COUNTER.labels(
-            not interaction.is_guild_integration()
-        ).inc()
+        ON_INTERACTION_COUNTER.labels(not interaction.is_guild_integration()).inc()
 
     @commands.Cog.listener()
     async def on_connect(self):

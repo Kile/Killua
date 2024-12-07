@@ -4,7 +4,7 @@ x-common-labels: &common-labels
     org.opencontainers.image.source: https://github.com/kile/Killua
     org.opencontainers.image.title: "Killua"
     org.opencontainers.image.description: "The Killua Discord bot with Rust API and ZMQ Proxy"
-    org.opencontainers.image.version: "1.1.0"
+    org.opencontainers.image.version: "1.2.0"
     org.opencontainers.image.authors: "kile@killua.dev"
     
 services:
@@ -35,6 +35,9 @@ services:
     container_name: rust_api
     ports:
       - "6060:7650"
+    volumes:
+      - ./cards.json:/app/cards.json
+      - ./assets:/app/assets
     environment:
       - ZMQ_ADDRESS=tcp://proxy:5559
     env_file:

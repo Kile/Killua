@@ -2,13 +2,12 @@ import argparse
 
 from typing import Optional
 
-
 class _Args:
-
     development: Optional[bool] = None
     migrate: Optional[bool] = None
     test: Optional[bool] = None
     log: Optional[str] = None
+    download: Optional[str] = None
 
     @classmethod
     def get_args(cls) -> None:
@@ -47,14 +46,22 @@ class _Args:
         parser.add_argument(
             "-dl",
             "--download",
-            help="Download all cards into a file for offline testing",
-            action="store_const",
-            const=True,
+            help="Download all cards into a file for testing and modifying cards",
+            default=None,
+            choices=["public", "private"],
+            metavar="type",
         )
         parser.add_argument(
             "-dc",
             "--docker",
             help="Set if the bot is running in a docker container",
+            action="store_const",
+            const=True,
+        )
+        parser.add_argument(
+            "-fl",
+            "--force-local",
+            help="Force the bot to download the cards data from the local API. Only relevant for development. Useful if server is down or you want to test new cards defined locally.",
             action="store_const",
             const=True,
         )
@@ -67,6 +74,7 @@ class _Args:
         cls.log = parsed.log
         cls.download = parsed.download
         cls.docker = parsed.docker
+        cls.force_local = parsed.force_local
 
 
 def init():

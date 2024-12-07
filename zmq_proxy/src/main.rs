@@ -5,7 +5,6 @@ fn main() {
     // set logging level to info
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    // The pyton code but written in rust
     let client_address = std::env::var("ZMQ_CLIENT_ADDRESS").unwrap();
     let server_address = std::env::var("ZMQ_SERVER_ADDRESS").unwrap();
 
@@ -36,7 +35,7 @@ fn main() {
                 };
                 // backend.send(message, 0).unwrap();
                 backend.send(message, more).unwrap();
-                info!("Forwarded recieved frontend message to backend");
+                info!("Forwarded received frontend message to backend");
                 if more == 0 {
                     break;
                 };
@@ -52,7 +51,7 @@ fn main() {
                     0
                 };
                 frontend.send(message, more).unwrap();
-                info!("Forwarded recieved backend message to frontend");
+                info!("Forwarded received backend message to frontend");
                 if more == 0 {
                     break;
                 }

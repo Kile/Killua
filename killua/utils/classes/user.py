@@ -11,7 +11,6 @@ from killua.static.constants import (
     PREMIUM_ALIASES,
     PATREON_TIERS,
 )
-from killua.utils.classes.card import Card
 from killua.utils.classes.exceptions import NoMatches, NotInPossession, CardLimitReached
 
 @dataclass
@@ -170,17 +169,8 @@ class User:
             {"$or": [{"id": x} for x in user]},
             {"$set": {"cards": {"rs": [], "fs": [], "effects": {}}, "met_user": []}},
         )
-        cards = [
-            x
-            async for x in await DB.items.find({})
-            if "owners" in x and len(x["owners"]) > 0
-        ]
-        await DB.items.update_many(
-            {"_id": {"$in": [x["_id"] for x in DB.items.find()]}},
-            {"$set": {"owners": []}},
-        )
 
-        return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} and all owners from {len(cards)} card{'s' if len(cards) != 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
+        return f"Removed all cards from {len(user)} user{'s' if len(user) > 1 else ''} in {(datetime.now() - start).seconds} second{'s' if (datetime.now() - start).seconds > 1 else ''}"
 
     @classmethod
     async def is_registered(cls, user_id: int) -> bool:
@@ -446,10 +436,6 @@ class User:
                 and ((data["clone"] == clone) if not clone is None else True)
                 and ((data["fake"] == fake) if not fake is None else True)
             ):
-
-                if not data["fake"]:
-                    await (await Card.new(id)).remove_owner(self.id)
-
                 del cards[
                     counter
                 ]  # instead of returning the match I delete it because in theory there can be multiple matches and that would break stuff
@@ -534,10 +520,6 @@ class User:
                         )
             await self._update_val("cards.rs", self.rs_cards)
 
-    async def _add_card_owner(self, card: int, fake: bool) -> None:
-        if not fake:
-            await (await Card.new(card)).add_owner(self.id)
-
     async def add_card(self, card_id: int, fake: bool = False, clone: bool = False):
         """Adds a card to the the user"""
         data = [card_id, {"fake": fake, "clone": clone}]
@@ -545,7 +527,6 @@ class User:
         if self.has_rs_card(card_id) is False:
             if card_id < 100:
                 self.rs_cards.append(data)
-                await self._add_card_owner(card_id, fake)
                 await self._update_val("cards.rs", data, "$push")
                 if len([x for x in self.rs_cards if not x[1]["fake"]]) == 99:
                     await self.add_card(0)
@@ -555,7 +536,6 @@ class User:
         if len(self.fs_cards) >= FREE_SLOTS:
             raise CardLimitReached("User reached card limit for free slots")
         self.fs_cards.append(data)
-        await self._add_card_owner(card_id, fake)
         await self._update_val("cards.fs", data, "$push")
 
     def count_card(self, card_id: int, including_fakes: bool = True) -> int:
@@ -580,8 +560,6 @@ class User:
             return fs_cards
 
         for item in args:
-            if not item[1]["fake"]:
-                await (await Card.new(item[0])).add_owner(self.id)
             if item[0] < 100:
                 if not self.has_rs_card(item[0]):
                     if not item[0] in [x[0] for x in rs_cards]:
@@ -676,12 +654,6 @@ class User:
         return user_id in self.met_user
 
     async def _remove(self, cards: str) -> None:
-        for card in [x[0] for x in getattr(self, cards)]:
-            try:
-                await (await Card.new(card)).remove_owner(self.id)
-            except Exception:
-                pass
-
         setattr(self, cards, [])
 
     async def nuke_cards(self, t: str = "all") -> bool:
@@ -740,6 +712,11 @@ class User:
         if not achievement in self.achievements:
             self.achievements.append(achievement)
             await self._update_val("achievements", achievement, "$push")
+
+    async def toggle_votereminder(self) -> None:
+        """Toggles the voting reminder"""
+        self.voting_reminder = not self.voting_reminder
+        await self._update_val("voting_reminder", not self.voting_reminder)
 
     async def log_locale(self, locale: str) -> Optional[str]:
         """Logs the locale of the user. Returns the old locale if it was different from the new one, else None"""

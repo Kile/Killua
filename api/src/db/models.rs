@@ -3,6 +3,14 @@ use mongodb::{bson, bson::DateTime, error::Error, options::UpdateOptions};
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+#[serde(crate = "rocket::serde")]
+pub struct ImageToken {
+    pub created_at: DateTime,
+    pub endpoints: Vec<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct StatsStruct {
     pub _id: String,
@@ -44,7 +52,7 @@ impl ApiStats {
             },
             // Add 0 to successful_responses.
             // The reason I am doing this is for the first time the document is created.
-            // This won't rly happen in production but it does in testsin a new environment
+            // This won't rly happen in production but it does in tests in a new environment
             "$inc": {
                 "successful_responses": 0,
             },

@@ -4,12 +4,13 @@ import discord
 from aiohttp import ClientSession
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
+from datetime import datetime
 from pathlib import Path
 from typing import Tuple, Union
 
-from killua.bot import BaseBot
 from killua.utils.classes.user import User
 from killua.utils.classes.card import Card
+from killua.bot import BaseBot as Bot
 
 
 # pillow logic contributed by DerUSBstick (Thank you!)
@@ -18,16 +19,28 @@ class Book:
     background_cache = {}
     card_cache = {}
 
-    def __init__(self, session: ClientSession, base_url: str):
-        self.session = session
-        self.base_url = base_url
+    def __init__(
+        self, client: Bot
+    ):
+        self.session = client.session
+        self.base_url = client.api_url(to_fetch=True)
+        self.client = client
+        self._book_token_cache: Tuple[str, str] = None
+        self.scalar = 2
+
+    @property
+    def book_token_cache(self) -> Tuple[str, str]:
+        # No token is permanent, so it may need to be refreshed if the token is older than 24 hours
+        if self._book_token_cache is None or datetime.fromtimestamp(float(self._book_token_cache[1])) < datetime.now():
+            self._book_token_cache = self.client.sha256_for_api("book", 60 * 60 * 24)
+        return self._book_token_cache
 
     async def create_image(
         self, data: list, restricted_slots: bool, page: int
     ) -> Image.Image:
         """Creates the book image of the current page and returns it"""
         background = await self._get_background(0 if len(data) == 10 else 1)
-        if len(data) == 18 and restricted_slots:
+        if restricted_slots:
             background = await self._numbers(background, data, page)
         background = await self._cards(background, data, 0 if len(data) == 10 else 1)
         background = self._set_page(background, page)
@@ -50,35 +63,43 @@ class Book:
 
     async def _get_background(self, types: int) -> Image.Image:
         """Gets the background image of the book"""
-        url = [
-            self.base_url + "/image/misc/book_first.png",
-            self.base_url + "/image/misc/book_default.png",
+
+        endpoints = [
+            "misc/book_first.png",
+            "misc/book_default.png",
         ]
+        url = [
+            (self.base_url + "/image/" + x + "?token=" + self.book_token_cache[0] + "&expiry=" + self.book_token_cache[1])
+            for x in endpoints
+        ]
+
         if res := self._get_from_cache(types):
             return res.convert("RGBA")
 
-        async with self.session.get(url[types]) as res:
-            image_bytes = await res.read()
-            background = (img := Image.open(BytesIO(image_bytes))).convert("RGBA")
+        res = await self.session.get(url[types])
+        image_bytes = await res.read()
+        img = Image.open(BytesIO(image_bytes))
+        img = img.resize((img.size[0] * self.scalar, img.size[1] * self.scalar))
 
+        background = img.convert("RGBA")
         self._set_cache(img, types == 0)
         return background
 
     async def _get_card(self, url: str) -> Image.Image:
         """Gets a card image from the url"""
-        async with self.session.get(url) as res:
-            image_bytes = await res.read()
-            image_card = Image.open(BytesIO(image_bytes)).convert("RGBA")
-            image_card = image_card.resize((84, 115), Image.LANCZOS)
-        # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp"s "Response payload is not completed" bug
+        res = await self.session.get(url)
+        image_bytes = await res.read()
+        image_card = Image.open(BytesIO(image_bytes)).convert("RGBA")
+        image_card = image_card.resize((84 * self.scalar, 115 * self.scalar), Image.LANCZOS)
+        # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
         return image_card
 
     def _set_page(self, image: Image.Image, page: int) -> Image.Image:
         """Gets the plain page background and sets the page number"""
-        font = self._get_font(20)
+        font = self._get_font(20 * self.scalar)
         draw = ImageDraw.Draw(image)
-        draw.text((5, 385), f"{page*2-1}", (0, 0, 0), font=font)
-        draw.text((595, 385), f"{page*2}", (0, 0, 0), font=font)
+        draw.text((5 * self.scalar, 385 * self.scalar), f"{page*2-1}", (0, 0, 0), font=font)
+        draw.text((595 * self.scalar, 385 * self.scalar), f"{page*2}", (0, 0, 0), font=font)
         return image
 
     def _get_font(self, size: int) -> ImageFont.ImageFont:
@@ -125,6 +146,8 @@ class Book:
                 (514, 269),
             ],
         ]
+        # Multiply all by scalar
+        card_pos = [[(x * self.scalar, y * self.scalar) for x, y in i] for i in card_pos]
         for n, i in enumerate(data):
             if i:
                 if i[1]:
@@ -137,8 +160,20 @@ class Book:
 
     async def _numbers(self, image: Image.Image, data: list, page: int) -> Image.Image:
         """Puts the numbers on the restricted slots in the book"""
-        page -= 2
+        page -= 1
         numbers_pos: list = [
+            [
+                (130, 188),
+                (338, 60),
+                (436, 60),
+                (536, 60),
+                (338, 188),
+                (436, 188),
+                (536, 188),
+                (338, 317),
+                (436, 317),
+                (536, 317),
+            ],
             [
                 (35, 60),
                 (138, 60),
@@ -260,19 +295,20 @@ class Book:
                 (535, 317),
             ],
         ]
+        numbers_pos = [[(x * self.scalar, y * self.scalar) for x, y in i] for i in numbers_pos]
 
-        font = self._get_font(35)
+        font = self._get_font(35 * self.scalar)
         draw = ImageDraw.Draw(image)
         for n, i in enumerate(data):
             if i[1] is None:
-                draw.text(numbers_pos[page][n], f"0{i[0]}", (165, 165, 165), font=font)
+                draw.text(numbers_pos[page][n], f"0{i[0]}" if i[0] > 9 else f"00{i[0]}", (165 * self.scalar, 165 * self.scalar, 165 * self.scalar), font=font)
         return image
 
     async def _get_book(
         self,
         user: discord.Member,
         page: int,
-        client: BaseBot,
+        client: Bot,
         just_fs_cards: bool = False,
     ) -> Tuple[discord.Embed, discord.File]:
         """Gets a formatted embed containing the book for the user"""
@@ -299,9 +335,7 @@ class Book:
                     rs_cards.append(
                         [
                             i,
-                            (await Card.new(i)).formatted_image_url(
-                                client, to_fetch=True
-                            ),
+                            (Card(i)).formatted_image_url(client, to_fetch=True),
                         ]
                     )
                 if page == 1 and len(rs_cards) == 10:
@@ -314,7 +348,7 @@ class Book:
                     fs_cards.append(
                         [
                             person.fs_cards[i][0],
-                            (await Card.new(person.fs_cards[i][0])).formatted_image_url(
+                            (Card(person.fs_cards[i][0])).formatted_image_url(
                                 client, to_fetch=True
                             ),
                         ]
@@ -348,7 +382,6 @@ class Book:
         self,
         user: discord.Member,
         page: int,
-        client: BaseBot,
         just_fs_cards: bool = False,
     ) -> Tuple[discord.Embed, discord.File]:
-        return await self._get_book(user, page, client, just_fs_cards)
+        return await self._get_book(user, page, self.client, just_fs_cards)

@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from datetime import datetime
-import math, logging, re
+import math, re
 from typing import Union, Optional, List, Literal, cast
 
 from killua.bot import BaseBot
@@ -922,7 +922,7 @@ class TodoSystem(commands.Cog):
                         },
                         {
                             "name": "Reported user",
-                            "value": f"ID: {ctx.author.id}\nName: {ctx.author.name}",
+                            "value": f"ID: {ctx.author.id}\nName: {ctx.author.display_name}",
                         },
                         {
                             "name": "Todo list",
@@ -936,7 +936,7 @@ class TodoSystem(commands.Cog):
             )
             await channel.send(embed=embed)
             await ctx.author.send(f"{user} reported your invite to your todo list")
-            return await user.send(f"Successfully reported {ctx.author.name}!")
+            return await user.send(f"Successfully reported {ctx.author.display_name}!")
 
         if role == "viewer":
             todo_list.add_viewer(user.id)
@@ -1075,14 +1075,15 @@ class TodoSystem(commands.Cog):
     @discord.app_commands.describe(todo_id="The todo list to delete")
     async def delete(self, ctx: commands.Context, todo_id: str):
         """Use this command to delete your todo list. Make sure to say goodbye a last time"""
-        todo_list = await self._edit_check(ctx)
-        if todo_list is None:
-            return
+        try:
+            todo_list = await TodoList.new(todo_id)
+        except TodoListNotFound:
+            return await ctx.send("No todo list with this id exists")
 
         if not ctx.author.id == todo_list.owner:
             return await ctx.send("Only the owner of a todo list can delete it")
 
-        todo_list.delete()
+        await todo_list.delete()
         return await ctx.send(
             f"Done! Deleted todo list {todo_list.name}",
             allowed_mentions=discord.AllowedMentions.none(),

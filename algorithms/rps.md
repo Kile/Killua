@@ -81,6 +81,6 @@ import math
 def result(p: int, q: int) -> int:
     return int(math.sin(math.pi/12*(q-p)*((q-p)**2+5)))
 ```
-That's it. One line. It's not the most readable code, but it's very efficient and it's very smart.
+That's it. One line. It's not the most readable code, probably also not the most efficient *but* it's very smart.
 
 I have geniunely no idea how exactly this maths works but I do know that this proves that maths is not only cool but also magic.

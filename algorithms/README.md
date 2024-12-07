@@ -6,3 +6,4 @@ This folder contains a collection of different interesting algorithms that are u
  + [Using a math forula for rps](./rps.md)
  + [Own OOP testing framework](../killua/tests/README.md)
  + [Argument parser for command](./parser.md)
+ + [Using tokens to limit access to staticly hosted images](image-cdn.md)
