@@ -346,14 +346,14 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         # Changing the status
-        if self.client.guilds % 7 == 0: # Different number than on_guild_remove so if someone keeps re-adding the bot it doesn't spam the status
+        if len(self.client.guilds) % 7 == 0: # Different number than on_guild_remove so if someone keeps re-adding the bot it doesn't spam the status
             await self.client.update_presence()
         await Guild.add_default(guild.id, guild.member_count)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):
         # Changing Killua's status
-        if self.client.guilds % 10 == 0:
+        if len(self.client.guilds) % 10 == 0:
             await self.client.update_presence()
         await (await Guild.new(guild.id)).delete()
         await self._post_guild_count()
