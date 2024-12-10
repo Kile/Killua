@@ -94,7 +94,7 @@ class Shop(commands.Cog):
             if number == reduced_item:
                 return {
                     "name": f"**Number {item.id}: {item.name}** |{item.emoji}|",
-                    "value": f"**Description:** {item['description']}\n**Price:** {price-int(price*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item.type.replace('normal', 'item')}\n**Rarity:** {item.rank}",
+                    "value": f"**Description:** {item.description}\n**Price:** {price-int(price*(reduced_by/100))} (Reduced by **{reduced_by}%**) Jenny\n**Type:** {item.type.replace('normal', 'item')}\n**Rarity:** {item.rank}",
                 }
 
         return {
