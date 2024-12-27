@@ -11,7 +11,7 @@ WORKDIR /app
 COPY killua/ killua/
 
 # This is kinda dumb but helps keep things defined in one place
-COPY api/Rocket.toml.template api/Rocket.toml
+COPY api/Rocket.toml api/Rocket.toml
 
 # Copy requirements.txt, hugs.json and config.json which are needed for the bot
 COPY requirements.txt .

@@ -9,8 +9,6 @@ WORKDIR /app
 
 COPY api/ api/
 
-RUN mv api/Rocket.toml.template api/Rocket.toml
-
 # This is mainly for reading the config.json
 WORKDIR /app/api
 
