@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, ClassVar
+from typing import List, Dict, Any, ClassVar, Optional
 from dataclasses import dataclass, field
 from inspect import signature
 
@@ -29,27 +29,42 @@ class Guild:
         )
     
     @classmethod
-    async def update_member_count(cls, raw: dict, member_count: int) -> int:
+    async def update_member_count(cls, guild_id: int, old_member_count: Optional[int], member_count: int) -> Optional[int]:
         """If saved member count is inaccurate by > 5%, update it"""
-        saved = raw.get("approximate_member_count", 0)
-        if member_count > saved * 1.05 or member_count < saved * 0.95:
+        old_member_count = old_member_count or 0
+        if member_count > old_member_count * 1.05 or member_count < old_member_count * 0.95:
             await DB.guilds.update_one(
-                {"id": raw["id"]}, {"$set": {"approximate_member_count": member_count}}
+                {"id": guild_id}, {"$set": {"approximate_member_count": member_count}}
             )
             return member_count
-        return saved
+        return None
+    
+    @classmethod
+    async def _member_count_helper(cls, guild_id: int, approximate_member_count: Optional[int], member_count: Optional[int]) -> int:
+        """Helper function to get the member count"""
+        if member_count:
+            return await cls.update_member_count(
+                guild_id, approximate_member_count, member_count
+            ) or approximate_member_count or member_count or 0
+        return approximate_member_count or 0
 
     @classmethod
-    async def new(cls, guild_id: int, member_count: int = None) -> Guild:
-        raw: dict = await DB.guilds.find_one({"id": guild_id})
-        if not raw:
+    async def new(cls, guild_id: int, member_count: Optional[int] = None) -> Guild:
+        if guild_id in cls.cache:
+            cls.cache[guild_id].approximate_member_count = await cls._member_count_helper(
+                guild_id, cls.cache[guild_id].approximate_member_count, member_count
+            )
+            return cls.cache[guild_id]
+    
+        raw: Optional[dict] = await DB.guilds.find_one({"id": guild_id}) # type: ignore
+        if raw is None:
             await cls.add_default(guild_id, member_count)
-            raw = await DB.guilds.find_one({"id": guild_id})
+            raw: dict = await DB.guilds.find_one({"id": guild_id}) # type: ignore
+
         del raw["_id"]
-        if member_count:
-            raw["approximate_member_count"] = await cls.update_member_count(raw, member_count)
-        else:
-            raw["approximate_member_count"] = raw.get("approximate_member_count", 0)
+        raw["approximate_member_count"] = await cls._member_count_helper(
+            guild_id, raw.get("approximate_member_count", None), member_count
+        )
         guild = cls.from_dict(raw)
         cls.cache[guild_id] = guild
 
@@ -60,10 +75,10 @@ class Guild:
         return ("partner" in self.badges) or ("premium" in self.badges)
 
     @classmethod
-    async def add_default(cls, guild_id: int, member_count: int) -> None:
+    async def add_default(cls, guild_id: int, member_count: Optional[int]) -> None:
         """Adds a guild to the database"""
         await DB.guilds.insert_one(
-            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count}
+            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count or 0}
         )
 
     @classmethod

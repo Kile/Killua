@@ -36,12 +36,12 @@ class _BoosterSelect(discord.ui.Select):
             )
         self.booster = None
 
-    async def callback(self, _: discord.Interaction) -> None:
+    async def callback(self, interaction: discord.Interaction) -> None:
         """Callback for the select"""
         # Add booster to view
         booster = int(self.values[0])
         self.booster = booster
-        self.view.stop()
+        cast(View, self.view).stop()
 
 
 class CancelButton(discord.ui.Button):
@@ -52,10 +52,10 @@ class CancelButton(discord.ui.Button):
             label="Cancel", style=discord.ButtonStyle.red, custom_id="cancel", **kwargs
         )
 
-    async def callback(self, _: discord.Interaction) -> None:
+    async def callback(self, interaction: discord.Interaction) -> None:
         """Callback for the button"""
-        self.view.value = "cancel"
-        self.view.stop()
+        cast(View, self.view).value = "cancel"
+        cast(View, self.view).stop()
 
 
 class _OptionView(View):

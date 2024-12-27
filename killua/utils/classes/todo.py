@@ -112,7 +112,7 @@ class TodoList:
         if todo_id is None:
             return int("".join(l))
         else:
-            return TodoList._generate_id()
+            return await TodoList._generate_id()
 
     @staticmethod
     async def create(

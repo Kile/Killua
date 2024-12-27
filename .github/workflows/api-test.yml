@@ -52,8 +52,6 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Setup Rocket.toml
-        run: mv api/Rocket.toml.template api/Rocket.toml
       - name: Setup local cards
         run: "echo '[{\"id\": 0, \"name\": \"Name\", \"description\": \"One two\", \"image\": \"/image/image.png\", \"emoji\": \":pensive\", \"rank\": \"S\", \"limit\": 10, \"type\": \"monster\", \"available\": true}]' > cards.json"
       - name: Run clippy

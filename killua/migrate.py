@@ -5,7 +5,7 @@ an update is released. It can be run through the command line with `python3 -m k
 
 import logging
 from typing import Type
-from pymongo.collection import Collection
+from motor.motor_asyncio import AsyncIOMotorCollection as Collection
 from discord.ext.commands import AutoShardedBot, HybridGroup
 from killua.static.constants import DB
 

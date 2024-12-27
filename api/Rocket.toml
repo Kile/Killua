@@ -2,8 +2,6 @@
 [default]
 address = "0.0.0.0"
 limits = { form = "64 kB", json = "1 MiB" }
-## This is the API key you set in top.gg for the /vote endpoint
-api_key = "123"
 
 ## set only when compiled in debug mode, i.e, `cargo build`
 [debug]
@@ -15,4 +13,3 @@ limits = { json = "10MiB" }
 [release]
 port = 7650
 ip_header = false
-secret_key = "123"

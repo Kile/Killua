@@ -10,10 +10,13 @@
 # Downloaded cards
 cards.json
 
+# Sync config
+.sync_config
+
 # Some assets
 assets/hugs/*
 # Still allow an "official" hug for development
-!assets/hugs/0.gif
+!assets/hugs/0.jpg
 assets/cards/*
 # Still allow the placeholder cards for development
 !assets/cards/PLACEHOLDER*.png
@@ -30,5 +33,3 @@ assets/cards/*
 **/env
 
 **/.DS_Store
-
-Rocket.toml

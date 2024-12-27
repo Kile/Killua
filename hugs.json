@@ -1,830 +1,952 @@
 [
     {
-        "url": "/image/hugs/0.gif",
+        "url": "/image/hugs/0.jpg",
         "artist": {
-            "name": "Madhouse",
-            "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
-        }
+            "name": "Joedi",
+            "link": "https://x.com/joedi___"
+        },
+        "featured": true
     },
     {
         "url": "/image/hugs/1.jpeg",
         "artist": {
             "name": "asacchi",
             "link": "https://asacchi.tumblr.com/tagged/hxh"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/2.jpeg",
         "artist": {
             "name": "Madhouse",
             "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/3.jpeg",
         "artist": {
             "name": "\u3068\u307f\u3053",
             "link": "https://www.pixiv.net/en/users/851453"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/4.gif",
         "artist": {
             "name": "RubyBandit and Madhouse",
             "link": "https://www.youtube.com/@RubyBandit"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/5.jpeg",
         "artist": {
             "name": "\u3068\u307f\u3053",
             "link": "https://www.pixiv.net/en/users/851453"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/6.gif",
         "artist": {
             "name": "Madhouse",
             "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/0.jpg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/8.gif",
         "artist": {
             "name": "Madhouse",
             "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/9.jpeg",
         "artist": {
             "name": "Skullcaps",
             "link": "https://skullcaps.tumblr.com/tagged/Hunter%20x%20Hunter"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/10.jpg",
         "artist": {
             "name": "smcms-m",
             "link": "https://smcms-m.tumblr.com/tagged/HH"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/11.jpeg",
         "artist": {
             "name": "\u3055\u3093\u304b\u304f",
             "link": "https://www.pixiv.net/en/users/4512389"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/12.jpeg",
         "artist": {
             "name": "hmyyy",
             "link": "https://www.pixiv.net/en/users/6084786"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/13.gif",
         "artist": {
             "name": "Madhouse",
             "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/14.gif",
         "artist": {
             "name": "Madhouse",
             "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/15.jpeg",
         "artist": {
             "name": "chocokilluakun",
             "link": "https://chocokilluakun.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/16.jpeg",
         "artist": {
             "name": "\u304f\u306b\u304d\u3061",
             "link": "https://www.pixiv.net/en/users/2257967"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/17.jpeg",
         "artist": {
             "name": "Snuddi",
             "link": "https://snuddi.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/18.jpeg",
         "artist": {
             "name": "Kibstar",
             "link": "https://kibstar.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/19.jpeg",
         "artist": {
             "name": "Nakamu_405",
             "link": "https://www.zerochan.net/nakamu+405"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/20.jpeg",
         "artist": {
             "name": "Queijac",
             "link": "https://queijac.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/21.jpeg",
         "artist": {
             "name": "Toramaru/\u306d\u3053\u307e\u3093\u307e",
             "link": "https://www.pixiv.net/en/users/2186270"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/22.jpeg",
         "artist": {
             "name": "kmz",
             "link": "https://www.pixiv.net/en/users/5698376"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/23.png",
         "artist": {
             "name": "Doodleck",
             "link": "https://doodleck-blog.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/24.png",
         "artist": {
             "name": "Skullcaps",
             "link": "https://skullcaps.tumblr.com/tagged/Hunter%20x%20Hunter"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/25.jpg",
         "artist": {
             "name": "たらこのこ",
             "link": "https://www.pixiv.net/en/users/489866"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/26.jpeg",
         "artist": {
             "name": "\u7531\u5b87",
             "link": "https://www.pixiv.net/en/users/1386476"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/27.jpeg",
         "artist": {
             "name": "Zen6zen6",
             "link": "https://zen6zen6.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/28.png",
         "artist": {
             "name": "HoneyDeep",
             "link": "https://twitter.com/HDSzzZ"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/29.jpeg",
         "artist": {
             "name": "Misted_8",
             "link": "https://twitter.com/misted_8"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/30.jpeg",
         "artist": {
             "name": "\u9ea6\u6625 \u3042\u3084\u307f",
             "link": "https://www.pixiv.net/en/users/1567000"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/31.jpeg",
         "artist": {
             "name": "Nestycc",
             "link": "https://www.tumblr.com/nestycc"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/32.jpeg",
         "artist": {
             "name": "Iwakki",
             "link": "https://twitter.com/iwakkecubung"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/33.jpeg",
         "artist": {
             "name": "Pemprika",
             "link": "https://pemprika.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/34.jpeg",
         "artist": {
             "name": "\uc18c\uc740(@soeun_hu)",
             "link": "https://twitter.com/soeun_hu"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/35.jpeg",
         "artist": {
             "name": "Skullcaps",
             "link": "https://skullcaps.tumblr.com/tagged/Hunter%20x%20Hunter"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/36.jpeg",
         "artist": {
             "name": "Pemprika",
             "link": "https://pemprika.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/37.jpeg",
         "artist": {
             "name": "Kasuria",
             "link": "https://kasuria.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/38.jpeg",
         "artist": {
             "name": "Alicerush",
             "link": "https://alicerush.tumblr.com/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/39.jpeg",
         "artist": {
             "name": "\u3042\u304d",
             "link": "https://www.pixiv.net/en/users/3630014/illustrations/HUNTER%C3%97HUNTER"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/40.png",
         "artist": {
             "name": "Himaeart",
             "link": "https://www.deviantart.com/himaeart"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/41.jpeg",
         "artist": {
             "name": "Anna",
             "link": "https://www.pixiv.net/en/users/3167761"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/42.png",
         "artist": {
             "name": "V",
             "link": "https://www.pixiv.net/en/users/1155777"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/43.jpeg",
         "artist": {
             "name": "V",
             "link": "https://www.pixiv.net/en/users/1155777"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/44.jpeg",
         "artist": {
             "name": "-\u5345-",
             "link": "https://www.pixiv.net/en/users/626987"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/45.jpeg",
         "artist": {
             "name": "Maimai(\u307e\u3044\u307e\u3044)",
             "link": "https://www.pixiv.net/en/users/68066427"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/46.jpeg",
         "artist": {
             "name": "Gin And Tonic",
             "link": "https://www.zerochan.net/Gin+And+Tonic"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/47.jpeg",
         "artist": {
             "name": "Chiyo(\u7a1a\u4ee3\u2605\u30ec\u30a4\u30f3\u30dc\u30fc\u751f\u8db3\u30a6\u30a7\u30fc\u30d6)",
             "link": "https://www.pixiv.net/en/users/573867/illustrations/HUNTER%C3%97HUNTER"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/48.jpeg",
         "artist": {
             "name": "Kuro (Kuroquis!!/\u30af\u30ed\u30c3\u30ad\u30fc!!)",
             "link": "https://www.zerochan.net/Kuro+%28Kuroquis%21%21%29"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/49.jpeg",
         "artist": {
             "name": "\u793c\u52a0",
             "link": "https://www.pixiv.net/en/users/1840801"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/50.jpeg",
         "artist": {
             "name": "Chiyo (\u7a1a\u4ee3\u2605\u30ec\u30a4\u30f3\u30dc\u30fc\u751f\u8db3\u30a6\u30a7\u30fc\u30d6)",
             "link": "https://www.pixiv.net/en/users/573867/illustrations/HUNTER%C3%97HUNTER"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/51.jpeg",
         "artist": {
             "name": "nii345",
             "link": "https://www.zerochan.net/nii345"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/52.jpeg",
         "artist": {
             "name": "Hiyo Kiki(Meta)",
             "link": "https://www.pixiv.net/en/users/539800"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/53.jpeg",
         "artist": {
             "name": "Nellua",
             "link": "https://twitter.com/NE00s"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/54.jpeg",
         "artist": {
             "name": "KL",
             "link": "https://www.zerochan.net/KL"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/55.jpeg",
         "artist": {
             "name": "Kgmr Alkl(\u93e1\u5bae)",
             "link": "https://www.zerochan.net/Kgmr+Alkl"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/56.jpeg",
         "artist": {
             "name": "\u3055\u304d\u308b\uff20\u30e1\u30a4\u30c9\uff1a\u3064\u3044\u3063\u305f\uff01",
             "link": "https://www.pixiv.net/en/users/1100062"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/57.png",
         "artist": {
             "name": "\u307e\u3057\u308d",
             "link": "https://www.pixiv.net/en/users/86284314"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/58.jpeg",
         "artist": {
             "name": "\u3064\u305f",
             "link": "https://www.pixiv.net/en/users/7555206"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/59.png",
         "artist": {
             "name": "\u3042\u308a\u3059",
             "link": "https://www.pixiv.net/en/users/50922670"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/60.jpeg",
         "artist": {
             "name": "Pixiv Id 1297593",
             "link": "https://www.zerochan.net/Pixiv+Id+1297593"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/61.jpeg",
         "artist": {
             "name": "Shiyuu Mai (\u3057\u3085\u30fc\u307e\u3044)",
             "link": "https://www.zerochan.net/Shiyuu+Mai"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/62.jpeg",
         "artist": {
             "name": "Chiyo (\u7a1a\u4ee3\u2605\u30ec\u30a4\u30f3\u30dc\u30fc\u751f\u8db3\u30a6\u30a7\u30fc\u30d6)",
             "link": "https://www.pixiv.net/en/users/573867/illustrations/HUNTER%C3%97HUNTER"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/63.jpeg",
         "artist": {
             "name": "Kara",
             "link": "https://www.pixiv.net/en/users/2281984"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/64.jpeg",
         "artist": {
             "name": "Kumao",
             "link": "https://www.zerochan.net/Kumao"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/65.jpeg",
         "artist": {
             "name": "Saku(\u3055\u304f)",
             "link": "https://www.pixiv.net/en/users/196214"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/66.jpeg",
         "artist": {
             "name": "Ayame",
             "link": "https://www.pixiv.net/en/users/1250681"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/67.png",
         "artist": {
             "name": "\u306b\u3093\u306b\u304f",
             "link": "https://www.pixiv.net/en/users/11767722"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/68.jpeg",
         "artist": {
             "name": "Tachibana Amane (Amane01a)",
             "link": "https://www.pixiv.net/en/users/932066"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/69.jpeg",
         "artist": {
             "name": "Yukke",
             "link": "https://www.pixiv.net/en/users/48675"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/70.jpeg",
         "artist": {
             "name": "1994sionn(\u67f4\u7a4f)",
             "link": "https://www.pixiv.net/en/users/1445626"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/71.jpeg",
         "artist": {
             "name": "Mosamosa(\u304d\u3083\u304d\u3083)",
             "link": "https://www.pixiv.net/en/users/630277"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/72.jpeg",
         "artist": {
             "name": "Get3",
             "link": "https://www.pixiv.net/en/users/343563"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/73.jpeg",
         "artist": {
             "name": "\u3057\u3085\u3046",
             "link": "https://www.pixiv.net/en/users/831627"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/74.jpeg",
         "artist": {
             "name": "Saib",
             "link": "https://twitter.com/saib36511626"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/75.gif",
         "artist": {
             "name": "RubyBandit and Madhouse",
             "link": "https://www.youtube.com/@RubyBandit"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/76.jpeg",
         "artist": {
             "name": "Vivany",
             "link": "https://vivany.carrd.co/"
-        }
+        },
+        "featured": true
     },
     {
         "url": "/image/hugs/77.png",
         "artist": {
             "name": "Vivany",
             "link": "https://vivany.carrd.co/"
-        }
+        },
+        "featured": true
     },
     {
         "url": "/image/hugs/78.jpeg",
         "artist": {
             "name": "Ryan",
             "link": "https://www.instagram.com/ryannarrator10/"
-        }
+        },
+        "featured": true
     },
     {
         "url": "/image/hugs/79.jpeg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/80.png",
         "artist": {
             "name": "kidd!",
             "link": "https://www.pixiv.net/en/users/16678760"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/81.jpeg",
         "artist": {
             "name": "さよならさんがつ",
             "link": "https://www.pixiv.net/en/users/3942480"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/82.jpeg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/83.jpeg",
         "artist": {
             "name": "ボー",
             "link": "https://www.pixiv.net/en/users/21592771"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/84.jpeg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/85.jpeg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/86.jpeg",
         "artist": {
             "name": "车",
             "link": "https://www.pixiv.net/en/users/7035762"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/87.jpeg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/88.jpeg",
         "artist": {
             "name": "クンジュ",
             "link": "https://www.pixiv.net/en/users/7878892"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/89.jpeg",
         "artist": {
             "name": "shizaya-kun",
             "link": "https://www.pixiv.net/en/users/3111216"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/90.jpeg",
         "artist": {
             "name": "ばこ",
             "link": "https://www.pixiv.net/en/users/9867236"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/91.jpg",
         "artist": {
             "name": "条儿儿儿（低浮上",
             "link": "https://x.com/tiorrr1"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/92.jpg",
         "artist": {
             "name": "Tomiko (とみこ)",
             "link": "https://www.pixiv.net/en/users/851453"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/93.jpeg",
         "artist": {
             "name": "HoneyDeep",
             "link": "https://x.com/HDSzzZ"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/94.jpeg",
         "artist": {
             "name": "Tacotako",
             "link": "https://x.com/tacotako_27"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/95.jpg",
         "artist": {
             "name": "Tomiko (とみこ)",
             "link": "https://www.pixiv.net/en/users/851453"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/96.jpg",
         "artist": {
             "name": "Tomiko (とみこ)",
             "link": "https://www.pixiv.net/en/users/851453"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/97.jpg",
         "artist": {
             "name": "V",
             "link": "https://www.pixiv.net/en/users/1155777"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/98.jpg",
         "artist": {
             "name": "Kinigani",
             "link": "https://www.instagram.com/kinigani/"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/99.jpg",
         "artist": {
             "name": "たらこのこ",
             "link": "https://www.pixiv.net/en/users/489866"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/100.jpg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/101.jpg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/102.jpg",
         "artist": {
             "name": "YE",
             "link": "https://www.pixiv.net/en/users/5585039"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/103.jpeg",
         "artist": {
             "name": "Badly Planned",
             "link": "https://www.tumblr.com/badlyplanned"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/104.jpg",
         "artist": {
             "name": "まめ",
             "link": "https://www.pixiv.net/en/users/4105624"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/105.jpg",
         "artist": {
             "name": "smcms-m",
             "link": "https://smcms-m.tumblr.com"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/106.jpg",
         "artist": {
             "name": "たらこのこ",
             "link": "https://www.pixiv.net/en/users/489866"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/107.jpg",
-        "artist": null
+        "artist": null,
+        "featured": false
     },
     {
         "url": "/image/hugs/108.jpg",
         "artist": {
             "name": "にわ",
             "link": "https://www.pixiv.net/en/users/6976932"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/109.jpg",
         "artist": {
             "name": "smcms-m",
             "link": "https://smcms-m.tumblr.com"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/110.jpg",
         "artist": {
             "name": "smcms-m",
             "link": "https://smcms-m.tumblr.com"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/111.jpg",
         "artist": {
             "name": "smcms-m",
             "link": "https://smcms-m.tumblr.com"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/112.jpg",
         "artist": {
             "name": "さの",
             "link": "https://www.pixiv.net/en/users/22609074"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/113.jpg",
         "artist": {
             "name": "cori愿",
             "link": "https://x.com/AY_cori"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/114.jpg",
         "artist": {
             "name": "HATORI",
             "link": "https://www.pixiv.net/en/users/7293337"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/115.png",
         "artist": {
             "name": "HoneyDeep",
             "link": "https://x.com/HDSzzZ"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/116.jpg",
         "artist": {
             "name": "世界星语",
             "link": "https://www.pixiv.net/en/users/42790458"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/117.jpg",
         "artist": {
             "name": "はすの",
             "link": "https://www.pixiv.net/en/users/1300262"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/118.jpg",
         "artist": {
             "name": "kasurias",
             "link": "https://x.com/kasurias"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/119.jpg",
         "artist": {
             "name": "V",
             "link": "https://www.pixiv.net/en/users/1155777"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/120.jpg",
         "artist": {
             "name": "ばこ",
             "link": "https://www.pixiv.net/en/users/9867236"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/121.jpg",
         "artist": {
             "name": "zw_mob",
             "link": "https://x.com/zw_mob"
-        }
+        },
+        "featured": false
     },
     {
         "_comment": "This was crazy hard to find lol, had to get the ID from a wayback machine Twitter API snapshot.",
@@ -832,101 +954,231 @@
         "artist": {
             "name": "eedldn",
             "link": "https://twitter.com/intent/user?user_id=1501517809599528961"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/123.jpg",
         "artist": {
             "name": "eedldn",
             "link": "https://twitter.com/intent/user?user_id=1501517809599528961"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/124.jpeg",
         "artist": {
             "name": "くもすずめ",
             "link": "https://www.pixiv.net/en/users/2421496"
-        }
+        },
+        "featured": false
     },
     {
-        "url": "/image/hugs/125.jpg",
-        "artist": null
+        "url": "/image/hugs/125.jpeg",
+        "artist": {
+            "name": "가덕",
+            "link": "https://x.com/seuyugye"
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/126.jpg",
         "artist": {
             "name": "菜",
             "link": "https://www.pixiv.net/en/users/10448432"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/127.jpg",
         "artist": {
             "name": "菜",
             "link": "https://www.pixiv.net/en/users/10448432"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/128.jpeg",
         "artist": {
             "name": "瀬上",
             "link": "https://x.com/segami_poyo"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/129.jpg",
         "artist": {
             "name": "Dengdeng",
             "link": "https://www.pixiv.net/en/users/3243282"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/130.png",
         "artist": {
             "name": "April",
             "link": "https://www.pixiv.net/en/users/4537765"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/131.png",
         "artist": {
             "name": "ﾊﾞﾗﾊﾞﾗﾊﾞｶﾗ",
             "link": "https://www.pixiv.net/en/users/81145559"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/132.jpg",
         "artist": {
             "name": "さよならさんがつ",
             "link": "https://www.pixiv.net/en/users/3942480"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/133.jpg",
         "artist": {
             "name": "车",
             "link": "https://www.pixiv.net/en/users/7035762"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/134.jpg",
         "artist": {
             "name": "车",
             "link": "https://www.pixiv.net/en/users/7035762"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/135.jpg",
         "artist": {
             "name": "ばこ",
             "link": "https://www.pixiv.net/en/users/9867236"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/136.png",
         "artist": {
             "name": "にわ",
             "link": "https://www.pixiv.net/en/users/6976932"
-        }
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/137.jpeg",
+        "artist": {
+            "name": "F__7755",
+            "link": "https://x.com/F__7755"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/138.jpeg",
+        "artist": {
+            "name": "가덕",
+            "link": "https://x.com/seuyugye"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/139.jpeg",
+        "artist": {
+            "name": "가덕",
+            "link": "https://x.com/seuyugye"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/140.jpeg",
+        "artist": {
+            "name": "가덕",
+            "link": "https://x.com/seuyugye"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/141.jpeg",
+        "artist": {
+            "name": "syionow",
+            "link": "https://x.com/siyo_now"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/142.jpeg",
+        "artist": {
+            "name": "syionow",
+            "link": "https://x.com/siyo_now"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/143.png",
+        "artist": {
+            "name": "条条条儿",
+            "link": "https://www.pixiv.net/en/users/90695807"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/144.gif",
+        "artist": {
+            "name": "Madhouse",
+            "link": "https://en.wikipedia.org/wiki/Madhouse_(company)"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/145.jpeg",
+        "artist": {
+            "name": "가덕",
+            "link": "https://x.com/seuyugye"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/146.jpeg",
+        "artist": {
+            "name": "cori愿",
+            "link": "https://x.com/AY_cori"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/147.jpeg",
+        "artist": {
+            "name": "cori愿",
+            "link": "https://x.com/AY_cori"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/148.jpeg",
+        "artist": {
+            "name": "cori愿",
+            "link": "https://x.com/AY_cori"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/149.jpeg",
+        "artist": {
+            "name": "井戸",
+            "link": "https://x.com/ido_desu"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/150.jpeg",
+        "artist": {
+            "name": "井戸",
+            "link": "https://x.com/ido_desu"
+        },
+        "featured": false
     }
 ]

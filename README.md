@@ -38,6 +38,24 @@
   </a>
 </p>
 
+# Table of Contents
+1. [What is Killua?](#what-is-killua)
+2. [Links](#links)
+3. [Algorithms](#algorithms)
+4. [Flowchart](#flowchart)
+5. [Programming concepts list](#programming-concepts-list)
+6. [Contributors](#contributors)
+7. [Running Killua locally](#running-killua-locally)
+    - [Assets](#assets)
+    - [If you want to use/edit the "Greed Island" game locally](#if-you-want-to-useedit-the-greed-island-game-locally)
+    - [Syncing Gitignored Images to Production](#syncing-gitignored-images-to-production)
+    - [MongoDB Atlas](#mongodb-atlas)
+    - [Running from source](#running-from-source)
+    - [Running using Docker](#running-using-docker) 
+8. [Contributing](#contributing)
+9. [Grafana](#grafana)
+10. [Thanks for checking this repo out!](#thanks-for-checking-this-repo-out)
+
 ## What is Killua?
 
 I started Killua as a way to learn python and different programming concepts. It definitely was not the easiest way to do it, but it got me to a good level of python knowledge plus having a cool bot! As a result, I greatly appreciate issues, PRs and contributions enhancing my code.
@@ -139,8 +157,46 @@ To use the local cards endpoint, you need to download the `cards.json` file. You
 
 If you are running the bot using Docker (and build it locally with the `--build` flag), the default behavior is to use the remote API if in dev mode, and the local API in production mode. This is so development is plug and play and production runs faster by directly requesting another container rather than the internet. To change this, go into the `Dockerfile` in the `killua` directory and edit the arguments passed to the bot in the last line (`CMD`). You can add the `--force-local` flag to force the bot to use the local which will then request the API container instead.
 
-> [!INFO] 
+> [!NOTE] 
 > Even when using `--force-local`, your local cards will still be censored if in dev mode. To prevent this, omit the `--development` or `-d` flag when running the bot. The censored version is still designed in a way that will let you test most of the functionality (eg name autocomplete, images in the book command etc) so most of the time this will not really be necessary. You may need to replace the emoji though as some code needs it to be a custom emoji.
+
+### Syncing Gitignored Images to Production
+
+This repository supports optional syncing of gitignored images in the "hugs" and "cards" folders to a production server as well as the gitignored cards.json. This feature ensures the latest assets are always available in production when changes are pushed to `main`. This is not useful if you would like to contribute to the bot, but if you are running your own instance of Killua, this can be useful.
+
+#### **How to Set It Up**
+
+1. **Copy the Hook Script:**
+   - Copy the `post-push-hook.sh` script to your local `.git/hooks/` directory:
+     ```bash
+     cp scripts/post-push-hook.sh .git/hooks/post-push
+     chmod +x .git/hooks/post-push
+     ```
+
+2. **Set Up Configuration:**
+   - Copy the example configuration file and customize it:
+     ```bash
+     cp .sync_config.example .sync_config
+     ```
+   - Open `.sync_config` in a text editor and update:
+     - Set `REMOTE_USER`, `REMOTE_HOST`, and `REMOTE_BASE_PATH` with your production server details.
+     - Set `USE_SSH_KEY=true` if using an SSH key for authentication.
+     - Set `SSH_KEY_PATH` to point to your private key file (e.g., `~/.ssh/id_rsa`).
+
+3. **Push Changes to `main`:**
+   - When pushing changes to `main`, the script will prompt you to select what you want to sync. Options include:
+     - `all` - Sync all folders and `cards.json`
+     - `images` - Sync all image folders (hugs, cards)
+     - `hugs` - Sync hug images (assets/hugs/*)
+     - `cards-images` - Sync cards images (assets/cards/*)
+     - `cards-json` - Sync `cards.json`
+     - `none/abort` - Do not sync anything
+
+#### **Notes:**
+- A confirmation will be requested before syncing begins, as this may overwrite files on the remote server.
+- Ensure you have the correct permissions for `scp` on the remote server.
+
+
 
 ### MongoDB Atlas
 Depending on if you self host mongodb or not, you may also need a mongodb account. You can to create a mongodb account [here](https://www.mongodb.com), then create a collection called "Killua". You can then create a user with read and write permissions to this collection. You can then add the connection string to the `.env` file. Killua should automatically create the needed collections and indexes on startup. However this is rarely tested so please contact me if you encounter any issues.
@@ -164,6 +220,8 @@ While running Killua using Docker is more convenient, running from source is mor
 > Not running Killua in Docker will make you unable to use Grafana or Prometheus. The code handles this on its own but if you want to use either of these you must run Killua using docker-compose. You also do not need to run the rust proxy as the IPC connection will be direct.
 
 ### Bot process
+Note: Killua runs on Python 3.9. Some later versions introduce breaking changes and are not supported. 
+
 First, set up a virtual environment. Do so with `python3 -m venv env; source env/bin/activate` (for linux and macOS). To leave the virtual environment after you are done, simply run `deactivate`
 
 `requirements.txt` contains the libraries you'll need. To install them use `pip3 install -r requirements.txt`
@@ -181,6 +239,7 @@ unset $(cat .env | xargs)
 # or to ignore comments started with #
 unset $(grep -v '^#' .env | xargs)
 ```
+Please note these are not only needed for the bot but also for the API.
 
 ### Bot
 The bot can be run using 

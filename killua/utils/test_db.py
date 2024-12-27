@@ -33,8 +33,9 @@ class TestingDatabase:
                         k2 = key.split(".")[1]
                         d[k1][k2] = val
                         del d[key]
+        return dictionary
 
-    def find_one(self, where: dict) -> Optional[dict]:
+    async def find_one(self, where: dict) -> Optional[dict]:
         coll = self.db[self.collection]
         for d in coll:
             for key, value in d.items():
@@ -43,7 +44,7 @@ class TestingDatabase:
                 ):  # When all conditions defined in "where" are met
                     return d
 
-    def find(self, where: dict) -> Optional[dict]:
+    async def find(self, where: dict) -> Optional[list]:
         coll = self.db[self.collection]
         results = []
 
@@ -71,14 +72,14 @@ class TestingDatabase:
 
         return results
 
-    def insert_one(self, object: dict) -> None:
+    async def insert_one(self, object: dict) -> None:
         self.db[self.collection].append(object)
 
-    def insert_many(self, objects: List[dict]) -> None:
+    async def insert_many(self, objects: List[dict]) -> None:
         for obj in objects:
-            self.insert_one(obj)
+            await self.insert_one(obj)
 
-    def update_one(self, where: dict, update: Dict[str, dict]) -> dict:
+    async def update_one(self, where: dict, update: Dict[str, dict]) -> dict:
         # updated = False
         operator = list(update.keys())[0]  # This does not support multiple keys
 
@@ -129,5 +130,14 @@ class TestingDatabase:
 
         return update  # I only need this when the update would equal the object
 
-    def count_documents(self, where: dict = {}) -> int:
-        return len(self.find(where))
+    async def count_documents(self, where: dict = {}) -> int:
+        return len(await self.find(where) or [])
+
+    async def delete_one(self, where: dict) -> None:
+        ... # TODO: Implement this
+
+    async def delete_many(self, where: dict) -> None:
+        ... # TODO: Implement this
+
+    async def update_many(self, where: dict, update: dict) -> None:
+        ... # TODO: Implement this

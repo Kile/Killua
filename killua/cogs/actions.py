@@ -173,7 +173,7 @@ class Actions(commands.GroupCog, group_name="action"):
 
     async def _get_image_url(
         self, endpoint: str
-    ) -> Tuple[str, Optional[Dict[str, str]]]:
+    ) -> Tuple[str, Optional[Dict[str, str]], bool]:
         """
         Gets a tuple object with all image infos.
         First element is the image URL, second is the artist info.
@@ -190,6 +190,7 @@ class Actions(commands.GroupCog, group_name="action"):
         """
         if endpoint == "hug":
             chosen = LIMITED_HUGS_ENDPOINT if self.limited_hugs else random.choice(ACTIONS[endpoint]["images"])
+
             if not cast(str, chosen["url"]).startswith("http"):
                 # This could have already been done (Python mutability my beloved)
                 chosen["url"] = (
@@ -198,10 +199,11 @@ class Actions(commands.GroupCog, group_name="action"):
             return (
                 chosen["url"],
                 chosen["artist"],
+                chosen["featured"]
             )  # This might eventually be deprecated for copyright reasons
         else:
             image = await self.request_action(endpoint)
-            return image["link"], None
+            return image["link"], None, False
 
     async def action_embed(
         self,
@@ -217,7 +219,7 @@ class Actions(commands.GroupCog, group_name="action"):
         if disabled == len(users):
             return "All members targeted have disabled this action.", None
 
-        image_url, artist = await self._get_image_url(endpoint)
+        image_url, artist, featured = await self._get_image_url(endpoint)
 
         text: str = random.choice(ACTIONS[endpoint]["text"])
         text = text.format(
@@ -237,6 +239,11 @@ class Actions(commands.GroupCog, group_name="action"):
                 ),
             }
         )
+
+        if featured is True:
+            embed.set_footer(
+                text="\U000024d8 This artwork has been created specifically for this bot"
+            )
 
         file = None
         if endpoint == "hug":

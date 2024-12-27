@@ -1,6 +1,6 @@
 import discord
 
-from typing import Union, List
+from typing import Union, List, Any
 
 
 class View(discord.ui.View):
@@ -9,7 +9,7 @@ class View(discord.ui.View):
     def __init__(self, user_id: Union[int, List[int]], **kwargs):
         super().__init__(**kwargs)
         self.user_id = user_id
-        self.value = None
+        self.value: Any = None
         self.timed_out = False
         self.interaction = None
 

@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 from killua.utils.classes.user import User
 from killua.utils.classes.card import Card
@@ -25,7 +25,7 @@ class Book:
         self.session = client.session
         self.base_url = client.api_url(to_fetch=True)
         self.client = client
-        self._book_token_cache: Tuple[str, str] = None
+        self._book_token_cache: Optional[Tuple[str, str]] = None
         self.scalar = 2
 
     @property
@@ -55,7 +55,7 @@ class Book:
             if "default_background" in self.background_cache:
                 return self.background_cache["default_background"]
 
-    def _set_cache(self, data: Image, first_page: bool) -> None:
+    def _set_cache(self, data: Image.Image, first_page: bool) -> None:
         """Sets the background cache"""
         self.background_cache["first_page" if first_page else "default_background"] = (
             data
@@ -90,7 +90,7 @@ class Book:
         res = await self.session.get(url)
         image_bytes = await res.read()
         image_card = Image.open(BytesIO(image_bytes)).convert("RGBA")
-        image_card = image_card.resize((84 * self.scalar, 115 * self.scalar), Image.LANCZOS)
+        image_card = image_card.resize((84 * self.scalar, 115 * self.scalar), Image.Resampling.LANCZOS)
         # await asyncio.sleep(0.4) # This is to hopefully prevent aiohttp's "Response payload is not completed" bug
         return image_card
 
@@ -102,7 +102,7 @@ class Book:
         draw.text((595 * self.scalar, 385 * self.scalar), f"{page*2}", (0, 0, 0), font=font)
         return image
 
-    def _get_font(self, size: int) -> ImageFont.ImageFont:
+    def _get_font(self, size: int) -> ImageFont.FreeTypeFont:
         font = ImageFont.truetype(
             str(Path(__file__).parent.parent.parent) + "/static/font.ttf",
             size,

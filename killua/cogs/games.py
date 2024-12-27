@@ -230,7 +230,7 @@ class Trivia(CompetitiveGame):
                 ":x: There was an issue with the API. Please try again. If this should happen frequently, please report it"
             )
 
-        self.msg = await self.ctx.bot.send_message(
+        self.msg = await cast(BaseBot, self.ctx.bot).send_message(
             self.ctx, embed=self.embed, view=self.view
         )
         await self.view.wait()
@@ -492,7 +492,7 @@ class Rps(CompetitiveGame):
 
         await cast(BaseBot, self.ctx.bot).send_message(self.ctx, embed=embed)
 
-    async def check_for_achivement(self, player: discord.User) -> None:
+    async def check_for_achievement(self, player: discord.User) -> None:
         """Checks wether someone has earend the "rps master" achivement"""
         user = await User.new(player.id)
         if not "rps_master" in user.achievements and user.rps_stats["pve"]["won"] >= 25:
@@ -530,7 +530,7 @@ class Rps(CompetitiveGame):
         if winlose == -1:
             await p1.add_rps_stat("won", player2 == self.ctx.me)
             await p2.add_rps_stat("lost", player1 == self.ctx.me)
-            await self.check_for_achivement(player1)
+            await self.check_for_achievement(player1)
 
             if self.points:
                 await p1.add_jenny(self.points)
@@ -561,7 +561,7 @@ class Rps(CompetitiveGame):
         elif winlose == 1:
             await p1.add_rps_stat("lost", player2 == self.ctx.me)
             await p2.add_rps_stat("won", player1 == self.ctx.me)
-            await self.check_for_achivement(player2)
+            await self.check_for_achievement(player2)
 
             if self.points:
                 if player1 != self.ctx.me:

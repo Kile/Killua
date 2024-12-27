@@ -1093,7 +1093,12 @@ class Events(commands.Cog):
                 f"{PrintColors.FAIL}------------------------------------------"
             )
             logging.critical(
-                f"An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: {error}"
+                f"An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: \n"
+                + "".join(
+                    traceback.format_exception(
+                        etype=type(error), value=error, tb=error.__traceback__
+                    )
+                )
             )
             logging.info(
                 f"------------------------------------------{PrintColors.ENDC}"
@@ -1113,7 +1118,7 @@ class Events(commands.Cog):
         )
         try:
             await ctx.send(
-                ":x: an unexpected error occured. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.",
+                ":x: an unexpected error occurred. If this should keep happening, please report it by clicking on the button and using `/report` in the support server.",
                 view=view,
             )
         except (discord.Forbidden, discord.NotFound):

@@ -42,7 +42,6 @@ class DBProperty(Generic[T]):
 
 class DB:
     _DB = None
-    const = None
 
     def __init__(self):
         if not args.Args.test:

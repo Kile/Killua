@@ -52,9 +52,9 @@ class Card:
     limit: int
     available: bool
     type: str = "normal"
-    range: str = None
+    range: Optional[str] = None
     ctx: Optional[commands.Context] = None
-    _cls: List[str] = None
+    _cls: Optional[List[str]] = None
 
     cache: ClassVar[Dict[int, Card]] = {}  # Cached objects
     cached_raw: ClassVar[List[Tuple[str, int]]] = []  # String to int ID mapping
@@ -101,7 +101,7 @@ class Card:
                 if c[1] == int(name_or_id):
                     return c[1]
 
-    def __init__(self, name_or_id: str, ctx: commands.Context = None) -> Card:
+    def __init__(self, name_or_id: Union[str, int], ctx: Optional[commands.Context] = None):
         cards_id = self._find_card(name_or_id)
 
         if cards_id in self.cache and not self._should_ignore(self.cache[cards_id]):
@@ -171,13 +171,13 @@ class Card:
         if len(effects) == 0:
             return
 
-        effects: List["Card"] = [Card(c) for c in effects]
+        effect_instances: List["Card"] = [Card(c) for c in effects]
         view = View(other.id, timeout=20)
         view.add_item(
             Select(
                 options=[
                     discord.SelectOption(label=c.name, emoji=c.emoji, value=str(c.id))
-                    for c in effects
+                    for c in effect_instances
                 ]
             )
         )
@@ -186,7 +186,7 @@ class Card:
         )
 
         msg = await ctx.send(
-            f"<@{other.id}> {ctx.author} has used the spell `{self.id}` on you! You have {len(effects)} spells to defend yourself. You can either choose one of them to defend yourself with or let the attack go through",
+            f"<@{other.id}> {ctx.author} has used the spell `{self.id}` on you! You have {len(effect_instances)} spells to defend yourself. You can either choose one of them to defend yourself with or let the attack go through",
             view=view,
         )
         await view.wait()

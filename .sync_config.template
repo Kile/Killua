@@ -1,0 +1,10 @@
+# Remote server details
+REMOTE_USER="your-username"
+REMOTE_HOST="remote-host.com"
+REMOTE_BASE_PATH="/path/to/remote/directory"
+
+# Use SSH key for authentication (true/false)
+USE_SSH_KEY=true
+
+# Path to the SSH private key (only needed if USE_SSH_KEY=true)
+SSH_KEY_PATH="~/.ssh/id_rsa"
