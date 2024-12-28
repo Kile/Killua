@@ -241,6 +241,9 @@ class WebScraping(commands.GroupCog, group_name="web"):
             except Exception:
                 continue  # Possible it errors, skip if so
 
+        # Filter out any malformed urls
+        images = list(filter(lambda x: re.match(r"^https?://[^\s]+$", x), images))
+
         return images
 
     @check(4)
