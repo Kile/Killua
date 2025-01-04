@@ -230,6 +230,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
     @discord.app_commands.describe(question="The question to ask the magic 8 ball")
     async def _ball(self, ctx: commands.Context, *, question: str):
         """Ask Killua anything and he will answer"""
+        question = question if len(question) < 2000 else question[:2000] + "..."
         embed = discord.Embed.from_dict(
             {
                 "title": f"8ball has spoken 🎱",

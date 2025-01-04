@@ -438,9 +438,6 @@ class Economy(commands.GroupCog, group_name="econ"):
                 return await ctx.send("Invalid box name or id", ephemeral=True)
 
         data = LOOTBOXES[int(box)]
-        data["image"] = cast(str, data["image"]).format(
-            self.client.api_url(to_fetch=self.client.is_dev)
-        )
 
         c_min, c_max = data["cards_total"]
         j_min, j_max = data["rewards"]["jenny"]

@@ -1018,8 +1018,9 @@ class Events(commands.Cog):
             not self.client.is_user_installed(ctx)
             and ctx.channel.permissions_for(ctx.me).send_messages is False
             and not self.client.is_dev
+            and not isinstance(error, discord.Forbidden)
         ):
-            # we don't want to raise an error inside the error handler when Killua ' send the error because that does not trigger `on_command_error`
+            # we don't want to raise an error inside the error handler when Killua sends the error message because that does not trigger `on_command_error`
             return
 
         if ctx.command:

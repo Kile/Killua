@@ -15,7 +15,6 @@ from killua.utils.paginator import Paginator
 from killua.static.enums import Category
 from killua.static.constants import PXLAPI
 
-
 class WebScraping(commands.GroupCog, group_name="web"):
 
     def __init__(self, client: BaseBot):
@@ -59,7 +58,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
         extras={"category": Category.FUN, "id": 116},
         usage="book <title>",
     )
-    @discord.app_commands.describe(book="The name of the book to loock for")
+    @discord.app_commands.describe(book="The name of the book to look for")
     async def novel(self, ctx: commands.Context, *, book: str):
         """With this command you can search for books! Just say the book title and look through the results"""
         await ctx.channel.typing()
@@ -256,7 +255,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
     async def img(self, ctx: commands.Context, *, query: str):
         """Search for any image you want"""
         if ctx.interaction and not ctx.interaction.response.is_done():
-            await ctx.defer() # I don't want this to fail, even if it takes < 3 secs most of the time
+            await ctx.defer()  # I don't want this to fail, even if it takes < 3 secs most of the time
 
         links = await self.get_bing_images(query)
 
