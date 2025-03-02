@@ -327,7 +327,7 @@ class Dev(commands.GroupCog, group_name="dev"):
             headers={"Authorization": self.client.secret_api_key},
         )
         if data.status != 200:
-            return await ctx.send("An error occured while fetching the data")
+            return await ctx.send("An error occurred while fetching the data")
 
         json = await data.json()
         response_time = data.headers.get("X-Response-Time")

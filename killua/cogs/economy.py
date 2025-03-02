@@ -149,7 +149,9 @@ class Economy(commands.GroupCog, group_name="econ"):
                         "inline": False,
                     },
                 ],
-                "thumbnail": {"url": str(user.display_avatar.url) if user.avatar else None},
+                "thumbnail": {
+                    "url": str(user.display_avatar.url) if user.avatar else None
+                },
                 "image": {"url": user.banner.url if user.banner else None},
                 "color": 0x3E4A78,
             }
@@ -479,7 +481,7 @@ class Economy(commands.GroupCog, group_name="econ"):
             cast(str, data["image"]).format(
                 self.client.api_url(to_fetch=self.client.is_dev)
             ),
-            embed
+            embed,
         )
         await ctx.send(embed=embed, file=file)
 

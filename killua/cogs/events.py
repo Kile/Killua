@@ -97,7 +97,7 @@ class Events(commands.Cog):
         )
         await self.client.session.post(
             f"https://top.gg/api/bots/756206646396452975/stats",
-            headers={"Authorization": TOPGG_TOKEN},
+            headers={"Authorization": "Bearer " + TOPGG_TOKEN},
             data={"server_count": len(self.client.guilds)},
         )
 
@@ -208,7 +208,14 @@ class Events(commands.Cog):
             PrintColors.OKGREEN
             + "Logged in as: "
             + self.client.user.name
-            + f" (ID: {self.client.user.id})"
+            + f" (ID: {self.client.user.id}). "
+            + f"Highest command ID is: "
+            + str(
+                sorted(
+                    self.client.get_raw_formatted_commands(),
+                    key=lambda x: x.extras["id"],
+                )[-1].extras["id"]
+            )
             + PrintColors.ENDC
         )
 
@@ -308,7 +315,9 @@ class Events(commands.Cog):
         # If it has been more than 24 hours since the last save
         if self.skipped_first:
             approx_users = await self.client.get_approximate_user_count()
-            approximate_user_install_count = (await self.client.application_info()).approximate_user_install_count
+            approximate_user_install_count = (
+                await self.client.application_info()
+            ).approximate_user_install_count
             logging.info(PrintColors.OKBLUE + "Saving stats:")
             logging.info(
                 "Guilds: {} | Users: {} | Registered Users: {} | Daily Users: {} | Approximate Users: {} | User Installs: {}{}".format(
@@ -346,7 +355,9 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         # Changing the status
-        if len(self.client.guilds) % 7 == 0: # Different number than on_guild_remove so if someone keeps re-adding the bot it doesn't spam the status
+        if (
+            len(self.client.guilds) % 7 == 0
+        ):  # Different number than on_guild_remove so if someone keeps re-adding the bot it doesn't spam the status
             await self.client.update_presence()
         await Guild.add_default(guild.id, guild.member_count)
 
@@ -800,10 +811,6 @@ class Events(commands.Cog):
         await guild.update_poll_votes(interaction.message.id, votes)
         return votes
 
-    # def _calc_poll_votes(
-    #         self,
-    #         interaction: discord.Interaction,
-
     def _set_new_field_name_for_unsaved(
         self,
         field: "discord.embeds._EmbedFieldProxy",
@@ -1065,9 +1072,12 @@ class Events(commands.Cog):
             error, commands.CheckFailure
         ):  # I don't care if this happens
             return
-        
+
         if isinstance(error, discord.HTTPException) and error.code == 200000:
-            return await ctx.send("The content of this message was blocked by automod. Please respect the rules of the server.", ephemeral=True)
+            return await ctx.send(
+                "The content of this message was blocked by automod. Please respect the rules of the server.",
+                ephemeral=True,
+            )
 
         if self.client.is_dev:  # prints the full traceback in dev enviroment
             # CRITICAL for the dev bot instead of error is because it makes it easier spot
@@ -1109,7 +1119,7 @@ class Events(commands.Cog):
             or (isinstance(error, discord.HTTPException) and error.code == 50027)
             or isinstance(error, discord.Forbidden)
         ):
-            # This is the error code for unknown interaction. This means the error occured
+            # This is the error code for unknown interaction. This means the error occurred
             # running a slash command or button or whatever where it failed to find the interaction
             # Because of this, following up will also fail so we just return
             return

@@ -454,7 +454,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
             return await ctx.send("An unknown error occurred during calculation!")
         if answer["error"]:
             return await ctx.send(
-                "The following error occured while calculating:\n`{}`".format(
+                "The following error occurred while calculating:\n`{}`".format(
                     answer["error"]
                 )
             )

@@ -3,7 +3,7 @@ from discord.ext import commands
 import asyncio, os, random
 from pathlib import Path
 from logging import info, warning
-from typing import List, Union, Optional, cast, Tuple, Dict
+from typing import List, Union, Optional, cast, Tuple, Dict, TypedDict
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -21,6 +21,34 @@ class ActionException(Exception):
 class APIException(ActionException):
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class AnimeAsset(TypedDict):
+    url: str
+    anime_name: str
+
+    @classmethod
+    def is_anime_asset(cls, data: dict) -> bool:
+        return "anime_name" in data
+
+
+class Artist(TypedDict):
+    name: str
+    link: str
+
+    @classmethod
+    def from_api(cls, data: dict) -> "Artist":
+        return cls(name=data["artist_name"], link=data["artist_href"])
+
+
+class ArtistAsset(TypedDict):
+    url: str
+    artist: Optional[Artist]
+    featured: bool
+
+    @classmethod
+    def is_artist_asset(cls, data: dict) -> bool:
+        return "artist" in data
 
 
 class SettingsSelect(discord.ui.Select):
@@ -62,9 +90,11 @@ class Actions(commands.GroupCog, group_name="action"):
     async def cog_load(self):
         # Get number of files in assets/hugs
         DIR = Path(__file__).parent.parent.parent.joinpath("assets/hugs")
- 
+
         files = [
-            name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name)) and not name.startswith(".")
+            name
+            for name in os.listdir(DIR)
+            if os.path.isfile(os.path.join(DIR, name)) and not name.startswith(".")
         ]
         number_of_hug_imgs = len(files)
 
@@ -75,7 +105,7 @@ class Actions(commands.GroupCog, group_name="action"):
             )
             self.limited_hugs = True
             return
-        
+
         # Constant will be sorted, the files variable will not
         files.sort(key=lambda f: int(cast(str, f).split(".")[0]))
         for filename, expected_filename in zip(files, ACTIONS["hug"]["images"]):
@@ -91,7 +121,7 @@ class Actions(commands.GroupCog, group_name="action"):
             f"{PrintColors.OKGREEN}{number_of_hug_imgs} hugs loaded.{PrintColors.ENDC}"
         )
 
-    async def request_action(self, endpoint: str) -> Union[dict, str]:
+    async def request_action(self, endpoint: str) -> Union[AnimeAsset, ArtistAsset]:
         """
         Fetch an image from the API for the action commands
 
@@ -99,18 +129,45 @@ class Actions(commands.GroupCog, group_name="action"):
             APIException: If the API returns an error
         """
 
-        r = await self.session.get(f"https://purrbot.site/api/img/sfw/{endpoint}/gif")
+        r = await self.session.get(f"https://nekos.best/api/v2/{endpoint}")
         if r.status == 200:
             res = await r.json()
 
-            if res["error"]:
+            if "message" in res:
                 raise APIException(res["message"])
 
-            return res
+            raw_asset = res["results"][0]
+            if "anime_name" in raw_asset:
+                return AnimeAsset(
+                    url=raw_asset["url"], anime_name=raw_asset["anime_name"]
+                )
+            else:
+                return ArtistAsset(
+                    # No asset is currently returned in this format but the API has
+                    # endpoints that return this format so it's here for future use
+                    url=raw_asset["url"],
+                    artist=Artist.from_api(raw_asset),
+                    featured=False,
+                )
         else:
-            raise APIException(await r.text())
+            json = await r.json()
+            raise APIException(json["message"] if "message" in json else await r.text())
 
-    async def get_image(
+    def add_credit(
+        self, embed: discord.Embed, asset: Union[ArtistAsset, AnimeAsset]
+    ) -> discord.Embed:
+        """
+        Adds the artist credit to the embed
+        """
+        if ArtistAsset.is_artist_asset(asset) and asset["artist"] is not None:
+            embed.description = (
+                f"-# Art by [{asset['artist']['name']}]({asset['artist']['link']})"
+            )
+        elif AnimeAsset.is_anime_asset(asset):
+            embed.description = f"-# GIF from anime `{asset['anime_name']}`"
+        return embed
+
+    async def _get_image(
         self, ctx: commands.Context
     ) -> (
         discord.Message
@@ -122,10 +179,11 @@ class Actions(commands.GroupCog, group_name="action"):
         embed = discord.Embed.from_dict(
             {
                 "title": "",
-                "image": {"url": image["link"]},
-                "color": await self.client.find_dominant_color(image["link"]),
+                "image": {"url": image["url"]},
+                "color": await self.client.find_dominant_color(image["url"]),
             }
         )
+        embed = self.add_credit(embed, image)
         return await ctx.send(embed=embed)
 
     async def save_stat(
@@ -171,39 +229,29 @@ class Actions(commands.GroupCog, group_name="action"):
                     userlist = userlist + f", {user.display_name}"
         return userlist
 
-    async def _get_image_url(
-        self, endpoint: str
-    ) -> Tuple[str, Optional[Dict[str, str]], bool]:
+    async def _get_image_url(self, endpoint: str) -> Union[AnimeAsset, ArtistAsset]:
         """
-        Gets a tuple object with all image infos.
-        First element is the image URL, second is the artist info.
-
-        Either as
-        (https://example.com/image.jpg, None)
-        if returned from the API or
-
-        (https://example.com/image.jpg, {"name": "artist", "link": "https://example.com/artist"})
-        if the image is from the hug command
+        Gets an image URL and extra info from the API for the action commands
+        or, for the hug command, returns a random image from the list of images
 
         Raises:
             APIException: If the API returns an error
         """
         if endpoint == "hug":
-            chosen = LIMITED_HUGS_ENDPOINT if self.limited_hugs else random.choice(ACTIONS[endpoint]["images"])
+            chosen = (
+                LIMITED_HUGS_ENDPOINT
+                if self.limited_hugs
+                else random.choice(ACTIONS[endpoint]["images"])
+            )
 
             if not cast(str, chosen["url"]).startswith("http"):
                 # This could have already been done (Python mutability my beloved)
                 chosen["url"] = (
                     self.client.api_url(to_fetch=self.client.is_dev) + chosen["url"]
                 )
-            return (
-                chosen["url"],
-                chosen["artist"],
-                chosen["featured"]
-            )  # This might eventually be deprecated for copyright reasons
+            return ArtistAsset(chosen)
         else:
-            image = await self.request_action(endpoint)
-            return image["link"], None, False
+            return await self.request_action(endpoint)
 
     async def action_embed(
         self,
@@ -219,7 +267,7 @@ class Actions(commands.GroupCog, group_name="action"):
         if disabled == len(users):
             return "All members targeted have disabled this action.", None
 
-        image_url, artist, featured = await self._get_image_url(endpoint)
+        asset = await self._get_image_url(endpoint)
 
         text: str = random.choice(ACTIONS[endpoint]["text"])
         text = text.format(
@@ -231,39 +279,33 @@ class Actions(commands.GroupCog, group_name="action"):
             + "**",
         )
 
-        embed = discord.Embed.from_dict(
-            {
-                "title": text,
-                "description": (
-                    f"Art by [{artist['name']}]({artist['link']})" if artist else None
-                ),
-            }
-        )
+        embed = discord.Embed(title=text, description="")
 
-        if featured is True:
+        if ArtistAsset.is_artist_asset(asset) and asset["featured"] is True:
             embed.set_footer(
                 text="\U000024d8 This artwork has been created specifically for this bot"
             )
 
         file = None
         if endpoint == "hug":
-            image_path = image_url.split("image/")[1]
+            image_path = asset["url"].split("image/")[1]
             token, expiry = self.client.sha256_for_api(
                 image_path, expires_in_seconds=60 * 60 * 24 * 7
             )
-            image_url += f"?token={token}&expiry={expiry}"
+            asset["url"] += f"?token={token}&expiry={expiry}"
             embed, file = await self.client.make_embed_from_api(
-                image_url, embed, no_token=True
+                asset["url"], embed, no_token=True
             )
         else:
             # Does not need to be fetched under any conditions
-            embed.set_image(url=image_url)
+            embed.set_image(url=asset["url"])
 
-        embed.color = await self.client.find_dominant_color(image_url)
+        embed.color = await self.client.find_dominant_color(asset["url"])
         if disabled > 0:
             embed.set_footer(
                 text=f"{disabled} user{'s' if disabled > 1 else ''} disabled being targetted with this action"
             )
+        embed = self.add_credit(embed, asset)
         return embed, file
 
     async def no_argument(
@@ -364,6 +406,31 @@ class Actions(commands.GroupCog, group_name="action"):
         ):  # May be None from no_argument, in which case we don't want to send a message
             await self.client.send_message(ctx, embed=embed, file=file)
 
+    async def _handle_error(self, ctx: commands.Context, error: Exception) -> None:
+        """
+        Handles any exceptions raised during the execution of an action command
+        """
+        if isinstance(error, ActionException):
+            embed = discord.Embed.from_dict(
+                {
+                    "title": "An error occurred",
+                    "description": ":x: " + type(error).__name__ + ": " + error.message,
+                    "color": int(discord.Colour.red()),
+                }
+            )
+            await ctx.send(embed=embed)
+        else:
+            raise error
+
+    async def get_image(self, ctx: commands.Context) -> discord.Message:
+        """
+        Wrapper for _get_image to catch any exceptions raised
+        """
+        try:
+            return await self._get_image(ctx)
+        except APIException as e:
+            await self._handle_error(ctx, e)
+
     async def do_action(
         self, ctx: commands.Context, users: List[discord.User] = None
     ) -> None:
@@ -373,14 +440,7 @@ class Actions(commands.GroupCog, group_name="action"):
         try:
             await self._do_action(ctx, users)
         except ActionException as e:
-            embed = discord.Embed.from_dict(
-                {
-                    "title": "An error occurred",
-                    "description": ":x: " + type(e).__name__ + ": " + e.message,
-                    "color": discord.Colour.red(),
-                }
-            )
-            await ctx.send(embed=embed)
+            await self._handle_error(ctx, e)
 
     @check()
     @commands.hybrid_command(
@@ -456,13 +516,13 @@ class Actions(commands.GroupCog, group_name="action"):
         """Show off your dance moves!"""
         return await self.get_image(ctx)
 
-    @check()
-    @commands.hybrid_command(
-        extras={"category": Category.ACTIONS, "id": 8}, usage="neko"
-    )
-    async def neko(self, ctx: commands.Context):
-        """uwu"""
-        return await self.get_image(ctx)
+    # @check()
+    # @commands.hybrid_command(
+    #     extras={"category": Category.ACTIONS, "id": 8}, usage="neko"
+    # )
+    # async def neko(self, ctx: commands.Context):
+    #     """uwu"""
+    #     return await self.get_image(ctx)
 
     @check()
     @commands.hybrid_command(
@@ -480,12 +540,44 @@ class Actions(commands.GroupCog, group_name="action"):
         """O-Oh! T-thank you for t-the compliment... You have beautiful fingernails too!"""
         return await self.get_image(ctx)
 
+    # @check()
+    # @commands.hybrid_command(
+    #     extras={"category": Category.ACTIONS, "id": 11}, usage="tail"
+    # )
+    # async def tail(self, ctx: commands.Context):
+    #     """Wag your tail when you're happy!"""
+    #     return await self.get_image(ctx)
+
     @check()
     @commands.hybrid_command(
-        extras={"category": Category.ACTIONS, "id": 11}, usage="tail"
+        extras={"category": Category.ACTIONS, "id": 120}, usage="cry"
     )
-    async def tail(self, ctx: commands.Context):
-        """Wag your tail when you're happy!"""
+    async def cry(self, ctx: commands.Context):
+        """They thought Ant Man was gonna do WHAT to Thanos???"""
+        return await self.get_image(ctx)
+
+    @check()
+    @commands.hybrid_command(
+        extras={"category": Category.ACTIONS, "id": 121}, usage="smug"
+    )
+    async def smug(self, ctx: commands.Context):
+        """They don't know I use Discord light mode..."""
+        return await self.get_image(ctx)
+
+    @check()
+    @commands.hybrid_command(
+        extras={"category": Category.ACTIONS, "id": 122}, usage="yawn"
+    )
+    async def yawn(self, ctx: commands.Context):
+        """Don't worry I'll go to bed just 5 more Tik Toks!"""
+        return await self.get_image(ctx)
+
+    @check()
+    @commands.hybrid_command(
+        extras={"category": Category.ACTIONS, "id": 123}, usage="nope"
+    )
+    async def nope(self, ctx: commands.Context):
+        """No I don't want to buy your new cryptocurrency Shabloink Coin™️!"""
         return await self.get_image(ctx)
 
     def _get_view(self, id: int, current: dict) -> View:
