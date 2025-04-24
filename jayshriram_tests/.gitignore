@@ -1,0 +1,11 @@
+# Configuration
+
+# Downloaded cards
+/cards.json
+
+#python stuff
+**/__pycache__
+
+**/env
+
+**/.DS_Store
