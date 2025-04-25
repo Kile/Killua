@@ -225,7 +225,7 @@ class Tags(commands.Cog):
         )
         await DB.guilds.update_one({"id": ctx.guild.id}, {"$set": {"tags": tags}})
 
-        return await ctx.send(f"Successfully created tag `{name}`")
+        return await ctx.send(f"Successfully created tag `{name}`", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @commands.guild_only()
