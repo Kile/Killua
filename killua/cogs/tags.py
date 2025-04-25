@@ -176,7 +176,7 @@ class Tags(commands.Cog):
         if not (tag := await Tag.new(ctx.guild.id, name)).found is False:
             user = ctx.guild.get_member(tag.owner)
             return await ctx.send(
-                f"This tag already exists and is owned by {user or '`user left`'}"
+                f"This tag already exists and is owned by {user or '`user left`'}", allowed_mentions=discord.AllowedMentions.none()
             )
 
         if "tags" in guild:
@@ -250,7 +250,7 @@ class Tags(commands.Cog):
             )
 
         await tag.delete()
-        await ctx.send(f"Successfully deleted tag `{tag.name}`")
+        await ctx.send(f"Successfully deleted tag `{tag.name}`", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @commands.guild_only()
@@ -279,7 +279,7 @@ class Tags(commands.Cog):
             return await ctx.send("Too many characters!")
 
         await tag.update(content)
-        return await ctx.send(f"Successfully updated tag `{tag.name}`")
+        return await ctx.send(f"Successfully updated tag `{tag.name}`", allowed_mentions=discord.AllowedMentions.none())
 
     @check()
     @commands.guild_only()
