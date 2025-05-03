@@ -391,39 +391,58 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
 
         if len(source) > 1800:
             return await ctx.send("Too many characters to translate!", ephemeral=True)
+        
 
-        coded_text = quote(text, safe="")
-        res = await self.client.session.get(
-            "http://api.mymemory.translated.net/get?q="
-            + coded_text
-            + "&langpair="
-            + source.lower()
-            + "|"
-            + target.lower()
-        )
+        chunks = text.split(".")
+        formatted_chunks = []
+        for chunk in chunks:
+            if len(formatted_chunks) == 0:
+                formatted_chunks.append(chunk)
+            elif len(formatted_chunks[-1]) + len(chunk) > 450:
+                formatted_chunks.append(chunk)
+            else:
+                formatted_chunks[-1] += "." + chunk
 
-        if not (res.status == 200):
-            return await ctx.send(":x: " + await res.text(), ephemeral=True)
+        result = ""
+        quality = 0
+        for chunk in formatted_chunks:
+            coded_text = quote(chunk, safe="")
 
-        translation = await res.json()
-        if not "matches" in translation or len(translation["matches"]) < 1:
-            if source == "autodetect":
-                return await ctx.send(
-                    "Unfortunately the translators language detection is currently malfunctioning, please try again later!",
-                    ephemeral=True,
-                )
-            return await ctx.send(
-                "Translation failed!", ephemeral=hasattr(ctx, "invoked_by_context_menu")
+            res = await self.client.session.get(
+                "http://api.mymemory.translated.net/get?q="
+                + coded_text
+                + "&langpair=en|"
+                + target.lower()
+                + "&de=kile@killua.dev" # increased usage limit
             )
+            
+            if not (res.status == 200):
+                return await ctx.send(":x: " + await res.text(), ephemeral=True)
+
+            translation = await res.json()
+            if not "matches" in translation or len(translation["matches"]) < 1:
+                if source == "autodetect":
+                    return await ctx.send(
+                        "Unfortunately the translators language detection is currently malfunctioning, please try again later!",
+                        ephemeral=True,
+                    )
+                return await ctx.send(
+                    "Translation failed!", ephemeral=hasattr(ctx, "invoked_by_context_menu")
+                )
+            
+            full_translation = translation["responseData"]["translatedText"]
+            
+            result += full_translation + "\n"
+            quality += int(translation["matches"][0]["quality"])
 
         embed = discord.Embed.from_dict(
             {
                 "title": f"Translation Successfull",
-                "description": f"```\n{text}```\n`{source}` -> `{target}`\n\n```\n{translation['responseData']['translatedText']}```",
+                "description": f"```\n{text}```\n`{source}` -> `{target}`\n\n```\n{result}```",
                 "color": 0x3E4A78,
                 "footer": {
                     "text": "Confidence: "
-                    + str(translation["matches"][0]["quality"])
+                    + str(math.floor(quality / len(formatted_chunks)))
                     + "%"
                 },
             }

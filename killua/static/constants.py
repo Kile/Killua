@@ -655,7 +655,7 @@ HUG_TEXTS = [
     "{author} hugs {user} and makes sure to not let go",
     "{author} gives {user} the longest hug they have ever seen",
     "{author} uses {user} as a teddybear",
-    "{author} hugs {user} until all their worries are gone and 5 minutes longer",
+    "{author} hugs {user} until all their worries are gone and 5 minutes longer just to make sure",
     "{author} clones themselves and together they hug {user}",
     "{author} jumps in {user}'s arms",
     "{author} gives {user} a bearhug",
@@ -738,7 +738,8 @@ CUDDLE_TEXTS = [
     "{author} cannot resist {user}'s face, so they cuddle them",
     "{author} uses cuddle-attack on {user}. It is very effective",
     "{author} can't stop thinking about it... so they cuddle {user}",
-    "{author} cuddles {user} to conserve body heat"
+    "{author} cuddles {user} to conserve body heat",
+    "{user} was wishfully thinking about cuddles when out of nowhere {author} came and tackled them for some nice and much needed cuddles"
 ]
 
 DEFAULT_AVATAR = "https://i.imgur.com/fehQCjC.png"

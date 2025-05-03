@@ -1180,5 +1180,47 @@
             "link": "https://x.com/ido_desu"
         },
         "featured": false
+    },
+    {
+        "url": "/image/hugs/151.jpg",
+        "artist": {
+            "name": "Hikari",
+            "link": "https://x.com/akchainsju"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/152.jpeg",
+        "artist": {
+            "name": "延遲",
+            "link": "https://x.com/unicoxo"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/153.jpg",
+        "artist": {
+            "name": "あき",
+            "link": "https://x.com/Aki_Neiyuki"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/154.jpeg",
+        "artist": {
+            "name": "えとー",
+            "link": "https://x.com/eto_hxh"
+        }
+    },
+    {
+        "url": "/image/hugs/155.jpg",
+        "artist": null,
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/156.jpg",
+        "artist": null,
+        "featured": false
     }
+
 ]

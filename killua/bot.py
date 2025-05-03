@@ -404,17 +404,16 @@ class BaseBot(commands.AutoShardedBot):
             confirm_msg: discord.Message = await self.wait_for(
                 "message", check=check, timeout=timeout
             )
+            res = confirm_msg.content
         except asyncio.TimeoutError:
             if timeout_message:
                 await ctx.send(timeout_message, delete_after=5)
             res = None
-        else:
-            res = confirm_msg.content
 
         await msg.delete()
         try:
             await confirm_msg.delete()
-        except discord.Forbidden:
+        except discord.HTTPException:
             pass
 
         return res

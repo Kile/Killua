@@ -23,7 +23,9 @@ class CommandUsageCache:
 
     async def set(self, key, value):
         self.data[key] = value
-        await DB.const.update_one({"_id": "usage"}, {"$set": {"command_usage": self.data}})
+        await DB.const.update_one(
+            {"_id": "usage"}, {"$set": {"command_usage": self.data}}
+        )
 
     def __contains__(self, key):
         return key in self.data
@@ -89,12 +91,14 @@ def premium_user_only():
                     url="https://patreon.com/kilealkuri",
                 )
             )
-            embed = discord.Embed.from_dict({
-                "title": "Premium",
-                "description": "This command is currently only a premium feature. To enable your account to use it, become a Patreon!",
-                "image": {"url": PatreonBanner.URL},
-                "color": 0x3E4A78
-            })
+            embed = discord.Embed.from_dict(
+                {
+                    "title": "Premium",
+                    "description": "This command is currently only a premium feature. To enable your account to use it, become a Patreon!",
+                    "image": {"url": PatreonBanner.URL},
+                    "color": 0x3E4A78,
+                }
+            )
             await ctx.send(
                 embed=embed,
                 view=view,
@@ -105,6 +109,7 @@ def premium_user_only():
     setattr(predicate, "premium_user_only", True)
 
     return commands.check(predicate)
+
 
 def check(time: int = 0):
     """
@@ -118,7 +123,9 @@ def check(time: int = 0):
         if userid not in daily_users.users:
             daily_users.users.append(userid)
 
-    async def add_usage(command: Union[commands.Command, Type[commands.Command]]) -> None:
+    async def add_usage(
+        command: Union[commands.Command, Type[commands.Command]],
+    ) -> None:
         """Adds one to the usage count of a command"""
         if isinstance(command, commands.HybridGroup) or isinstance(
             command, discord.app_commands.Group
@@ -129,7 +136,9 @@ def check(time: int = 0):
         if data.data is None:
             data.data = dict(await DB.const.find_one({"_id": "usage"}))["command_usage"]
 
-        await data.set(str(command.extras["id"]), data.get(str(command.extras["id"]), 0) + 1)
+        await data.set(
+            str(command.extras["id"]), data.get(str(command.extras["id"]), 0) + 1
+        )
 
     async def custom_cooldown(ctx: commands.Context, time: int) -> bool:
         global cooldowndict
@@ -151,7 +160,11 @@ def check(time: int = 0):
         diff = cd.seconds
 
         user = await User.new(ctx.author.id)
-        guild = (await Guild.new(ctx.guild.id, ctx.guild.member_count)) if ctx.guild else None
+        guild = (
+            (await Guild.new(ctx.guild.id, ctx.guild.member_count))
+            if ctx.guild
+            else None
+        )
         view = discord.ui.View()
         view.add_item(
             discord.ui.Button(
@@ -259,8 +272,14 @@ def check(time: int = 0):
         return True
 
     async def predicate(ctx: commands.Context) -> bool:
-        if ctx.guild and not ctx.guild.chunked:
-            await ctx.defer() # Chunking can take a while
+        if ctx.guild and (
+            (ctx.guild.member_count < 10_000 and not ctx.guild.chunked)
+            or abs(ctx.guild.member_count - len(ctx.guild.members))
+            > int(ctx.guild.member_count / 10_000)
+        ): # If the guild is not chunked, or, for large guilds, if the member count is off by more than 0.01%
+            # This is a workaround for the fact that Discord literally cannot keep up with meber join
+            # dispatches on large guilds
+            await ctx.defer()  # Chunking can take a while
             await ctx.guild.chunk()
 
         if await blcheck(ctx.author.id):
