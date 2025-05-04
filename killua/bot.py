@@ -1,17 +1,32 @@
-import discord
-from discord.ext import commands
-
+import logging
+import math
 import asyncio
-from aiohttp import ClientSession
+import discord
+import jishaku
+import time
+import sys
+
+from typing import Dict, Union, List, Tuple, Coroutine, Any, Optional
+from datetime import date, datetime
 from random import randint, choice
 from discord.ext import commands
-from datetime import date
-from typing import Coroutine, Union, Dict
+from aiohttp import ClientSession
 
-from .migrate import migrate_requiring_bot
-from .static.enums import Category
-from .utils.interactions import Modal
-from .static.constants import TIPS, LOOTBOXES, DB
+from killua.static.constants import *
+from killua.static.tips import TIPS
+from killua.utils.db import DB
+from killua.utils.enums import Category
+from killua.utils.functions import get_prefix
+from killua.utils.ui import Modal
+from killua.utils.migrate import migrate_requiring_bot
+
+# Configure root logger
+logging.basicConfig(level=logging.INFO, 
+                   format='[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
+                   datefmt='%Y-%m-%d %H:%M:%S')
+
+# Create a logger for this module
+logger = logging.getLogger('killua.bot')
 
 def get_prefix(bot, message):
 	if bot.is_dev:
@@ -29,24 +44,104 @@ def get_prefix(bot, message):
 
 class BaseBot(commands.AutoShardedBot):
 	def __init__(self, *args, **kwargs):
-		super().__init__(chunk_guilds_at_startup=False, *args, **kwargs)
+		logger.info("Initializing Killua bot...")
+		self.startup_time = time.time()
+		
+		# Extract session from kwargs if provided
+		self.session = kwargs.pop('session', None)
+		logger.debug(f"Session provided: {self.session is not None}")
+		
+		# Set modern defaults for Discord.py 2.5+
+		kwargs.setdefault('chunk_guilds_at_startup', False)
+		kwargs.setdefault('max_messages', 10000)  # Increase message cache for better performance
+		kwargs.setdefault('enable_debug_events', False)
+		kwargs.setdefault('assume_unsync_clock', True)  # Better for distributed systems
+		
+		logger.info("Calling parent constructor with optimized settings")
+		super().__init__(*args, **kwargs)
 
-		self.session: ClientSession = None
+		# Bot configuration
 		self.support_server_invite = "https://discord.gg/MKyWA5M"
-		self.invite = "https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot&permissions=268723414&applications.commands"
-		# self.ipc = ipc.Server(self, secret_key=IPC_TOKEN)
+		self.invite = "https://discord.com/oauth2/authorize?client_id=756206646396452975&scope=bot%20applications.commands&permissions=268723414"
 		self.is_dev = False
+		logger.info(f"Development mode: {self.is_dev}")
+		
+		# Performance optimizations
+		self._command_cache = {}
+		self._formatted_commands_cache = None
+		logger.info("Bot initialization complete")
 
 	async def setup_hook(self):
-		await self.load_extension("jishaku")
-		# await self.ipc.start()
-		await self.tree.sync()
-		if DB.const.find_one({"_id": "migrate"})["value"]:
-			migrate_requiring_bot(self)
+		logger.info("Setting up bot hooks and extensions...")
+		
+		# Check MongoDB connection first
+		try:
+			logger.info("Testing MongoDB connection...")
+			db_info = DB.const.database.client.server_info()
+			logger.info(f"Connected to MongoDB version: {db_info.get('version', 'unknown')}")
+		except Exception as e:
+			logger.critical(f"MongoDB connection failed: {e}")
+			logger.critical("Please make sure MongoDB is running and the connection string is correct in config.json")
+			logger.critical("Bot cannot start without a database connection. Exiting...")
+			sys.exit(1)
+		
+		# Load extensions
+		try:
+			logger.info("Loading jishaku extension...")
+			await self.load_extension("jishaku")
+			logger.info("Successfully loaded jishaku extension")
+		except Exception as e:
+			logger.error(f"Failed to load jishaku: {e}")
+		
+		# Sync application commands
+		try:
+			logger.info("Syncing application commands...")
+			await self.tree.sync()
+			logger.info("Successfully synced application commands")
+		except Exception as e:
+			logger.error(f"Failed to sync application commands: {e}")
+		
+		# Check for migration
+		try:
+			logger.info("Checking for pending database migrations...")
+			migrate_doc = DB.const.find_one({"_id": "migrate"})
+			if migrate_doc and migrate_doc.get("value", False):
+				logger.info("Running database migration...")
+				migrate_requiring_bot(self)
+				logger.info("Database migration completed successfully")
+			else:
+				logger.info("No pending migrations found")
+		except Exception as e:
+			logger.error(f"Failed to check/run migration: {e}")
+			
+		logger.info("Bot setup completed successfully")
 
 	async def close(self):
+		# Clean up resources before closing
+		logger.info("Bot is shutting down, cleaning up resources...")
+		
+		# Calculate uptime
+		uptime = time.time() - self.startup_time
+		logger.info(f"Bot was running for {uptime:.2f} seconds")
+		
+		# Clear caches
+		logger.debug("Clearing command caches")
+		self._command_cache.clear()
+		self._formatted_commands_cache = None
+		
+		# Only close the session if it was created by this instance and not passed in
+		if hasattr(self, 'session') and self.session is not None and not self.session.closed:
+			try:
+				logger.info("Closing HTTP session")
+				await self.session.close()
+				logger.debug("HTTP session closed successfully")
+			except Exception as e:
+				logger.error(f"Error closing session: {e}")
+		
+		# Call parent close method
+		logger.info("Calling parent close method")
 		await super().close()
-		await self.session.close()
+		logger.info("Bot shutdown complete")
 
 	def __format_command(self, res: Dict[str, list], cmd: commands.Command) -> dict:
 		"""Adds a command to a dict of formatted commands"""
@@ -58,9 +153,15 @@ class BaseBot(commands.AutoShardedBot):
 		return res
 
 	def get_formatted_commands(self) -> dict:
-		"""Gets a dictionary of formatted commands"""
+		"""Gets a dictionary of formatted commands with caching for better performance"""
+		# Return cached result if available
+		if self._formatted_commands_cache is not None:
+			return self._formatted_commands_cache
+		
+		# Initialize result dictionary
 		res = {c.value["name"]: {"description": c.value["description"], "emoji": c.value["emoji"], "commands": []} for c in Category}
 
+		# Process commands
 		for cmd in self.commands:
 			if isinstance(cmd, commands.Group) and cmd.name != "jishaku":
 				for c in cmd.commands:
@@ -68,23 +169,38 @@ class BaseBot(commands.AutoShardedBot):
 				continue
 			res = self.__format_command(res, cmd)
 
+		# Cache the result
+		self._formatted_commands_cache = res
 		return res
 
 	async def find_user(self, ctx: commands.Context, user: str) -> Union[discord.Member, discord.User, None]:
-		"""Attempts to create a member or user object from the passed string"""
+		"""Attempts to create a member or user object from the passed string
+		Optimized for Python 3.11 with better error handling"""
+		# Check if input is empty
+		if not user:
+			return None
+		
+		# Try to convert to member first (most common case)
 		try:
-			res = await commands.MemberConverter().convert(ctx, user)
+			return await commands.MemberConverter().convert(ctx, user)
 		except commands.MemberNotFound:
-			if not user.isdigit():
-				return
+			pass
+		
+		# If not a digit ID, return None
+		if not user.isdigit():
+			return None
 
-			res = self.get_user(int(user))
-			if not res:
-				try:
-					res = await self.fetch_user(int(user))
-				except discord.NotFound:
-					return
-		return res
+		# Try to get from cache first (faster)
+		user_id = int(user)
+		res = self.get_user(user_id)
+		if res:
+			return res
+		
+		# Fetch from API as last resort
+		try:
+			return await self.fetch_user(user_id)
+		except (discord.NotFound, discord.HTTPException):
+			return None
 
 	def get_lootbox_from_name(self, name: str) -> Union[int, None]:
 		"""Gets a lootbox id from its name"""
@@ -157,29 +273,54 @@ class BaseBot(commands.AutoShardedBot):
 				await confirmmsg.delete()
 			except commands.Forbidden:
 				pass
-
+			
 			return res
 
-
 	async def update_presence(self):
-		status = DB.const.find_one({"_id": "presence"})
-		if status['text']:
-			if not status['activity']:
-				status['activity'] = 'playing'
-
-			s = discord.Activity(name=status['text'], type=getattr(discord.ActivityType, status['activity']))
+		"""Update the bot's presence with improved error handling and caching"""
+		logger.debug("Updating bot presence...")
+		try:
+			# Try to get custom presence from database
+			logger.debug("Fetching presence data from database")
+			status = DB.const.find_one({"_id": "presence"})
+			if status and status.get('text'):
+				logger.info(f"Using custom presence: {status['text']}")
+				# Set defaults if missing
+				activity_type = status.get('activity', 'playing')
+				presence_status = status.get('presence', 'online')
 				
-			if not status['presence']:
-				status['presence'] = 'online'
-
-			return await self.change_presence(activity=s, status=getattr(discord.Status, status['presence']))
-
-		a = date.today()
-		#The day Killua was born!!
-		b = date(2020,9,17)
-		delta = a - b
-		playing = discord.Activity(name=f'over {len(self.guilds)} guilds | k! | day {delta.days}', type=discord.ActivityType.watching)
-		return await self.change_presence(status=discord.Status.online, activity=playing)
+				# Create activity object
+				activity = discord.Activity(
+					name=status['text'], 
+					type=getattr(discord.ActivityType, activity_type)
+				)
+				
+				# Update presence
+				logger.debug(f"Setting presence: {activity.name} ({activity.type.name})")
+				await self.change_presence(
+					activity=activity, 
+					status=getattr(discord.Status, presence_status)
+				)
+				return
+			
+			# Calculate bot age
+			today = date.today()
+			bot_birthday = date(2020, 9, 17)  # The day Killua was born!!
+			days_running = (today - bot_birthday).days
+			
+			# Create default activity
+			logger.info(f"Using default presence for {len(self.guilds)} guilds")
+			playing = discord.Activity(
+				name=f'over {len(self.guilds)} guilds | k! | day {days_running}', 
+				type=discord.ActivityType.watching
+			)
+			
+			# Update presence
+			logger.debug(f"Setting default presence: {playing.name}")
+			await self.change_presence(status=discord.Status.online, activity=playing)
+			logger.info("Presence updated successfully")
+		except Exception as e:
+			logger.error(f"Failed to update presence: {e}")
 
 	async def send_message(self, messageable: discord.abc.Messageable, *args, **kwargs) -> discord.Message:
 		"""A helper function sending messages and adding a tip with the probability of 5%"""

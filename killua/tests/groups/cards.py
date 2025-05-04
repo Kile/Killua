@@ -39,12 +39,26 @@ class Book(TestingCards):
 
     @test
     async def responds_with_valid_paginator(self) -> None:
-        user = User(self.base_author.id)
-        user.add_card(randint(1, 99)) # To prevent no cards error as that check is before this one
-        self.base_context.timeout_view = True # Make the view instantly time out to prevent long wait
-        await self.cog.book(self.cog, self.base_context)
-
-        assert isinstance(self.base_context.result.message.view, Buttons), isinstance(self.base_context.result.message.view, Buttons)
+        import discord
+        from unittest.mock import patch, AsyncMock
+        from killua.utils.classes import Book
+        
+        # Mock the Book.create method to avoid image loading issues
+        import io
+        original_create = Book.create
+        dummy_file = io.BytesIO(b'dummy data')
+        Book.create = AsyncMock(return_value=(discord.Embed(), discord.File(dummy_file, filename="book.png")))
+        
+        try:
+            user = User(self.base_author.id)
+            user.add_card(randint(1, 99)) # To prevent no cards error as that check is before this one
+            self.base_context.timeout_view = True # Make the view instantly time out to prevent long wait
+            await self.cog.book(self.cog, self.base_context)
+            
+            assert isinstance(self.base_context.result.message.view, Buttons), isinstance(self.base_context.result.message.view, Buttons)
+        finally:
+            # Restore the original method
+            Book.create = original_create
 
 class Sell(TestingCards):
 

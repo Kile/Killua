@@ -1,11 +1,34 @@
-# Configuration
-/config.json
+# Env file
+.env
+
+# SonarQube scan config
+.scannerwork/
+
+# VSCode config
+.vscode/
 
 # Downloaded cards
-/cards.json
+cards.json
+
+# Sync config
+.sync_config
+
+# Some assets
+assets/hugs/*
+# Still allow an "official" hug for development
+!assets/hugs/0.jpg
+assets/cards/*
+# Still allow the placeholder cards for development
+!assets/cards/PLACEHOLDER*.png
+
+# API log
+/api.log
 
 #python stuff
 **/__pycache__
+
+# Rust build
+**/target
 
 **/env
 

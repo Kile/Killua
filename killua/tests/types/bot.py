@@ -12,7 +12,7 @@ from .channel import TestingTextChannel
 from .user import TestingUser
 
 from typing import Any, Optional, Callable
-from asyncio import get_event_loop, TimeoutError, sleep
+from asyncio import get_event_loop, get_running_loop, TimeoutError, sleep
 
 class TestingBot(BaseBot):
     """A class simulating a discord.py bot instance"""
@@ -32,7 +32,10 @@ class TestingBot(BaseBot):
 
     @property
     def loop(self):
-        return get_event_loop()
+        try:
+            return get_running_loop()
+        except RuntimeError:
+            return get_event_loop()
 
     @loop.setter
     def loop(self, _): # This attribute cannot be changed
@@ -89,6 +92,7 @@ class TestingBot(BaseBot):
         return await messageable.send(content=kwargs.pop("content", None), *args, **kwargs)
 
     async def setup_hook(self) -> None:
-        self.session = ClientSession()
+        if not hasattr(self, 'session') or self.session is None or getattr(self.session, 'closed', True):
+            self.session = ClientSession()
 
 BOT = TestingBot(command_prefix="k!", intents=Intents.all())

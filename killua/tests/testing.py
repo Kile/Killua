@@ -76,7 +76,10 @@ class Testing:
             await command.test_command()
             self.result.add_result(command.result)
 
-        # await Bot.session.close()
+        # Ensure any client sessions are properly closed
+        if hasattr(Bot, 'session') and Bot.session is not None and not getattr(Bot.session, 'closed', False):
+            await Bot.session.close()
+            
         return self.result
 
     async def test_command(self) -> None:

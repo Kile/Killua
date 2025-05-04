@@ -3,6 +3,7 @@ from .groups import tests
 from .types import Bot
 from ..static.enums import PrintColors
 from datetime import datetime
+from aiohttp import ClientSession
 
 # CAREFUL. This is a fairly hacky fix as assertion erros still get printed even though they are caught for some reason.
 # With this, only logging messages get printed. HOWEVER this means all errors that happen outside of tests will also not get printed.
@@ -16,9 +17,14 @@ class DevMod:
 async def run_tests(args) -> None:
     sys.stderr = DevMod()
 
+    # Set up the bot for testing
     Bot.command_prefix = lambda *_: ["mention1", "mention2", "k!"]
     await Bot.setup_hook()
     start = datetime.now()
+    
+    # Create a single shared session for all tests
+    if not hasattr(Bot, 'session') or Bot.session is None or getattr(Bot.session, 'closed', True):
+        Bot.session = ClientSession()
 
     if args:
         if len(args) == 1:
@@ -85,10 +91,9 @@ async def run_tests(args) -> None:
         logging.info(PrintColors.OKGREEN + f"{len(total['passed'])} tests passed \U00002713" + PrintColors.ENDC)
         logging.info(PrintColors.WARNING + f"{len(total['failed'])} tests failed \U00002715" + PrintColors.ENDC)
         logging.info(PrintColors.FAIL + f"{len(total['errors'])} tests raised unhandled exceptions \U000026a0" + PrintColors.ENDC)
-        # for failed in total["errors"]:
-        #     print(PrintColors.FAIL + f"Errored test: {failed['command'].__name__}" + PrintColors.ENDC)
-        #     print(PrintColors.FAIL + f"Error: {failed['error'].error}" + PrintColors.ENDC)
-        # for failed in total["failed"]:
-        #     print(PrintColors.WARNING + f"Failed test: {failed['command'].__name__}" + PrintColors.ENDC)
-        #     print(PrintColors.WARNING + f"Result: {failed['result'].error}" + PrintColors.ENDC)
+    
+    # Ensure all client sessions are properly closed
+    if hasattr(Bot, 'session') and Bot.session is not None and not getattr(Bot.session, 'closed', False):
+        await Bot.session.close()
+        
     logging.info(PrintColors.OKCYAN + "Tests finished after: " + PrintColors.OKBLUE + f"{round((datetime.now() - start).total_seconds())}" + PrintColors.OKCYAN + " seconds" + PrintColors.ENDC)
