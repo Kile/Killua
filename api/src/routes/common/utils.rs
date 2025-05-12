@@ -72,7 +72,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     Ok(msg.as_str().unwrap().to_string())
 }
 
-pub async fn make_request<'b, T: Serialize + std::marker::Send + Deserialize<'static> + 'static>(
+pub async fn make_request<T: Serialize + std::marker::Send + Deserialize<'static> + 'static>(
     route: &'static str,
     data: T,
 ) -> Result<String, zmq::Error> {

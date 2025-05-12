@@ -1221,6 +1221,37 @@
         "url": "/image/hugs/156.jpg",
         "artist": null,
         "featured": false
+    },
+    {
+        "url": "/image/hugs/157.jpeg",
+        "artist": {
+            "name": "ちょこぱい",
+            "link": "https://x.com/sha_nato"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/158.jpeg",
+        "artist": {
+            "name": "ちょこぱい",
+            "link": "https://x.com/sha_nato"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/159.jpeg",
+        "artist": {
+            "name": "ちょこぱい",
+            "link": "https://x.com/sha_nato"
+        },
+        "featured": false
+    },
+    {
+        "url": "/image/hugs/160.jpeg",
+        "artist": {
+            "name": "いもっこレジェンド",
+            "link": "https://x.com/7uXacFPL7L38301"
+        },
+        "featured": false
     }
-
 ]

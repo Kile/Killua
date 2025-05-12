@@ -19,6 +19,8 @@ pub struct Card<'a> {
     limit: u32,
     r#type: Cow<'a, str>,
     available: bool,
+    class: Option<Vec<Cow<'a, str>>>,
+    range: Option<Cow<'a, str>>,
 }
 
 static CENSORED_CACHE: OnceCell<Json<Vec<Card<'static>>>> = OnceCell::const_new();
@@ -67,6 +69,8 @@ pub async fn get_public_cards() -> Result<Json<Vec<Card<'static>>>, BadRequest<J
                 ref t if t =="monster" => Cow::Borrowed("/image/cards/PLACEHOLDER_NORMAL.png"),
                 _ => Cow::Borrowed("/image/cards/PLACEHOLDER_NORMAL.png")
             };
+            card.class = card.class.map(|_| vec![Cow::Borrowed("X")]);
+            card.range = card.range.map(|_| Cow::Borrowed("X"));
             card
         }).collect();
         Ok(Json(cards))
