@@ -1,0 +1,28 @@
+name: Feature request
+description: Make a feature request
+title: "[FEATURE REQUEST]: "
+labels: [feature-request]
+assignees:
+  - Kile
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for giving feedback by making a feature request!
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we get in touch with you if we need more info?
+      placeholder: ex. Kile#0606
+    validations:
+      required: false
+  - type: textarea
+    id: request
+    attributes:
+      label: What is your request
+      description: Please describe your feature request as detailed as possible
+      placeholder: Descibe your wish!
+      value: "I want... cats! And dogs! And- and I want a really really big loli!"
+    validations:
+      required: true
