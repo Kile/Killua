@@ -314,6 +314,8 @@ class Actions(commands.GroupCog, group_name="action"):
         """
         The user didn't provide any (valid) arguments to the command, so they are asked if they
         want to be hugged. If they respond with "yes", the command is executed with the author as the target.
+
+        This will never get called when the messageable is an interaction
         """
         await ctx.send(
             f"You provided no one to {ctx.command.name}.. Should- I {ctx.command.name} you?"
@@ -375,7 +377,7 @@ class Actions(commands.GroupCog, group_name="action"):
         return allowed, disabled
 
     async def _do_action(
-        self, ctx: commands.Context, users: List[discord.User] = None
+        self, messageable: Union[commands.Context, discord.Interaction], users: List[discord.User], action: str, author: Union[discord.User, discord.Member]
     ) -> None:
         """
         Executes an action command with the given members
@@ -384,27 +386,38 @@ class Actions(commands.GroupCog, group_name="action"):
             ActionException: If any exceptions are raised during the execution
         """
         if not users:
-            embed, file = await self.no_argument(ctx)
-        elif ctx.author == users[0]:
-            await ctx.send("Sorry... you can't use this command on yourself")
+            embed, file = await self.no_argument(messageable) 
+        elif author == users[0]:
+            await messageable.send("Sorry... you can't use this command on yourself") # This will always be a Context obj in that case
             return
         else:
-            allowed, disabled = await self.get_allowed_users(users, ctx.command.name)
+            allowed, disabled = await self.get_allowed_users(users, action or action)
 
             for user in allowed:
-                await self._save_stat_for(user, ctx.command.name, True)
+                await self._save_stat_for(user, action or action, True)
 
-            await self._save_stat_for(ctx.author, ctx.command.name, False, len(allowed))
+            await self._save_stat_for(author, action or action, False, len(allowed))
             embed, file = await self.action_embed(
-                ctx.command.name, ctx.author, users, disabled
+                action or action, author, users, disabled
             )
 
         if isinstance(embed, str):
-            await self.client.send_message(ctx, content=embed)
+            await self.client.send_message(messageable, content=embed)
         elif (
             embed is not None
         ):  # May be None from no_argument, in which case we don't want to send a message
-            await self.client.send_message(ctx, embed=embed, file=file)
+            if not isinstance(messageable, discord.Interaction):
+                view = discord.ui.View(timeout=None)
+                view.add_item(
+                    discord.ui.Button(
+                        label=f"{action.capitalize()} back",
+                        style=discord.ButtonStyle.blurple,
+                        custom_id=f"action:{action}:{author.id}:{','.join([self.client._encrypt(i.id) for i in users])}:",
+                    )
+                )
+            else: 
+                view = None
+            await self.client.send_message(messageable, embed=embed, file=file, view=view)
 
     async def _handle_error(self, ctx: commands.Context, error: Exception) -> None:
         """
@@ -432,16 +445,99 @@ class Actions(commands.GroupCog, group_name="action"):
             await self._handle_error(ctx, e)
 
     async def do_action(
-        self, ctx: commands.Context, users: List[discord.User] = None
+        self, ctx: Union[commands.Context, discord.Interaction], users: List[discord.User] = None, action: Optional[str] = None
     ) -> None:
         """
         Wrapper for _do_action to catch any exceptions raised
         """
         try:
-            await self._do_action(ctx, users)
+            await self._do_action(ctx, users, action or ctx.command.name, ctx.user if isinstance(ctx, discord.Interaction) else ctx.author)
         except ActionException as e:
             await self._handle_error(ctx, e)
 
+    async def _button_checks(self, interaction: discord.Interaction, user_id, not_yet_responded, responded) -> bool:
+        """
+        Checks if the button is valid and if the user is allowed to use it
+        """
+        encrypted_user = self.client._encrypt(interaction.user.id)
+
+        if interaction.user.id == int(user_id):
+            await interaction.response.send_message(
+                f"You cannot use this button on yourself", ephemeral=True
+            )
+            return False
+        if encrypted_user not in not_yet_responded and encrypted_user not in responded:
+            await interaction.response.send_message(
+                f"You are not who this command was used on, so you cannot use this button", ephemeral=True
+            )
+            return False
+        elif encrypted_user in responded:
+            await interaction.response.send_message(
+                f"You have already used this button, so you cannot use it again", ephemeral=True
+            )
+            return False
+        elif interaction.channel.permissions_for(interaction.user).send_messages is False:
+            await interaction.response.send_message(
+                f"You do not have permission to send messages in this channel, so you can't use this button :(", ephemeral=True
+            )
+            return False
+        elif isinstance(interaction.channel, discord.GroupChannel) or isinstance(interaction.channel, discord.DMChannel):
+            view = discord.ui.View(timeout=None)
+            view.add_item(
+                discord.ui.Button(
+                    label="Install Killua",
+                    style=discord.ButtonStyle.link,
+                    url="https://canary.discord.com/oauth2/authorize?client_id=756206646396452975",
+                )
+            )
+            await interaction.response.send_message(
+                f"You cannot use this button in DMs... Instead user install Killua and hug the person back that way!!", 
+                view=view,
+                ephemeral=True
+            )
+            return False
+        return True
+
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        if interaction.type != discord.InteractionType.component:
+            return False
+
+        if not interaction.data["custom_id"].startswith("act"):
+            return False
+        
+        _, action, user_id, not_yet_responded, responded = interaction.data["custom_id"].split(":")
+        not_yet_responded = not_yet_responded.split(",")
+        responded = responded.split(",")
+        if not await self._button_checks(interaction, user_id, not_yet_responded, responded):
+            return 
+        
+        user = await self.client.find_user(interaction.context, user_id)
+        if not user:
+            return await interaction.response.send_message(
+                "User not found", ephemeral=True
+            )
+        if len(not_yet_responded) == 1:
+            # Remove button
+            await interaction.message.edit(view=None)
+        else:
+            # Remove the button for this user
+            not_yet_responded.remove(self.client._encrypt(interaction.user.id))
+            new_not_yet_responded = ",".join(not_yet_responded)
+            responded.append(self.client._encrypt(interaction.user.id))
+            new_responded = ",".join(responded)
+            await interaction.message.edit(
+                view=discord.ui.View(timeout=None).add_item(
+                    discord.ui.Button(
+                        label=f"{action.capitalize()} back",
+                        style=discord.ButtonStyle.blurple,
+                        custom_id=f"action:{action}:{user_id}:{new_not_yet_responded}:{new_responded}",
+                    )
+                )
+            )
+        return await self.do_action(
+           interaction, [user], action
+        )
     @check()
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 1}, usage="hug <user(s)>"
