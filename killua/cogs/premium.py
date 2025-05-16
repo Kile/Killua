@@ -189,7 +189,7 @@ class Premium(commands.Cog):
                     badges.remove(k)
 
             if d["tier"] is None:
-                await Guild.bullk_remove_premium(
+                await Guild.bulk_remove_premium(
                     [int(x) for x in premium_guilds.keys()]
                 )
                 await user.clear_premium_guilds()

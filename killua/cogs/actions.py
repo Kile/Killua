@@ -389,6 +389,9 @@ class Actions(commands.GroupCog, group_name="action"):
         users: List[discord.User],
         has_user_installed: List[discord.User],
     ) -> Optional[View]:
+        if users is None:
+            return None # No users to return to
+        
         author_obj = await User.new(author.id)
         if self.has_disabled(author_obj, action):
             return None # If the user disabled it anyway, don't show the button
@@ -430,6 +433,7 @@ class Actions(commands.GroupCog, group_name="action"):
         """
         if not users:
             embed, file = await self.no_argument(messageable)
+            has_user_installed = []
         elif author == users[0]:
             await messageable.send(
                 "Sorry... you can't use this command on yourself"

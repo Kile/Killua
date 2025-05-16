@@ -16,7 +16,6 @@ from inspect import signature, Parameter
 from functools import partial
 from typing import Coroutine, Union, Dict, List, Optional, Tuple, cast
 
-from .migrate import migrate_requiring_bot
 from .static.enums import Category
 from .utils.interactions import Modal
 from .static.constants import TIPS, LOOTBOXES, DB
@@ -106,9 +105,6 @@ class BaseBot(commands.AutoShardedBot):
         self.cached_entitlements = [
             entitlement async for entitlement in self.entitlements(limit=None)
         ]
-        if (await DB.const.find_one({"_id": "migrate"}))["value"]:
-            await migrate_requiring_bot(self)
-            await DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
 
     async def _turn_top_level_user_installed(self, command: commands.HybridCommand):
         """
@@ -382,7 +378,8 @@ class BaseBot(commands.AutoShardedBot):
             if timeout_message:
                 await ctx.send(timeout_message, delete_after=5)
             return
-        await modal.interaction.response.defer()
+        if modal.interaction and not modal.interaction.response.is_done():
+            await modal.interaction.response.defer()
         return textinput.value
 
     async def _get_text_response_message(

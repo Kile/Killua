@@ -539,7 +539,7 @@ class Dev(commands.GroupCog, group_name="dev"):
     )
     async def blacklist(self, ctx: commands.Context, user: str, *, reason=None):
         """Blacklisting bad people like Hisoka. Owner restricted"""
-        discord_user: Union[discord.User, None] = await self.client.find_user(user)
+        discord_user: Union[discord.User, None] = await self.client.find_user(ctx, user)
         if not discord_user:
             return await ctx.send("Invalid user!", ephermal=True)
         # Inserting the bad person into my database

@@ -30,7 +30,7 @@ async def main():
     )
 
     if args.migrate:
-        return migrate()
+        return await migrate()
 
     if args.test is not None:
         return await run_tests(args.test)
