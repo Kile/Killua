@@ -453,16 +453,18 @@ class BaseBot(commands.AutoShardedBot):
         return cast(
             dict,
             (
-                await DB.guilds.aggregate(
-                    [
-                        {"$match": {"approximate_member_count": {"$exists": True}}},
-                        {
-                            "$group": {
-                                "_id": None,
-                                "total": {"$sum": "$approximate_member_count"},
-                            }
-                        },
-                    ]
+                await (
+                    await DB.guilds.aggregate(
+                        [
+                            {"$match": {"approximate_member_count": {"$exists": True}}},
+                            {
+                                "$group": {
+                                    "_id": None,
+                                    "total": {"$sum": "$approximate_member_count"},
+                                }
+                            },
+                        ]
+                    )
                 ).to_list(length=None)
             )[0],
         ).get("total", 0)
@@ -561,7 +563,7 @@ class BaseBot(commands.AutoShardedBot):
         msg = None
         if kwargs.get("file", False) is None:
             kwargs.pop("file")
-        
+
         if kwargs.get("view", False) is None:
             kwargs["view"] = discord.utils.MISSING
 

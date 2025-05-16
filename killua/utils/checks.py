@@ -2,7 +2,9 @@ import discord
 from discord.ext import commands
 from typing import Union, Type
 from datetime import datetime, timedelta
+from typing import cast
 
+from killua.bot import BaseBot
 from killua.static.constants import DB, PatreonBanner, daily_users
 from .classes import User, Guild
 
@@ -140,7 +142,7 @@ def check(time: int = 0):
             str(command.extras["id"]), data.get(str(command.extras["id"]), 0) + 1
         )
 
-    async def custom_cooldown(ctx: commands.Context, time: int) -> bool:
+    async def custom_cooldown(ctx: commands.Context, time: int, user: User, guild: Guild) -> bool:
         global cooldowndict
         now = datetime.now()
         try:
@@ -159,12 +161,6 @@ def check(time: int = 0):
         cd: timedelta = now - cdwn
         diff = cd.seconds
 
-        user = await User.new(ctx.author.id)
-        guild = (
-            (await Guild.new(ctx.guild.id, ctx.guild.member_count))
-            if ctx.guild
-            else None
-        )
         view = discord.ui.View()
         view.add_item(
             discord.ui.Button(
@@ -198,11 +194,9 @@ def check(time: int = 0):
         # await ctx.send(f":x: Command on cooldown! Try again  after `{time-diff}` seconds\n\nHalf your cooldown by clicking on the button and becoming a Patreon",file=PatreonBanner.file(), view=view, delete_after=10)
         return False
 
-    async def settings_check(ctx: commands.Context) -> bool:
-        if not ctx.guild:
+    async def settings_check(ctx: commands.Context, guild: Guild) -> bool:
+        if not guild:
             return True
-
-        guild = await Guild.new(ctx.guild.id, ctx.guild.member_count)
 
         if not ctx.command.name in guild.commands:
             return True
@@ -262,7 +256,7 @@ def check(time: int = 0):
         ):
             return False
 
-        # Checking if the command invokation should be deleted
+        # Checking if the command invocation should be deleted
         if "delete_invokation" in command and command["delete_invokation"]:
             try:
                 await ctx.message.delete()
@@ -284,18 +278,23 @@ def check(time: int = 0):
 
         if await blcheck(ctx.author.id):
             return False
+        
+        guild = await Guild.new(ctx.guild.id, ctx.guild.member_count) if ctx.guild else None
+        user = await User.new(ctx.author.id)
 
         try:
-            if (await settings_check(ctx)) is False:
+            if (await settings_check(ctx, guild)) is False:
                 return False
         except (
             Exception
         ):  # If someone used the api and messed up the guilds data structure
             pass
 
-        if time > 0 and await custom_cooldown(ctx, time) is False:
+        if time > 0 and await custom_cooldown(ctx, time, user, guild) is False:
             return False
 
+        if cast(BaseBot, ctx.bot).is_user_installed(ctx):
+            await user.register_user_installed_usage()
         await add_usage(ctx.command)
         add_daily_user(ctx.author.id)
 

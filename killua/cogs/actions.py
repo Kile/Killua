@@ -362,22 +362,65 @@ class Actions(commands.GroupCog, group_name="action"):
         self,
         users: List[discord.User],
         command_name: str,
-    ) -> Tuple[List[discord.User], int]:
+    ) -> Tuple[List[discord.User], int, List[discord.User]]:
         """
-        Returns a list of users that are allowed to use the action command
+        Returns a list of users that are allowed to use the action command.
+        Also provides the number of people that have user installed the bot.
+        This is to avoid looping through the list of users twice.
         """
         allowed: List[discord.User] = []
         disabled = 0
+        has_user_installed: List[discord.User] = []
         for user in users:
             m = await User.new(user.id)
             if m.action_settings and self.has_disabled(m, command_name):
                 disabled += 1
             else:
                 allowed.append(user)
-        return allowed, disabled
+            if m.has_user_installed:
+                has_user_installed.append(user)
+        return allowed, disabled, has_user_installed
+
+    async def _get_return_view(
+        self,
+        messagable: Union[commands.Context, discord.Interaction],
+        action: str,
+        author: discord.User,
+        users: List[discord.User],
+        has_user_installed: List[discord.User],
+    ) -> Optional[View]:
+        author_obj = await User.new(author.id)
+        if self.has_disabled(author_obj, action):
+            return None # If the user disabled it anyway, don't show the button
+        
+        targeted_without_user_installed = [
+            user for user in users if user not in has_user_installed
+        ]
+        if (
+            isinstance(messagable.channel, discord.GroupChannel)
+            or isinstance(messagable.channel, discord.DMChannel)
+        ) and len(targeted_without_user_installed) == 0:
+            return None
+        
+        if isinstance(messagable, discord.Interaction):
+            return None # Don't show the button on actions invoked by a button
+        
+        view = discord.ui.View(timeout=None)
+        view.add_item(
+            discord.ui.Button(
+                label=f"{action.capitalize()} back",
+                style=discord.ButtonStyle.blurple,
+                custom_id=f"action:{action}:{author.id}:{','.join([self.client._encrypt(i.id) for i in users])}:",
+            )
+        )
+        return view
 
     async def _do_action(
-        self, messageable: Union[commands.Context, discord.Interaction], users: List[discord.User], action: str, author: Union[discord.User, discord.Member]
+        self,
+        messageable: Union[commands.Context, discord.Interaction],
+        users: List[discord.User],
+        action: str,
+        author: Union[discord.User, discord.Member],
     ) -> None:
         """
         Executes an action command with the given members
@@ -386,12 +429,16 @@ class Actions(commands.GroupCog, group_name="action"):
             ActionException: If any exceptions are raised during the execution
         """
         if not users:
-            embed, file = await self.no_argument(messageable) 
+            embed, file = await self.no_argument(messageable)
         elif author == users[0]:
-            await messageable.send("Sorry... you can't use this command on yourself") # This will always be a Context obj in that case
+            await messageable.send(
+                "Sorry... you can't use this command on yourself"
+            )  # This will always be a Context obj in that case
             return
         else:
-            allowed, disabled = await self.get_allowed_users(users, action or action)
+            allowed, disabled, has_user_installed = await self.get_allowed_users(
+                users, action or action
+            )
 
             for user in allowed:
                 await self._save_stat_for(user, action or action, True)
@@ -406,18 +453,12 @@ class Actions(commands.GroupCog, group_name="action"):
         elif (
             embed is not None
         ):  # May be None from no_argument, in which case we don't want to send a message
-            if not isinstance(messageable, discord.Interaction):
-                view = discord.ui.View(timeout=None)
-                view.add_item(
-                    discord.ui.Button(
-                        label=f"{action.capitalize()} back",
-                        style=discord.ButtonStyle.blurple,
-                        custom_id=f"action:{action}:{author.id}:{','.join([self.client._encrypt(i.id) for i in users])}:",
-                    )
-                )
-            else: 
-                view = None
-            await self.client.send_message(messageable, embed=embed, file=file, view=view)
+            view = await self._get_return_view(
+                messageable, action, author, users, has_user_installed
+            )
+            await self.client.send_message(
+                messageable, embed=embed, file=file, view=view
+            )
 
     async def _handle_error(self, ctx: commands.Context, error: Exception) -> None:
         """
@@ -445,17 +486,56 @@ class Actions(commands.GroupCog, group_name="action"):
             await self._handle_error(ctx, e)
 
     async def do_action(
-        self, ctx: Union[commands.Context, discord.Interaction], users: List[discord.User] = None, action: Optional[str] = None
+        self,
+        ctx: Union[commands.Context, discord.Interaction],
+        users: List[discord.User] = None,
+        action: Optional[str] = None,
     ) -> None:
         """
         Wrapper for _do_action to catch any exceptions raised
         """
         try:
-            await self._do_action(ctx, users, action or ctx.command.name, ctx.user if isinstance(ctx, discord.Interaction) else ctx.author)
+            await self._do_action(
+                ctx,
+                users,
+                action or ctx.command.name,
+                ctx.user if isinstance(ctx, discord.Interaction) else ctx.author,
+            )
         except ActionException as e:
             await self._handle_error(ctx, e)
 
-    async def _button_checks(self, interaction: discord.Interaction, user_id, not_yet_responded, responded) -> bool:
+    async def _dm_return_button_press(
+        self,
+        interaction: discord.Interaction,
+        action: str,
+    ) -> None:
+        """
+        Handles the button press for the DM return button
+        """
+        user = await User.new(interaction.user.id)
+        if user.has_user_installed:
+            await interaction.response.send_message(
+                f"You cannot use this button in dms, instead use the command to {action} the person back!",
+                ephemeral=True,
+            )
+        else:
+            view = discord.ui.View(timeout=None)
+            view.add_item(
+                discord.ui.Button(
+                    label="Install Killua",
+                    style=discord.ButtonStyle.link,
+                    url=f"https://canary.discord.com/oauth2/authorize?client_id={self.client.user.id}",
+                )
+            )
+            await interaction.response.send_message(
+                f"You cannot use this button in DMs... Instead user install Killua and {action} the person using the command!!",
+                view=view,
+                ephemeral=True,
+            )
+
+    async def _button_checks(
+        self, interaction: discord.Interaction, user_id, not_yet_responded, responded, action
+    ) -> bool:
         """
         Checks if the button is valid and if the user is allowed to use it
         """
@@ -468,33 +548,28 @@ class Actions(commands.GroupCog, group_name="action"):
             return False
         if encrypted_user not in not_yet_responded and encrypted_user not in responded:
             await interaction.response.send_message(
-                f"You are not who this command was used on, so you cannot use this button", ephemeral=True
+                f"You are not who this command was used on, so you cannot use this button",
+                ephemeral=True,
             )
             return False
         elif encrypted_user in responded:
             await interaction.response.send_message(
-                f"You have already used this button, so you cannot use it again", ephemeral=True
+                f"You have already used this button, so you cannot use it again",
+                ephemeral=True,
             )
             return False
-        elif interaction.channel.permissions_for(interaction.user).send_messages is False:
+        elif (
+            interaction.channel.permissions_for(interaction.user).send_messages is False
+        ):
             await interaction.response.send_message(
-                f"You do not have permission to send messages in this channel, so you can't use this button :(", ephemeral=True
+                f"You do not have permission to send messages in this channel, so you can't use this button :(",
+                ephemeral=True,
             )
             return False
-        elif isinstance(interaction.channel, discord.GroupChannel) or isinstance(interaction.channel, discord.DMChannel):
-            view = discord.ui.View(timeout=None)
-            view.add_item(
-                discord.ui.Button(
-                    label="Install Killua",
-                    style=discord.ButtonStyle.link,
-                    url="https://canary.discord.com/oauth2/authorize?client_id=756206646396452975",
-                )
-            )
-            await interaction.response.send_message(
-                f"You cannot use this button in DMs... Instead user install Killua and hug the person back that way!!", 
-                view=view,
-                ephemeral=True
-            )
+        elif isinstance(interaction.channel, discord.GroupChannel) or isinstance(
+            interaction.channel, discord.DMChannel
+        ):
+            await self._dm_return_button_press(interaction, action)
             return False
         return True
 
@@ -505,13 +580,17 @@ class Actions(commands.GroupCog, group_name="action"):
 
         if not interaction.data["custom_id"].startswith("act"):
             return False
-        
-        _, action, user_id, not_yet_responded, responded = interaction.data["custom_id"].split(":")
+
+        _, action, user_id, not_yet_responded, responded = interaction.data[
+            "custom_id"
+        ].split(":")
         not_yet_responded = not_yet_responded.split(",")
         responded = responded.split(",")
-        if not await self._button_checks(interaction, user_id, not_yet_responded, responded):
-            return 
-        
+        if not await self._button_checks(
+            interaction, user_id, not_yet_responded, responded, action
+        ):
+            return
+
         user = await self.client.find_user(interaction.context, user_id)
         if not user:
             return await interaction.response.send_message(
@@ -535,9 +614,8 @@ class Actions(commands.GroupCog, group_name="action"):
                     )
                 )
             )
-        return await self.do_action(
-           interaction, [user], action
-        )
+        return await self.do_action(interaction, [user], action)
+
     @check()
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 1}, usage="hug <user(s)>"

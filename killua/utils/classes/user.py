@@ -39,6 +39,7 @@ class User:
     action_settings: Dict[str, Any]
     action_stats: Dict[str, Any]
     locale: str
+    has_user_installed: bool = False
     cache: ClassVar[Dict[int, User]] = {}
 
     @classmethod
@@ -94,6 +95,7 @@ class User:
             action_settings=data.get("action_settings", {}),
             action_stats=data.get("action_stats", {}),
             locale=data.get("locale", None),
+            has_user_installed=data.get("user_installed", False),
         )
 
         cls.cache[user_id] = instance
@@ -218,7 +220,7 @@ class User:
                     "weekly_cooldown": None,
                     "action_settings": {},
                     "action_stats": {},
-                    "achivements": [],
+                    "achievements": [],
                     "stats": {
                         "rps": {
                             "pvp": {"won": 0, "lost": 0, "tied": 0},
@@ -231,6 +233,8 @@ class User:
                             "hard": {"right": 0, "wrong": 0},
                         },
                     },
+                    "locale": None,
+                    "has_user_installed": False,
                 }
             )
 
@@ -241,7 +245,7 @@ class User:
     async def add_badge(self, badge: str) -> None:
         """Adds a badge to a user"""
         if badge.lower() in self.badges:
-            raise TypeError("Badge already in possesion of user")
+            raise TypeError("Badge already in possession of user")
 
         self._badges.append(badge.lower())
         await self._update_val("badges", badge.lower(), "$push")
@@ -506,7 +510,7 @@ class User:
                 except Exception:
                     if raise_if_failed:
                         raise NotInPossession(
-                            "This card is not in possesion of the specified user!"
+                            "This card is not in possession of the specified user!"
                         )
             await self._update_val("cards.fs", self.fs_cards)
         else:
@@ -516,7 +520,7 @@ class User:
                 except Exception:
                     if raise_if_failed:
                         raise NotInPossession(
-                            "This card is not in possesion of the specified user!"
+                            "This card is not in possession of the specified user!"
                         )
             await self._update_val("cards.rs", self.rs_cards)
 
@@ -725,3 +729,10 @@ class User:
             self.locale = locale
             await self._update_val("locale", locale)
             return old
+
+    async def register_user_installed_usage(self) -> None:
+        """Registers the user as having installed the bot"""
+        if self.has_user_installed:
+            return # No unnecessary database calls
+        self.has_user_installed = True
+        await self._update_val("user_installed", True)
