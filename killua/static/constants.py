@@ -1,7 +1,8 @@
 import json
 import io, os
 import discord
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from pymongo import AsyncMongoClient
+from pymongo.asynchronous.collection import AsyncCollection
 from typing import Any, Callable, TypeVar, Generic, Union, Dict, List, Tuple
 
 from killua.utils.test_db import TestingDatabase as Database
@@ -10,7 +11,7 @@ import killua.args as args
 args.init()
 
 # Instead, use env variables
-CLUSTER = AsyncIOMotorClient(os.getenv("MONGODB"))
+CLUSTER = AsyncMongoClient(os.getenv("MONGODB"))
 
 CONST_DEFAULT = [  # The default values for the const collection
     {"_id": "migrate", "value": True},
@@ -48,19 +49,19 @@ class DB:
             self._DB = CLUSTER["Killua"]
 
     @DBProperty
-    def teams(self) -> Union[AsyncIOMotorCollection, Database]:
+    def teams(self) -> Union[AsyncCollection, Database]:
         return self._DB["teams"] if args.Args.test is None else Database("teams")
 
     @DBProperty
-    def guilds(self) -> Union[AsyncIOMotorCollection, Database]:
+    def guilds(self) -> Union[AsyncCollection, Database]:
         return self._DB["guilds"] if args.Args.test is None else Database("guilds")
 
     @DBProperty
-    def todo(self) -> Union[AsyncIOMotorCollection, Database]:
+    def todo(self) -> Union[AsyncCollection, Database]:
         return self._DB["todo"] if args.Args.test is None else Database("todo")
 
     @DBProperty
-    def const(self) -> Union[AsyncIOMotorCollection, Database]:
+    def const(self) -> Union[AsyncCollection, Database]:
         if args.Args.test is not None:
             db = Database("const")
             db.insert_many(CONST_DEFAULT)
@@ -70,7 +71,7 @@ class DB:
             return self._DB["const"]
 
     @DBProperty
-    def APIstats(self) -> Union[AsyncIOMotorCollection, Database]:
+    def APIstats(self) -> Union[AsyncCollection, Database]:
         return (
             self._DB["api-stats"] if args.Args.test is None else Database("api-stats")
         )
