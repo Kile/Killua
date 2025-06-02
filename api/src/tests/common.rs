@@ -44,8 +44,6 @@ pub fn test_zmq_server() {
             let stripped: Vec<u8> = (msg.as_ref() as &[u8])[1..].to_vec();
             let str = String::from_utf8(stripped.clone()).unwrap();
 
-            let stripped_identity: Vec<u8> = (identity.as_ref() as &[u8])[1..].to_vec();
-
             let request = serde_json::from_str::<SimpleRequest>(str.as_str())
                 .expect("Failed to parse request");
 
