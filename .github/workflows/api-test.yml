@@ -23,6 +23,8 @@ jobs:
           filters: |
             api:
               - 'api/**/*.rs'
+              - 'api/Cargo.toml'
+              - 'api/Cargo.lock'
 
   # run only if some file in 'api' folder was changed ending with .rs
   test:
