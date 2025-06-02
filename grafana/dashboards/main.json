@@ -1362,11 +1362,12 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
-      "description": "The upvotes for Killua on sites like top.gg",
+      "description": "The commands (of any kind) ran in the last 24hrs",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "fixedColor": "semi-dark-purple",
+            "mode": "fixed"
           },
           "custom": {
             "axisBorderShow": false,
@@ -1375,9 +1376,9 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 0,
-            "gradientMode": "hue",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -1388,8 +1389,7 @@
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
-              "log": 2,
-              "type": "log"
+              "type": "linear"
             },
             "showPoints": "auto",
             "spanNulls": true,
@@ -1420,7 +1420,7 @@
         "x": 0,
         "y": 30
       },
-      "id": 856,
+      "id": 910,
       "options": {
         "legend": {
           "calcs": [],
@@ -1440,16 +1440,40 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "round(delta(discord_votes_total{job=\"$job\"}[1h]))",
+          "expr": "round(delta(discord_event_on_interaction_total{job=\"$job\"}[1h]))",
           "instant": false,
-          "legendFormat": "{{platform}}",
+          "legendFormat": "__auto",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "round(delta(discord_event_on_command_total{job=\"$job\"}[1h]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "C"
         }
       ],
-      "timeFrom": "24h",
-      "title": "Votes for the bot",
+      "timeFrom": "1w",
+      "title": "Commands ran",
       "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Command usage",
+            "mode": "reduceRow",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        },
         {
           "id": "filterByValue",
           "options": {
@@ -1461,16 +1485,7 @@
                     "value": 0
                   }
                 },
-                "fieldName": "discordbotlist"
-              },
-              {
-                "config": {
-                  "id": "lower",
-                  "options": {
-                    "value": 0
-                  }
-                },
-                "fieldName": "topgg"
+                "fieldName": "Command usage"
               }
             ],
             "match": "any",
@@ -1578,12 +1593,11 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
-      "description": "The commands (of any kind) ran in the last 24hrs",
+      "description": "The upvotes for Killua on sites like top.gg",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "fixedColor": "semi-dark-purple",
-            "mode": "fixed"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisBorderShow": false,
@@ -1592,9 +1606,9 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
+            "drawStyle": "bars",
+            "fillOpacity": 0,
+            "gradientMode": "hue",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -1605,7 +1619,8 @@
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
-              "type": "linear"
+              "log": 2,
+              "type": "log"
             },
             "showPoints": "auto",
             "spanNulls": true,
@@ -1632,11 +1647,11 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 37
       },
-      "id": 910,
+      "id": 856,
       "options": {
         "legend": {
           "calcs": [],
@@ -1656,40 +1671,16 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "round(delta(discord_event_on_interaction_total{job=\"$job\"}[1h]))",
+          "expr": "round(delta(discord_votes_total{job=\"$job\"}[1h]))",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{{platform}}",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "expr": "round(delta(discord_event_on_command_total{job=\"$job\"}[1h]))",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "C"
         }
       ],
-      "timeFrom": "1w",
-      "title": "Commands ran",
+      "timeFrom": "24h",
+      "title": "Votes for the bot",
       "transformations": [
-        {
-          "id": "calculateField",
-          "options": {
-            "alias": "Command usage",
-            "mode": "reduceRow",
-            "reduce": {
-              "reducer": "sum"
-            },
-            "replaceFields": true
-          }
-        },
         {
           "id": "filterByValue",
           "options": {
@@ -1701,7 +1692,16 @@
                     "value": 0
                   }
                 },
-                "fieldName": "Command usage"
+                "fieldName": "discordbotlist"
+              },
+              {
+                "config": {
+                  "id": "lower",
+                  "options": {
+                    "value": 0
+                  }
+                },
+                "fieldName": "topgg"
               }
             ],
             "match": "any",
@@ -1769,8 +1769,8 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 12,
-        "x": 12,
+        "w": 9,
+        "x": 8,
         "y": 37
       },
       "id": 817,
@@ -1822,6 +1822,99 @@
           }
         }
       ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The combined amount of members of all servers Killua is in",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 3,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 17,
+        "y": 37
+      },
+      "id": 1011,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "hidden",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_approximate_user_count",
+          "instant": false,
+          "legendFormat": "Daily active users",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Approximate total users",
       "type": "timeseries"
     },
     {
@@ -2634,8 +2727,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "light-orange",
-                "value": null
+                "color": "light-orange"
               }
             ]
           }
@@ -2694,8 +2786,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "light-orange",
-                "value": null
+                "color": "light-orange"
               }
             ]
           },
@@ -2791,8 +2882,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2890,8 +2980,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2989,8 +3078,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3224,6 +3312,6 @@
   "timezone": "",
   "title": "Killua statistics",
   "uid": "TGkTuzD4zA",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }
