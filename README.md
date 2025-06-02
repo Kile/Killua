@@ -275,7 +275,7 @@ If you want to run the pre-built images from the registry:
 
 You can access Grafana on port 3000. The configured dashboard should already be added. You can access it after logging in with username `admin` and password `admin` (unless you changed it in the env file). Prometheus can be accessed on port 8000. The API can be accessed on port 6060.
 
-As of version 1.2.3 the Grafana dashboard includes an "Update" button. Pressing this button is meant to run `scripts/updates.sh` in production. For this, you need to run `cargo run` in `script_service` in a `screen` or `tmux` session which will listen to requests from Grafana for this. This is not essential to run the bot in Docker and is only for that button. 
+As of version 1.2.3 the Grafana dashboard includes an "Update" button. Pressing this button is meant to run `scripts/update.sh` in production. For this, you need to run `cargo run` in `script_service` in a `screen` or `tmux` session which will listen to requests from Grafana for this. This is not essential to run the bot in Docker and is only for that button. 
 
 Note: if you want to expose Grafana on nginx, you need to add `proxy_set_header Host $http_host;` to the `server` config.
 </details>
