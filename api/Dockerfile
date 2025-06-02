@@ -1,5 +1,5 @@
 # Use an official Rust runtime as a parent image
-FROM rust:1.78 AS base
+FROM rust:1.87 AS base
 
 ARG MYUID=1000
 ARG MYGID=1000
@@ -8,6 +8,7 @@ ARG MYGID=1000
 WORKDIR /app
 
 COPY api/ api/
+COPY scripts/ scripts/
 
 # This is mainly for reading the config.json
 WORKDIR /app/api

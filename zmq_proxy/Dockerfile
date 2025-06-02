@@ -1,4 +1,4 @@
-FROM rust:1.78 as base
+FROM rust:1.78 AS base
 
 ARG MYUID=1000
 ARG MYGID=1000
@@ -6,6 +6,8 @@ ARG MYGID=1000
 COPY . .
 
 FROM base AS prod
+
+EXPOSE 5558
 
 # Build the Rust application
 RUN cargo build --release

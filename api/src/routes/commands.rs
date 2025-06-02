@@ -43,7 +43,7 @@ static CACHE: OnceCell<HashMap<String, Category>> = OnceCell::const_new();
 pub async fn get_commands() -> Result<Json<HashMap<String, Category>>, BadRequest<Json<Value>>> {
     let commands = CACHE
         .get_or_try_init(|| async {
-            let commands = make_request("commands", NoData {})
+            let commands = make_request("commands", NoData {}, 0_u8)
                 .await
                 .context("Failed to get commands")?;
             // Parse the commands into a HashMap using the defined structs and rocket

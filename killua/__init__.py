@@ -11,7 +11,7 @@ from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a separate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
 from .static.constants import TOKEN
-from .metrics import PrometheusLoggingHandler
+from .metrics import PrometheusLoggingHandler, API_KEY, IS_DEV
 
 import killua.args as args_file
 
@@ -59,6 +59,9 @@ async def main():
     bot.is_dev = args.development
     bot.run_in_docker = args.docker
     bot.force_local = args.force_local
+
+    API_KEY.labels(bot.secret_api_key).set(1)
+    IS_DEV.labels(str(bot.is_dev).lower()).set(1)
 
     # Setup cogs.
     for cog in cogs.all_cogs:

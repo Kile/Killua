@@ -105,8 +105,30 @@ TAGS = Gauge(
     "Amount of tags created",
 )
 
+CARDS = Gauge(
+    METRIC_PREFIX + "cards",
+    "Amount of cards in circulation",
+)
+
+BIGGEST_COLLECTION = Gauge(
+    METRIC_PREFIX + "biggest_collection",
+    "Amount of non fake cards in the biggest collection",
+)
+
 LOCALE = Gauge(
     METRIC_PREFIX + "locale",
     "Where users are from",
     ["country"],
+)
+
+API_KEY = Gauge(
+    METRIC_PREFIX + "api_key",
+    "The secret key for restricted endpoints of the Killua API",
+    ["key"],
+)
+
+IS_DEV = Gauge(
+    METRIC_PREFIX + "is_dev",
+    "If the bot is running in dev mode",
+    ["dev"],
 )

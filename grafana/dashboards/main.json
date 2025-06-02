@@ -22,7 +22,7 @@
     ]
   },
   "description": "This is a dashboard for the Discord bot Killua to monitor various statistics.",
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "gnetId": 17670,
   "graphTooltip": 1,
@@ -47,9 +47,45 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
-      "description": "The type of logs outputted to the console on the bot process",
+      "description": "Number of users that have installed Killua over time",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 2,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -60,11 +96,10 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 80
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": []
       },
@@ -74,24 +109,20 @@
         "x": 0,
         "y": 1
       },
-      "id": 28,
+      "hideTimeOverride": false,
+      "id": 952,
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
-      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -99,42 +130,15 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "sum(logging_total{level=\"WARN\"}) OR on() vector(0)",
-          "hide": false,
-          "instant": false,
-          "interval": "0",
-          "legendFormat": "Warnings",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "expr": "sum(logging_total{level=\"ERROR\"}) OR on() vector(0)",
-          "interval": "",
-          "legendFormat": "Errors",
+          "expr": "discord_user_installs{job=~\"$job\"}",
+          "legendFormat": "{{job}}",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "expr": "sum(logging_total{level=\"CRITICAL\"}) OR on() vector(0)",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "Critical Errors",
-          "range": true,
-          "refId": "C"
         }
       ],
-      "title": "Logs",
-      "type": "stat"
+      "timeFrom": "1w",
+      "title": "User Installs Over Time",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -350,20 +354,34 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
-      "description": "The amount of users saved in the mongodb database",
+      "description": "How much RAM the bot is using",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "fieldMinMax": false,
           "mappings": [],
+          "min": 0,
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -373,11 +391,10 @@
         "x": 0,
         "y": 6
       },
-      "id": 48,
+      "id": 58,
       "options": {
-        "colorMode": "background_solid",
-        "graphMode": "none",
-        "justifyMode": "auto",
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -386,9 +403,9 @@
           "fields": "",
           "values": false
         },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
       "pluginVersion": "10.4.2",
       "targets": [
@@ -398,14 +415,14 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "discord_stat_total_registered_users{job=~\"$job\"}",
-          "legendFormat": "{{job}}",
+          "expr": "discord_ram_usage{job=~\"$job\"}",
+          "legendFormat": "{{job}} : {{shard}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Registered users",
-      "type": "stat"
+      "title": "RAM usage",
+      "type": "gauge"
     },
     {
       "datasource": {
@@ -518,18 +535,12 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
-      "description": "How much RAM the bot is using",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 1,
-          "fieldMinMax": false,
+          "decimals": 2,
           "mappings": [],
-          "min": 0,
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               {
                 "color": "green",
@@ -555,10 +566,11 @@
         "x": 16,
         "y": 6
       },
-      "id": 58,
+      "id": 22,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -567,9 +579,9 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
       "pluginVersion": "10.4.2",
       "targets": [
@@ -579,14 +591,51 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "discord_ram_usage{job=~\"$job\"}",
-          "legendFormat": "{{job}} : {{shard}}",
+          "expr": "discord_cpu_usage{job=~\"$job\"}",
+          "legendFormat": "{{job}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "RAM usage",
-      "type": "gauge"
+      "title": "CPU Activity",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "lokidatasource"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "id": 911,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Ascending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "lokidatasource"
+          },
+          "editorMode": "code",
+          "expr": "{service_name=\"python_bot\"} | detected_level = \"info\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Info logs",
+      "type": "logs"
     },
     {
       "datasource": {
@@ -617,7 +666,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 11
+        "y": 17
       },
       "id": 818,
       "options": {
@@ -667,8 +716,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheusdatasource"
+        "type": "loki",
+        "uid": "lokidatasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -682,10 +731,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -696,53 +741,134 @@
         "h": 5,
         "w": 4,
         "x": 4,
-        "y": 11
+        "y": 17
       },
-      "id": 819,
+      "id": 930,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
+        "infinitePan": false,
+        "inlineEditing": false,
+        "panZoom": false,
+        "root": {
+          "background": {
+            "color": {
+              "fixed": "transparent"
+            },
+            "image": {
+              "field": "",
+              "fixed": "",
+              "mode": "fixed"
+            },
+            "size": "tile"
+          },
+          "border": {
+            "color": {
+              "fixed": "dark-green"
+            },
+            "width": 0
+          },
+          "constraint": {
+            "horizontal": "left",
+            "vertical": "top"
+          },
+          "elements": [
+            {
+              "background": {
+                "color": {
+                  "fixed": "transparent"
+                }
+              },
+              "border": {
+                "color": {
+                  "fixed": "dark-green"
+                },
+                "width": 0
+              },
+              "config": {
+                "align": "center",
+                "api": {
+                  "contentType": "application/json",
+                  "endpoint": "http://127.0.0.1:6060/update",
+                  "headerParams": [
+                    [
+                      "Authorization",
+                      "$apiKey"
+                    ]
+                  ],
+                  "method": "POST",
+                  "queryParams": []
+                },
+                "color": {
+                  "fixed": "#F0F4FD"
+                },
+                "size": 24,
+                "style": {
+                  "variant": "primary"
+                },
+                "text": {
+                  "fixed": "Update",
+                  "mode": "fixed"
+                }
+              },
+              "constraint": {
+                "horizontal": "center",
+                "vertical": "center"
+              },
+              "name": "Button",
+              "placement": {
+                "height": 43,
+                "left": -2,
+                "top": -44.5,
+                "width": 163
+              },
+              "type": "button"
+            },
+            {
+              "background": {
+                "color": {
+                  "fixed": "transparent"
+                }
+              },
+              "border": {
+                "color": {
+                  "fixed": "dark-green"
+                }
+              },
+              "config": {
+                "blinkRate": {
+                  "mode": "mod"
+                },
+                "statusColor": {
+                  "fixed": "semi-dark-blue"
+                },
+                "type": "Stack"
+              },
+              "constraint": {
+                "horizontal": "left",
+                "vertical": "top"
+              },
+              "name": "Server",
+              "placement": {
+                "height": 87,
+                "left": 67,
+                "top": 16,
+                "width": 85
+              },
+              "type": "server"
+            }
           ],
-          "fields": "",
-          "values": false
+          "name": "Element 1747594786442",
+          "placement": {
+            "height": 100,
+            "left": 0,
+            "top": 0,
+            "width": 100
+          },
+          "type": "frame"
         },
-        "showPercentChange": false,
-        "textMode": "name",
-        "wideLayout": true
+        "showAdvancedTypes": true
       },
       "pluginVersion": "10.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "python_info",
-          "instant": true,
-          "legendFormat": "{{major}}.{{minor}}",
-          "range": false,
-          "refId": "A"
-        }
-      ],
-      "title": "Python version",
-      "transformations": [
-        {
-          "id": "formatTime",
-          "options": {
-            "outputFormat": "",
-            "timeField": "",
-            "useTimezone": true
-          }
-        }
-      ],
-      "type": "stat"
+      "type": "canvas"
     },
     {
       "datasource": {
@@ -808,7 +934,7 @@
         "h": 5,
         "w": 8,
         "x": 8,
-        "y": 11
+        "y": 17
       },
       "id": 24,
       "options": {
@@ -844,9 +970,9 @@
         "type": "prometheus",
         "uid": "prometheusdatasource"
       },
+      "description": "The amount of users saved in the mongodb database",
       "fieldConfig": {
         "defaults": {
-          "decimals": 2,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -854,18 +980,10 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -873,12 +991,12 @@
         "h": 5,
         "w": 8,
         "x": 16,
-        "y": 11
+        "y": 17
       },
-      "id": 22,
+      "id": 48,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background_solid",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -900,13 +1018,13 @@
             "uid": "prometheusdatasource"
           },
           "editorMode": "code",
-          "expr": "discord_cpu_usage{job=~\"$job\"}",
+          "expr": "discord_stat_total_registered_users{job=~\"$job\"}",
           "legendFormat": "{{job}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "CPU Activity",
+      "title": "Registered users",
       "type": "stat"
     },
     {
@@ -936,7 +1054,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 16
+        "y": 22
       },
       "id": 807,
       "options": {
@@ -1017,7 +1135,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 16
+        "y": 22
       },
       "id": 874,
       "options": {
@@ -1169,7 +1287,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 16
+        "y": 22
       },
       "id": 892,
       "options": {
@@ -1300,7 +1418,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 30
       },
       "id": 856,
       "options": {
@@ -1422,7 +1540,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 30
       },
       "id": 84,
       "options": {
@@ -1516,7 +1634,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 37
       },
       "id": 910,
       "options": {
@@ -1653,7 +1771,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 37
       },
       "id": 817,
       "options": {
@@ -1707,309 +1825,12 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheusdatasource"
-      },
-      "description": "The number of tags registered overall using Killua",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-YlBl"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 38
-      },
-      "id": 836,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "expr": "discord_tags",
-          "instant": false,
-          "legendFormat": "Tags",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "timeFrom": "1w",
-      "title": "Total tags registered",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheusdatasource"
-      },
-      "description": "The number of todo lists created overall using Killua",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-YlBl"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 38
-      },
-      "id": 837,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "expr": "discord_todo_lists",
-          "instant": false,
-          "legendFormat": "Todo lists",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "timeFrom": "1w",
-      "title": "Todo lists",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheusdatasource"
-      },
-      "description": "The number of todo tasks created overall using Killua",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-YlBl"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 38
-      },
-      "id": 838,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheusdatasource"
-          },
-          "editorMode": "code",
-          "expr": "discord_todos",
-          "instant": false,
-          "legendFormat": "Todo tasks",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "timeFrom": "1w",
-      "title": "Todo tasks",
-      "type": "timeseries"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 44
       },
       "id": 68,
       "panels": [],
@@ -2079,7 +1900,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 46
+        "y": 45
       },
       "id": 64,
       "options": {
@@ -2176,7 +1997,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 46
+        "y": 45
       },
       "id": 72,
       "options": {
@@ -2274,7 +2095,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 46
+        "y": 45
       },
       "id": 76,
       "options": {
@@ -2316,7 +2137,225 @@
         "h": 1,
         "w": 24,
         "x": 0,
+        "y": 53
+      },
+      "id": 931,
+      "panels": [],
+      "title": "Logs",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The type of logs outputted to the console on the bot process",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
         "y": 54
+      },
+      "id": 28,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(logging_total{level=\"WARN\"}) OR on() vector(0)",
+          "hide": false,
+          "instant": false,
+          "interval": "0",
+          "legendFormat": "Warnings",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(logging_total{level=\"ERROR\"}) OR on() vector(0)",
+          "interval": "",
+          "legendFormat": "Errors",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(logging_total{level=\"CRITICAL\"}) OR on() vector(0)",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Critical Errors",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Logs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "lokidatasource"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      },
+      "id": 950,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Ascending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "lokidatasource"
+          },
+          "editorMode": "code",
+          "expr": "{service_name=\"python_bot\"} | detected_level != \"info\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Bot critical logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "lokidatasource"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 70
+      },
+      "id": 951,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Ascending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "lokidatasource"
+          },
+          "editorMode": "code",
+          "expr": "{service_name=\"rust_api\"}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "API logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "lokidatasource"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 80
+      },
+      "id": 971,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Ascending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "lokidatasource"
+          },
+          "editorMode": "code",
+          "expr": "{service_name=\"zmq_proxy\"}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Proxy logs",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 86
       },
       "id": 60,
       "panels": [],
@@ -2388,7 +2427,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 55
+        "y": 87
       },
       "hideTimeOverride": true,
       "id": 59,
@@ -2453,7 +2492,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 63
+        "y": 103
       },
       "id": 88,
       "panels": [],
@@ -2485,7 +2524,7 @@
         "h": 11,
         "w": 8,
         "x": 0,
-        "y": 64
+        "y": 104
       },
       "id": 97,
       "maxPerRow": 3,
@@ -2533,6 +2572,473 @@
       ],
       "title": "Command usage for group $group",
       "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 159
+      },
+      "id": 992,
+      "panels": [],
+      "title": "DB stats",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The total number of cards in circulation ",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "light-orange",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 160
+      },
+      "id": 837,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_cards{job=\"$job\"}",
+          "instant": false,
+          "legendFormat": "Total cards",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Cards in circulation",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The largest amount of non fake, restricted slot cards someone has",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "light-orange",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 160
+      },
+      "id": 991,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_biggest_collection{job=~\"$job\"}",
+          "legendFormat": "{{job}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Biggest collection",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The number of tags registered overall using Killua",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 167
+      },
+      "id": 836,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_tags",
+          "instant": false,
+          "legendFormat": "Tags",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Total tags registered",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The number of tags registered overall using Killua",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 167
+      },
+      "id": 990,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_tags",
+          "instant": false,
+          "legendFormat": "Tags",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Total tags registered",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "The number of todo tasks created overall using Killua",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 167
+      },
+      "id": 838,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "discord_todos",
+          "instant": false,
+          "legendFormat": "Todo tasks",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "1w",
+      "title": "Todo tasks",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
@@ -2673,6 +3179,33 @@
         "query": {
           "qryType": 5,
           "query": "label_values(discord_command_usage{group=~\"$group\", command=~\"$command\"}, command_id)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "uwu",
+          "value": "uwu"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheusdatasource"
+        },
+        "definition": "label_values(discord_api_key,key)",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "apiKey",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(discord_api_key,key)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,

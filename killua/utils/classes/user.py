@@ -237,6 +237,86 @@ class User:
                     "has_user_installed": False,
                 }
             )
+    
+    @staticmethod
+    async def get_top_collector() -> Optional[Tuple[int, int]]:
+        """
+        Returns the user id and the number of cards they have in their free slots of 
+        the user with the most non-fake cards in their free slots
+        """
+        pipeline = [
+            {
+                "$project": {
+                    "id": 1,
+                    "filtered_rs": {
+                        "$filter": {
+                            "input": { "$ifNull": ["$cards.rs", []] },
+                            "as": "item",
+                            "cond": {
+                                "$ne": [
+                                    {
+                                        "$getField": {
+                                            "field": "fake",
+                                            "input": { "$arrayElemAt": ["$$item", 1] }
+                                        }
+                                    },
+                                    True
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "id": 1,
+                    "filtered_length": { "$size": { "$ifNull": ["$filtered_rs", []] } }
+                }
+            },
+            {
+                "$sort": { "filtered_length": -1 }
+            },
+            {
+                "$limit": 1
+            }
+        ]
+
+        cursor = await DB.teams.aggregate(pipeline)
+        result = await cursor.to_list(length=1)
+        if result:
+            doc = result[0]
+            return (doc["id"], doc["filtered_length"])
+        else:
+            return None
+    
+    @staticmethod
+    async def total_cards_in_circulation() -> int:
+        """
+        Returns the total number of cards in circulation across all users 
+        including free and restricted slots as well as fakes and clones.
+        """
+        pipeline = [
+            {
+                "$project": {
+                    "total_length": {
+                        "$add": [
+                            { "$size": { "$ifNull": ["$cards.fs", []] } },
+                            { "$size": { "$ifNull": ["$cards.rs", []] } }
+                        ]
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "total": { "$sum": "$total_length" }
+                }
+            }
+        ]
+
+        cursor = await DB.teams.aggregate(pipeline)
+        result = await cursor.to_list(length=1)
+        return result[0]["total"] if result else 0
 
     async def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
