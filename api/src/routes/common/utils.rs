@@ -74,7 +74,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     // Close the socket
     assert!(socket.disconnect(&address).is_ok());
 
-    Ok(msg.as_str().unwrap_or("").to_string())
+    Ok(msg.as_str().unwrap().to_string())
 }
 
 pub async fn make_request<T: Serialize + std::marker::Send + Deserialize<'static> + 'static>(
