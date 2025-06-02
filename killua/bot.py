@@ -484,7 +484,7 @@ class BaseBot(commands.AutoShardedBot):
             KilluaAPIException: If the Killua API returns an error
         """
         file = None
-        base_url = self.api_url(to_fetch=True)
+        base_url = self.api_url(to_fetch=self.is_dev)
         if no_token is False:
             image_path = image_url.split(base_url)[1].split("image/")[1]
             token, expiry = self.sha256_for_api(
