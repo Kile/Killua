@@ -1,5 +1,9 @@
 use mongodb::Client;
-use mongodb::{bson::{DateTime, doc, Document, from_document}, error::Error, options::UpdateOptions};
+use mongodb::{
+    bson::{doc, from_document, DateTime, Document},
+    error::Error,
+    options::UpdateOptions,
+};
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
