@@ -1,4 +1,4 @@
-FROM rust:1.78 AS base
+FROM rust:1.87 AS base
 
 ARG MYUID=1000
 ARG MYGID=1000
