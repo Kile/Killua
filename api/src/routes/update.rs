@@ -63,17 +63,19 @@ pub async fn update(
     test: Option<TestOption>,
 ) -> Result<Json<Value>, BadRequest<Json<Value>>> {
     // Runs a shell script which is in scripts/update.sh
-    let command = "scripts/update.sh".to_owned()
-        + match test {
+    let command = format!(
+        "scripts/update.sh{}{}",
+        match test {
             Some(TestOption::Pass) => " --test-pass",
             Some(TestOption::Fail) => " --test-fail",
             None => "",
-        }
-        + if force.unwrap_or(false) {
+        },
+        if force.unwrap_or(false) {
             " --force"
         } else {
             ""
-        };
+        }
+    );
 
     let output = send_command_and_get_result(command, 1_u8).await?;
 
