@@ -68,7 +68,7 @@ pub async fn get_diagnostics(
         None => insert(&mut formatted),
     };
     let start_time = SystemTime::now();
-    let res = make_request("heartbeat", NoData {}).await;
+    let res = make_request("heartbeat", NoData {}, 0_u8).await;
     let success = res.is_ok();
     let response_time = match success {
         true => Some(start_time.elapsed().unwrap().as_secs_f64() * 1000.0),

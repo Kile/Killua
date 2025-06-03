@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::task;
-use zmq::{Context, REQ};
+use zmq::{Context, SocketType::DEALER};
 
 use rocket::response::status::BadRequest;
 use rocket::serde::json::Json;
@@ -27,9 +27,10 @@ pub struct NoData {}
 pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     route: &str,
     data: T,
+    first_bit: u8,
 ) -> Result<String, zmq::Error> {
     let ctx = Context::new();
-    let socket = ctx.socket(REQ).unwrap();
+    let socket = ctx.socket(DEALER).unwrap();
 
     assert!(socket.set_linger(0).is_ok());
     // Omg this function...
@@ -53,6 +54,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     // Get route from environment variable
     let address = std::env::var("ZMQ_ADDRESS").unwrap_or("tcp://0.0.0.0:3210".to_string());
     assert!(socket.connect(&address).is_ok());
+    assert!(socket.set_identity("api-client".as_bytes()).is_ok());
 
     let request_data = RequestData {
         route: route.to_owned(),
@@ -62,21 +64,25 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     let mut msg = zmq::Message::new();
     let request_json = serde_json::to_string(&request_data).unwrap();
 
-    socket.send(request_json.as_bytes(), 0).unwrap();
-    let result = socket.recv(&mut msg, 0);
+    let mut data = vec![first_bit];
+    data.extend_from_slice(request_json.as_bytes());
+    socket.send("", zmq::SNDMORE)?; // delimiter
+    socket.send(data, 0)?;
+
+    socket.recv(&mut msg, 0)?; // Receive acknowledgment from the server
 
     // Close the socket
     assert!(socket.disconnect(&address).is_ok());
 
-    result?; // Return error if error (Rust is cool)
     Ok(msg.as_str().unwrap().to_string())
 }
 
 pub async fn make_request<T: Serialize + std::marker::Send + Deserialize<'static> + 'static>(
     route: &'static str,
     data: T,
+    first_bit: u8,
 ) -> Result<String, zmq::Error> {
-    task::spawn_blocking(move || make_request_inner(route, data))
+    task::spawn_blocking(move || make_request_inner(route, data, first_bit))
         .await
         .unwrap()
 }

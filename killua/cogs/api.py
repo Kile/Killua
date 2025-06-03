@@ -4,10 +4,11 @@ from discord.ext import commands
 from os import environ
 from random import choices
 from json import loads, dumps
-from asyncio import create_task
-from zmq import REP, Poller, POLLIN
+from asyncio import create_task, sleep
+from zmq import ROUTER, Poller, POLLIN
 from zmq.asyncio import Context
 from io import BytesIO
+from logging import warning, info
 from PIL import Image, ImageDraw, ImageChops
 
 from killua.bot import BaseBot
@@ -34,9 +35,9 @@ class IPCRoutes(commands.Cog):
         self.command_cache = {}
 
     async def start(self):
-        """Starts the zmq server asyncronously and handles incoming requests"""
+        """Starts the zmq server asynchronously and handles incoming requests"""
         context = Context()
-        socket = context.socket(REP)
+        socket = context.socket(ROUTER)
         address = environ.get("ZMQ_ADDRESS", "tcp://0.0.0.0:3210")
         if self.client.run_in_docker:
             # If run in docker, both client and server connect
@@ -44,25 +45,28 @@ class IPCRoutes(commands.Cog):
             socket.connect(address)
         else:
             # If not run in docker, the server binds to the address
-            # to recieve requests directly
+            # to receive requests directly
             socket.bind(address)
 
         poller = Poller()
         poller.register(socket, POLLIN)
 
         while True:
-            message = await socket.recv()
-            decoded = loads(message.decode())
+            message = await socket.recv_multipart() # Receive the actual message
+            decoded = loads(message[-1].decode())
+            metadata = message[:-1]  # The first parts are metadata, the last part is the actual data
             try:
                 res = await getattr(self, decoded["route"])(decoded["data"])
             except Exception as e:
-                await socket.send(dumps({"error": str(e)}).encode())
+                await socket.send_multipart([*metadata, dumps({"error": str(e)}).encode()])
                 continue
 
             if res:
-                await socket.send(dumps(res).encode())
+                await socket.send_multipart(
+                    [*metadata, dumps(res).encode()]
+                )
             else:
-                await socket.send(b'{"status":"ok"}')
+                await socket.send_multipart([*metadata, b'{"status":"ok"}'])
 
     async def download(self, url: str) -> Image.Image:
         """Downloads an image from the given url and returns it as a PIL Image"""

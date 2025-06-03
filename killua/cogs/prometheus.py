@@ -122,6 +122,10 @@ class PrometheusCog(commands.Cog):
             (await self.client.application_info()).approximate_user_install_count
         )
 
+        CARDS.set(await User.total_cards_in_circulation())
+        _, num = await User.get_top_collector()
+        BIGGEST_COLLECTION.set(num)
+
         await self.save_locales()
 
         # Update command stats
@@ -171,12 +175,15 @@ class PrometheusCog(commands.Cog):
             TODO_LISTS.set(todo_list_amount)
             todos = sum([len(todo["todos"]) async for todo in DB.todo.find({})])
             TODOS.set(todos)
-
             tags = await DB.guilds.find({"tags": {"$exists": True}}).to_list(
                 length=None
             )
             tag_amount = sum([len(v["tags"]) for v in tags])
-            TAGS.set(tag_amount)
+            TAGS.set(tag_amount)        
+            CARDS.set(await User.total_cards_in_circulation())
+            _, num = await User.get_top_collector()
+            BIGGEST_COLLECTION.set(num)
+            
             await self.save_locales()
             await self.update_api_stats()
         except ServerSelectionTimeoutError:

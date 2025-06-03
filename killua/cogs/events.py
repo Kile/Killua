@@ -17,6 +17,7 @@ from killua.metrics import DAILY_ACTIVE_USERS
 from killua.bot import BaseBot
 from killua.utils.classes import Guild, Book, User, Card
 from killua.static.enums import PrintColors
+from killua.migrate import migrate_requiring_bot
 from killua.static.constants import (
     TOPGG_TOKEN,
     DBL_TOKEN,
@@ -218,6 +219,9 @@ class Events(commands.Cog):
             )
             + PrintColors.ENDC
         )
+        if (await DB.const.find_one({"_id": "migrate"}))["value"]:
+            await migrate_requiring_bot(self.client)
+            await DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
 
     @tasks.loop(hours=12)
     async def status(self):

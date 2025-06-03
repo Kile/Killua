@@ -1,5 +1,9 @@
 use mongodb::Client;
-use mongodb::{bson, bson::DateTime, error::Error, options::UpdateOptions};
+use mongodb::{
+    bson::{doc, from_document, DateTime, Document},
+    error::Error,
+    options::UpdateOptions,
+};
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
@@ -34,7 +38,7 @@ pub struct StatsStruct {
 
 #[derive(Clone)]
 pub struct ApiStats {
-    pub collection: mongodb::Collection<mongodb::bson::Document>,
+    pub collection: mongodb::Collection<Document>,
 }
 
 impl ApiStats {
@@ -45,8 +49,8 @@ impl ApiStats {
     }
 
     pub async fn add_request(&self, id: &str) {
-        let filter = mongodb::bson::doc! { "_id": id };
-        let update = mongodb::bson::doc! {
+        let filter = doc! { "_id": id };
+        let update = doc! {
             "$push": {
                 "requests": DateTime::now(),
             },
@@ -60,14 +64,15 @@ impl ApiStats {
         let mut option = UpdateOptions::default();
         option.upsert = Some(true);
         self.collection
-            .update_one(filter, update, option)
+            .update_one(filter, update)
+            .with_options(option)
             .await
             .unwrap();
     }
 
     pub async fn add_successful_response(&self, id: &str) {
-        let filter = mongodb::bson::doc! { "_id": id };
-        let update = mongodb::bson::doc! {
+        let filter = doc! { "_id": id };
+        let update = doc! {
             "$inc": {
                 "successful_responses": 1,
             },
@@ -76,7 +81,8 @@ impl ApiStats {
         let mut option = UpdateOptions::default();
         option.upsert = Some(true);
         self.collection
-            .update_one(filter, update, option)
+            .update_one(filter, update)
+            .with_options(option)
             .await
             .unwrap();
     }
@@ -114,12 +120,12 @@ impl ApiStats {
     // }
 
     pub async fn get_all_stats(&self) -> Result<Vec<StatsStruct>, Error> {
-        let mut cursor = self.collection.find(None, None).await?;
+        let mut cursor = self.collection.find(Document::new()).await?;
         let mut stats_vec: Vec<StatsStruct> = Vec::new();
 
         while let Some(result) = cursor.next().await {
             match result {
-                Ok(document) => match bson::from_document::<StatsStruct>(document) {
+                Ok(document) => match from_document::<StatsStruct>(document) {
                     Ok(stats) => stats_vec.push(stats),
                     Err(e) => eprintln!("Failed to deserialize document: {}", e),
                 },

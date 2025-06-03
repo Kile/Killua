@@ -23,6 +23,8 @@ jobs:
           filters: |
             api:
               - 'api/**/*.rs'
+              - 'api/Cargo.toml'
+              - 'api/Cargo.lock'
 
   # run only if some file in 'api' folder was changed ending with .rs
   test:
@@ -54,6 +56,8 @@ jobs:
 
       - name: Setup local cards
         run: "echo '[{\"id\": 0, \"name\": \"Name\", \"description\": \"One two\", \"image\": \"/image/image.png\", \"emoji\": \":pensive\", \"rank\": \"S\", \"limit\": 10, \"type\": \"monster\", \"available\": true}]' > cards.json"
+      - name: Make update.sh executable
+        run: chmod +x scripts/update.sh
       - name: Run clippy
         run: cargo clippy --all --all-features --tests -- -D warnings
         working-directory: api

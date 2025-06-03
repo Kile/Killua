@@ -16,7 +16,6 @@ from inspect import signature, Parameter
 from functools import partial
 from typing import Coroutine, Union, Dict, List, Optional, Tuple, cast
 
-from .migrate import migrate_requiring_bot
 from .static.enums import Category
 from .utils.interactions import Modal
 from .static.constants import TIPS, LOOTBOXES, DB
@@ -106,9 +105,6 @@ class BaseBot(commands.AutoShardedBot):
         self.cached_entitlements = [
             entitlement async for entitlement in self.entitlements(limit=None)
         ]
-        if (await DB.const.find_one({"_id": "migrate"}))["value"]:
-            await migrate_requiring_bot(self)
-            await DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
 
     async def _turn_top_level_user_installed(self, command: commands.HybridCommand):
         """
@@ -382,7 +378,8 @@ class BaseBot(commands.AutoShardedBot):
             if timeout_message:
                 await ctx.send(timeout_message, delete_after=5)
             return
-        await modal.interaction.response.defer()
+        if modal.interaction and not modal.interaction.response.is_done():
+            await modal.interaction.response.defer()
         return textinput.value
 
     async def _get_text_response_message(
@@ -453,22 +450,29 @@ class BaseBot(commands.AutoShardedBot):
         return cast(
             dict,
             (
-                await DB.guilds.aggregate(
-                    [
-                        {"$match": {"approximate_member_count": {"$exists": True}}},
-                        {
-                            "$group": {
-                                "_id": None,
-                                "total": {"$sum": "$approximate_member_count"},
-                            }
-                        },
-                    ]
+                await (
+                    await DB.guilds.aggregate(
+                        [
+                            {"$match": {"approximate_member_count": {"$exists": True}}},
+                            {
+                                "$group": {
+                                    "_id": None,
+                                    "total": {"$sum": "$approximate_member_count"},
+                                }
+                            },
+                        ]
+                    )
                 ).to_list(length=None)
             )[0],
         ).get("total", 0)
 
     async def make_embed_from_api(
-        self, image_url: str, embed: discord.Embed, expire_in: int = 60 * 60 * 24 * 7, no_token: bool = False, thumbnail: bool = False
+        self,
+        image_url: str,
+        embed: discord.Embed,
+        expire_in: int = 60 * 60 * 24 * 7,
+        no_token: bool = False,
+        thumbnail: bool = False,
     ) -> Tuple[discord.Embed, Optional[discord.File]]:
         """
         Makes an embed from a Killua API image url.
@@ -480,14 +484,18 @@ class BaseBot(commands.AutoShardedBot):
             KilluaAPIException: If the Killua API returns an error
         """
         file = None
-        base_url = self.api_url(to_fetch=True)
+        base_url = self.api_url(to_fetch=self.is_dev)
         if no_token is False:
             image_path = image_url.split(base_url)[1].split("image/")[1]
-            token, expiry = self.sha256_for_api(image_path, expires_in_seconds=expire_in)
+            token, expiry = self.sha256_for_api(
+                image_path, expires_in_seconds=expire_in
+            )
 
         if self.is_dev:
             # Upload the image as attachment instead
-            data = await self.session.get(image_url + ("" if no_token else f"?token={token}&expiry={expiry}"))
+            data = await self.session.get(
+                image_url + ("" if no_token else f"?token={token}&expiry={expiry}")
+            )
             if data.status != 200:
                 raise KilluaAPIException(await data.text())
 
@@ -499,9 +507,15 @@ class BaseBot(commands.AutoShardedBot):
             file = discord.File(BytesIO(await data.read()), f"image.{extension}")
         else:
             if thumbnail:
-                embed.set_thumbnail(url=image_url + ("" if no_token else f"?token={token}&expiry={expiry}"))
+                embed.set_thumbnail(
+                    url=image_url
+                    + ("" if no_token else f"?token={token}&expiry={expiry}")
+                )
             else:
-                embed.set_image(url=image_url + ("" if no_token else f"?token={token}&expiry={expiry}"))
+                embed.set_image(
+                    url=image_url
+                    + ("" if no_token else f"?token={token}&expiry={expiry}")
+                )
         return embed, file
 
     async def update_presence(self):
@@ -534,10 +548,42 @@ class BaseBot(commands.AutoShardedBot):
             status=discord.Status.online, activity=playing
         )
 
-    async def send_message(
-        self, messageable: discord.abc.Messageable, *args, **kwargs
+    async def _send_interaction_response(
+        self,
+        interaction: discord.Interaction,
+        *args,
+        **kwargs,
+    ) -> None:
+        """
+        Sends an interaction response.
+        """
+        msg = None
+        if kwargs.get("file", False) is None:
+            kwargs.pop("file")
+
+        if kwargs.get("view", False) is None:
+            kwargs["view"] = discord.utils.MISSING
+
+        if interaction.response.is_done():
+            msg = await interaction.followup.send(*args, **kwargs)
+        else:
+            await interaction.response.send_message(*args, **kwargs)
+
+        if randint(1, 100) < 6:
+            message = msg or interaction.message
+            await interaction.followup.send(
+                f"**Tip:** {choice(TIPS).replace('<prefix>', (await get_prefix(self, message))[2])}",
+                ephemeral=True,
+            )
+
+        return msg or await interaction.original_response()
+
+    async def _send_messageable_response(
+        self,
+        messageable: discord.abc.Messageable,
+        *args,
+        **kwargs,
     ) -> discord.Message:
-        """A helper function sending messages and adding a tip with the probability of 5%"""
         msg = await messageable.send(*args, **kwargs)
         if randint(1, 100) < 6:  # 5% probability to send a tip afterwards
             await messageable.send(
@@ -545,6 +591,19 @@ class BaseBot(commands.AutoShardedBot):
                 ephemeral=True,
             )
         return msg
+
+    async def send_message(
+        self,
+        messageable: Union[discord.abc.Messageable, discord.Interaction],
+        *args,
+        **kwargs,
+    ) -> discord.Message:
+        """A helper function sending messages and adding a tip with the probability of 5%"""
+        return (
+            await self._send_interaction_response(messageable, *args, **kwargs)
+            if isinstance(messageable, discord.Interaction)
+            else await self._send_messageable_response(messageable, *args, **kwargs)
+        )
 
     def convert_to_timestamp(self, id: int, args: str = "f") -> str:
         """Turns a discord snowflake into a discord timestamp string"""

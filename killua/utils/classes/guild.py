@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Dict, Any, ClassVar, Optional
 from dataclasses import dataclass, field
 from inspect import signature
+from datetime import datetime
 
 from killua.static.constants import DB
 from killua.utils.classes.user import User
@@ -20,6 +21,7 @@ class Guild:
     )  # The logic behind this is not used and needs to be rewritten
     polls: dict = field(default_factory=dict)
     tags: List[dict] = field(default_factory=list)
+    added_on: Optional[datetime] = None
     cache: ClassVar[Dict[int, Guild]] = {}
 
     @classmethod
@@ -78,11 +80,11 @@ class Guild:
     async def add_default(cls, guild_id: int, member_count: Optional[int]) -> None:
         """Adds a guild to the database"""
         await DB.guilds.insert_one(
-            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count or 0}
+            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count or 0, "added_on": datetime.now()}
         )
 
     @classmethod
-    async def bullk_remove_premium(cls, guild_ids: List[int]) -> None:
+    async def bulk_remove_premium(cls, guild_ids: List[int]) -> None:
         """Removes premium from all guilds specified, if possible"""
         for guild in guild_ids:
             try:
