@@ -787,7 +787,7 @@
                 "align": "center",
                 "api": {
                   "contentType": "application/json",
-                  "endpoint": "http://127.0.0.1:6060/update",
+                  "endpoint": "http://api:6060/update",
                   "headerParams": [
                     [
                       "Authorization",
