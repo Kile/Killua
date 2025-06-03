@@ -1210,7 +1210,8 @@
         "artist": {
             "name": "えとー",
             "link": "https://x.com/eto_hxh"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/155.jpg",
@@ -1275,7 +1276,8 @@
         "artist": {
             "name": "𝒞𝓊𝓉𝑒𝒢𝒶𝓀𝒾",
             "link": "https://x.com/cute__gaki"
-        }
+        },
+        "featured": false
     },
     {
         "url": "/image/hugs/164.jpeg",
