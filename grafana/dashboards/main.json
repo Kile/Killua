@@ -787,7 +787,7 @@
                 "align": "center",
                 "api": {
                   "contentType": "application/json",
-                  "endpoint": "http://api:6060/update",
+                  "endpoint": "https://api.killua.dev/update",
                   "headerParams": [
                     [
                       "Authorization",
