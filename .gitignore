@@ -13,6 +13,9 @@ cards.json
 # Sync config
 .sync_config
 
+# Configuration files with sensitive information
+**/config.json
+
 # Some assets
 assets/hugs/*
 # Still allow an "official" hug for development
