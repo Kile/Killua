@@ -70,6 +70,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     socket.send(data, 0)?;
 
     socket.recv(&mut msg, 0)?; // Receive acknowledgment from the server
+    socket.recv(&mut msg, 0)?; // Receive the actual response
 
     // Close the socket
     assert!(socket.disconnect(&address).is_ok());

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import discord
-from aiohttp import ClientSession
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from datetime import datetime

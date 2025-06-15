@@ -79,9 +79,10 @@ pub fn test_zmq_server() {
                 _ => r#"{}"#,
             }.to_string()
             };
+            let buffer = Message::from("");
             let message = Message::from(respond_with.as_str());
             responder
-                .send_multipart(vec![identity, message], 0)
+                .send_multipart(vec![identity, buffer, message], 0)
                 .unwrap();
         }
     });
