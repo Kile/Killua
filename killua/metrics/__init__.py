@@ -26,7 +26,8 @@ from .metrics import (
     BIGGEST_COLLECTION,
     LOCALE,
     API_KEY,
-    IS_DEV
+    IS_DEV,
+    API_URL,
 )
 
 from .logger import PrometheusLoggingHandler
@@ -60,5 +61,6 @@ __all__ = [
     "BIGGEST_COLLECTION",
     "LOCALE",
     "API_KEY",
-    "IS_DEV"
+    "IS_DEV",
+    "API_URL",
 ]

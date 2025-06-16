@@ -15,8 +15,10 @@ COPY api/Rocket.toml api/Rocket.toml
 
 # Copy requirements.txt, hugs.json and config.json which are needed for the bot
 COPY requirements.txt .
-# COPY config.json .
+# Copy config.json .
 COPY hugs.json .
+# Copy docker-compose.yml to know which port the API runs on publicly
+COPY docker-compose.yaml .
 
 # Git needs to be installed for pip
 RUN apt-get update && apt-get install -y git

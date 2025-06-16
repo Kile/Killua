@@ -69,11 +69,13 @@ DAILY_ACTIVE_USERS = Gauge(
 )
 
 APPROXIMATE_USER_COUNT = Gauge(
-    METRIC_PREFIX + "approximate_user_count", "Combined amount of users in all guilds the bot is on"
+    METRIC_PREFIX + "approximate_user_count",
+    "Combined amount of users in all guilds the bot is on",
 )
 
 USER_INSTALLS = Gauge(
-    METRIC_PREFIX + "user_installs", "Amount of users that have installed the bot to their account"
+    METRIC_PREFIX + "user_installs",
+    "Amount of users that have installed the bot to their account",
 )
 
 COMMAND_USAGE = Gauge(
@@ -85,7 +87,6 @@ COMMAND_USAGE = Gauge(
 PREMIUM_USERS = Gauge(
     METRIC_PREFIX + "premium_users", "Amount of users that have premium"
 )
-
 
 VOTES = Counter(
     METRIC_PREFIX + "votes",
@@ -131,4 +132,10 @@ IS_DEV = Gauge(
     METRIC_PREFIX + "is_dev",
     "If the bot is running in dev mode",
     ["dev"],
+)
+
+API_URL = Gauge(
+    METRIC_PREFIX + "api_url",
+    "The URL of the Killua API",
+    ["url"],
 )

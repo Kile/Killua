@@ -14,6 +14,7 @@ from logging import info
 from hashlib import sha256
 from inspect import signature, Parameter
 from functools import partial
+from yaml import full_load
 from typing import Coroutine, Union, Dict, List, Optional, Tuple, cast
 
 from .static.enums import Category
@@ -82,6 +83,10 @@ class BaseBot(commands.AutoShardedBot):
         with open("api/Rocket.toml") as f:
             loaded = load(f)
             self.dev_port = loaded["debug"]["port"]
+
+        with open("docker-compose.yaml") as f:
+            loaded = full_load(f)
+            self.public_api_port = loaded["services"]["api"]["ports"][0].split(":")[0]
 
         self.secret_api_key = os.getenv("API_KEY")
         self.hash_secret = os.getenv("HASH_SECRET")

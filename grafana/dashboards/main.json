@@ -91,8 +91,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -185,8 +184,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -300,8 +298,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -368,8 +365,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -474,8 +470,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -543,8 +538,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -634,6 +628,7 @@
           "refId": "A"
         }
       ],
+      "timeFrom": "2d",
       "title": "Info logs",
       "type": "logs"
     },
@@ -653,8 +648,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
-                "value": null
+                "color": "blue"
               }
             ]
           },
@@ -729,8 +723,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -746,7 +739,7 @@
       "id": 930,
       "options": {
         "infinitePan": false,
-        "inlineEditing": false,
+        "inlineEditing": true,
         "panZoom": false,
         "root": {
           "background": {
@@ -826,6 +819,9 @@
               "background": {
                 "color": {
                   "fixed": "transparent"
+                },
+                "image": {
+                  "fixed": ""
                 }
               },
               "border": {
@@ -835,7 +831,8 @@
               },
               "config": {
                 "blinkRate": {
-                  "mode": "mod"
+                  "fixed": 1,
+                  "mode": "clamped"
                 },
                 "statusColor": {
                   "fixed": "semi-dark-blue"
@@ -843,15 +840,15 @@
                 "type": "Stack"
               },
               "constraint": {
-                "horizontal": "left",
-                "vertical": "top"
+                "horizontal": "center",
+                "vertical": "center"
               },
               "name": "Server",
               "placement": {
-                "height": 87,
-                "left": 67,
-                "top": 16,
-                "width": 85
+                "height": 86.98526763916016,
+                "left": -2.088237762451172,
+                "top": 35.50368118286133,
+                "width": 84.99999237060547
               },
               "type": "server"
             }
@@ -921,8 +918,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -978,8 +974,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1123,8 +1118,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1406,8 +1400,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1543,8 +1536,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1637,8 +1629,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1759,8 +1750,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1872,8 +1862,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1908,7 +1897,7 @@
           "editorMode": "code",
           "expr": "discord_approximate_user_count",
           "instant": false,
-          "legendFormat": "Daily active users",
+          "legendFormat": "Approximate total users",
           "range": true,
           "refId": "A"
         }
@@ -1980,8 +1969,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2077,8 +2065,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2175,8 +2162,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2250,8 +2236,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2365,6 +2350,7 @@
           "refId": "A"
         }
       ],
+      "timeFrom": "2w",
       "title": "Bot critical logs",
       "type": "logs"
     },
@@ -2402,6 +2388,7 @@
           "refId": "A"
         }
       ],
+      "timeFrom": "1w",
       "title": "API logs",
       "type": "logs"
     },
@@ -2439,6 +2426,7 @@
           "refId": "A"
         }
       ],
+      "timeFrom": "1w",
       "title": "Proxy logs",
       "type": "logs"
     },
@@ -2507,8 +2495,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2585,7 +2572,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 103
+        "y": 111
       },
       "id": 88,
       "panels": [],
@@ -2617,7 +2604,7 @@
         "h": 11,
         "w": 8,
         "x": 0,
-        "y": 104
+        "y": 112
       },
       "id": 97,
       "maxPerRow": 3,
@@ -2672,7 +2659,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 159
+        "y": 222
       },
       "id": 992,
       "panels": [],
@@ -2738,7 +2725,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 160
+        "y": 223
       },
       "id": 837,
       "options": {
@@ -2798,7 +2785,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 160
+        "y": 223
       },
       "id": 991,
       "options": {
@@ -2897,7 +2884,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 167
+        "y": 230
       },
       "id": 836,
       "options": {
@@ -2995,7 +2982,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 167
+        "y": 230
       },
       "id": 990,
       "options": {
@@ -3093,7 +3080,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 167
+        "y": 230
       },
       "id": 838,
       "options": {
@@ -3301,6 +3288,35 @@
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
+      },
+      {
+        "current": {
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheusdatasource"
+        },
+        "definition": "label_values(discord_api_url,key)",
+        "description": "The public facing url of the api",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "apiUrl",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(discord_api_url,url)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
@@ -3312,6 +3328,6 @@
   "timezone": "",
   "title": "Killua statistics",
   "uid": "TGkTuzD4zA",
-  "version": 1,
+  "version": 4,
   "weekStart": ""
 }
