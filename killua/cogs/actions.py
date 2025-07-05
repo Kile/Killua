@@ -390,12 +390,12 @@ class Actions(commands.GroupCog, group_name="action"):
         has_user_installed: List[discord.User],
     ) -> Optional[View]:
         if users is None:
-            return None # No users to return to
-        
+            return None  # No users to return to
+
         author_obj = await User.new(author.id)
         if self.has_disabled(author_obj, action):
-            return None # If the user disabled it anyway, don't show the button
-        
+            return None  # If the user disabled it anyway, don't show the button
+
         targeted_without_user_installed = [
             user for user in users if user not in has_user_installed
         ]
@@ -404,10 +404,10 @@ class Actions(commands.GroupCog, group_name="action"):
             or isinstance(messagable.channel, discord.DMChannel)
         ) and len(targeted_without_user_installed) == 0:
             return None
-        
+
         if isinstance(messagable, discord.Interaction):
-            return None # Don't show the button on actions invoked by a button
-        
+            return None  # Don't show the button on actions invoked by a button
+
         view = discord.ui.View(timeout=None)
         view.add_item(
             discord.ui.Button(
@@ -441,16 +441,14 @@ class Actions(commands.GroupCog, group_name="action"):
             return
         else:
             allowed, disabled, has_user_installed = await self.get_allowed_users(
-                users, action or action
+                users, action
             )
 
             for user in allowed:
-                await self._save_stat_for(user, action or action, True)
+                await self._save_stat_for(user, action, True)
 
-            await self._save_stat_for(author, action or action, False, len(allowed))
-            embed, file = await self.action_embed(
-                action or action, author, users, disabled
-            )
+            await self._save_stat_for(author, action, False, len(allowed))
+            embed, file = await self.action_embed(action, author, users, disabled)
 
         if isinstance(embed, str):
             await self.client.send_message(messageable, content=embed)
@@ -461,7 +459,15 @@ class Actions(commands.GroupCog, group_name="action"):
                 messageable, action, author, users, has_user_installed
             )
             await self.client.send_message(
-                messageable, embed=embed, file=file, view=view
+                messageable,
+                content=( # Mention the person being hugged back if it is by button
+                    "".join([u.mention for u in users])
+                    if isinstance(messageable, discord.Interaction)
+                    else None
+                ),
+                embed=embed,
+                file=file,
+                view=view,
             )
 
     async def _handle_error(self, ctx: commands.Context, error: Exception) -> None:
@@ -538,7 +544,12 @@ class Actions(commands.GroupCog, group_name="action"):
             )
 
     async def _button_checks(
-        self, interaction: discord.Interaction, user_id, not_yet_responded, responded, action
+        self,
+        interaction: discord.Interaction,
+        user_id,
+        not_yet_responded,
+        responded,
+        action,
     ) -> bool:
         """
         Checks if the button is valid and if the user is allowed to use it
@@ -547,18 +558,18 @@ class Actions(commands.GroupCog, group_name="action"):
 
         if interaction.user.id == int(user_id):
             await interaction.response.send_message(
-                f"You cannot use this button on yourself", ephemeral=True
+                "You cannot use this button on yourself", ephemeral=True
             )
             return False
         if encrypted_user not in not_yet_responded and encrypted_user not in responded:
             await interaction.response.send_message(
-                f"You are not who this command was used on, so you cannot use this button",
+                "You are not who this command was used on, so you cannot use this button",
                 ephemeral=True,
             )
             return False
         elif encrypted_user in responded:
             await interaction.response.send_message(
-                f"You have already used this button, so you cannot use it again",
+                "You have already used this button, so you cannot use it again",
                 ephemeral=True,
             )
             return False
@@ -566,7 +577,7 @@ class Actions(commands.GroupCog, group_name="action"):
             interaction.channel.permissions_for(interaction.user).send_messages is False
         ):
             await interaction.response.send_message(
-                f"You do not have permission to send messages in this channel, so you can't use this button :(",
+                "You do not have permission to send messages in this channel, so you can't use this button :(",
                 ephemeral=True,
             )
             return False
@@ -780,6 +791,27 @@ class Actions(commands.GroupCog, group_name="action"):
 
         return view
 
+    def adjust_settings_embed(
+        self,
+        embed: discord.Embed,
+        current: Dict[str, bool],
+        view_values: Optional[Dict[str, bool]] = None,
+    ) -> None:
+        """
+        Adjusts the embed to show the current settings for each action.
+        """
+        embed.clear_fields()
+        for action in ACTIONS.keys():
+            if view_values and action in view_values:
+                current[action] = True
+            elif view_values and action not in view_values:
+                current[action] = False
+            else:
+                current[action] = current.get(action, True)
+            embed.add_field(
+                name=action, value="✅" if current[action] else "❌", inline=False
+            )
+
     @check()
     @commands.hybrid_command(
         extras={"category": Category.ACTIONS, "id": 12}, usage="settings"
@@ -797,15 +829,7 @@ class Actions(commands.GroupCog, group_name="action"):
 
         user = await User.new(ctx.author.id)
         current = user.action_settings
-
-        for action in ACTIONS.keys():
-            if action in current:
-                embed.add_field(
-                    name=action, value="✅" if current[action] else "❌", inline=False
-                )
-            else:
-                embed.add_field(name=action, value="✅", inline=False)
-                current[action] = True
+        self.adjust_settings_embed(embed, current)
 
         view = self._get_view(ctx.author.id, current)
 
@@ -817,17 +841,7 @@ class Actions(commands.GroupCog, group_name="action"):
             return await view.disable(msg)
 
         while True:
-            embed.clear_fields()
-
-            for action in ACTIONS.keys():
-                if (
-                    action in view.values
-                ):  # view.values contains a list of the remaining values in the select after the user has clicked save
-                    current[action] = True
-                    embed.add_field(name=action, value="✅", inline=False)
-                else:
-                    current[action] = False
-                    embed.add_field(name=action, value="❌", inline=False)
+            self.adjust_settings_embed(embed, current, view.values)
 
             await user.set_action_settings(current)
             await view.interaction.response.defer()  # Ideally I would use the response to edit the message, however as view HAS to be redefined above before editing this is impossible

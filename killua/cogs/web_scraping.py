@@ -52,6 +52,73 @@ class WebScraping(commands.GroupCog, group_name="web"):
         for menu in menus:
             self.client.tree.add_command(menu)
 
+    def book_buying_links(self, book: dict) -> List[str]:
+        """Returns a list of links where the book can be bought"""
+        available_to_buy = []
+        if "ia" in book:
+            available_to_buy.append(
+                f"[Internet Archive](https://archive.org/details/{book['ia'][0]})"
+            )
+        if "id_amazon" in book and [i for i in book["id_amazon"] if i]:
+            available_to_buy.append(
+                f"[Amazon](https://www.amazon.com/dp/{[i for i in book['id_amazon'] if i][0]})"
+            )
+        if "worldcat" in book:
+            available_to_buy.append(
+                f"[WorldCat](https://www.worldcat.org/title/{book['worldcat'][0]})"
+            )
+        if "id_goodreads" in book:
+            available_to_buy.append(
+                f"[Goodreads](https://www.goodreads.com/book/show/{book['id_goodreads'][0]})"
+            )
+        if "id_librarything" in book:
+            available_to_buy.append(
+                f"[LibraryThing](https://www.librarything.com/work/{book['id_librarything'][0]})"
+            )
+        if "id_overdrive" in book:
+            available_to_buy.append(
+                f"[Overdrive](https://www.overdrive.com/media/{book['id_overdrive'][0]})"
+            )
+        return available_to_buy
+
+    def embed_for_book(self, book: dict) -> discord.Embed:
+        """Creates an embed for a book"""
+        embed = discord.Embed(
+            title=(
+                book["title"]
+                if len(book["title"]) < 256
+                else (book["title"][:253] + "...")
+            ),
+            url=f"https://openlibrary.org{book['key']}",
+            color=0x3E4A78,
+        )
+
+        if "author_name" in book:
+            embed.add_field(name="Author", value=book["author_name"][0])
+        if "first_publish_year" in book:
+            embed.add_field(name="Published", value=book["first_publish_year"])
+        if "language" in book:
+            embed.add_field(name="Language", value=book["language"][0])
+        if "isbn" in book:
+            embed.add_field(name="ISBN", value=book["isbn"][0])
+        if "edition_count" in book:
+            embed.add_field(name="Editions", value=book["edition_count"])
+
+        available_to_buy = self.book_buying_links(book)
+        if available_to_buy:
+            embed.add_field(
+                name="Available to buy",
+                value="\n".join(available_to_buy),
+                inline=False,
+            )
+
+        if "cover_i" in book:
+            embed.set_image(
+                url=f"https://covers.openlibrary.org/b/id/{book['cover_i']}-M.jpg"
+            )
+
+        return embed
+
     @check(12)
     @commands.hybrid_command(
         aliases=["n", "search-book", "sb"],
@@ -79,61 +146,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         embeds = []
         for book in data["docs"]:
-            embed = discord.Embed(
-                title=(
-                    book["title"]
-                    if len(book["title"]) < 256
-                    else (book["title"][:253] + "...")
-                ),
-                url=f"https://openlibrary.org{book['key']}",
-                color=0x3E4A78,
-            )
-            if "author_name" in book:
-                embed.add_field(name="Author", value=book["author_name"][0])
-            if "first_publish_year" in book:
-                embed.add_field(name="Published", value=book["first_publish_year"])
-            if "language" in book:
-                embed.add_field(name="Language", value=book["language"][0])
-            if "isbn" in book:
-                embed.add_field(name="ISBN", value=book["isbn"][0])
-            if "edition_count" in book:
-                embed.add_field(name="Editions", value=book["edition_count"])
-            # Find where the book is available to buy and give links
-            available_to_buy = []
-            if "ia" in book:
-                available_to_buy.append(
-                    f"[Internet Archive](https://archive.org/details/{book['ia'][0]})"
-                )
-            if "id_amazon" in book and [i for i in book["id_amazon"] if i]:
-                available_to_buy.append(
-                    f"[Amazon](https://www.amazon.com/dp/{[i for i in book['id_amazon'] if i][0]})"
-                )
-            if "worldcat" in book:
-                available_to_buy.append(
-                    f"[WorldCat](https://www.worldcat.org/title/{book['worldcat'][0]})"
-                )
-            if "id_goodreads" in book:
-                available_to_buy.append(
-                    f"[Goodreads](https://www.goodreads.com/book/show/{book['id_goodreads'][0]})"
-                )
-            if "id_librarything" in book:
-                available_to_buy.append(
-                    f"[LibraryThing](https://www.librarything.com/work/{book['id_librarything'][0]})"
-                )
-            if "id_overdrive" in book:
-                available_to_buy.append(
-                    f"[Overdrive](https://www.overdrive.com/media/{book['id_overdrive'][0]})"
-                )
-            if available_to_buy:
-                embed.add_field(
-                    name="Available to buy",
-                    value="\n".join(available_to_buy),
-                    inline=False,
-                )
-            if "cover_i" in book:
-                embed.set_image(
-                    url=f"https://covers.openlibrary.org/b/id/{book['cover_i']}-M.jpg"
-                )
+            embed = self.embed_for_book(book)
             embeds.append({"embed": embed, "key": book["key"]})
 
         async def make_embed(page, embed: discord.Embed, pages):
@@ -172,7 +185,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
             res = await self.client.session.get(
                 f"https://duckduckgo.com/?q={escape(query)}"
             )
-            if not res.status == 200:
+            if res.status != 200:
                 return
             token = re.search(
                 r'vqd="(.*?)",', str(BeautifulSoup(await res.text(), "html.parser"))
@@ -181,7 +194,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
         except Exception:
             return
 
-    async def get_duckduckgo_images(self, query: str) -> Union[str, None]:
+    async def get_duckduckgo_images(self, query: str) -> Union[List[str], None]:
         token = await self._get_token(query)
 
         if not token:
@@ -192,7 +205,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         response = await self.client.session.get(url, headers=self.headers)
 
-        if not response.status == 200:
+        if response.status != 200:
             if response.status == 403:
                 return None
 
@@ -209,14 +222,14 @@ class WebScraping(commands.GroupCog, group_name="web"):
         return [r["image"] for r in results if r["image"]]
 
     async def get_soup(self, url) -> Union[int, BeautifulSoup]:
-        """Make request and return BeatifulSoup object"""
+        """Make request and return BeautifulSoup object"""
         header = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36"
         }
 
         response = await self.client.session.get(url, headers=header)
 
-        if not response.status == 200:
+        if response.status != 200:
             return response.status
 
         return BeautifulSoup(await response.text(), "html.parser")

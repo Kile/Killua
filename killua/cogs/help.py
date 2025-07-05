@@ -126,19 +126,20 @@ class HelpCommand(commands.Cog):
             + command.usage
             + "\n```"
             if not isinstance(command.cog, commands.GroupCog)
-            else f"```css\n/"
+            else "```css\n/"
             + command.cog.__cog_group_name__
             + " "
             + command.usage
             + "\n```"
         )
         usage_message = (
-            f"```css\n{prefix}"
+            "```css\n"
+            + prefix
             + command.qualified_name.replace(command.name, "")
             + command.usage
             + "\n```"
             if not isinstance(command.cog, commands.GroupCog)
-            else f"```css\n{prefix}" + command.usage + "\n```"
+            else "```css\n" + prefix + command.usage + "\n```"
         )
         embed.add_field(
             name="Usage",
@@ -332,7 +333,7 @@ class HelpCommand(commands.Cog):
 
             # if command not in [c.qualified_name for c in self.client.commands]:
             #     return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
-            if not group.lower() in [c.qualified_name for c in all_commands]:
+            if group.lower() not in [c.qualified_name for c in all_commands]:
                 return await ctx.send(
                     f'No command or group called "{group}" found.', ephemeral=True
                 )
@@ -345,7 +346,7 @@ class HelpCommand(commands.Cog):
 
             # if command not in [c.qualified_name for c in self.client.commands]:
             #     return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
-            if not command.lower() in [c.qualified_name for c in all_commands]:
+            if command.lower() not in [c.qualified_name for c in all_commands]:
                 return await ctx.send(
                     f'No command called "{command}" found.', ephemeral=True
                 )
