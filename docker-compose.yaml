@@ -10,6 +10,10 @@ services:
   proxy:
     container_name: zmq_proxy
     image: ghcr.io/kile/zmq-proxy:latest
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     build:
       context: "./zmq_proxy"
       target: ${MODE:-prod}
@@ -76,6 +80,10 @@ services:
   grafana:
     image: grafana/grafana:10.4.2
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     ports:
       - '3000:3000'
     volumes:
@@ -100,6 +108,10 @@ services:
   loki:
     image: grafana/loki:latest
     container_name: loki
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/config.yml
@@ -110,6 +122,10 @@ services:
   alloy:
     image: grafana/alloy:latest
     container_name: alloy
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
     ports:
       - 12345:12345
       - 4317:4317
