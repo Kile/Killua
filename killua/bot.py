@@ -177,7 +177,7 @@ class BaseBot(commands.AutoShardedBot):
             ),
         )
 
-        discord.app_commands.commands._populate_descriptions(
+        discord.app_commands.commands._populate_descriptions( # pyright: ignore
             new_command._params,
             {
                 k: v.description

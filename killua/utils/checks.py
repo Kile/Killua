@@ -266,7 +266,7 @@ def check(time: int = 0):
         return True
 
     async def predicate(ctx: commands.Context) -> bool:
-        if ctx.guild and (
+        if ctx.guild and ctx.guild.member_count is not None and (
             (ctx.guild.member_count < 10_000 and not ctx.guild.chunked)
             or abs(ctx.guild.member_count - len(ctx.guild.members))
             > int(ctx.guild.member_count / 10_000)
