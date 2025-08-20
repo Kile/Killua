@@ -10,10 +10,11 @@ services:
   proxy:
     container_name: zmq_proxy
     image: ghcr.io/kile/zmq-proxy:latest
-    deploy:
-      resources:
-        limits:
-          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "3"   # number of files or file count
+        max-size: "10m" # file size
     build:
       context: "./zmq_proxy"
       target: ${MODE:-prod}
@@ -52,6 +53,11 @@ services:
     restart: unless-stopped
     depends_on:
       - proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"   # number of files or file count
+        max-size: "10m" # file size
     <<: *common-labels
 
   bot:
@@ -75,15 +81,16 @@ services:
     depends_on:
       - api
       - proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "10"   # number of files or file count
+        max-size: "10m" # file size
     <<: *common-labels
 
   grafana:
     image: grafana/grafana:10.4.2
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
     ports:
       - '3000:3000'
     volumes:
@@ -92,6 +99,11 @@ services:
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
     env_file:
       - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "3"   # number of files or file count
+        max-size: "10m" # file size
 
   prometheus:
     image: prom/prometheus
@@ -104,28 +116,30 @@ services:
     volumes:
       - ./prometheus:/etc/prometheus
       - prom_data:/prometheus
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "3"   # number of files or file count
+        max-size: "10m" # file size
 
   loki:
     image: grafana/loki:latest
     container_name: loki
-    deploy:
-      resources:
-        limits:
-          memory: 1024M
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/config.yml
     volumes:
       - ./loki/config.yml:/etc/loki/config.yml
       - loki_data:/loki
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"   # number of files or file count
+        max-size: "10m" # file size
 
   alloy:
     image: grafana/alloy:latest
     container_name: alloy
-    deploy:
-      resources:
-        limits:
-          memory: 1024M
     ports:
       - 12345:12345
       - 4317:4317
@@ -137,6 +151,11 @@ services:
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     depends_on:
       - loki
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"   # number of files or file count
+        max-size: "50m" # file size
 
 volumes:
   prom_data:
