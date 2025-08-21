@@ -297,9 +297,7 @@ class TodoSystem(commands.Cog):
     ):
         """Lets you create your todo list in an interactive menu"""
 
-        user_todo_lists = [
-            x async for x in DB.todo.find({"owner": ctx.author.id})
-        ]
+        user_todo_lists = [x async for x in DB.todo.find({"owner": ctx.author.id})]
 
         if len(user_todo_lists) == 5:
             return await ctx.send(
@@ -866,26 +864,31 @@ class TodoSystem(commands.Cog):
                 "The user you are trying to invite has their dms closed, they need to open them to accept the invitation"
             )
 
-        embed = discord.Embed.from_dict(
-            {
-                "title": f"You were invited to to-do list {todo_list.name} (ID: {todo_list.id})",
-                "description": f'{ctx.author} invited you to be {role} in their to-do list. To accept, click "confirm", to deny click "cancel". If this invitation was inappropriate, click "report"',
-                "color": todo_list.color or 0x3E4A78,
-                "footer": {
-                    "icon_url": str(ctx.author.avatar.url),
-                    "text": f"Requested by {ctx.author}",
-                },
-            }
-        )
+        # embed = discord.Embed.from_dict(
+        #     {
+        #         "title": f"You were invited to to-do list {todo_list.name} (ID: {todo_list.id})",
+        #         "description": f'{ctx.author} invited you to be {role} in their to-do list. To accept, click "confirm", to deny click "cancel". If this invitation was inappropriate, click "report"',
+        #         "color": todo_list.color or 0x3E4A78,
+        #         "footer": {
+        #             "icon_url": str(ctx.author.avatar.url),
+        #             "text": f"Requested by {ctx.author}",
+        #         },
+        #     }
+        # )
 
         try:
-            view = ConfirmButton(user.id, timeout=60 * 60 * 24)
-            view.add_item(
+            view = ConfirmButton(
+                user.id,
+                f"# You were invited to to-do list {todo_list.name} (ID: {todo_list.id})\n"
+                + f'{ctx.author} invited you to be {role} in their to-do list. To accept, click "confirm", to deny click "cancel". If this invitation was inappropriate, click "report"',
+                timeout=60 * 60 * 24,
+            )
+            view._children[0]._children[1].add_item(
                 Button(
-                    label="Report", custom_id="report", style=discord.ButtonStyle.red
+                    label="report", custom_id="report", style=discord.ButtonStyle.red
                 )
             )
-            msg = await user.send(embed=embed, view=view)
+            msg = await user.send(view=view)
             await ctx.send(
                 "Successfully send the invitation to the specified user! They have 24 hours to accept or deny"
             )

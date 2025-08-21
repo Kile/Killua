@@ -528,9 +528,8 @@ class Shop(commands.Cog):
             if todo_list.spots >= 100:
                 return await ctx.send("You can't buy more than 100 spots")
 
-            view = ConfirmButton(ctx.author.id, timeout=10)
+            view = ConfirmButton(ctx.author.id, f"Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points", timeout=10)
             msg = await ctx.send(
-                f"Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points",
                 view=view,
             )
             await view.wait()

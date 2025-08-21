@@ -54,9 +54,7 @@ class Card1001(Card, IndividualCard):
         self._has_cards_check(other.fs_cards, " in their free slots", uses_up=True)
 
         async def make_embed(page, *_):
-            return await Book(
-                cast(BaseBot, self.ctx.bot)
-            ).create(member, page,True)
+            return await Book(cast(BaseBot, self.ctx.bot)).create(member, page, True)
 
         await Paginator(
             self.ctx,
@@ -87,9 +85,7 @@ class Card1002(Card, IndividualCard):
         await self._view_defense_check(self.ctx, other)
 
         async def make_embed(page, *_):
-            return await Book(
-                cast(BaseBot, self.ctx.bot)
-            ).create(member, page)
+            return await Book(cast(BaseBot, self.ctx.bot)).create(member, page)
 
         await Paginator(self.ctx, max_pages=6, func=make_embed, has_file=True).start()
 
@@ -203,9 +199,7 @@ class Card1015(Card, IndividualCard):
         self._has_cards_check(other.all_cards)
 
         async def make_embed(page, embed, pages):
-            return await Book(
-                cast(BaseBot, self.ctx.bot)
-            ).create(member, page)
+            return await Book(cast(BaseBot, self.ctx.bot)).create(member, page)
 
         return await Paginator(
             self.ctx,
@@ -339,9 +333,11 @@ class Card1026(Card, IndividualCard):
                 raise CheckFailure(
                     "You don't have another copy of this card to renew the effect"
                 )
-            view = ConfirmButton(user_id=self.ctx.author.id)
-            msg = await self.ctx.send(
+            view = ConfirmButton(
+                self.ctx.author.id,
                 f"You still have {author.has_effect(str(self.id))[1]} protections left. Do you really want to use this card now and overwrite the current protection?",
+            )
+            msg = await self.ctx.send(
                 view=view,
             )
             await view.wait()

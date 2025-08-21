@@ -284,9 +284,12 @@ class Cards(commands.GroupCog, group_name="cards"):
         Asks the user if they want to sell the cards.
         Returns True if the user wants to sell the cards, False if they don't
         """
-        view = ConfirmButton(ctx.author.id, timeout=80)
-        msg = await ctx.send(
+        view = ConfirmButton(
+            ctx.author.id,
             f"You will receive {to_be_gained} Jenny for selling {selling_what} cards, do you want to proceed?",
+            timeout=80,
+        )
+        msg = await ctx.send(
             view=view,
         )
         await view.wait()
@@ -649,9 +652,12 @@ class Cards(commands.GroupCog, group_name="cards"):
         if card.id == 0:
             return await ctx.send("You cannot discard this card!")
 
-        view = ConfirmButton(ctx.author.id, timeout=20)
-        msg = await ctx.send(
+        view = ConfirmButton(
+            ctx.author.id,
             f"Do you really want to throw this card away? (if you want to throw a fake aware, make sure it's in the free slots (unless it's the only copy you own. You can switch cards between free and restricted slots with `{(await self.client.command_prefix(self.client, ctx.message))[2]}swap <card_id>`)",
+            timeout=20,
+        )
+        msg = await ctx.send(
             view=view,
             allowed_mentions=discord.AllowedMentions.none(),
         )

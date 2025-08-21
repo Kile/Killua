@@ -411,9 +411,11 @@ class Trivia(CompetitiveGame):
             )
 
         if not replay:
-            view = ConfirmButton(other.id)
-            msg = await self.ctx.send(
+            view = ConfirmButton(
+                other.id,
                 f"{other.mention}, {self.ctx.author.mention} wants to play a trivia against you. They chose the category `{next((t for t, v in TRIVIA_TOPICS.items() if v == self.category)) if self.category else 'Random category'}` with a difficulty of `{self.difficulty}`, playing for {jenny} jenny. Do you accept?",
+            )
+            msg = await self.ctx.send(
                 view=view,
             )
             await view.wait()
@@ -646,9 +648,12 @@ class Rps(CompetitiveGame):
             if await blcheck(self.other.id) is True:
                 return await self.ctx.send("You can't play against someone blacklisted")
 
-            view = ConfirmButton(self.other.id, timeout=80)
-            msg = await self.ctx.send(
+            view = ConfirmButton(
+                self.other.id,
                 f"{self.ctx.author.mention} challenged {self.other.mention} to a game of Rock Paper Scissors! Will **{self.other}** accept the challange?",
+                timeout=80,
+            )
+            msg = await self.ctx.send(
                 view=view,
             )
             await view.wait()
