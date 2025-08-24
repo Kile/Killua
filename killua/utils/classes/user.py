@@ -143,6 +143,7 @@ class User:
 
     @property
     def is_entitled_to_double_jenny(self) -> bool:
+        return True # LIMITED TIME EVENT
         return self.is_premium and self.premium_tier in list(PATREON_TIERS.keys())[2:]
 
     @all_cards.setter
