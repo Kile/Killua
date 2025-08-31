@@ -64,16 +64,16 @@ class PrometheusCog(commands.Cog):
         reqs = 0
         not_spam = 0
         for key, val in cast(dict, json["usage"]).items():
-            reqs += len(val["requests"])
+            reqs += val["requests"]
             if not key in API_ROUTES:
                 continue
-            not_spam += len(val["requests"])
-            new_requests = len(val["requests"]) - self.api_previous.get(key, {}).get(
+            not_spam += val["requests"]
+            new_requests = val["requests"] - self.api_previous.get(key, {}).get(
                 "requests", 0
             )
             if key not in self.api_previous:
                 self.api_previous[key] = {}
-            self.api_previous[key]["requests"] = len(val["requests"])
+            self.api_previous[key]["requests"] = val["requests"]
             API_REQUESTS_COUNTER.labels(key, "requests").inc(amount=new_requests)
             new_success = val["successful_responses"] - self.api_previous.get(
                 key, {}

@@ -34,7 +34,7 @@ impl Fairing for RequestTimer {
         let start_time = req.local_cache(|| TimerStart(None));
         if let Some(Ok(duration)) = start_time.0.map(|st| st.elapsed()) {
             let ms = duration.as_secs() * 1000 + duration.subsec_millis() as u64;
-            res.set_raw_header("X-Response-Time", format!("{} ms", ms));
+            res.set_raw_header("X-Response-Time", format!("{ms} ms"));
         }
     }
 }

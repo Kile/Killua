@@ -352,22 +352,22 @@ class Dev(commands.GroupCog, group_name="dev"):
         data = []
         for key, val in cast(dict, json["usage"]).items():
             if not key in API_ROUTES:
-                spam += len(val["requests"])
+                spam += val["requests"]
                 continue
-            reqs: List[datetime] = cast(dict, val).get("requests")
+            reqs: int = cast(dict, val).get("requests")
             successful_res: int = cast(dict, val).get("successful_responses")
 
             embed.add_field(
                 name=key,
                 value="Requests: "
-                + str(len(reqs))
+                + str(reqs)
                 + "\n"
                 + "Successful responses: "
                 + str(successful_res)
-                + f" ({round(successful_res/len(reqs)*100)}%)"
+                + f" ({round(successful_res/reqs*100)}%)"
                 + "\n",
             )
-            data.append((key, len(reqs)))
+            data.append((key, reqs))
 
         embed.description += f"\nSpam requests: {spam}"
         piechart = self._create_piechart(data)

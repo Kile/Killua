@@ -63,9 +63,9 @@ pub fn test_zmq_server() {
                 // Get the output
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 let stderr = String::from_utf8_lossy(&output.stderr);
-                let full_output = format!("{}{}", stdout, stderr);
+                let full_output = format!("{stdout}{stderr}");
                 // Prepare the response
-                format!("EXIT_CODE={}\nOUTPUT={}", exit_code, full_output)
+                format!("EXIT_CODE={exit_code}\nOUTPUT={full_output}")
             } else {
                 match request.route
                 .as_str()
@@ -73,9 +73,42 @@ pub fn test_zmq_server() {
                 "commands" => {
                     r#"{"CATEGORY": {"name": "category", "description": "", "emoji": {"normal": "a", "unicode": "b"}, "commands": []}}"#
                 }
-                "stats" => r#"{"guilds": 1, "shards": 1, "registered_users": 1, "last_restart": 1.0}"#,
+                "stats" => r#"{"guilds": 1, "shards": 1, "registered_users": 1, "user_installs": 1, "last_restart": 1.0}"#,
                 "vote" => r#"{"success": "true"}"#,
                 "heartbeat" => r#"{"success": "true"}"#,
+                "user/info" => {
+                    // Mock userinfo response with all required fields
+                    r#"{
+                        "id": "123456789",
+                        "email": "user@example.com",
+                        "display_name": "Test User",
+                        "avatar_url": "https://cdn.discordapp.com/avatars/123456789/avatar.png",
+                        "jenny": 1000,
+                        "daily_cooldown": "2025-01-01T12:00:00",
+                        "met_user": ["111111111", "222222222"],
+                        "effects": {},
+                        "rs_cards": [],
+                        "fs_cards": [],
+                        "badges": ["developer"],
+                        "rps_stats": {"pvp": {"won": 10, "lost": 5, "tied": 2}},
+                        "counting_highscore": {"easy": 3, "hard": 1},
+                        "trivia_stats": {"easy": {"right": 5, "wrong": 2}},
+                        "achievements": ["first_win"],
+                        "votes": 50,
+                        "voting_streak": {"topgg": {"streak": 5}},
+                        "voting_reminder": true,
+                        "premium_guilds": {},
+                        "lootboxes": [1, 2, 3],
+                        "boosters": {"1": 5, "2": 3},
+                        "weekly_cooldown": "2025-01-01T12:00:00",
+                        "action_settings": {"hug": true},
+                        "action_stats": {"hug": {"used": 10}},
+                        "locale": "en-US",
+                        "has_user_installed": true,
+                        "is_premium": true,
+                        "premium_tier": "2"
+                    }"#
+                }
                 _ => r#"{}"#,
             }.to_string()
             };

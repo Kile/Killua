@@ -13,8 +13,13 @@ fn get_stats() {
     let client = Client::tracked(rocket()).unwrap();
     let response = client.get("/stats").dispatch();
     assert_eq!(response.status(), Status::Ok);
-    assert_eq!(
-        response.into_string().unwrap(),
-        r#"{"guilds":1,"shards":1,"registered_users":1,"last_restart":1.0}"#
-    );
+    let response_text = response.into_string().unwrap();
+    let response_json: serde_json::Value = serde_json::from_str(&response_text).unwrap();
+
+    // Check individual fields instead of exact string match due to JSON field ordering
+    assert_eq!(response_json["guilds"], 1);
+    assert_eq!(response_json["shards"], 1);
+    assert_eq!(response_json["registered_users"], 1);
+    assert_eq!(response_json["user_installs"], 1);
+    assert_eq!(response_json["last_restart"], 1.0);
 }

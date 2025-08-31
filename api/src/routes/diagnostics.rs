@@ -13,23 +13,36 @@ use super::common::utils::{make_request, NoData, ResultExt};
 use crate::db::models::ApiStats;
 use crate::fairings::counter::Endpoint;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone)]
 pub struct IPCData {
     pub success: bool,
     pub response_time: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct DiagnosticsResonse {
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct EndpointSummary {
+    pub request_count: usize,
+    pub successful_responses: usize,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct DiagnosticsResponse {
+    pub usage: HashMap<String, EndpointSummary>,
+    pub ipc: IPCData,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct DiagnosticsFullResponse {
     pub usage: HashMap<String, Endpoint>,
     pub ipc: IPCData,
 }
 
-#[get("/diagnostics")]
+#[get("/diagnostics?<full>")]
 pub async fn get_diagnostics(
     _key: ApiKey,
     diag: &State<Client>,
-) -> Result<Json<DiagnosticsResonse>, BadRequest<Json<Value>>> {
+    full: Option<bool>,
+) -> Result<Json<Value>, BadRequest<Json<Value>>> {
     let diag = ApiStats::new(diag);
     let stats = diag.get_all_stats().await.context("Failed to get stats")?;
     let mut formatted: HashMap<String, Endpoint> = HashMap::new();
@@ -75,14 +88,35 @@ pub async fn get_diagnostics(
         false => None,
     };
 
-    // Make new owned Counter object
-    let data = DiagnosticsResonse {
-        usage: formatted,
-        ipc: IPCData {
-            success,
-            response_time,
-        },
+    let ipc_data = IPCData {
+        success,
+        response_time,
     };
 
-    Ok(Json(data))
+    // Return full data if ?full=true is specified
+    if full.unwrap_or(false) {
+        let data = DiagnosticsFullResponse {
+            usage: formatted,
+            ipc: ipc_data,
+        };
+        Ok(Json(serde_json::to_value(data).unwrap()))
+    } else {
+        // Return summary data with counts
+        let mut summary: HashMap<String, EndpointSummary> = HashMap::new();
+        for (key, endpoint) in formatted {
+            summary.insert(
+                key,
+                EndpointSummary {
+                    request_count: endpoint.requests.len(),
+                    successful_responses: endpoint.successful_responses,
+                },
+            );
+        }
+
+        let data = DiagnosticsResponse {
+            usage: summary,
+            ipc: ipc_data,
+        };
+        Ok(Json(serde_json::to_value(data).unwrap()))
+    }
 }

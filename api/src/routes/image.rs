@@ -33,7 +33,7 @@ pub struct AllowImage {
 
 pub fn sha256(endpoint: &str, expiry: &str, secret: &str) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(format!("{}{}{}", endpoint, expiry, secret));
+    hasher.update(format!("{endpoint}{expiry}{secret}"));
     format!("{:x}", hasher.finalize())
 }
 

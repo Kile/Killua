@@ -16,6 +16,7 @@ use routes::diagnostics::get_diagnostics;
 use routes::image::image;
 use routes::stats::get_stats;
 use routes::update::{update, update_cors};
+use routes::userinfo::{get_userinfo, get_userinfo_by_id};
 use routes::vote::register_vote;
 
 use fairings::cors::Cors;
@@ -37,6 +38,8 @@ fn rocket() -> _ {
                 get_public_cards,
                 update,
                 update_cors,
+                get_userinfo,
+                get_userinfo_by_id,
             ],
         )
         .attach(db::init())

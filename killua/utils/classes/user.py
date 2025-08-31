@@ -40,7 +40,13 @@ class User:
     action_stats: Dict[str, Any]
     locale: str
     has_user_installed: bool = False
+    email: Optional[str] = None
     cache: ClassVar[Dict[int, User]] = {}
+
+    async def set_email(self, email: str) -> None:
+        """Sets the user's email address"""
+        self.email = email
+        await self._update_val("email", email)
 
     @classmethod
     async def new(cls, user_id: int):
@@ -96,6 +102,7 @@ class User:
             action_stats=data.get("action_stats", {}),
             locale=data.get("locale", None),
             has_user_installed=data.get("user_installed", False),
+            email=data.get("email", None),
         )
 
         cls.cache[user_id] = instance
@@ -143,7 +150,7 @@ class User:
 
     @property
     def is_entitled_to_double_jenny(self) -> bool:
-        return True # LIMITED TIME EVENT
+        return True  # LIMITED TIME EVENT
         return self.is_premium and self.premium_tier in list(PATREON_TIERS.keys())[2:]
 
     @all_cards.setter
@@ -238,11 +245,11 @@ class User:
                     "has_user_installed": False,
                 }
             )
-    
+
     @staticmethod
     async def get_top_collector() -> Optional[Tuple[int, int]]:
         """
-        Returns the user id and the number of cards they have in their free slots of 
+        Returns the user id and the number of cards they have in their free slots of
         the user with the most non-fake cards in their free slots
         """
         pipeline = [
@@ -251,35 +258,31 @@ class User:
                     "id": 1,
                     "filtered_rs": {
                         "$filter": {
-                            "input": { "$ifNull": ["$cards.rs", []] },
+                            "input": {"$ifNull": ["$cards.rs", []]},
                             "as": "item",
                             "cond": {
                                 "$ne": [
                                     {
                                         "$getField": {
                                             "field": "fake",
-                                            "input": { "$arrayElemAt": ["$$item", 1] }
+                                            "input": {"$arrayElemAt": ["$$item", 1]},
                                         }
                                     },
-                                    True
+                                    True,
                                 ]
-                            }
+                            },
                         }
-                    }
+                    },
                 }
             },
             {
                 "$project": {
                     "id": 1,
-                    "filtered_length": { "$size": { "$ifNull": ["$filtered_rs", []] } }
+                    "filtered_length": {"$size": {"$ifNull": ["$filtered_rs", []]}},
                 }
             },
-            {
-                "$sort": { "filtered_length": -1 }
-            },
-            {
-                "$limit": 1
-            }
+            {"$sort": {"filtered_length": -1}},
+            {"$limit": 1},
         ]
 
         cursor = await DB.teams.aggregate(pipeline)
@@ -289,11 +292,11 @@ class User:
             return (doc["id"], doc["filtered_length"])
         else:
             return None
-    
+
     @staticmethod
     async def total_cards_in_circulation() -> int:
         """
-        Returns the total number of cards in circulation across all users 
+        Returns the total number of cards in circulation across all users
         including free and restricted slots as well as fakes and clones.
         """
         pipeline = [
@@ -301,18 +304,13 @@ class User:
                 "$project": {
                     "total_length": {
                         "$add": [
-                            { "$size": { "$ifNull": ["$cards.fs", []] } },
-                            { "$size": { "$ifNull": ["$cards.rs", []] } }
+                            {"$size": {"$ifNull": ["$cards.fs", []]}},
+                            {"$size": {"$ifNull": ["$cards.rs", []]}},
                         ]
                     }
                 }
             },
-            {
-                "$group": {
-                    "_id": None,
-                    "total": { "$sum": "$total_length" }
-                }
-            }
+            {"$group": {"_id": None, "total": {"$sum": "$total_length"}}},
         ]
 
         cursor = await DB.teams.aggregate(pipeline)
@@ -814,6 +812,6 @@ class User:
     async def register_user_installed_usage(self) -> None:
         """Registers the user as having installed the bot"""
         if self.has_user_installed:
-            return # No unnecessary database calls
+            return  # No unnecessary database calls
         self.has_user_installed = True
         await self._update_val("user_installed", True)

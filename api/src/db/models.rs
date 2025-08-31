@@ -127,7 +127,7 @@ impl ApiStats {
             match result {
                 Ok(document) => match from_document::<StatsStruct>(document) {
                     Ok(stats) => stats_vec.push(stats),
-                    Err(e) => eprintln!("Failed to deserialize document: {}", e),
+                    Err(e) => eprintln!("Failed to deserialize document: {e}"),
                 },
                 Err(e) => return Err(e),
             }

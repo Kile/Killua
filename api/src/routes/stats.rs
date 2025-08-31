@@ -9,6 +9,7 @@ use super::common::utils::{make_request, NoData, ResultExt};
 pub struct Stats {
     pub guilds: u32,
     pub shards: u8,
+    pub user_installs: u32,
     pub registered_users: u32,
     pub last_restart: f64,
 }

@@ -5,6 +5,7 @@ from os import environ
 from random import choices
 from json import loads, dumps
 from asyncio import create_task, sleep
+from datetime import datetime
 from zmq import ROUTER, Poller, POLLIN
 from zmq.asyncio import Context
 from io import BytesIO
@@ -52,19 +53,27 @@ class IPCRoutes(commands.Cog):
         poller.register(socket, POLLIN)
 
         while True:
-            message = await socket.recv_multipart() # Receive the actual message
-            decoded = loads(message[-1].decode())
-            metadata = message[:-1]  # The first parts are metadata, the last part is the actual data
+            message = await socket.recv_multipart()  # Receive the actual message
+            message_data = message[-1].decode()
+            # Strip the first byte (first_bit) before parsing JSON
+            if message_data and message_data[0] == "\x00":
+                message_data = message_data[1:]
+            decoded = loads(message_data)
+            metadata = message[
+                :-1
+            ]  # The first parts are metadata, the last part is the actual data
             try:
-                res = await getattr(self, decoded["route"])(decoded["data"])
+                res = await getattr(self, decoded["route"].replace("/", "_"))(
+                    decoded["data"]
+                )
             except Exception as e:
-                await socket.send_multipart([*metadata, dumps({"error": str(e)}).encode()])
+                await socket.send_multipart(
+                    [*metadata, dumps({"error": str(e)}).encode()]
+                )
                 continue
 
             if res:
-                await socket.send_multipart(
-                    [*metadata, dumps(res).encode()]
-                )
+                await socket.send_multipart([*metadata, dumps(res).encode()])
             else:
                 await socket.send_multipart([*metadata, b'{"status":"ok"}'])
 
@@ -279,7 +288,12 @@ class IPCRoutes(commands.Cog):
 
         # Add token to the image endpoints
         path = [
-            item if not isinstance(item, str) or item == "-" else item + f"?token={token}&expiry={expiry}" for item in path
+            (
+                item
+                if not isinstance(item, str) or item == "-"
+                else item + f"?token={token}&expiry={expiry}"
+            )
+            for item in path
         ]
 
         image = await self.streak_image(
@@ -415,6 +429,7 @@ class IPCRoutes(commands.Cog):
             "guilds": len(self.client.guilds),
             "shards": self.client.shard_count,
             "registered_users": await DB.teams.count_documents({}),
+            "user_installs": (await self.client.application_info()).approximate_user_install_count,
             "last_restart": self.client.startup_datetime.timestamp(),
         }
 
@@ -445,6 +460,96 @@ class IPCRoutes(commands.Cog):
     async def heartbeat(self, _) -> dict:
         """Just a simple heartbeat to see if the bot and IPC connection is alive"""
         return {"status": "ok"}
+
+    def _convert_datetime(self, obj):
+        """Helper function to convert datetime objects to ISO strings"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, dict):
+            return {k: self._convert_datetime(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_datetime(item) for item in obj]
+        else:
+            return obj
+
+    def _convert_snowflakes(self, obj):
+        """Helper function to convert snowflake (discord IDs) objects to strings"""
+        # check if the integer has more than 17 digits
+        if isinstance(obj, int) and len(str(obj)) > 17:
+            return str(obj)
+        elif isinstance(obj, dict):
+            return {k: self._convert_snowflakes(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_snowflakes(item) for item in obj]
+        else:
+            return obj
+
+    def jsonify(self, obj):
+        """Helper function to convert objects to JSON transferable format"""
+        return self._convert_snowflakes(self._convert_datetime(obj))
+
+    async def user_info(self, data) -> dict:
+        """Gets user info by Discord ID and returns it with display name and avatar URL"""
+        user_id = data.get("user_id")
+        if not user_id:
+            raise ValueError("User ID is required")
+
+        # Convert user_id to int if it's a string
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            raise ValueError("Invalid user ID format")
+
+        # Get Discord user
+        user = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        # Get user data from database
+        user_data = await User.new(user_id)
+
+        # Save email if provided
+        email = data.get("email")
+        if email and email != user_data.email:
+            await user_data.set_email(email)
+
+        # Return flat dictionary structure with all user data and Discord info
+        response_data = {
+            "id": user_data.id, 
+            "email": user_data.email,
+            "display_name": user.display_name,
+            "avatar_url": str(user.avatar.url) if user.avatar else None,
+            "jenny": user_data.jenny,
+            "daily_cooldown": user_data.daily_cooldown,
+            "met_user": user_data.met_user,
+            "effects": user_data.effects,
+            "rs_cards": user_data.rs_cards,
+            "fs_cards": user_data.fs_cards,
+            "badges": user_data.badges,
+            "rps_stats": user_data.rps_stats,
+            "counting_highscore": user_data.counting_highscore,
+            "trivia_stats": user_data.trivia_stats,
+            "achievements": user_data.achievements,
+            "votes": user_data.votes,
+            "voting_streak": user_data.voting_streak,
+            "voting_reminder": user_data.voting_reminder,
+            "premium_guilds": user_data.premium_guilds,
+            "lootboxes": user_data.lootboxes,
+            "boosters": user_data.boosters,
+            "weekly_cooldown": (
+                user_data.weekly_cooldown
+                if user_data.weekly_cooldown
+                else None
+            ),
+            "action_settings": user_data.action_settings,
+            "action_stats": user_data.action_stats,
+            "locale": user_data.locale,
+            "has_user_installed": user_data.has_user_installed,
+            "is_premium": user_data.is_premium,
+            "premium_tier": user_data.premium_tier,
+        }
+
+        return self.jsonify(response_data)
 
 
 Cog = IPCRoutes

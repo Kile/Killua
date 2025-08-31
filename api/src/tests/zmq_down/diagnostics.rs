@@ -3,8 +3,7 @@ use rocket::http::{Header, Status};
 use rocket::local::blocking::Client;
 use serde_json::from_str;
 
-use crate::fairings::counter::Endpoint;
-use crate::routes::diagnostics::DiagnosticsResonse;
+use crate::routes::diagnostics::{DiagnosticsResponse, EndpointSummary};
 use crate::tests::common::get_key;
 
 #[test]
@@ -17,7 +16,8 @@ fn diagnostics_when_down() {
         .dispatch();
     assert_eq!(response.status(), Status::Ok);
     // Check the json body ipc.success is false, ignore other fields which may not be empty
-    let parsed_response = from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
+    let parsed_response =
+        from_str::<DiagnosticsResponse>(&response.into_string().unwrap()).unwrap();
     assert!(!parsed_response.ipc.success);
     assert_eq!(parsed_response.ipc.response_time, None);
 }
@@ -33,7 +33,7 @@ fn diagnostics_plus_one_success() {
 
     assert_eq!(response.status(), Status::Ok);
     let parsed_response =
-        serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
+        serde_json::from_str::<DiagnosticsResponse>(&response.into_string().unwrap()).unwrap();
 
     let initial_values = parsed_response.usage.clone();
 
@@ -49,24 +49,23 @@ fn diagnostics_plus_one_success() {
     assert_eq!(response.status(), Status::Ok);
 
     let parsed_response =
-        serde_json::from_str::<DiagnosticsResonse>(&response.into_string().unwrap()).unwrap();
+        serde_json::from_str::<DiagnosticsResponse>(&response.into_string().unwrap()).unwrap();
     let new_values = parsed_response.usage.clone();
 
     // Check that the values have increased by one
     assert!(
         initial_values
             .get("/stats")
-            .unwrap_or(&Endpoint::default())
-            .requests
-            .len()
+            .unwrap_or(&EndpointSummary::default())
+            .request_count
             + 1
-            == new_values.get("/stats").unwrap().requests.len()
+            == new_values.get("/stats").unwrap().request_count
     );
     // Request fails so the successful_responses should be the same
     assert!(
         initial_values
             .get("/stats")
-            .unwrap_or(&Endpoint::default())
+            .unwrap_or(&EndpointSummary::default())
             .successful_responses
             == new_values.get("/stats").unwrap().successful_responses
     );
