@@ -352,9 +352,9 @@ class Dev(commands.GroupCog, group_name="dev"):
         data = []
         for key, val in cast(dict, json["usage"]).items():
             if not key in API_ROUTES:
-                spam += val["requests"]
+                spam += val["request_count"]
                 continue
-            reqs: int = cast(dict, val).get("requests")
+            reqs: int = cast(dict, val).get("request_count")
             successful_res: int = cast(dict, val).get("successful_responses")
 
             embed.add_field(

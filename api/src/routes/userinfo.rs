@@ -48,6 +48,7 @@ pub struct ErrorResponse {
 pub struct UserInfoRequest {
     pub user_id: String,
     pub email: Option<String>,
+    pub from_admin: bool
 }
 
 #[get("/userinfo")]
@@ -62,59 +63,43 @@ pub async fn get_userinfo_by_id(
     auth: DiscordAuth,
     user_id: Option<&str>,
 ) -> Result<Json<FlatUserInfoResponse>, Status> {
-    let is_specific_user = user_id.is_some();
     let target_user_id = user_id
         .map(|s| s.to_string())
         .unwrap_or_else(|| auth.0.id.clone());
-    println!("Looking for user ID: {target_user_id}");
 
     // Check if the authenticated user can access this user's data
     if !auth.can_access_user(&target_user_id) {
-        println!("Access denied for user: {target_user_id}");
         return Err(Status::Forbidden);
     }
 
-    get_userinfo_by_user_id(auth, target_user_id, is_specific_user).await
+    let from_admin: bool = auth.0.id != target_user_id;
+    get_userinfo_by_user_id(auth, target_user_id, from_admin).await
 }
 
 async fn get_userinfo_by_user_id(
     auth: DiscordAuth,
     user_id: String,
-    is_specific_user: bool,
+    from_admin: bool,
 ) -> Result<Json<FlatUserInfoResponse>, Status> {
-    println!("Looking for user with ID: {user_id}");
-
     // Make request to Killua bot
     // Don't send email if this is a specific user request (admin accessing other user's data)
-    let email = if is_specific_user {
+    let email = if from_admin {
         None
     } else {
         auth.0.email.clone()
     };
-    let request_data = UserInfoRequest { user_id, email };
+    let request_data = UserInfoRequest { user_id, email, from_admin };
 
     match make_request("user/info", request_data, 0_u8).await {
         Ok(response) => {
-            println!("Response: {response}");
             match serde_json::from_str::<FlatUserInfoResponse>(&response) {
                 Ok(user_data) => {
-                    println!("Successfully retrieved user data");
                     Ok(Json(user_data))
                 }
-                Err(_e) => match serde_json::from_str::<ErrorResponse>(&response) {
-                    Ok(error) => {
-                        println!("Error: {0}", error.error);
-                        Err(Status::InternalServerError)
-                    }
-                    Err(e) => {
-                        println!("Unknown error: {e:?}");
-                        Err(Status::InternalServerError)
-                    }
-                },
+                Err(_e) => Err(Status::InternalServerError)
             }
         }
-        Err(e) => {
-            println!("Failed to get user info: {e:?}");
+        Err(_e) => {
             Err(Status::InternalServerError)
         }
     }

@@ -75,8 +75,6 @@ async fn verify_discord_token(token: &str) -> Result<DiscordUser, DiscordAuthErr
         .send()
         .await;
 
-    println!("Response: {response:?}");
-
     match response {
         Ok(resp) => {
             if resp.status().is_success() {

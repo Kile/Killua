@@ -815,3 +815,11 @@ class User:
             return  # No unnecessary database calls
         self.has_user_installed = True
         await self._update_val("user_installed", True)
+
+    async def register_login(self) -> bool:
+        """Registers that a user logged into the website and returns True if it was the first time"""
+        if "logged_into_website" in self.achievements:
+            return False
+        self.achievements.append("logged_into_website")
+        await self._update_val("achievements", self.achievements)
+        return True

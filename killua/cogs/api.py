@@ -9,7 +9,7 @@ from datetime import datetime
 from zmq import ROUTER, Poller, POLLIN
 from zmq.asyncio import Context
 from io import BytesIO
-from logging import warning, info
+from asyncio import create_task
 from PIL import Image, ImageDraw, ImageChops
 
 from killua.bot import BaseBot
@@ -429,7 +429,9 @@ class IPCRoutes(commands.Cog):
             "guilds": len(self.client.guilds),
             "shards": self.client.shard_count,
             "registered_users": await DB.teams.count_documents({}),
-            "user_installs": (await self.client.application_info()).approximate_user_install_count,
+            "user_installs": (
+                await self.client.application_info()
+            ).approximate_user_install_count,
             "last_restart": self.client.startup_datetime.timestamp(),
         }
 
@@ -488,7 +490,7 @@ class IPCRoutes(commands.Cog):
         """Helper function to convert objects to JSON transferable format"""
         return self._convert_snowflakes(self._convert_datetime(obj))
 
-    async def user_info(self, data) -> dict:
+    async def user_info(self, data: dict) -> dict:
         """Gets user info by Discord ID and returns it with display name and avatar URL"""
         user_id = data.get("user_id")
         if not user_id:
@@ -515,7 +517,7 @@ class IPCRoutes(commands.Cog):
 
         # Return flat dictionary structure with all user data and Discord info
         response_data = {
-            "id": user_data.id, 
+            "id": user_data.id,
             "email": user_data.email,
             "display_name": user.display_name,
             "avatar_url": str(user.avatar.url) if user.avatar else None,
@@ -537,9 +539,7 @@ class IPCRoutes(commands.Cog):
             "lootboxes": user_data.lootboxes,
             "boosters": user_data.boosters,
             "weekly_cooldown": (
-                user_data.weekly_cooldown
-                if user_data.weekly_cooldown
-                else None
+                user_data.weekly_cooldown if user_data.weekly_cooldown else None
             ),
             "action_settings": user_data.action_settings,
             "action_stats": user_data.action_stats,
@@ -549,7 +549,35 @@ class IPCRoutes(commands.Cog):
             "premium_tier": user_data.premium_tier,
         }
 
+        if data.get("from_admin", False) is False:
+            # Fire and forget background task
+            create_task(self._register_login(user, user_data))
+
         return self.jsonify(response_data)
 
+    async def _register_login(self, user: discord.User, user_data: User) -> None:
+        """The actual background work you want to do"""
+        first_login = await user_data.register_login()
+        if not first_login:
+            return
+
+        # Add free golden lootbox and 1000 Jenny to user
+        await user_data.add_lootbox(4)
+        await user_data.add_jenny(1000)
+
+        # Try to send the user a DM about their reward
+        if user:
+            try:
+                await user.send(
+                    embed=discord.Embed.from_dict(
+                        {
+                            "title": "Thank you for checking out Killua's new website!",
+                            "description": "You've received a free golden lootbox and 1000 Jenny!",
+                            "color": 0x3E4A78,
+                        }
+                    )
+                )
+            except discord.HTTPException:
+                pass # Ignore failure
 
 Cog = IPCRoutes
