@@ -48,7 +48,7 @@ pub struct ErrorResponse {
 pub struct UserInfoRequest {
     pub user_id: String,
     pub email: Option<String>,
-    pub from_admin: bool
+    pub from_admin: bool,
 }
 
 #[get("/userinfo")]
@@ -88,19 +88,17 @@ async fn get_userinfo_by_user_id(
     } else {
         auth.0.email.clone()
     };
-    let request_data = UserInfoRequest { user_id, email, from_admin };
+    let request_data = UserInfoRequest {
+        user_id,
+        email,
+        from_admin,
+    };
 
     match make_request("user/info", request_data, 0_u8).await {
-        Ok(response) => {
-            match serde_json::from_str::<FlatUserInfoResponse>(&response) {
-                Ok(user_data) => {
-                    Ok(Json(user_data))
-                }
-                Err(_e) => Err(Status::InternalServerError)
-            }
-        }
-        Err(_e) => {
-            Err(Status::InternalServerError)
-        }
+        Ok(response) => match serde_json::from_str::<FlatUserInfoResponse>(&response) {
+            Ok(user_data) => Ok(Json(user_data)),
+            Err(_e) => Err(Status::InternalServerError),
+        },
+        Err(_e) => Err(Status::InternalServerError),
     }
 }
