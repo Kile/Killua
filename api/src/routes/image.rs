@@ -276,7 +276,7 @@ pub async fn delete(
                 "message": format!("{} deleted successfully", item_type),
                 "path": format!("cdn/{}", path)
             })))
-        },
+        }
         Err(_) => {
             let item_type = if is_directory { "directory" } else { "file" };
             Err((

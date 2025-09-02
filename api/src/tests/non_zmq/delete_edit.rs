@@ -371,7 +371,10 @@ fn test_edit_directory() {
 
     // Verify the new directory appears in the list with correct paths
     let list_auth_header = create_auth_header();
-    let list_response = client.get("/image/list").header(list_auth_header).dispatch();
+    let list_response = client
+        .get("/image/list")
+        .header(list_auth_header)
+        .dispatch();
     assert_eq!(list_response.status(), Status::Ok);
 
     let list_body: Value = serde_json::from_str(&list_response.into_string().unwrap()).unwrap();
@@ -434,10 +437,7 @@ fn test_delete_directory() {
         body.get("message").unwrap().as_str().unwrap(),
         "directory deleted successfully"
     );
-    assert_eq!(
-        body.get("path").unwrap().as_str().unwrap(),
-        "cdn/test_dir"
-    );
+    assert_eq!(body.get("path").unwrap().as_str().unwrap(), "cdn/test_dir");
 
     // Verify the directory and all its contents were deleted
     assert!(!test_dir.exists());
