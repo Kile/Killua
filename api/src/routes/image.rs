@@ -339,7 +339,7 @@ pub async fn edit(
     if is_directory {
         // For directories, we need to validate the new directory name
         // Extract the directory name from the new path
-        let new_dir_name = new_path.split('/').last().unwrap_or(new_path);
+        let new_dir_name = new_path.split('/').next_back().unwrap_or(new_path);
         validate_filename(new_dir_name)?;
     } else {
         // For files, validate the new filename as before
