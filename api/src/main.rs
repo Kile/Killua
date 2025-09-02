@@ -13,7 +13,7 @@ mod tests;
 use routes::cards::{get_cards, get_public_cards};
 use routes::commands::get_commands;
 use routes::diagnostics::get_diagnostics;
-use routes::image::image;
+use routes::image::{delete, edit, image, list, upload};
 use routes::stats::get_stats;
 use routes::update::{update, update_cors};
 use routes::userinfo::{get_userinfo, get_userinfo_by_id};
@@ -33,6 +33,10 @@ fn rocket() -> _ {
                 register_vote,
                 get_stats,
                 image,
+                upload,
+                delete,
+                edit,
+                list,
                 get_diagnostics,
                 get_cards,
                 get_public_cards,

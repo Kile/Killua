@@ -5,6 +5,9 @@ use std::env;
 
 // Test mode flag - set to true during tests
 static TEST_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+// Test admin IDs - set during tests
+static TEST_ADMIN_IDS: std::sync::atomic::AtomicPtr<String> =
+    std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
 
 /// Enable test mode for Discord authentication
 #[allow(dead_code)]
@@ -16,6 +19,17 @@ pub fn enable_test_mode() {
 #[allow(dead_code)]
 pub fn disable_test_mode() {
     TEST_MODE.store(false, std::sync::atomic::Ordering::Relaxed);
+    // Clear test admin IDs
+    let null_ptr = std::ptr::null_mut();
+    TEST_ADMIN_IDS.store(null_ptr, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Set test admin IDs for testing
+#[allow(dead_code)]
+pub fn set_test_admin_ids(admin_ids: String) {
+    let boxed_string = Box::new(admin_ids);
+    let ptr = Box::into_raw(boxed_string);
+    TEST_ADMIN_IDS.store(ptr, std::sync::atomic::Ordering::Relaxed);
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -129,6 +143,19 @@ fn verify_discord_token_test(token: &str) -> Result<DiscordUser, DiscordAuthErro
 impl DiscordAuth {
     /// Check if the authenticated user is an admin
     pub fn is_admin(&self) -> bool {
+        let test_mode = TEST_MODE.load(std::sync::atomic::Ordering::Relaxed);
+
+        if test_mode {
+            // Use test admin IDs
+            let test_admin_ids_ptr = TEST_ADMIN_IDS.load(std::sync::atomic::Ordering::Relaxed);
+            if !test_admin_ids_ptr.is_null() {
+                let test_admin_ids = unsafe { &*test_admin_ids_ptr };
+                let admin_ids: Vec<&str> = test_admin_ids.split(',').collect();
+                return admin_ids.contains(&self.0.id.as_str());
+            }
+        }
+
+        // Use environment variable
         let admin_ids = env::var("ADMIN_IDS").unwrap_or_default();
         let admin_ids: Vec<&str> = admin_ids.split(',').collect();
         admin_ids.contains(&self.0.id.as_str())

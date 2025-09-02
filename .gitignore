@@ -21,6 +21,9 @@ assets/cards/*
 # Still allow the placeholder cards for development
 !assets/cards/PLACEHOLDER*.png
 
+# CDN uploads
+assets/cdn/*
+
 # API log
 /api.log
 

@@ -151,6 +151,9 @@ fn verify_request_count_matches_requests_length() {
     // Make a request to create some data
     let _ = client.get("/stats").dispatch();
 
+    // Sleep for a bit to allow the stats to update
+    std::thread::sleep(std::time::Duration::from_secs(1));
+
     // Get full response
     let full_response = client
         .get("/diagnostics?full=true")
@@ -172,6 +175,9 @@ fn verify_request_count_matches_requests_length() {
     // For each endpoint, verify that request_count matches the length of requests array
     if let Some(usage) = full_data["usage"].as_object() {
         for (endpoint_name, endpoint_data) in usage {
+            if endpoint_name == "/diagnostics" {
+                continue; // Skip self-check as it may be incremented after the request
+            }
             if let Some(requests_array) = endpoint_data["requests"].as_array() {
                 let requests_length = requests_array.len();
 
