@@ -109,6 +109,8 @@ pub fn test_zmq_server() {
                         "premium_tier": "2"
                     }"#
                 }
+                "discord/application_authorized" => r#"{"success": true, "message": "Application authorized event processed successfully"}"#,
+                "discord/application_deauthorized" => r#"{"success": true, "message": "Application deauthorized event processed successfully"}"#,
                 _ => r#"{}"#,
             }.to_string()
             };

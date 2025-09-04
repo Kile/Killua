@@ -816,6 +816,13 @@ class User:
         self.has_user_installed = True
         await self._update_val("user_installed", True)
 
+    async def register_user_uninstalled_usage(self) -> None:
+        """Registers the user as having uninstalled the bot"""
+        if not self.has_user_installed:
+            return
+        self.has_user_installed = False
+        await self._update_val("user_installed", False)
+
     async def register_login(self) -> bool:
         """Registers that a user logged into the website and returns True if it was the first time"""
         if "logged_into_website" in self.achievements:

@@ -280,13 +280,13 @@ fn test_upload_empty_directory() {
 
 #[test]
 fn test_upload_file_size_limit() {
-    // Test uploading a file that should be within the size limit
+    // Test uploading a file that should be within the 500 MiB limit
     setup_test_environment();
 
     let client = Client::tracked(rocket()).unwrap();
     let auth_header = create_auth_header();
 
-    // Create a file that should be within the 10 MiB limit
+    // Create a file that should be within the 500 MiB limit
     let data = vec![0u8; 5 * 1024 * 1024]; // 5 MiB
 
     let response = client

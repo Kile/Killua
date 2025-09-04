@@ -1,15 +1,16 @@
 ## defaults for _all_ profiles
 [default]
 address = "0.0.0.0"
-limits = { form = "64 kB", json = "1 MiB" }
+limits = { form = "64 kB", json = "1 MiB", data-form = "500 MiB" }
 
 ## set only when compiled in debug mode, i.e, `cargo build`
 [debug]
 port = 7650
 ## only the `json` key from `default` will be overridden; `form` will remain
-limits = { json = "10MiB" }
+limits = { json = "10MiB", data-form = "500 MiB" }
 
 ## set only when compiled in release mode, i.e, `cargo build --release`
 [release]
 port = 7650
 ip_header = false
+limits = { data-form = "500 MiB" }

@@ -1,6 +1,7 @@
 use regex::Regex;
 use regex::RegexSet;
 use rocket::data::ToByteUnit;
+use rocket::http::uri::Segments;
 use rocket::response::status::Forbidden;
 use rocket::serde::json::Json;
 use rocket::{
@@ -11,7 +12,7 @@ use rocket::{
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::SystemTime;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
@@ -119,9 +120,9 @@ fn allows_endpoint(token: &str, endpoint: &str, expiry: &str) -> bool {
         })
 }
 
-#[get("/image/<images..>?<token>&<expiry>")]
+#[get("/image/<path..>?<token>&<expiry>")]
 pub async fn image(
-    images: PathBuf,
+    path: Segments<'_, rocket::http::uri::fmt::Path>,
     token: Option<&str>,
     expiry: Option<&str>,
 ) -> Result<Option<NamedFile>, Forbidden<Json<Value>>> {
@@ -130,12 +131,14 @@ pub async fn image(
             serde_json::json!({"error": "No token or expiry provided"}),
         )));
     }
-    if !allows_endpoint(token.unwrap(), &images.to_string_lossy(), expiry.unwrap()) {
+    let path_str: String = path.map(|s| s.to_string()).collect::<Vec<_>>().join("/");
+
+    if !allows_endpoint(token.unwrap(), &path_str, expiry.unwrap()) {
         return Err(Forbidden(Json(
             serde_json::json!({"error": "Invalid token"}),
         )));
     };
-    Ok(NamedFile::open(Path::new("../assets").join(images))
+    Ok(NamedFile::open(Path::new("../assets").join(&path_str))
         .await
         .ok())
 }
@@ -192,7 +195,7 @@ pub async fn upload(
     }
 
     // Read the uploaded data
-    let bytes = match data.open(10.mebibytes()).into_bytes().await {
+    let bytes = match data.open(500.mebibytes()).into_bytes().await {
         Ok(bytes) => bytes,
         Err(_) => {
             return Err((

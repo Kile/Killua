@@ -13,6 +13,7 @@ mod tests;
 use routes::cards::{get_cards, get_public_cards};
 use routes::commands::get_commands;
 use routes::diagnostics::get_diagnostics;
+use routes::discord_webhooks::{handle_discord_webhook, webhook_health_check};
 use routes::image::{delete, edit, image, list, upload};
 use routes::stats::get_stats;
 use routes::update::{update, update_cors};
@@ -44,6 +45,8 @@ fn rocket() -> _ {
                 update_cors,
                 get_userinfo,
                 get_userinfo_by_id,
+                handle_discord_webhook,
+                webhook_health_check,
             ],
         )
         .attach(db::init())

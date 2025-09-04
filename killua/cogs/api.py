@@ -435,10 +435,6 @@ class IPCRoutes(commands.Cog):
             "last_restart": self.client.startup_datetime.timestamp(),
         }
 
-    async def save_user(self, data) -> None:
-        """This functions purpose is not that much getting user data but saving a user in the database"""
-        await User.new(data["user"])
-
     async def get_discord_user(self, data) -> dict:
         """Getting additional info about a user with their id"""
         res = self.client.get_user(data["user"])
@@ -448,6 +444,18 @@ class IPCRoutes(commands.Cog):
             "avatar": str(res.avatar.url),
             "created_at": res.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
+
+    async def discord_application_authorized(self, data) -> None:
+        """Handles the application authorized webhook"""
+        user_id = data["user"]["id"]
+        user = await User.new(user_id)
+        await user.register_user_installed_usage()
+    
+    async def discord_application_deauthorized(self, data) -> None:
+        """Handles the application deauthorized webhook"""
+        user_id = data["user"]["id"]
+        user = await User.new(user_id)
+        await user.register_user_uninstalled_usage()
 
     # async def update_guild_cache(self, data) -> None:
     #     """Makes sure the local cache is up to date with the db"""
