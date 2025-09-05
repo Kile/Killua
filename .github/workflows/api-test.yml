@@ -9,6 +9,7 @@ env:
   MONGODB: mongodb://localhost:27017/Killua
   API_KEY: test
   HASH_SECRET: supersecretpassword
+  PUBLIC_KEY: 1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
 
 jobs:
   setup:

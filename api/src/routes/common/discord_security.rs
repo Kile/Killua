@@ -122,30 +122,44 @@ pub fn verify_discord_signature(
     }
 
     // Production mode - perform actual Ed25519 verification
+    eprintln!("DEBUG: Performing Ed25519 signature verification");
+    eprintln!("  Public key length: {}", public_key.len());
+    eprintln!("  Signature length: {}", signature.len());
+    eprintln!("  Timestamp length: {}", timestamp.len());
+    eprintln!("  Body length: {}", body.len());
+    
     // Parse the public key
     let public_key_bytes = match hex::decode(public_key) {
         Ok(bytes) => {
             if bytes.len() != 32 {
+                eprintln!("ERROR: Public key is not 32 bytes long, got {} bytes", bytes.len());
                 return false;
             }
             let mut array = [0u8; 32];
             array.copy_from_slice(&bytes);
             array
         }
-        Err(_) => return false,
+        Err(e) => {
+            eprintln!("ERROR: Failed to decode public key hex: {}", e);
+            return false;
+        }
     };
 
     // Parse the signature
     let signature_bytes = match hex::decode(signature) {
         Ok(bytes) => {
             if bytes.len() != 64 {
+                eprintln!("ERROR: Signature is not 64 bytes long, got {} bytes", bytes.len());
                 return false;
             }
             let mut array = [0u8; 64];
             array.copy_from_slice(&bytes);
             array
         }
-        Err(_) => return false,
+        Err(e) => {
+            eprintln!("ERROR: Failed to decode signature hex: {}", e);
+            return false;
+        }
     };
 
     // Create the message to verify (timestamp + body)
@@ -155,14 +169,19 @@ pub fn verify_discord_signature(
     // Create the verifying key
     let verifying_key = match VerifyingKey::from_bytes(&public_key_bytes) {
         Ok(key) => key,
-        Err(_) => return false,
+        Err(e) => {
+            eprintln!("ERROR: Failed to create verifying key: {}", e);
+            return false;
+        }
     };
 
     // Create the signature
     let signature = Signature::from(signature_bytes);
 
     // Verify the signature
-    verifying_key.verify(message_bytes, &signature).is_ok()
+    let result = verifying_key.verify(message_bytes, &signature).is_ok();
+    eprintln!("DEBUG: Signature verification result: {}", result);
+    result
 }
 
 // Function to validate Discord webhook request

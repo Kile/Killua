@@ -178,7 +178,11 @@ pub async fn handle_discord_webhook(
     if signature.is_authenticated {
         let public_key = match std::env::var("PUBLIC_KEY") {
             Ok(key) => key,
-            Err(_) => return Err(Status::InternalServerError),
+            Err(_) => {
+                // Log the error for debugging
+                eprintln!("ERROR: PUBLIC_KEY environment variable not set");
+                return Err(Status::InternalServerError);
+            }
         };
 
         let signature_str = signature.signature.as_ref().unwrap();
@@ -186,6 +190,12 @@ pub async fn handle_discord_webhook(
         let body = serde_json::to_string(&webhook).unwrap();
 
         if !verify_discord_signature(&public_key, signature_str, timestamp_str, &body) {
+            // Log the error for debugging
+            eprintln!("ERROR: Discord signature verification failed");
+            eprintln!("  Public key: {}", public_key);
+            eprintln!("  Signature: {}", signature_str);
+            eprintln!("  Timestamp: {}", timestamp_str);
+            eprintln!("  Body length: {}", body.len());
             return Err(Status::Unauthorized);
         }
     }
