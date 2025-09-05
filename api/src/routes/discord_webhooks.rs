@@ -174,8 +174,8 @@ pub async fn handle_discord_webhook(
         return Err(Status::Unauthorized);
     }
 
-    // For authenticated events, verify the signature
-    if signature.is_authenticated {
+    // For authenticated events (non-ping), verify the signature
+    if signature.is_authenticated && !is_ping_event {
         eprintln!("=== DISCORD WEBHOOK HANDLER DEBUG ===");
         eprintln!("DEBUG: Processing authenticated webhook request");
         eprintln!("DEBUG: Webhook data: {:?}", webhook);
