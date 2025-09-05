@@ -122,65 +122,130 @@ pub fn verify_discord_signature(
     }
 
     // Production mode - perform actual Ed25519 verification
+    eprintln!("=== DISCORD SIGNATURE VERIFICATION DEBUG ===");
     eprintln!("DEBUG: Performing Ed25519 signature verification");
+    eprintln!("  Public key: '{}'", public_key);
     eprintln!("  Public key length: {}", public_key.len());
+    eprintln!("  Signature: '{}'", signature);
     eprintln!("  Signature length: {}", signature.len());
+    eprintln!("  Timestamp: '{}'", timestamp);
     eprintln!("  Timestamp length: {}", timestamp.len());
+    eprintln!("  Body: '{}'", body);
     eprintln!("  Body length: {}", body.len());
-    
+
     // Parse the public key
+    eprintln!("DEBUG: Decoding public key from hex...");
     let public_key_bytes = match hex::decode(public_key) {
         Ok(bytes) => {
+            eprintln!(
+                "DEBUG: Public key decoded successfully, {} bytes",
+                bytes.len()
+            );
             if bytes.len() != 32 {
-                eprintln!("ERROR: Public key is not 32 bytes long, got {} bytes", bytes.len());
+                eprintln!(
+                    "ERROR: Public key is not 32 bytes long, got {} bytes",
+                    bytes.len()
+                );
+                eprintln!("ERROR: Public key bytes: {:?}", bytes);
                 return false;
             }
             let mut array = [0u8; 32];
             array.copy_from_slice(&bytes);
+            eprintln!("DEBUG: Public key array: {:?}", array);
             array
         }
         Err(e) => {
             eprintln!("ERROR: Failed to decode public key hex: {}", e);
+            eprintln!("ERROR: Public key string: '{}'", public_key);
             return false;
         }
     };
 
     // Parse the signature
+    eprintln!("DEBUG: Decoding signature from hex...");
     let signature_bytes = match hex::decode(signature) {
         Ok(bytes) => {
+            eprintln!(
+                "DEBUG: Signature decoded successfully, {} bytes",
+                bytes.len()
+            );
             if bytes.len() != 64 {
-                eprintln!("ERROR: Signature is not 64 bytes long, got {} bytes", bytes.len());
+                eprintln!(
+                    "ERROR: Signature is not 64 bytes long, got {} bytes",
+                    bytes.len()
+                );
+                eprintln!("ERROR: Signature bytes: {:?}", bytes);
                 return false;
             }
             let mut array = [0u8; 64];
             array.copy_from_slice(&bytes);
+            eprintln!("DEBUG: Signature array: {:?}", array);
             array
         }
         Err(e) => {
             eprintln!("ERROR: Failed to decode signature hex: {}", e);
+            eprintln!("ERROR: Signature string: '{}'", signature);
             return false;
         }
     };
 
     // Create the message to verify (timestamp + body)
+    eprintln!("DEBUG: Creating message to verify...");
     let message = format!("{}{}", timestamp, body);
     let message_bytes = message.as_bytes();
 
+    eprintln!("DEBUG: Message construction:");
+    eprintln!("  Timestamp: '{}'", timestamp);
+    eprintln!("  Body: '{}'", body);
+    eprintln!("  Combined message: '{}'", message);
+    eprintln!("  Message bytes length: {}", message_bytes.len());
+    eprintln!(
+        "  Message bytes (first 100): {:?}",
+        &message_bytes[..message_bytes.len().min(100)]
+    );
+    eprintln!(
+        "  Message bytes (last 100): {:?}",
+        &message_bytes[message_bytes.len().saturating_sub(100)..]
+    );
+
     // Create the verifying key
+    eprintln!("DEBUG: Creating Ed25519 verifying key...");
     let verifying_key = match VerifyingKey::from_bytes(&public_key_bytes) {
-        Ok(key) => key,
+        Ok(key) => {
+            eprintln!("DEBUG: Verifying key created successfully");
+            key
+        }
         Err(e) => {
             eprintln!("ERROR: Failed to create verifying key: {}", e);
+            eprintln!("ERROR: Public key bytes used: {:?}", public_key_bytes);
             return false;
         }
     };
 
     // Create the signature
+    eprintln!("DEBUG: Creating Ed25519 signature object...");
     let signature = Signature::from(signature_bytes);
+    eprintln!("DEBUG: Signature object created successfully");
 
     // Verify the signature
+    eprintln!("DEBUG: Performing Ed25519 verification...");
+    eprintln!("DEBUG: Verifying key: {:?}", verifying_key);
+    eprintln!("DEBUG: Signature: {:?}", signature);
+    eprintln!("DEBUG: Message bytes length: {}", message_bytes.len());
+
     let result = verifying_key.verify(message_bytes, &signature).is_ok();
-    eprintln!("DEBUG: Signature verification result: {}", result);
+    eprintln!("DEBUG: Ed25519 verification result: {}", result);
+
+    if !result {
+        eprintln!("ERROR: Ed25519 verification failed!");
+        eprintln!("ERROR: This means either:");
+        eprintln!("  1. The public key is wrong");
+        eprintln!("  2. The signature is wrong");
+        eprintln!("  3. The message (timestamp + body) is wrong");
+        eprintln!("  4. The signature was created with a different algorithm");
+    }
+
+    eprintln!("=== END DISCORD SIGNATURE VERIFICATION DEBUG ===");
     result
 }
 

@@ -176,8 +176,15 @@ pub async fn handle_discord_webhook(
 
     // For authenticated events, verify the signature
     if signature.is_authenticated {
+        eprintln!("=== DISCORD WEBHOOK HANDLER DEBUG ===");
+        eprintln!("DEBUG: Processing authenticated webhook request");
+        eprintln!("DEBUG: Webhook data: {:?}", webhook);
+
         let public_key = match std::env::var("PUBLIC_KEY") {
-            Ok(key) => key,
+            Ok(key) => {
+                eprintln!("DEBUG: PUBLIC_KEY environment variable found");
+                key
+            }
             Err(_) => {
                 // Log the error for debugging
                 eprintln!("ERROR: PUBLIC_KEY environment variable not set");
@@ -189,15 +196,20 @@ pub async fn handle_discord_webhook(
         let timestamp_str = signature.timestamp.as_ref().unwrap();
         let body = serde_json::to_string(&webhook).unwrap();
 
+        eprintln!("DEBUG: Calling verify_discord_signature with:");
+        eprintln!("  Public key: {}", public_key);
+        eprintln!("  Signature: {}", signature_str);
+        eprintln!("  Timestamp: {}", timestamp_str);
+        eprintln!("  Body: {}", body);
+
         if !verify_discord_signature(&public_key, signature_str, timestamp_str, &body) {
             // Log the error for debugging
-            eprintln!("ERROR: Discord signature verification failed");
-            eprintln!("  Public key: {}", public_key);
-            eprintln!("  Signature: {}", signature_str);
-            eprintln!("  Timestamp: {}", timestamp_str);
-            eprintln!("  Body length: {}", body.len());
-            return Err(Status::Unauthorized);
+            eprintln!("ERROR: Discord signature verification failed - returning 403 Forbidden");
+            return Err(Status::Forbidden);
         }
+
+        eprintln!("DEBUG: Discord signature verification succeeded");
+        eprintln!("=== END DISCORD WEBHOOK HANDLER DEBUG ===");
     }
 
     match webhook.event.as_ref().and_then(|e| e.event_type.as_ref()) {
