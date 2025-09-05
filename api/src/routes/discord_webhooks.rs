@@ -1,9 +1,11 @@
 use rocket::http::Status;
+use rocket::response::status;
+use rocket::response::Responder;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::routes::common::discord_security::DiscordSignature;
+use crate::routes::common::discord_security::{verify_discord_signature, OptionalDiscordSignature};
 use crate::routes::common::utils::make_request;
 
 // Discord webhook event types
@@ -135,6 +137,21 @@ pub struct ApplicationDeauthorizedRequest {
 }
 
 // Response structure
+#[derive(Debug)]
+pub enum WebhookResponseType {
+    Json(Json<WebhookResponse>),
+    NoContent,
+}
+
+impl<'r> Responder<'r, 'static> for WebhookResponseType {
+    fn respond_to(self, request: &'r rocket::Request<'_>) -> rocket::response::Result<'static> {
+        match self {
+            WebhookResponseType::Json(json) => json.respond_to(request),
+            WebhookResponseType::NoContent => status::NoContent.respond_to(request),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WebhookResponse {
     pub success: bool,
@@ -143,17 +160,35 @@ pub struct WebhookResponse {
 
 #[post("/webhooks/discord", data = "<webhook_data>")]
 pub async fn handle_discord_webhook(
-    _signature: DiscordSignature,
+    signature: OptionalDiscordSignature,
     webhook_data: Json<DiscordWebhookEvent>,
-) -> Result<Json<WebhookResponse>, Status> {
+) -> Result<WebhookResponseType, Status> {
     // Get the webhook data and body for signature verification
     let webhook = webhook_data.into_inner();
 
-    // Verify the signature (disabled for testing with hash-based signatures)
-    // TODO: Implement proper Ed25519 signature generation for tests
-    // if !verify_discord_signature(&public_key, &signature.signature, &signature.timestamp, &body) {
-    //     return Err(Status::Unauthorized);
-    // }
+    // Check if this is a ping event (no event field)
+    let is_ping_event = webhook.event.is_none();
+
+    // For non-ping events, require authentication
+    if !is_ping_event && !signature.is_authenticated {
+        return Err(Status::Unauthorized);
+    }
+
+    // For authenticated events, verify the signature
+    if signature.is_authenticated {
+        let public_key = match std::env::var("PUBLIC_KEY") {
+            Ok(key) => key,
+            Err(_) => return Err(Status::InternalServerError),
+        };
+
+        let signature_str = signature.signature.as_ref().unwrap();
+        let timestamp_str = signature.timestamp.as_ref().unwrap();
+        let body = serde_json::to_string(&webhook).unwrap();
+
+        if !verify_discord_signature(&public_key, signature_str, timestamp_str, &body) {
+            return Err(Status::Unauthorized);
+        }
+    }
 
     match webhook.event.as_ref().and_then(|e| e.event_type.as_ref()) {
         Some(DiscordEventType::ApplicationAuthorized) => {
@@ -163,18 +198,15 @@ pub async fn handle_discord_webhook(
             handle_application_deauthorized(webhook).await
         }
         None => {
-            // This is a ping event (no event field)
-            Ok(Json(WebhookResponse {
-                success: true,
-                message: "Ping received successfully".to_string(),
-            }))
+            // This is a ping event (no event field) - Discord requires empty body and 204 status
+            Ok(WebhookResponseType::NoContent)
         }
     }
 }
 
 async fn handle_application_authorized(
     webhook: DiscordWebhookEvent,
-) -> Result<Json<WebhookResponse>, Status> {
+) -> Result<WebhookResponseType, Status> {
     // Parse the event data
     let event = webhook.event.ok_or(Status::BadRequest)?;
     let data = event.data.ok_or(Status::BadRequest)?;
@@ -192,27 +224,27 @@ async fn handle_application_authorized(
 
     if request_data.integration_type != Some(1) {
         // we only care about user integrations
-        return Ok(Json(WebhookResponse {
+        return Ok(WebhookResponseType::Json(Json(WebhookResponse {
             success: true,
             message: "Application authorized event processed successfully".to_string(),
-        }));
+        })));
     }
 
     println!("Received application authorized event: {:?}", request_data); // for debugging to see if this works in prod
 
     // Forward to Killua bot
     match make_request("discord/application_authorized", request_data, 0_u8).await {
-        Ok(_response) => Ok(Json(WebhookResponse {
+        Ok(_response) => Ok(WebhookResponseType::Json(Json(WebhookResponse {
             success: true,
             message: "Application authorized event processed successfully".to_string(),
-        })),
+        }))),
         Err(_e) => Err(Status::InternalServerError),
     }
 }
 
 async fn handle_application_deauthorized(
     webhook: DiscordWebhookEvent,
-) -> Result<Json<WebhookResponse>, Status> {
+) -> Result<WebhookResponseType, Status> {
     // Parse the event data
     let event = webhook.event.ok_or(Status::BadRequest)?;
     let data = event.data.ok_or(Status::BadRequest)?;
@@ -227,10 +259,10 @@ async fn handle_application_deauthorized(
 
     // Forward to Killua bot
     match make_request("discord/application_deauthorized", request_data, 0_u8).await {
-        Ok(_response) => Ok(Json(WebhookResponse {
+        Ok(_response) => Ok(WebhookResponseType::Json(Json(WebhookResponse {
             success: true,
             message: "Application deauthorized event processed successfully".to_string(),
-        })),
+        }))),
         Err(_e) => Err(Status::InternalServerError),
     }
 }

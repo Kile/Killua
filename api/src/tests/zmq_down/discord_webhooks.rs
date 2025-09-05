@@ -5,6 +5,8 @@ use rocket::local::blocking::Client;
 use rocket::serde::json::json;
 use sha2::{Digest, Sha256};
 
+use crate::routes::common::discord_security::enable_test_mode;
+
 // Test Discord public key (this is a test key, not a real one)
 #[allow(dead_code)]
 const TEST_PUBLIC_KEY: &str = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
@@ -23,6 +25,7 @@ fn create_test_signature(timestamp: &str, body: &str) -> String {
 #[test]
 fn test_application_authorized_webhook_zmq_down() {
     // ZMQ server is down
+    enable_test_mode();
     let client = Client::tracked(rocket()).unwrap();
 
     let webhook_data = json!({
@@ -68,6 +71,7 @@ fn test_application_authorized_webhook_zmq_down() {
 #[test]
 fn test_application_deauthorized_webhook_zmq_down() {
     // ZMQ server is down
+    enable_test_mode();
     let client = Client::tracked(rocket()).unwrap();
 
     let webhook_data = json!({
@@ -109,6 +113,30 @@ fn test_application_deauthorized_webhook_zmq_down() {
 }
 
 #[test]
+fn test_webhook_ping_event_no_auth_zmq_down() {
+    // ZMQ server is down, but ping should still work without auth
+    enable_test_mode();
+    let client = Client::tracked(rocket()).unwrap();
+
+    let webhook_data = json!({
+        "version": 1,
+        "application_id": "1234560123453231555",
+        "type": 1
+    });
+
+    let body = serde_json::to_string(&webhook_data).unwrap();
+
+    // No authentication headers for ping events
+    let response = client
+        .post("/webhooks/discord")
+        .header(ContentType::JSON)
+        .body(body)
+        .dispatch();
+
+    assert_eq!(response.status(), Status::NoContent);
+}
+
+#[test]
 fn test_webhook_ping_event_zmq_down() {
     // ZMQ server is down, but ping should still work
     let client = Client::tracked(rocket()).unwrap();
@@ -131,18 +159,13 @@ fn test_webhook_ping_event_zmq_down() {
         .body(body)
         .dispatch();
 
-    assert_eq!(response.status(), Status::Ok);
-
-    let body = response.into_string().expect("response body");
-    let response_data: serde_json::Value = serde_json::from_str(&body).expect("valid json");
-
-    assert_eq!(response_data["success"], true);
-    assert_eq!(response_data["message"], "Ping received successfully");
+    assert_eq!(response.status(), Status::NoContent);
 }
 
 #[test]
 fn test_webhook_health_check_zmq_down() {
     // ZMQ server is down, but health check should still work
+    enable_test_mode();
     let client = Client::tracked(rocket()).unwrap();
     let response = client.get("/webhooks/discord").dispatch();
 

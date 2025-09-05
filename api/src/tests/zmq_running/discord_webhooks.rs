@@ -5,6 +5,7 @@ use rocket::local::blocking::Client;
 use rocket::serde::json::json;
 use sha2::{Digest, Sha256};
 
+use crate::routes::common::discord_security::enable_test_mode;
 use crate::tests::common::{test_zmq_server, INIT};
 
 // Test Discord public key (this is a test key, not a real one)
@@ -24,9 +25,56 @@ fn create_test_signature(timestamp: &str, body: &str) -> String {
 }
 
 #[test]
+fn test_application_authorized_webhook_no_auth_zmq_running() {
+    INIT.call_once(|| {
+        test_zmq_server();
+        enable_test_mode();
+    });
+
+    let client = Client::tracked(rocket()).unwrap();
+
+    let webhook_data = json!({
+        "version": 1,
+        "application_id": "1234560123453231555",
+        "type": 1,
+        "event": {
+            "type": "APPLICATION_AUTHORIZED",
+            "timestamp": "2024-10-18T14:42:53.064834",
+            "data": {
+                "integration_type": 1,
+                "scopes": ["applications.commands"],
+                "user": {
+                    "id": "123456789012345678",
+                    "username": "testuser",
+                    "discriminator": "1234",
+                    "avatar": "test_avatar_hash",
+                    "bot": false,
+                    "system": false,
+                    "mfa_enabled": true,
+                    "verified": true,
+                    "email": "test@example.com"
+                }
+            }
+        }
+    });
+
+    let body = serde_json::to_string(&webhook_data).unwrap();
+
+    // No authentication headers - should fail for application events
+    let response = client
+        .post("/webhooks/discord")
+        .header(ContentType::JSON)
+        .body(body)
+        .dispatch();
+
+    assert_eq!(response.status(), Status::Unauthorized);
+}
+
+#[test]
 fn test_application_authorized_webhook_zmq_running() {
     INIT.call_once(|| {
         test_zmq_server();
+        enable_test_mode();
     });
 
     let client = Client::tracked(rocket()).unwrap();
@@ -84,6 +132,7 @@ fn test_application_authorized_webhook_zmq_running() {
 fn test_application_authorized_webhook_with_guild_zmq_running() {
     INIT.call_once(|| {
         test_zmq_server();
+        enable_test_mode();
     });
 
     let client = Client::tracked(rocket()).unwrap();
@@ -150,6 +199,7 @@ fn test_application_authorized_webhook_with_guild_zmq_running() {
 fn test_application_deauthorized_webhook_zmq_running() {
     INIT.call_once(|| {
         test_zmq_server();
+        enable_test_mode();
     });
 
     let client = Client::tracked(rocket()).unwrap();
@@ -202,9 +252,37 @@ fn test_application_deauthorized_webhook_zmq_running() {
 }
 
 #[test]
+fn test_webhook_ping_event_no_auth_zmq_running() {
+    INIT.call_once(|| {
+        test_zmq_server();
+        enable_test_mode();
+    });
+
+    let client = Client::tracked(rocket()).unwrap();
+
+    let webhook_data = json!({
+        "version": 1,
+        "application_id": "1234560123453231555",
+        "type": 1
+    });
+
+    let body = serde_json::to_string(&webhook_data).unwrap();
+
+    // No authentication headers for ping events
+    let response = client
+        .post("/webhooks/discord")
+        .header(ContentType::JSON)
+        .body(body)
+        .dispatch();
+
+    assert_eq!(response.status(), Status::NoContent);
+}
+
+#[test]
 fn test_webhook_ping_event_zmq_running() {
     INIT.call_once(|| {
         test_zmq_server();
+        enable_test_mode();
     });
 
     let client = Client::tracked(rocket()).unwrap();
@@ -227,19 +305,14 @@ fn test_webhook_ping_event_zmq_running() {
         .body(body)
         .dispatch();
 
-    assert_eq!(response.status(), Status::Ok);
-
-    let body = response.into_string().expect("response body");
-    let response_data: serde_json::Value = serde_json::from_str(&body).expect("valid json");
-
-    assert_eq!(response_data["success"], true);
-    assert_eq!(response_data["message"], "Ping received successfully");
+    assert_eq!(response.status(), Status::NoContent);
 }
 
 #[test]
 fn test_webhook_health_check_zmq_running() {
     INIT.call_once(|| {
         test_zmq_server();
+        enable_test_mode();
     });
 
     let client = Client::tracked(rocket()).unwrap();
@@ -261,6 +334,7 @@ fn test_webhook_health_check_zmq_running() {
 fn test_webhook_missing_signature_header() {
     INIT.call_once(|| {
         test_zmq_server();
+        enable_test_mode();
     });
 
     let client = Client::tracked(rocket()).unwrap();
@@ -301,6 +375,7 @@ fn test_webhook_missing_signature_header() {
 fn test_webhook_missing_timestamp_header() {
     INIT.call_once(|| {
         test_zmq_server();
+        enable_test_mode();
     });
 
     let client = Client::tracked(rocket()).unwrap();
@@ -342,6 +417,7 @@ fn test_webhook_missing_timestamp_header() {
 fn test_webhook_invalid_signature() {
     INIT.call_once(|| {
         test_zmq_server();
+        enable_test_mode();
     });
 
     let client = Client::tracked(rocket()).unwrap();
