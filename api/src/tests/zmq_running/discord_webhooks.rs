@@ -202,6 +202,41 @@ fn test_application_deauthorized_webhook_zmq_running() {
 }
 
 #[test]
+fn test_webhook_ping_event_zmq_running() {
+    INIT.call_once(|| {
+        test_zmq_server();
+    });
+
+    let client = Client::tracked(rocket()).unwrap();
+
+    let webhook_data = json!({
+        "version": 1,
+        "application_id": "1234560123453231555",
+        "type": 1
+    });
+
+    let body = serde_json::to_string(&webhook_data).unwrap();
+    let timestamp = "1703000000";
+    let signature = create_test_signature(timestamp, &body);
+
+    let response = client
+        .post("/webhooks/discord")
+        .header(ContentType::JSON)
+        .header(Header::new("X-Signature-Ed25519", signature))
+        .header(Header::new("X-Signature-Timestamp", timestamp))
+        .body(body)
+        .dispatch();
+
+    assert_eq!(response.status(), Status::Ok);
+
+    let body = response.into_string().expect("response body");
+    let response_data: serde_json::Value = serde_json::from_str(&body).expect("valid json");
+
+    assert_eq!(response_data["success"], true);
+    assert_eq!(response_data["message"], "Ping received successfully");
+}
+
+#[test]
 fn test_webhook_health_check_zmq_running() {
     INIT.call_once(|| {
         test_zmq_server();

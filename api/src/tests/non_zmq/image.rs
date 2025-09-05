@@ -57,7 +57,7 @@ fn attempt_malice() {
             "/image/../../Rocket.toml?token={token}&expiry={expiry}"
         ))
         .dispatch();
-    assert_eq!(response.status(), Status::NotFound);
+    assert_eq!(response.status(), Status::Forbidden);
 }
 
 #[test]

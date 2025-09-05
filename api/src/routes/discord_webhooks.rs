@@ -103,16 +103,17 @@ pub struct DiscordWebhookEvent {
     pub application_id: String,
     #[serde(rename = "type")]
     pub event_type: i32,
-    pub event: DiscordEvent,
+    pub event: Option<DiscordEvent>,
 }
 
 // Individual event structure
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DiscordEvent {
     #[serde(rename = "type")]
-    pub event_type: DiscordEventType,
-    pub timestamp: String,
-    pub data: Value, // Will be deserialized based on event type
+    pub event_type: Option<DiscordEventType>,
+    #[serde(default)]
+    pub timestamp: Option<String>,
+    pub data: Option<Value>, // Will be deserialized based on event type, None for ping events
 }
 
 // Request structures for forwarding to Killua bot
@@ -154,9 +155,20 @@ pub async fn handle_discord_webhook(
     //     return Err(Status::Unauthorized);
     // }
 
-    match webhook.event.event_type {
-        DiscordEventType::ApplicationAuthorized => handle_application_authorized(webhook).await,
-        DiscordEventType::ApplicationDeauthorized => handle_application_deauthorized(webhook).await,
+    match webhook.event.as_ref().and_then(|e| e.event_type.as_ref()) {
+        Some(DiscordEventType::ApplicationAuthorized) => {
+            handle_application_authorized(webhook).await
+        }
+        Some(DiscordEventType::ApplicationDeauthorized) => {
+            handle_application_deauthorized(webhook).await
+        }
+        None => {
+            // This is a ping event (no event field)
+            Ok(Json(WebhookResponse {
+                success: true,
+                message: "Ping received successfully".to_string(),
+            }))
+        }
     }
 }
 
@@ -164,8 +176,10 @@ async fn handle_application_authorized(
     webhook: DiscordWebhookEvent,
 ) -> Result<Json<WebhookResponse>, Status> {
     // Parse the event data
+    let event = webhook.event.ok_or(Status::BadRequest)?;
+    let data = event.data.ok_or(Status::BadRequest)?;
     let event_data: ApplicationAuthorizedData =
-        serde_json::from_value(webhook.event.data).map_err(|_| Status::BadRequest)?;
+        serde_json::from_value(data).map_err(|_| Status::BadRequest)?;
 
     let request_data = ApplicationAuthorizedRequest {
         application_id: webhook.application_id,
@@ -173,7 +187,7 @@ async fn handle_application_authorized(
         user: event_data.user,
         scopes: event_data.scopes,
         guild: event_data.guild,
-        timestamp: webhook.event.timestamp,
+        timestamp: event.timestamp.unwrap_or_default(),
     };
 
     if request_data.integration_type != Some(1) {
@@ -200,13 +214,15 @@ async fn handle_application_deauthorized(
     webhook: DiscordWebhookEvent,
 ) -> Result<Json<WebhookResponse>, Status> {
     // Parse the event data
+    let event = webhook.event.ok_or(Status::BadRequest)?;
+    let data = event.data.ok_or(Status::BadRequest)?;
     let event_data: ApplicationDeauthorizedData =
-        serde_json::from_value(webhook.event.data).map_err(|_| Status::BadRequest)?;
+        serde_json::from_value(data).map_err(|_| Status::BadRequest)?;
 
     let request_data = ApplicationDeauthorizedRequest {
         application_id: webhook.application_id,
         user: event_data.user,
-        timestamp: webhook.event.timestamp,
+        timestamp: event.timestamp.unwrap_or_default(),
     };
 
     // Forward to Killua bot
