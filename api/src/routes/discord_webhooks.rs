@@ -104,7 +104,7 @@ pub struct DiscordWebhookEvent {
     pub version: i32,
     pub application_id: String,
     #[serde(rename = "type")]
-    pub event_type: i32,
+    pub r#type: i32, // Use raw identifier to avoid Rust keyword conflict
     pub event: Option<DiscordEvent>,
 }
 
@@ -166,8 +166,8 @@ pub async fn handle_discord_webhook(
     // Get the webhook data and body for signature verification
     let webhook = webhook_data.into_inner();
 
-    // Check if this is a ping event (no event field)
-    let is_ping_event = webhook.event.is_none();
+    // Check if this is a ping event (type 0) vs application event (type 1)
+    let is_ping_event = webhook.r#type == 0;
 
     // For non-ping events, require authentication
     if !is_ping_event && !signature.is_authenticated {
@@ -212,14 +212,22 @@ pub async fn handle_discord_webhook(
         eprintln!("=== END DISCORD WEBHOOK HANDLER DEBUG ===");
     }
 
+    eprintln!("=== WEBHOOK EVENT ROUTING DEBUG ===");
+    eprintln!("DEBUG: Webhook type: {}", webhook.r#type);
+    eprintln!("DEBUG: Is ping event: {}", is_ping_event);
+    eprintln!("DEBUG: Event field: {:?}", webhook.event);
+    
     match webhook.event.as_ref().and_then(|e| e.event_type.as_ref()) {
         Some(DiscordEventType::ApplicationAuthorized) => {
+            eprintln!("DEBUG: Routing to APPLICATION_AUTHORIZED handler");
             handle_application_authorized(webhook).await
         }
         Some(DiscordEventType::ApplicationDeauthorized) => {
+            eprintln!("DEBUG: Routing to APPLICATION_DEAUTHORIZED handler");
             handle_application_deauthorized(webhook).await
         }
         None => {
+            eprintln!("DEBUG: Routing to ping event handler (204 No Content)");
             // This is a ping event (no event field) - Discord requires empty body and 204 status
             Ok(WebhookResponseType::NoContent)
         }
@@ -229,6 +237,9 @@ pub async fn handle_discord_webhook(
 async fn handle_application_authorized(
     webhook: DiscordWebhookEvent,
 ) -> Result<WebhookResponseType, Status> {
+    eprintln!("=== APPLICATION_AUTHORIZED HANDLER DEBUG ===");
+    eprintln!("DEBUG: Processing APPLICATION_AUTHORIZED event");
+    
     // Parse the event data
     let event = webhook.event.ok_or(Status::BadRequest)?;
     let data = event.data.ok_or(Status::BadRequest)?;
@@ -267,6 +278,9 @@ async fn handle_application_authorized(
 async fn handle_application_deauthorized(
     webhook: DiscordWebhookEvent,
 ) -> Result<WebhookResponseType, Status> {
+    eprintln!("=== APPLICATION_DEAUTHORIZED HANDLER DEBUG ===");
+    eprintln!("DEBUG: Processing APPLICATION_DEAUTHORIZED event");
+    
     // Parse the event data
     let event = webhook.event.ok_or(Status::BadRequest)?;
     let data = event.data.ok_or(Status::BadRequest)?;
