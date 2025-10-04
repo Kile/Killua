@@ -130,12 +130,13 @@ services:
     command: -config.file=/etc/loki/config.yml
     volumes:
       - ./loki/config.yml:/etc/loki/config.yml
-      - loki_data:/loki
+      - loki_data:/loki               # Persistent data directory
+      - loki_tmp:/tmp/loki            # Optional safeguard
     logging:
       driver: "json-file"
       options:
-        max-file: "5"   # number of files or file count
-        max-size: "10m" # file size
+        max-file: "5"
+        max-size: "10m"
 
   alloy:
     image: grafana/alloy:latest
@@ -160,3 +161,4 @@ services:
 volumes:
   prom_data:
   loki_data:
+  loki_tmp:
