@@ -266,8 +266,6 @@ pub async fn save_news(
         .await
         .context("Failed to save news item")?;
 
-    println!("Response from save: {}", response);
-
     let result: NewsSaveResponse = serde_json::from_str(&response).map_err(|_| {
         BadRequest(Json(
             serde_json::json!({"error": "Failed to parse response"}),
@@ -320,8 +318,6 @@ pub async fn edit_news(
         }))));
     }
 
-    println!("Editing news item: {} with data: {:?}", news_id, request);
-
     let mut request_data = serde_json::json!({
         "news_id": news_id,
     });
@@ -354,8 +350,6 @@ pub async fn edit_news(
     let response = make_request("news/edit", request_data, 0_u8)
         .await
         .context("Failed to edit news item")?;
-
-    println!("Response from edit: {}", response);
 
     let result: NewsSaveResponse = serde_json::from_str(&response).map_err(|_| {
         BadRequest(Json(

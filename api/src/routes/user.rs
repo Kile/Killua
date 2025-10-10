@@ -105,9 +105,6 @@ pub async fn edit_user_by_id(
         .map(|s| s.to_string())
         .unwrap_or_else(|| auth.0.id.clone());
 
-    println!("Target user ID: {}", target_user_id);
-    println!("Editing data: {:?}", edit_data);
-
     // Check if the authenticated user can edit this user's data
     if !auth.can_access_user(&target_user_id) {
         return Err(BadRequest(Json(serde_json::json!({
@@ -202,7 +199,6 @@ async fn get_userinfo_by_user_id(
             "error": format!("Failed to parse user info response from Killua bot: {}", e)
         })))
     })?;
-    println!("I should happen");
 
     Ok(Json(user_data))
 }
