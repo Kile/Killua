@@ -85,11 +85,6 @@ pub struct UserInfoRequest {
     pub from_admin: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: String,
-}
-
 #[put("/user/edit", data = "<edit_data>")]
 pub async fn edit_user(
     auth: DiscordAuth,

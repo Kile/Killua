@@ -9,14 +9,6 @@ use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-#[serde(crate = "rocket::serde")]
-pub struct ImageToken {
-    pub created_at: DateTime,
-    pub endpoints: Vec<String>,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct StatsStruct {
     pub _id: String,

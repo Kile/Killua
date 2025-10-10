@@ -4,11 +4,7 @@ use rocket::data::ToByteUnit;
 use rocket::http::uri::Segments;
 use rocket::response::status::Forbidden;
 use rocket::serde::json::Json;
-use rocket::{
-    fs::NamedFile,
-    serde::{Deserialize, Serialize},
-    Data,
-};
+use rocket::{fs::NamedFile, Data};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -90,11 +86,6 @@ lazy_static::lazy_static! {
         r"cdn/news/.*",
         r"news/.*",
     ]).unwrap();
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AllowImage {
-    pub endpoints: Vec<String>,
 }
 
 pub fn sha256(endpoint: &str, expiry: &str, secret: &str) -> String {
