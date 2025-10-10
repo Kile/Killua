@@ -15,9 +15,10 @@ use routes::commands::get_commands;
 use routes::diagnostics::get_diagnostics;
 use routes::discord_webhooks::{handle_discord_webhook, webhook_health_check};
 use routes::image::{delete, edit, image, list, upload};
+use routes::news::{delete_news, edit_news, get_news, get_news_by_id, like_news, save_news};
 use routes::stats::get_stats;
 use routes::update::{update, update_cors};
-use routes::userinfo::{get_userinfo, get_userinfo_by_id};
+use routes::user::{edit_user, edit_user_by_id, get_userinfo, get_userinfo_by_id};
 use routes::vote::register_vote;
 
 use fairings::cors::Cors;
@@ -47,6 +48,14 @@ fn rocket() -> _ {
                 get_userinfo_by_id,
                 handle_discord_webhook,
                 webhook_health_check,
+                get_news,
+                get_news_by_id,
+                like_news,
+                save_news,
+                delete_news,
+                edit_news,
+                edit_user,
+                edit_user_by_id,
             ],
         )
         .attach(db::init())

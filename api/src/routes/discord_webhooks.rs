@@ -216,7 +216,7 @@ pub async fn handle_discord_webhook(
     eprintln!("DEBUG: Webhook type: {}", webhook.r#type);
     eprintln!("DEBUG: Is ping event: {}", is_ping_event);
     eprintln!("DEBUG: Event field: {:?}", webhook.event);
-    
+
     match webhook.event.as_ref().and_then(|e| e.event_type.as_ref()) {
         Some(DiscordEventType::ApplicationAuthorized) => {
             eprintln!("DEBUG: Routing to APPLICATION_AUTHORIZED handler");
@@ -239,7 +239,7 @@ async fn handle_application_authorized(
 ) -> Result<WebhookResponseType, Status> {
     eprintln!("=== APPLICATION_AUTHORIZED HANDLER DEBUG ===");
     eprintln!("DEBUG: Processing APPLICATION_AUTHORIZED event");
-    
+
     // Parse the event data
     let event = webhook.event.ok_or(Status::BadRequest)?;
     let data = event.data.ok_or(Status::BadRequest)?;
@@ -266,13 +266,14 @@ async fn handle_application_authorized(
     println!("Received application authorized event: {:?}", request_data); // for debugging to see if this works in prod
 
     // Forward to Killua bot
-    match make_request("discord/application_authorized", request_data, 0_u8).await {
-        Ok(_response) => Ok(WebhookResponseType::Json(Json(WebhookResponse {
-            success: true,
-            message: "Application authorized event processed successfully".to_string(),
-        }))),
-        Err(_e) => Err(Status::InternalServerError),
-    }
+    let _response = make_request("discord/application_authorized", request_data, 0_u8)
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    Ok(WebhookResponseType::Json(Json(WebhookResponse {
+        success: true,
+        message: "Application authorized event processed successfully".to_string(),
+    })))
 }
 
 async fn handle_application_deauthorized(
@@ -280,7 +281,7 @@ async fn handle_application_deauthorized(
 ) -> Result<WebhookResponseType, Status> {
     eprintln!("=== APPLICATION_DEAUTHORIZED HANDLER DEBUG ===");
     eprintln!("DEBUG: Processing APPLICATION_DEAUTHORIZED event");
-    
+
     // Parse the event data
     let event = webhook.event.ok_or(Status::BadRequest)?;
     let data = event.data.ok_or(Status::BadRequest)?;
@@ -294,13 +295,14 @@ async fn handle_application_deauthorized(
     };
 
     // Forward to Killua bot
-    match make_request("discord/application_deauthorized", request_data, 0_u8).await {
-        Ok(_response) => Ok(WebhookResponseType::Json(Json(WebhookResponse {
-            success: true,
-            message: "Application deauthorized event processed successfully".to_string(),
-        }))),
-        Err(_e) => Err(Status::InternalServerError),
-    }
+    let _response = make_request("discord/application_deauthorized", request_data, 0_u8)
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    Ok(WebhookResponseType::Json(Json(WebhookResponse {
+        success: true,
+        message: "Application deauthorized event processed successfully".to_string(),
+    })))
 }
 
 // Health check endpoint for webhook verification

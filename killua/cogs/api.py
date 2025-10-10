@@ -11,6 +11,8 @@ from zmq.asyncio import Context
 from io import BytesIO
 from asyncio import create_task
 from PIL import Image, ImageDraw, ImageChops
+from typing import Tuple, Optional
+from logging import error
 
 from killua.bot import BaseBot
 from killua.metrics import VOTES
@@ -23,9 +25,221 @@ from killua.static.constants import (
     BOOSTERS,
     BOOSTER_LOGO_IMG,
     DEFAULT_AVATAR,
+    NEWS_CHANNEL,
+    POST_CHANNEL,
+    UPDATE_CHANNEL,
+    NEWS_ROLE,
+    POST_ROLE,
+    UPDATE_ROLE,
+    LINK_ICONS,
+    GUILD,
+    UPDATE_AFTER,
 )
 
-from typing import List, Dict, Union, cast
+from typing import List, Dict, Optional, Union, cast
+
+
+class NewsMessage:
+    def __init__(
+        self,
+        client: BaseBot,
+        id: str,
+        title: str,
+        content: str,
+        author: str,
+        _type: str,
+        version: Optional[str],
+        images: List[str],
+        links: Optional[Dict[str, str]],
+        notify_users: Optional[List[int]],
+        timestamp: datetime,
+    ):
+        self.client = client
+        self.id = id
+        self.title = title
+        self.content = content
+        self.author = author
+        self._type = _type
+        self.version = version
+        self.images = images
+        self.links = links
+        self.notify_users = notify_users
+        self.timestamp = timestamp
+
+    @classmethod
+    def from_data(cls, client: BaseBot, data: dict) -> "NewsMessage":
+        return cls(
+            client=client,
+            id=data.get("_id"),
+            title=data.get("title"),
+            content=data.get("content"),
+            author=str(data.get("author")),
+            _type=data.get("type"),
+            version=data.get("version"),
+            images=data.get("images", []),
+            links=data.get("links", {}),
+            notify_users=data.get("notify_users", {}),
+            timestamp=data.get("timestamp"),
+        )
+
+    @classmethod
+    async def from_id(cls, client: BaseBot, news_id: str) -> "NewsMessage":
+        # Fetch from DB
+        obj = await DB.news.find_one({"_id": news_id})
+        if not obj:
+            raise ValueError("News item not found")
+
+        cls.from_data(client, dict(obj))
+
+    @classmethod
+    def relevant_channel_id(cls, _type: str) -> int:
+        # Get the appropriate channel based on news type
+        channel_id = UPDATE_CHANNEL  # Default to update channel
+
+        # You can customize this based on news type
+        if _type == "news":
+            channel_id = NEWS_CHANNEL
+        elif _type == "update":
+            channel_id = UPDATE_CHANNEL
+        elif _type == "post":
+            channel_id = POST_CHANNEL
+
+        return channel_id
+
+    @property
+    def relevant_ping(self) -> int:
+        if self._type == "news":
+            return NEWS_ROLE
+        elif self._type == "update":
+            return UPDATE_ROLE
+        elif self._type == "post":
+            return POST_ROLE
+        raise ValueError("Invalid news type")
+
+    @property
+    def guild(self) -> Optional[discord.Guild]:
+        return self.client.get_guild(GUILD) or None
+
+    @property
+    def url(self) -> str:
+        return f"{'http://localhost:5173' if self.client.is_dev else'https://beta.killua.dev'}/news/{self.id}"
+
+    async def _make_view(
+        self
+    ) -> Tuple[discord.ui.LayoutView, Optional[List[discord.File]]]:
+        """Creates a discord.ui.Container for the news message"""
+        last_version = None
+        if self._type == "update":
+            # Get the update immediately before this one
+            last_update = await DB.news.find_one(
+                {
+                    "type": "update",
+                    "published": True,
+                    "timestamp": {"$lt": self.timestamp},
+                    "_id": {"$ne": self.id},
+                },
+                sort=[("timestamp", -1)],
+            )
+            if last_update:
+                last_version = last_update.get("version", "0.0.0")
+
+        view = discord.ui.LayoutView()
+        container = discord.ui.Container(
+            discord.ui.TextDisplay(
+                "-# **New "
+                + (
+                    f"Update `v{last_version}` -> `v{self.version}`**\n"
+                    if last_version
+                    else f"{self._type.capitalize()}**\n"
+                ) + f"-# <@&{self.relevant_ping}>\n"
+                + "# "
+                + self.title
+            ),
+            discord.ui.Separator(),
+            discord.ui.TextDisplay(self.content),
+            accent_color=0x3E4A78,
+        )
+
+        if (
+            self.client.is_dev
+        ):  # fetch the images
+            images = []
+            files = []
+            for i, image_url in enumerate(self.images):
+                try:
+                    image_data = await self.client.session.get(image_url)
+                    image_bytes = await image_data.read()
+                    file = discord.File(BytesIO(image_bytes), filename=f"image_{i}.png")
+                    files.append(file)
+                    images.append(f"attachment://image_{i}.png")
+                except Exception as e:
+                    print(f"Failed to download image {image_url}: {e}")
+                    continue
+
+            gallery = discord.ui.MediaGallery(
+                *[discord.MediaGalleryItem(image) for image in images]
+            )
+        else:  # Just link the images
+            files = None
+            gallery = discord.ui.MediaGallery(
+                *[discord.MediaGalleryItem(image) for image in self.images]
+            )
+
+        buttons = discord.ui.ActionRow(
+            *[
+                discord.ui.Button(
+                    style=discord.ButtonStyle.link,
+                    label=key,
+                    emoji=LINK_ICONS.get(key.lower(), None),
+                    url=value,
+                )
+                for key, value in (self.links or {}).items()
+            ]
+        )
+
+        view_on_website = discord.ui.ActionRow(
+            discord.ui.Button(
+                style=discord.ButtonStyle.link,
+                label="View on Website",
+                url=self.url,
+            )
+        )
+
+        if gallery.items:
+            container.add_item(gallery)
+        if buttons.children:
+            container.add_item(buttons)
+
+        container.add_item(view_on_website)
+
+        view.add_item(container)
+
+        return view, files or None
+
+    async def send(self) -> int:
+        """Sends the news message to the appropriate channel and returns the message ID"""
+        channel = self.guild.get_channel(self.relevant_channel_id(self._type))
+        if not channel or not isinstance(channel, discord.TextChannel):
+            raise ValueError("Invalid channel")
+
+        view, files = await self._make_view()
+        message = await channel.send(view=view, files=files)
+
+        return message.id
+
+    async def edit(self, message_id: int) -> None:
+        """Edits an existing news message"""
+        channel = self.guild.get_channel(self.relevant_channel_id(self._type))
+        if not channel or not isinstance(channel, discord.TextChannel):
+            raise ValueError("Invalid channel")
+
+        try:
+            message = await channel.fetch_message(message_id)
+        except discord.NotFound:
+            raise ValueError("Message not found")
+
+        view, attachments = await self._make_view()
+        await message.edit(content=None, view=view, attachments=attachments)
 
 
 class IPCRoutes(commands.Cog):
@@ -67,6 +281,7 @@ class IPCRoutes(commands.Cog):
                     decoded["data"]
                 )
             except Exception as e:
+                error(f"Error in IPC route {decoded['route']}: {e}")
                 await socket.send_multipart(
                     [*metadata, dumps({"error": str(e)}).encode()]
                 )
@@ -450,7 +665,7 @@ class IPCRoutes(commands.Cog):
         user_id = data["user"]["id"]
         user = await User.new(user_id)
         await user.register_user_installed_usage()
-    
+
     async def discord_application_deauthorized(self, data) -> None:
         """Handles the application deauthorized webhook"""
         user_id = data["user"]["id"]
@@ -525,7 +740,7 @@ class IPCRoutes(commands.Cog):
 
         # Return flat dictionary structure with all user data and Discord info
         response_data = {
-            "id": user_data.id,
+            "id": str(user_data.id),
             "email": user_data.email,
             "display_name": user.display_name,
             "avatar_url": str(user.avatar.url) if user.avatar else None,
@@ -555,6 +770,7 @@ class IPCRoutes(commands.Cog):
             "has_user_installed": user_data.has_user_installed,
             "is_premium": user_data.is_premium,
             "premium_tier": user_data.premium_tier,
+            "email_notifications": user_data.email_notifications,
         }
 
         if data.get("from_admin", False) is False:
@@ -562,6 +778,42 @@ class IPCRoutes(commands.Cog):
             create_task(self._register_login(user, user_data))
 
         return self.jsonify(response_data)
+
+    async def user_edit(self, data: dict) -> dict:
+        """Edits user info by Discord ID. Only certain fields are editable."""
+        user_id = data.get("user_id")
+        if not user_id:
+            raise ValueError("User ID is required")
+
+        # Convert user_id to int if it's a string
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            raise ValueError("Invalid user ID format")
+
+        # Get user data from database
+        user = await User.new(user_id)
+
+        # Editable fields
+        editable_fields = {
+            "voting_reminder",
+            "action_settings",
+            "email_notifications",
+        }
+
+        update_data = {}
+        for key in editable_fields:
+            if key in data and data[key] is not None:
+                update_data[key] = data[key]
+
+        if update_data:
+            for key, value in update_data.items():
+                # The format of the input is trusted to be correct due to 
+                # Rust's strict typing on the API side
+                setattr(user, key, value)
+                await user._update_val(key, value)
+
+        return {"success": True, "message": "User updated successfully"}
 
     async def _register_login(self, user: discord.User, user_data: User) -> None:
         """The actual background work you want to do"""
@@ -586,6 +838,169 @@ class IPCRoutes(commands.Cog):
                     )
                 )
             except discord.HTTPException:
-                pass # Ignore failure
+                pass  # Ignore failure
+
+    # User management routes
+    async def user_get_basic_details(self, data: dict) -> dict:
+        """Get basic Discord user details (display name and avatar URL)"""
+        user_id = data.get("user_id")
+        if not user_id:
+            raise ValueError("User ID is required")
+
+        # Convert user_id to int if it's a string
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            raise ValueError("Invalid user ID format")
+
+        # Get Discord user
+        user = self.client.get_user(user_id) or await self.client.fetch_user(user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        return {
+            "display_name": user.display_name,
+            "avatar_url": str(user.avatar.url) if user.avatar else None,
+        }
+
+    async def news_save(self, data: dict) -> dict:
+        """Save a new news item"""
+        # Generate unique ID using timestamp
+        news_id = str(int(datetime.now().timestamp() * 1000))
+
+        news_item = {
+            "_id": news_id,
+            "title": data["title"],
+            "content": data["content"],
+            "type": data["type"],
+            "likes": [],
+            "author": int(data["author"]),
+            "version": data.get("version"),
+            "messageId": None,
+            "published": data["published"],
+            "timestamp": datetime.now(),
+            "links": data.get("links", {}),
+            "images": data.get("images", []),
+            "notify_users": data["notify_users"],
+        }
+
+        await DB.news.insert_one(news_item)
+
+        if data.get("published", False):
+            # If published, send Discord message
+            message_id = await self._send_discord_message(news_item)
+            await DB.news.update_one(
+                {"_id": news_id}, {"$set": {"messageId": message_id}}
+            )
+            return {"news_id": news_id, "message_id": message_id}
+
+        return {"news_id": news_id, "message_id": None}
+
+    async def news_delete(self, data: dict) -> dict:
+        """Delete a news item"""
+        news_id = data.get("news_id")
+        if not news_id:
+            raise ValueError("News ID is required")
+
+        news_item = await DB.news.find_one({"_id": news_id})
+        if not news_item:
+            raise ValueError("News item not found")
+
+        # Delete Discord message if it exists
+        message_id = news_item.get("messageId")
+        if message_id:
+            await self._delete_discord_message(news_item["type"], message_id)
+
+        await DB.news.delete_one({"_id": news_id})
+
+        return {"status": "deleted"}
+
+    async def news_edit(self, data: dict) -> dict:
+        """Edit a news item"""
+        news_id = data.get("news_id")
+        if not news_id:
+            raise ValueError("News ID is required")
+
+        news_item = await DB.news.find_one({"_id": news_id})
+        if not news_item:
+            raise ValueError("News item not found")
+
+        old_published = news_item.get("published", False)
+
+        # Prepare update data
+        for key, value in data.items():
+            if not key in news_item:
+                continue
+            if key in ["news_id", "message_id"]:
+                continue
+            if key == "author":
+                value = int(value)
+            if key == "timestamp" and isinstance(value, str):
+                value = datetime.fromisoformat(value)
+            news_item[key] = value
+
+        # Handle published status change
+        if "published" in data:
+            new_published = news_item.get("published", False)
+
+            if not old_published and new_published:
+                # Publishing for the first time - send Discord message
+                message_id = await self._send_discord_message(news_item)
+                news_item["messageId"] = message_id
+            elif old_published and new_published and news_item.get("messageId"):
+                # Already published, edit existing message
+                await self._edit_discord_message(news_item["messageId"], news_item)
+            elif old_published and not new_published and news_item.get("messageId"):
+                # Unpublishing - delete Discord message
+                await self._delete_discord_message(
+                    news_item["type"], news_item["messageId"]
+                )
+                news_item["messageId"] = None
+
+            news_item["published"] = new_published
+
+        await DB.news.update_one({"_id": news_id}, {"$set": news_item})
+
+        return {"news_id": news_id, "message_id": news_item.get("messageId")}
+
+    async def _send_discord_message(self, data: dict) -> int:
+        """Send a Discord message for a news item"""
+        news_message = NewsMessage.from_data(self.client, data)
+        if news_message.timestamp < UPDATE_AFTER:
+            # Don't send messages for old news items
+            return None
+        message_id = await news_message.send()
+        return message_id
+
+    async def _edit_discord_message(self, message_id: str, data: dict) -> None:
+        """Edit an existing Discord message"""
+        try:
+            news_message = NewsMessage.from_data(self.client, data)
+            if news_message.timestamp < UPDATE_AFTER:
+                # If the news item is old, do nothing
+                return None
+            await news_message.edit(message_id)
+        except discord.NotFound:
+            # Message was deleted, ignore
+            pass
+
+    async def _delete_discord_message(self, news_type: str, message_id: str) -> None:
+        """Delete a Discord message"""
+        channel_id = NewsMessage.relevant_channel_id(news_type)
+        if not channel_id:
+            raise ValueError(f"Invalid news type: {news_type}")
+
+        channel = self.client.get_channel(channel_id)
+
+        if not channel:
+            raise ValueError(f"Channel {channel_id} not found")
+
+        try:
+            message = await channel.fetch_message(int(message_id))
+            await message.delete()
+        except discord.NotFound:
+            # Message was already deleted, ignore
+            pass
+
 
 Cog = IPCRoutes

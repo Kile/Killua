@@ -39,8 +39,9 @@ class User:
     action_settings: Dict[str, Any]
     action_stats: Dict[str, Any]
     locale: str
-    has_user_installed: bool = False
-    email: Optional[str] = None
+    has_user_installed: bool
+    email: Optional[str]
+    email_notifications: Dict[Literal["news", "updates", "posts"], bool]
     cache: ClassVar[Dict[int, User]] = {}
 
     async def set_email(self, email: str) -> None:
@@ -103,6 +104,10 @@ class User:
             locale=data.get("locale", None),
             has_user_installed=data.get("user_installed", False),
             email=data.get("email", None),
+            email_notifications=data.get(
+                "email_notifications",
+                {"news": False, "updates": False, "posts": False},
+            ),
         )
 
         cls.cache[user_id] = instance
@@ -150,7 +155,6 @@ class User:
 
     @property
     def is_entitled_to_double_jenny(self) -> bool:
-        return True  # LIMITED TIME EVENT
         return self.is_premium and self.premium_tier in list(PATREON_TIERS.keys())[2:]
 
     @all_cards.setter
@@ -243,6 +247,12 @@ class User:
                     },
                     "locale": None,
                     "has_user_installed": False,
+                    "email": None,
+                    "email_notifications": {
+                        "news": False,
+                        "updates": False,
+                        "posts": False,
+                    },
                 }
             )
 
@@ -561,7 +571,7 @@ class User:
         """Removes a card from a user"""
         if self.has_any_card(card_id) is False:
             raise NotInPossession(
-                "This card is not in possesion of the specified user!"
+                "This card is not in possession of the specified user!"
             )
 
         if restricted_slot:
@@ -740,7 +750,10 @@ class User:
         setattr(self, cards, [])
 
     async def nuke_cards(self, t: str = "all") -> bool:
-        """A function only intended to be used by bot owners, not in any actual command, that"s why it returns True, so the owner can see if it succeeded"""
+        """
+        A function only intended to be used by bot owners, not in any actual command, 
+        that's why it returns True, so the owner can see if it succeeded
+        """
         if t == "all":
             await self._remove("all_cards")
             self.effects = {}

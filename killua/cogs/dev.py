@@ -16,6 +16,7 @@ from killua.utils.interactions import View, Button, Modal
 from killua.static.enums import Category  # , StatsOptions
 from killua.static.cards import Card  # lgtm [py/unused-import]
 from killua.static.constants import DB, UPDATE_CHANNEL, GUILD_OBJECT, INFO, API_ROUTES
+from killua.cogs.api import NewsMessage
 
 
 class UsagePaginator(Paginator):
@@ -53,7 +54,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         if not self.version_cache:
             self.version_cache = [
                 x["version"]
-                for x in (await DB.const.find_one({"_id": "updates"}))["updates"]
+                async for x in DB.news.find({"type": "update", "published": True})
             ]
 
         return [
@@ -409,88 +410,6 @@ class Dev(commands.GroupCog, group_name="dev"):
         await ctx.message.delete()
         await ctx.send(content, reference=ctx.message.reference)
 
-    @commands.is_owner()
-    @commands.hybrid_command(
-        aliases=["publish-update", "pu"],
-        extras={"category": Category.OTHER, "id": 25},
-        usage="publish_update <version> <text>",
-        hidden=True,
-    )
-    @discord.app_commands.guilds(GUILD_OBJECT)
-    async def publish_update(self, ctx: commands.Context):
-        """Allows me to publish Killua updates in a handy format"""
-        if not ctx.interaction:
-            return await ctx.send("This command can only be used with slash commands")
-
-        modal = Modal(title="New update", timeout=None)
-        version = discord.ui.TextInput(label="Version", placeholder="v1.0")
-        image = discord.ui.TextInput(
-            label="Image",
-            default="https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png",
-            required=False,
-        )
-        description = discord.ui.TextInput(
-            label="Description",
-            placeholder="Killua is now open source!",
-            max_length=4000,
-            style=discord.TextStyle.long,
-        )
-        modal.add_item(version).add_item(image).add_item(description)
-
-        await ctx.interaction.response.send_modal(modal)
-
-        await modal.wait()
-
-        old = (await DB.const.find_one({"_id": "updates"}))["updates"]
-        old_version = (
-            old[-1]["version"]
-            if len(old) > 0 and "version" in old[-1]
-            else "No version"
-        )
-
-        if version.value in [x["version"] for x in old if "version" in x]:
-            return await ctx.send("This is an already existing version", ephemeral=True)
-
-        embed = discord.Embed.from_dict(
-            {
-                "title": f"Killua Update `{old_version}` -> `{version}`",
-                "description": description.value,
-                "color": 0x3E4A78,
-                "footer": {
-                    "text": f"Update by {ctx.author}",
-                    "icon_url": str(ctx.author.avatar.url),
-                },
-                "image": {
-                    "url": image.value
-                    or "https://cdn.discordapp.com/attachments/780554158154448916/788071254917120060/killua-banner-update.png"
-                },
-            }
-        )
-
-        data = {
-            "version": version.value,
-            "description": description.value,
-            "published_on": datetime.now(),
-            "published_by": ctx.author.id,
-            "image": image.value,
-        }
-        await DB.const.update_one({"_id": "updates"}, {"$push": {"updates": data}})
-        self.version_cache.append(version.value)
-
-        await modal.interaction.response.defer()
-
-        if (
-            self.client.is_dev
-        ):  # We do not want to accidentally publish a message when testing
-            return
-        channel = self.client.get_channel(UPDATE_CHANNEL)
-        msg = await channel.send(content="<@&795422783261114398>", embed=embed)
-        await ctx.send(
-            "Published new update " + f"`{old_version}` -> `{version.value}`",
-            ephemeral=True,
-        )
-        await msg.publish()
-
     @check()
     @commands.hybrid_command(
         extras={"category": Category.OTHER, "id": 26},
@@ -501,31 +420,19 @@ class Dev(commands.GroupCog, group_name="dev"):
     async def update(self, ctx: commands.Context, version: str = None):
         """Allows you to view current and past updates"""
         if version is None:
-            data = (await DB.const.find_one({"_id": "updates"}))["updates"][-1]
+            data = await DB.news.find_one({"type": "update", "published": True}, sort=[("timestamp", -1)])
+            if not data:
+                return await ctx.send("No updates found", ephemeral=True)
         else:
-            d = [
-                x
-                for x in (await DB.const.find_one({"_id": "updates"}))["updates"]
-                if "version" in x and x["version"] == version
-            ]
-            if len(d) == 0:
-                return await ctx.send("Invalid version!")
-            data = d[0]
-
-        author = self.client.get_user(data["published_by"])
-        embed = discord.Embed.from_dict(
-            {
-                "title": f"Infos about version `{data['version']}`",
-                "description": str(data["description"]),
-                "color": 0x3E4A78,
-                "image": {"url": data["image"]},
-                "footer": {
-                    "icon_url": str(author.avatar.url),
-                    "text": f"Published on {data['published_on'].strftime('%b %d %Y %H:%M:%S')}",
-                },
-            }
-        )
-        await ctx.send(embed=embed)
+            data = await DB.news.find_one(
+                {"type": "update", "version": version, "published": True}
+            )
+            if not data:
+                return await ctx.send("That version does not exist", ephemeral=True)
+            
+        news = NewsMessage.from_data(self.client, data)
+        view, files = await news._make_view()
+        await ctx.send(view=view, files=files, allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
     @commands.is_owner()
     @commands.hybrid_command(
