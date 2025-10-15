@@ -67,8 +67,8 @@ I started Killua as a way to learn python and different programming concepts. It
 ## Algorithms
 Killua contains a number of interesting algorithms which I have explained more and gone into detail in the [algorithms](./algorithms/README.md) folder.
 
-## Flowchart 
-![setup](https://github.com/user-attachments/assets/10f59072-35f0-4602-a752-6592163d3281)
+## Flowchart
+![setup-current](https://github.com/user-attachments/assets/5aa0d8d4-ff62-417b-81ca-900955829c30)
 
 
 
