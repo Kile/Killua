@@ -1198,7 +1198,10 @@ POST_ROLE = 1421846616364683314
 UPDATE_AFTER = datetime(2025, 10, 5)
 
 LINK_ICONS = {
-    "github": "<:github:1421327249814192300>"
+    "github": "<:github:1421327249814192300>",
+    "twitter": "<:twitter:1428016023868674068>",
+    "download": "<:download:1428015971016118444>",
+    "youtube": "<:YouTube:1428015930813976700>"
 }
 
 GUILD_OBJECT = discord.Object(id=GUILD)
