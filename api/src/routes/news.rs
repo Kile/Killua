@@ -262,7 +262,7 @@ pub async fn save_news(
         "author": auth.0.id
     });
 
-    let response = make_request("news/save", request_data, 0_u8)
+    let response = make_request("news/save", request_data, 0_u8, false)
         .await
         .context("Failed to save news item")?;
 
@@ -291,7 +291,7 @@ pub async fn delete_news(
     let request_data = NewsIdRequest {
         news_id: news_id.to_string(),
     };
-    let response = make_request("news/delete", request_data, 0_u8)
+    let response = make_request("news/delete", request_data, 0_u8, false)
         .await
         .context("Failed to delete news item")?;
 
@@ -347,7 +347,7 @@ pub async fn edit_news(
         request_data["notify_users"] = json!(notify_users);
     }
 
-    let response = make_request("news/edit", request_data, 0_u8)
+    let response = make_request("news/edit", request_data, 0_u8, false)
         .await
         .context("Failed to edit news item")?;
 
@@ -365,7 +365,7 @@ async fn get_author_info(author_id: i64) -> Result<AuthorInfo, BadRequest<Json<V
     let route = "user_get_basic_details";
     let data = json!({"user_id": author_id});
     let first_bit = 0_u8;
-    let response = make_request(route, data, first_bit)
+    let response = make_request(route, data, first_bit, false)
         .await
         .context("Failed to get author info")?;
 

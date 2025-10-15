@@ -122,20 +122,8 @@ LOCALE = Gauge(
     ["country"],
 )
 
-API_KEY = Gauge(
-    METRIC_PREFIX + "api_key",
-    "The secret key for restricted endpoints of the Killua API",
-    ["key"],
-)
-
 IS_DEV = Gauge(
     METRIC_PREFIX + "is_dev",
     "If the bot is running in dev mode",
     ["dev"],
-)
-
-API_URL = Gauge(
-    METRIC_PREFIX + "api_url",
-    "The URL of the Killua API",
-    ["url"],
 )

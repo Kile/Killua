@@ -130,7 +130,7 @@ pub async fn edit_user_by_id(
         }))));
     }
 
-    let response = make_request("user/edit", request_data, 0_u8)
+    let response = make_request("user/edit", request_data, 0_u8, false)
         .await
         .context("Failed to communicate with Killua bot to update user settings")?;
 
@@ -190,7 +190,7 @@ async fn get_userinfo_by_user_id(
         from_admin,
     };
 
-    let response = make_request("user/info", request_data, 0_u8)
+    let response = make_request("user/info", request_data, 0_u8, false)
         .await
         .context("Failed to communicate with Killua bot to retrieve user information")?;
 

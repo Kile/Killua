@@ -11,7 +11,7 @@ from .bot import BaseBot as Bot, get_prefix
 # This needs to be in a separate file from the __init__ file to
 # avoid relative import errors when subclassing it in the testing module
 from .static.constants import TOKEN
-from .metrics import PrometheusLoggingHandler, API_KEY, IS_DEV, API_URL
+from .metrics import PrometheusLoggingHandler, IS_DEV
 
 import killua.args as args_file
 
@@ -61,9 +61,7 @@ async def main():
     bot.force_local = args.force_local
 
     # These are things we want Grafana to have access to
-    API_KEY.labels(bot.secret_api_key).set(1)
     IS_DEV.labels(str(bot.is_dev).lower()).set(1)
-    API_URL.labels((f"http://127.0.0.1:{bot.public_api_port}") if bot.is_dev else bot.url).set(1)
 
     # Setup cogs.
     for cog in cogs.all_cogs:

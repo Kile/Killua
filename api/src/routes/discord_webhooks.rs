@@ -5,7 +5,9 @@ use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::routes::common::discord_security::{verify_discord_signature, OptionalDiscordSignature, TEST_MODE};
+use crate::routes::common::discord_security::{
+    verify_discord_signature, OptionalDiscordSignature, TEST_MODE,
+};
 use crate::routes::common::utils::make_request;
 
 // Discord webhook event types
@@ -273,7 +275,7 @@ async fn handle_application_authorized(
     println!("Received application authorized event: {:?}", request_data); // for debugging to see if this works in prod
 
     // Forward to Killua bot
-    let _response = make_request("discord/application_authorized", request_data, 0_u8)
+    let _response = make_request("discord/application_authorized", request_data, 0_u8, false)
         .await
         .map_err(|_| Status::InternalServerError)?;
 
@@ -302,9 +304,14 @@ async fn handle_application_deauthorized(
     };
 
     // Forward to Killua bot
-    let _response = make_request("discord/application_deauthorized", request_data, 0_u8)
-        .await
-        .map_err(|_| Status::InternalServerError)?;
+    let _response = make_request(
+        "discord/application_deauthorized",
+        request_data,
+        0_u8,
+        false,
+    )
+    .await
+    .map_err(|_| Status::InternalServerError)?;
 
     Ok(WebhookResponseType::Json(Json(WebhookResponse {
         success: true,

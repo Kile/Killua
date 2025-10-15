@@ -272,25 +272,29 @@ class IPCRoutes(commands.Cog):
             # Strip the first byte (first_bit) before parsing JSON
             if message_data and message_data[0] == "\x00":
                 message_data = message_data[1:]
-            decoded = loads(message_data)
-            metadata = message[
-                :-1
-            ]  # The first parts are metadata, the last part is the actual data
-            try:
-                res = await getattr(self, decoded["route"].replace("/", "_"))(
-                    decoded["data"]
-                )
-            except Exception as e:
-                error(f"Error in IPC route {decoded['route']}: {e}")
-                await socket.send_multipart(
-                    [*metadata, dumps({"error": str(e)}).encode()]
-                )
-                continue
-
-            if res:
-                await socket.send_multipart([*metadata, dumps(res).encode()])
+            if message_data and message_data[0] == "\x01":
+                # Must be run in Docker for this, notify the server about this.
+                res = {"error": "For this endpoint to work, the bot must be run in Docker"}
             else:
-                await socket.send_multipart([*metadata, b'{"status":"ok"}'])
+                decoded = loads(message_data)
+                metadata = message[
+                    :-1
+                ]  # The first parts are metadata, the last part is the actual data
+                try:
+                    res = await getattr(self, decoded["route"].replace("/", "_"))(
+                        decoded["data"]
+                    )
+                except Exception as e:
+                    error(f"Error in IPC route {decoded['route']}: {e}")
+                    await socket.send_multipart(
+                        [*metadata, dumps({"error": str(e)}).encode()]
+                    )
+                    continue
+
+                if res:
+                    await socket.send_multipart([*metadata, dumps(res).encode()])
+                else:
+                    await socket.send_multipart([*metadata, b'{"status":"ok"}'])
 
     async def download(self, url: str) -> Image.Image:
         """Downloads an image from the given url and returns it as a PIL Image"""

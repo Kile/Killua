@@ -1,4 +1,4 @@
-use super::common::keys::ApiKey;
+use super::common::discord_auth::DiscordAuth;
 
 use serde_json::Value;
 
@@ -20,9 +20,10 @@ struct CommandResult {
 async fn send_command_and_get_result(
     command: String,
     first_bit: u8,
+    is_test: bool,
 ) -> Result<CommandResult, BadRequest<Json<Value>>> {
     // List files in the directory
-    let response = make_request("update", command, first_bit)
+    let response = make_request("update", command, first_bit, !is_test)
         .await
         .context("Failed to get command output")?;
 
@@ -58,10 +59,16 @@ async fn send_command_and_get_result(
 
 #[post("/update?<force>&<test>")]
 pub async fn update(
-    _key: ApiKey,
+    auth: DiscordAuth,
     force: Option<bool>,
     test: Option<TestOption>,
 ) -> Result<Json<Value>, BadRequest<Json<Value>>> {
+    // Check if user is admin
+    if !auth.is_admin() {
+        return Err(BadRequest(Json(
+            serde_json::json!({"error": "Access denied: Admin privileges required"}),
+        )));
+    }
     // Runs a shell script which is in scripts/update.sh
     let command = format!(
         "scripts/update.sh{}{}",
@@ -77,7 +84,7 @@ pub async fn update(
         }
     );
 
-    let output = send_command_and_get_result(command, 1_u8).await?;
+    let output = send_command_and_get_result(command, 1_u8, test.is_some()).await?;
 
     if output.exit_code != 0 {
         return Err(BadRequest(Json(

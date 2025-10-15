@@ -16,7 +16,7 @@ pub struct Stats {
 
 #[get("/stats")]
 pub async fn get_stats() -> Result<Json<Stats>, BadRequest<Json<Value>>> {
-    let stats = make_request("stats", NoData {}, 0_u8)
+    let stats = make_request("stats", NoData {}, 0_u8, false)
         .await
         .context("Failed to get stats")?;
     let stats: Stats = serde_json::from_str(&stats).unwrap();

@@ -387,7 +387,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 8,
+        "w": 4,
         "x": 0,
         "y": 6
       },
@@ -422,6 +422,81 @@
         }
       ],
       "title": "RAM usage",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheusdatasource"
+      },
+      "description": "How much storage is being used on the server",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 6
+      },
+      "id": 1030,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheusdatasource"
+          },
+          "editorMode": "code",
+          "expr": "100 * (1 - (sum(node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay\"}) / sum(node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"})))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Storage usage",
       "type": "gauge"
     },
     {
@@ -665,7 +740,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
+        "w": 8,
         "x": 0,
         "y": 17
       },
@@ -714,166 +789,6 @@
         }
       ],
       "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "lokidatasource"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 4,
-        "y": 17
-      },
-      "id": 930,
-      "options": {
-        "infinitePan": false,
-        "inlineEditing": false,
-        "panZoom": false,
-        "root": {
-          "background": {
-            "color": {
-              "fixed": "transparent"
-            },
-            "image": {
-              "field": "",
-              "fixed": "",
-              "mode": "fixed"
-            },
-            "size": "tile"
-          },
-          "border": {
-            "color": {
-              "fixed": "dark-green"
-            },
-            "width": 0
-          },
-          "constraint": {
-            "horizontal": "left",
-            "vertical": "top"
-          },
-          "elements": [
-            {
-              "background": {
-                "color": {
-                  "fixed": "transparent"
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "dark-green"
-                },
-                "width": 0
-              },
-              "config": {
-                "align": "center",
-                "api": {
-                  "contentType": "application/json",
-                  "endpoint": "https://api.killua.dev/update",
-                  "headerParams": [
-                    [
-                      "Authorization",
-                      "$apiKey"
-                    ]
-                  ],
-                  "method": "POST",
-                  "queryParams": []
-                },
-                "color": {
-                  "fixed": "#F0F4FD"
-                },
-                "size": 24,
-                "style": {
-                  "variant": "primary"
-                },
-                "text": {
-                  "fixed": "Update",
-                  "mode": "fixed"
-                }
-              },
-              "constraint": {
-                "horizontal": "center",
-                "vertical": "center"
-              },
-              "name": "Button",
-              "placement": {
-                "height": 43,
-                "left": -2,
-                "top": -44.5,
-                "width": 163
-              },
-              "type": "button"
-            },
-            {
-              "background": {
-                "color": {
-                  "fixed": "transparent"
-                },
-                "image": {
-                  "fixed": ""
-                }
-              },
-              "border": {
-                "color": {
-                  "fixed": "dark-green"
-                }
-              },
-              "config": {
-                "blinkRate": {
-                  "fixed": 1,
-                  "mode": "clamped"
-                },
-                "statusColor": {
-                  "fixed": "semi-dark-blue"
-                },
-                "type": "Stack"
-              },
-              "constraint": {
-                "horizontal": "center",
-                "vertical": "center"
-              },
-              "name": "Server",
-              "placement": {
-                "height": 86.97917175292969,
-                "left": -1.9895858764648438,
-                "top": 35.010414123535156,
-                "width": 84.97917175292969
-              },
-              "type": "server"
-            }
-          ],
-          "name": "Element 1747594786442",
-          "placement": {
-            "height": 100,
-            "left": 0,
-            "top": 0,
-            "width": 100
-          },
-          "type": "frame"
-        },
-        "showAdvancedTypes": true
-      },
-      "pluginVersion": "10.4.2",
-      "type": "canvas"
     },
     {
       "datasource": {
@@ -2735,7 +2650,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "light-orange"
+                "color": "light-orange",
+                "value": null
               }
             ]
           }
@@ -2794,7 +2710,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "light-orange"
+                "color": "light-orange",
+                "value": null
               }
             ]
           },
@@ -2890,7 +2807,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2988,7 +2906,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -3086,7 +3005,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -3275,61 +3195,6 @@
         "query": {
           "qryType": 5,
           "query": "label_values(discord_command_usage{group=~\"$group\", command=~\"$command\"}, command_id)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
-      },
-      {
-        "current": {
-          "selected": false,
-          "text": "uwu",
-          "value": "uwu"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheusdatasource"
-        },
-        "definition": "label_values(discord_api_key,key)",
-        "hide": 2,
-        "includeAll": false,
-        "multi": false,
-        "name": "apiKey",
-        "options": [],
-        "query": {
-          "qryType": 1,
-          "query": "label_values(discord_api_key,key)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
-      },
-      {
-        "current": {
-          "selected": false,
-          "text": "http://127.0.0.1:6060",
-          "value": "http://127.0.0.1:6060"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheusdatasource"
-        },
-        "definition": "label_values(discord_api_url,key)",
-        "description": "The public facing url of the api",
-        "hide": 2,
-        "includeAll": false,
-        "multi": false,
-        "name": "apiUrl",
-        "options": [],
-        "query": {
-          "qryType": 1,
-          "query": "label_values(discord_api_url,url)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,

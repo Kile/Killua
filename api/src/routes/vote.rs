@@ -22,7 +22,7 @@ pub async fn register_vote(
     _key: ApiKey,
     vote: Json<Vote>,
 ) -> Result<Json<Value>, BadRequest<Json<Value>>> {
-    let response = make_request("vote", vote.into_inner(), 0_u8)
+    let response = make_request("vote", vote.into_inner(), 0_u8, false)
         .await
         .context("Failed to register vote")?;
     // Request also failed if the response key is "error"
