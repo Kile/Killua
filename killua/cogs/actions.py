@@ -259,6 +259,7 @@ class Actions(commands.GroupCog, group_name="action"):
         author: Union[str, discord.User],
         users: Union[str, List[discord.User]],
         disabled: int = 0,
+        user_installed: bool = False,
     ) -> Tuple[discord.Embed, Optional[discord.File]]:
         """
         Creates an embed for the action commands with the members and author provided
@@ -294,7 +295,7 @@ class Actions(commands.GroupCog, group_name="action"):
             )
             asset["url"] += f"?token={token}&expiry={expiry}"
             embed, file = await self.client.make_embed_from_api(
-                asset["url"], embed, no_token=True
+                asset["url"], embed, no_token=True, force_fetch=user_installed
             )
         else:
             # Does not need to be fetched under any conditions
@@ -330,7 +331,7 @@ class Actions(commands.GroupCog, group_name="action"):
             return None, None  # Needs to be a tuple
         else:
             return await self.action_embed(
-                ctx.command.name, "Killua", ctx.author.display_name
+                ctx.command.name, "Killua", ctx.author.display_name, user_installed=ctx.interaction and ctx.interaction.is_user_integration()
             )
 
     def has_disabled(self, user: User, action: str) -> bool:
@@ -448,7 +449,7 @@ class Actions(commands.GroupCog, group_name="action"):
                 await self._save_stat_for(user, action, True)
 
             await self._save_stat_for(author, action, False, len(allowed))
-            embed, file = await self.action_embed(action, author, users, disabled)
+            embed, file = await self.action_embed(action, author, users, disabled, user_installed=messageable.interaction and messageable.interaction.is_user_integration())
 
         if isinstance(embed, str):
             await self.client.send_message(messageable, content=embed)

@@ -28,6 +28,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     route: &str,
     data: T,
     first_bit: u8,
+    no_timeout: bool,
 ) -> Result<String, zmq::Error> {
     let ctx = Context::new();
     let socket = ctx.socket(DEALER).unwrap();
@@ -47,11 +48,15 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     // Here are the docs why this happens
     // https://libzmq.readthedocs.io/en/zeromq3-x/zmq_setsockopt.html
 
-    // timeout
-    assert!(socket.set_rcvtimeo(5000).is_ok());
+    // For endpoints that may take 5 > seconds, we disable the timeout
+    if no_timeout {
+        assert!(socket.set_rcvtimeo(-1).is_ok());
+    } else {
+        assert!(socket.set_rcvtimeo(5000).is_ok());
+    }
+
     assert!(socket.set_sndtimeo(1000).is_ok());
     assert!(socket.set_connect_timeout(5000).is_ok());
-    // Get route from environment variable
     let address = std::env::var("ZMQ_ADDRESS").unwrap_or("tcp://0.0.0.0:3210".to_string());
     assert!(socket.connect(&address).is_ok());
     assert!(socket.set_identity("api-client".as_bytes()).is_ok());
@@ -82,8 +87,9 @@ pub async fn make_request<T: Serialize + std::marker::Send + Deserialize<'static
     route: &'static str,
     data: T,
     first_bit: u8,
+    no_timeout: bool,
 ) -> Result<String, zmq::Error> {
-    task::spawn_blocking(move || make_request_inner(route, data, first_bit))
+    task::spawn_blocking(move || make_request_inner(route, data, first_bit, no_timeout))
         .await
         .unwrap()
 }

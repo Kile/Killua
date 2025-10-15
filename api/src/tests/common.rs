@@ -106,11 +106,17 @@ pub fn test_zmq_server() {
                         "locale": "en-US",
                         "has_user_installed": true,
                         "is_premium": true,
-                        "premium_tier": "2"
+                        "premium_tier": "2",
+                        "email_notifications": {"news": true, "updates": false, "posts": true}
                     }"#
                 }
                 "discord/application_authorized" => r#"{"success": true, "message": "Application authorized event processed successfully"}"#,
                 "discord/application_deauthorized" => r#"{"success": true, "message": "Application deauthorized event processed successfully"}"#,
+                "user_get_basic_details" => r#"{"display_name": "Test User", "avatar_url": "https://cdn.discordapp.com/avatars/123456789/avatar.png"}"#,
+                "news/save" => r#"{"news_id": "test_news_id", "message_id": 1234567890123456789}"#,
+                "news/delete" => r#"{"status": "deleted"}"#,
+                "news/edit" => r#"{"news_id": "test_news_id", "message_id": 1234567890123456789}"#,
+                "user/edit" => r#"{"success": true, "message": "User settings updated successfully"}"#,
                 _ => r#"{}"#,
             }.to_string()
             };

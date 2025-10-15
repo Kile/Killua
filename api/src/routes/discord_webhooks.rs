@@ -5,7 +5,9 @@ use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::routes::common::discord_security::{verify_discord_signature, OptionalDiscordSignature};
+use crate::routes::common::discord_security::{
+    verify_discord_signature, OptionalDiscordSignature, TEST_MODE,
+};
 use crate::routes::common::utils::make_request;
 
 // Discord webhook event types
@@ -180,43 +182,50 @@ pub async fn handle_discord_webhook(
         eprintln!("DEBUG: Processing authenticated webhook request");
         eprintln!("DEBUG: Webhook data: {:?}", webhook);
 
-        let public_key = match std::env::var("PUBLIC_KEY") {
-            Ok(key) => {
-                eprintln!("DEBUG: PUBLIC_KEY environment variable found");
-                key
-            }
-            Err(_) => {
+        // Check if we're in test mode
+        let test_mode = TEST_MODE.load(std::sync::atomic::Ordering::Relaxed);
+        if test_mode {
+            eprintln!("DEBUG: Test mode enabled - skipping signature verification");
+            eprintln!("=== END DISCORD WEBHOOK HANDLER DEBUG ===");
+        } else {
+            let public_key = match std::env::var("PUBLIC_KEY") {
+                Ok(key) => {
+                    eprintln!("DEBUG: PUBLIC_KEY environment variable found");
+                    key
+                }
+                Err(_) => {
+                    // Log the error for debugging
+                    eprintln!("ERROR: PUBLIC_KEY environment variable not set");
+                    return Err(Status::InternalServerError);
+                }
+            };
+
+            let signature_str = signature.signature.as_ref().unwrap();
+            let timestamp_str = signature.timestamp.as_ref().unwrap();
+            let body = serde_json::to_string(&webhook).unwrap();
+
+            eprintln!("DEBUG: Calling verify_discord_signature with:");
+            eprintln!("  Public key: {}", public_key);
+            eprintln!("  Signature: {}", signature_str);
+            eprintln!("  Timestamp: {}", timestamp_str);
+            eprintln!("  Body: {}", body);
+
+            if !verify_discord_signature(&public_key, signature_str, timestamp_str, &body) {
                 // Log the error for debugging
-                eprintln!("ERROR: PUBLIC_KEY environment variable not set");
-                return Err(Status::InternalServerError);
+                eprintln!("ERROR: Discord signature verification failed - returning 403 Forbidden");
+                return Err(Status::Forbidden);
             }
-        };
 
-        let signature_str = signature.signature.as_ref().unwrap();
-        let timestamp_str = signature.timestamp.as_ref().unwrap();
-        let body = serde_json::to_string(&webhook).unwrap();
-
-        eprintln!("DEBUG: Calling verify_discord_signature with:");
-        eprintln!("  Public key: {}", public_key);
-        eprintln!("  Signature: {}", signature_str);
-        eprintln!("  Timestamp: {}", timestamp_str);
-        eprintln!("  Body: {}", body);
-
-        if !verify_discord_signature(&public_key, signature_str, timestamp_str, &body) {
-            // Log the error for debugging
-            eprintln!("ERROR: Discord signature verification failed - returning 403 Forbidden");
-            return Err(Status::Forbidden);
+            eprintln!("DEBUG: Discord signature verification succeeded");
+            eprintln!("=== END DISCORD WEBHOOK HANDLER DEBUG ===");
         }
-
-        eprintln!("DEBUG: Discord signature verification succeeded");
-        eprintln!("=== END DISCORD WEBHOOK HANDLER DEBUG ===");
     }
 
     eprintln!("=== WEBHOOK EVENT ROUTING DEBUG ===");
     eprintln!("DEBUG: Webhook type: {}", webhook.r#type);
     eprintln!("DEBUG: Is ping event: {}", is_ping_event);
     eprintln!("DEBUG: Event field: {:?}", webhook.event);
-    
+
     match webhook.event.as_ref().and_then(|e| e.event_type.as_ref()) {
         Some(DiscordEventType::ApplicationAuthorized) => {
             eprintln!("DEBUG: Routing to APPLICATION_AUTHORIZED handler");
@@ -239,7 +248,7 @@ async fn handle_application_authorized(
 ) -> Result<WebhookResponseType, Status> {
     eprintln!("=== APPLICATION_AUTHORIZED HANDLER DEBUG ===");
     eprintln!("DEBUG: Processing APPLICATION_AUTHORIZED event");
-    
+
     // Parse the event data
     let event = webhook.event.ok_or(Status::BadRequest)?;
     let data = event.data.ok_or(Status::BadRequest)?;
@@ -266,13 +275,14 @@ async fn handle_application_authorized(
     println!("Received application authorized event: {:?}", request_data); // for debugging to see if this works in prod
 
     // Forward to Killua bot
-    match make_request("discord/application_authorized", request_data, 0_u8).await {
-        Ok(_response) => Ok(WebhookResponseType::Json(Json(WebhookResponse {
-            success: true,
-            message: "Application authorized event processed successfully".to_string(),
-        }))),
-        Err(_e) => Err(Status::InternalServerError),
-    }
+    let _response = make_request("discord/application_authorized", request_data, 0_u8, false)
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    Ok(WebhookResponseType::Json(Json(WebhookResponse {
+        success: true,
+        message: "Application authorized event processed successfully".to_string(),
+    })))
 }
 
 async fn handle_application_deauthorized(
@@ -280,7 +290,7 @@ async fn handle_application_deauthorized(
 ) -> Result<WebhookResponseType, Status> {
     eprintln!("=== APPLICATION_DEAUTHORIZED HANDLER DEBUG ===");
     eprintln!("DEBUG: Processing APPLICATION_DEAUTHORIZED event");
-    
+
     // Parse the event data
     let event = webhook.event.ok_or(Status::BadRequest)?;
     let data = event.data.ok_or(Status::BadRequest)?;
@@ -294,13 +304,19 @@ async fn handle_application_deauthorized(
     };
 
     // Forward to Killua bot
-    match make_request("discord/application_deauthorized", request_data, 0_u8).await {
-        Ok(_response) => Ok(WebhookResponseType::Json(Json(WebhookResponse {
-            success: true,
-            message: "Application deauthorized event processed successfully".to_string(),
-        }))),
-        Err(_e) => Err(Status::InternalServerError),
-    }
+    let _response = make_request(
+        "discord/application_deauthorized",
+        request_data,
+        0_u8,
+        false,
+    )
+    .await
+    .map_err(|_| Status::InternalServerError)?;
+
+    Ok(WebhookResponseType::Json(Json(WebhookResponse {
+        success: true,
+        message: "Application deauthorized event processed successfully".to_string(),
+    })))
 }
 
 // Health check endpoint for webhook verification

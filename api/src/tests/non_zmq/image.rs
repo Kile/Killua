@@ -6,11 +6,6 @@ use rocket::http::{ContentType, Status};
 use rocket::local::blocking::Client;
 use std::thread::sleep;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct AllowImageResponse {
-    token: String,
-}
-
 fn get_valid_token(endpoint: String, extra_secs: Option<u64>) -> (String, String) {
     let time = (SystemTime::now() + std::time::Duration::from_secs(extra_secs.unwrap_or(60)))
         .duration_since(SystemTime::UNIX_EPOCH)

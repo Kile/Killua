@@ -207,7 +207,7 @@ fn test_application_deauthorized_webhook_zmq_running() {
     let webhook_data = json!({
         "version": 1,
         "application_id": "1234560123453231555",
-        "type": 1,
+        "type": 0,
         "event": {
             "type": "APPLICATION_DEAUTHORIZED",
             "timestamp": "2024-10-18T14:42:53.064834",
@@ -263,7 +263,7 @@ fn test_webhook_ping_event_no_auth_zmq_running() {
     let webhook_data = json!({
         "version": 1,
         "application_id": "1234560123453231555",
-        "type": 1
+        "type": 0
     });
 
     let body = serde_json::to_string(&webhook_data).unwrap();
@@ -290,7 +290,7 @@ fn test_webhook_ping_event_zmq_running() {
     let webhook_data = json!({
         "version": 1,
         "application_id": "1234560123453231555",
-        "type": 1
+        "type": 0
     });
 
     let body = serde_json::to_string(&webhook_data).unwrap();

@@ -1,5 +1,5 @@
 # Use an official Rust runtime as a parent image
-FROM rust:1.87 AS base
+FROM rust:1.90 AS base
 
 ARG MYUID=1000
 ARG MYGID=1000

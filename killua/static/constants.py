@@ -1,6 +1,7 @@
 import json
 import io, os
 import discord
+from datetime import datetime
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.collection import AsyncCollection
 from typing import Any, Callable, TypeVar, Generic, Union, Dict, List, Tuple
@@ -18,7 +19,6 @@ CONST_DEFAULT = [  # The default values for the const collection
     {"_id": "usage", "command_usage": {}},
     {"_id": "shop", "offers": [], "log": []},
     {"_id": "presence", "text": None, "activity": None, "presence": None},
-    {"_id": "updates", "updates": []},
     {"_id": "blacklist", "blacklist": []},
 ]
 
@@ -75,6 +75,10 @@ class DB:
         return (
             self._DB["api-stats"] if args.Args.test is None else Database("api-stats")
         )
+
+    @DBProperty
+    def news(self) -> Union[AsyncCollection, Database]:
+        return self._DB["news"] if args.Args.test is None else Database("news")
 
 
 DB = DB()
@@ -1182,6 +1186,23 @@ GUILD = 715358111472418908
 BOOSTER_ROLE = 769622564648648744
 REPORT_CHANNEL = 796306329756893184
 UPDATE_CHANNEL = 757170264294424646
+NEWS_CHANNEL = 754063177553150002
+POST_CHANNEL = 1426130986483322941
+UPDATE_ROLE = 795422783261114398
+NEWS_ROLE = 1421846674229428407
+POST_ROLE = 1421846616364683314
+
+# When updates should be edited when they're edited on the website.
+# This is to preserve the old update posts so that they can be edited
+# on the website without breaking editing the old posts
+UPDATE_AFTER = datetime(2025, 10, 5)
+
+LINK_ICONS = {
+    "github": "<:github:1421327249814192300>",
+    "twitter": "<:twitter:1428016023868674068>",
+    "download": "<:download:1428015971016118444>",
+    "youtube": "<:YouTube:1428015930813976700>"
+}
 
 GUILD_OBJECT = discord.Object(id=GUILD)
 

@@ -158,6 +158,26 @@ services:
         max-file: "5"   # number of files or file count
         max-size: "50m" # file size
 
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node-exporter
+    # Mount the host filesystem so we get real host metrics (not container metrics)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    expose:
+      - "9100"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "3"   # number of files or file count
+        max-size: "10m" # file size
+
 volumes:
   prom_data:
   loki_data:

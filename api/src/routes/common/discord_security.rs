@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 // Test mode flag - set to true during tests
-static TEST_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+pub static TEST_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Enable test mode for Discord webhook signature verification
 #[allow(dead_code)]

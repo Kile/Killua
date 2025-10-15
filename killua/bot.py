@@ -478,11 +478,12 @@ class BaseBot(commands.AutoShardedBot):
         expire_in: int = 60 * 60 * 24 * 7,
         no_token: bool = False,
         thumbnail: bool = False,
+        force_fetch: bool = False,
     ) -> Tuple[discord.Embed, Optional[discord.File]]:
         """
         Makes an embed from a Killua API image url.
 
-        If the bot is running in a dev environment, the image is downloaded
+        If the bot is running in a dev environment or force_fetch is True, the image is downloaded
         and sent as a file.
 
         Raises:
@@ -496,7 +497,7 @@ class BaseBot(commands.AutoShardedBot):
                 image_path, expires_in_seconds=expire_in
             )
 
-        if self.is_dev:
+        if self.is_dev or force_fetch:
             # Upload the image as attachment instead
             data = await self.session.get(
                 image_url + ("" if no_token else f"?token={token}&expiry={expiry}")

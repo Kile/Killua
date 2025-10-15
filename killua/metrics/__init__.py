@@ -25,9 +25,7 @@ from .metrics import (
     CARDS,
     BIGGEST_COLLECTION,
     LOCALE,
-    API_KEY,
     IS_DEV,
-    API_URL,
 )
 
 from .logger import PrometheusLoggingHandler
@@ -60,7 +58,5 @@ __all__ = [
     "CARDS",
     "BIGGEST_COLLECTION",
     "LOCALE",
-    "API_KEY",
     "IS_DEV",
-    "API_URL",
 ]

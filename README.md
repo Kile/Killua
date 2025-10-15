@@ -16,9 +16,6 @@
     <img alt="Discord Server" src="https://img.shields.io/discord/691713541262147687.svg?label=Discord&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2&style=flat">
   </a>
   <a>
-    <img alt="Lines" src="https://img.shields.io/tokei/lines/github/Kile/Killua">
-  </a>
-  <a>
     <img scr="https://img.shields.io/github/commit-activity/w/Kile/Killua">
   </a>
   <a href="https://github.com/Rapptz/discord.py/">
@@ -70,8 +67,9 @@ I started Killua as a way to learn python and different programming concepts. It
 ## Algorithms
 Killua contains a number of interesting algorithms which I have explained more and gone into detail in the [algorithms](./algorithms/README.md) folder.
 
-## Flowchart 
-![setup-current](https://github.com/user-attachments/assets/0c0540d5-0ab7-4f48-822f-a29f743a9303)
+## Flowchart
+![setup-current](https://github.com/user-attachments/assets/5aa0d8d4-ff62-417b-81ca-900955829c30)
+
 
 
 ## Programming concepts list

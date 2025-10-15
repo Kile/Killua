@@ -4,11 +4,7 @@ use rocket::data::ToByteUnit;
 use rocket::http::uri::Segments;
 use rocket::response::status::Forbidden;
 use rocket::serde::json::Json;
-use rocket::{
-    fs::NamedFile,
-    serde::{Deserialize, Serialize},
-    Data,
-};
+use rocket::{fs::NamedFile, Data};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -85,11 +81,11 @@ lazy_static::lazy_static! {
         (2, "vote_rewards".to_string()),
         (3, "cdn".to_string()),
     ].iter().cloned().collect();
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AllowImage {
-    pub endpoints: Vec<String>,
+    static ref ALWAYS_ALLOW: RegexSet = RegexSet::new([
+        r"cdn/news/.*",
+        r"news/.*",
+    ]).unwrap();
 }
 
 pub fn sha256(endpoint: &str, expiry: &str, secret: &str) -> String {
@@ -100,9 +96,18 @@ pub fn sha256(endpoint: &str, expiry: &str, secret: &str) -> String {
 
 /// Check if the token is valid and has not expired as well as if the
 /// endpoint is allowed and the time has not expired
-fn allows_endpoint(token: &str, endpoint: &str, expiry: &str) -> bool {
+fn allows_endpoint(token: Option<&str>, endpoint: &str, expiry: Option<&str>) -> bool {
+    // If the endpoint is in the always allow list, return true
+    if ALWAYS_ALLOW.is_match(endpoint) {
+        return true;
+    }
+
+    if token.is_none() || expiry.is_none() {
+        return false;
+    }
+
     // If the expiry is in the past, the token is invalid
-    if expiry.parse::<u64>().unwrap()
+    if expiry.unwrap().parse::<u64>().unwrap()
         < SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
@@ -110,13 +115,13 @@ fn allows_endpoint(token: &str, endpoint: &str, expiry: &str) -> bool {
     {
         return false;
     }
-    sha256(endpoint, expiry, &HASH_SECRET) == token
+    sha256(endpoint, expiry.unwrap(), &HASH_SECRET) == token.unwrap()
         || REGEX_SET.matches(endpoint).iter().any(|x| {
             sha256(
                 SPECIAL_ENDPOINT_MAPPING.get(&x).unwrap(),
-                expiry,
+                expiry.unwrap(),
                 &HASH_SECRET,
-            ) == token
+            ) == token.unwrap()
         })
 }
 
@@ -126,14 +131,9 @@ pub async fn image(
     token: Option<&str>,
     expiry: Option<&str>,
 ) -> Result<Option<NamedFile>, Forbidden<Json<Value>>> {
-    if token.is_none() || expiry.is_none() {
-        return Err(Forbidden(Json(
-            serde_json::json!({"error": "No token or expiry provided"}),
-        )));
-    }
     let path_str: String = path.map(|s| s.to_string()).collect::<Vec<_>>().join("/");
 
-    if !allows_endpoint(token.unwrap(), &path_str, expiry.unwrap()) {
+    if !allows_endpoint(token, &path_str, expiry) {
         return Err(Forbidden(Json(
             serde_json::json!({"error": "Invalid token"}),
         )));

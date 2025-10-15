@@ -1,19 +1,13 @@
+use bson::DateTime;
 use mongodb::Client;
 use mongodb::{
-    bson::{doc, from_document, DateTime, Document},
+    bson::{doc, from_document, Document},
     error::Error,
     options::UpdateOptions,
 };
 use rocket::futures::StreamExt;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-#[serde(crate = "rocket::serde")]
-pub struct ImageToken {
-    pub created_at: DateTime,
-    pub endpoints: Vec<String>,
-}
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct StatsStruct {
@@ -148,4 +142,122 @@ impl ApiStats {
     //         None => None,
     //     }
     // }
+}
+
+// News-related structures
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(crate = "rocket::serde")]
+pub struct NewsItem {
+    #[serde(rename = "_id")]
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    #[serde(rename = "type")]
+    pub news_type: NewsType,
+    pub likes: Vec<String>,
+    pub author: i64,
+    pub version: Option<String>,
+    #[serde(rename = "messageId")]
+    pub message_id: Option<u64>,
+    pub published: bool,
+    pub timestamp: DateTime,
+    pub links: HashMap<String, String>,
+    pub images: Vec<String>,
+    pub notify_users: Option<NotifyUsers>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(crate = "rocket::serde")]
+pub enum NewsType {
+    #[serde(rename = "news")]
+    News,
+    #[serde(rename = "update")]
+    Update,
+    #[serde(rename = "post")]
+    Post,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(crate = "rocket::serde")]
+pub struct NotifyUsers {
+    #[serde(rename = "type")]
+    pub notify_type: NotifyType,
+    pub data: NotifyData,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(crate = "rocket::serde")]
+pub enum NotifyType {
+    #[serde(rename = "group")]
+    Group,
+    #[serde(rename = "specific")]
+    Specific,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(crate = "rocket::serde")]
+#[serde(untagged)]
+pub enum NotifyData {
+    UserIds(Vec<i64>),
+    Special(String),
+}
+
+#[derive(Clone)]
+pub struct NewsDb {
+    pub collection: mongodb::Collection<Document>,
+}
+
+impl NewsDb {
+    pub fn new(client: &Client) -> Self {
+        Self {
+            collection: client.database("Killua").collection("news"),
+        }
+    }
+
+    pub async fn get_all_news(&self) -> Result<Vec<NewsItem>, Error> {
+        let mut cursor = self.collection.find(Document::new()).await?;
+        let mut news_items: Vec<NewsItem> = Vec::new();
+
+        while let Some(result) = cursor.next().await {
+            match result {
+                Ok(document) => match from_document::<NewsItem>(document) {
+                    Ok(news_item) => news_items.push(news_item),
+                    Err(e) => eprintln!("Failed to deserialize news document: {e}"),
+                },
+                Err(e) => return Err(e),
+            }
+        }
+
+        Ok(news_items)
+    }
+
+    pub async fn get_news_by_id(&self, news_id: &str) -> Result<Option<NewsItem>, Error> {
+        let filter = doc! { "_id": news_id };
+        let result = self.collection.find_one(filter).await?;
+
+        match result {
+            Some(document) => match from_document::<NewsItem>(document) {
+                Ok(news_item) => Ok(Some(news_item)),
+                Err(e) => {
+                    eprintln!("Failed to deserialize news document: {e}");
+                    Err(Error::from(e))
+                }
+            },
+            None => Ok(None),
+        }
+    }
+
+    pub async fn update_likes(&self, news_id: &str, likes: Vec<String>) -> Result<(), Error> {
+        let filter = doc! { "_id": news_id };
+        let update = doc! { "$set": { "likes": likes } };
+
+        self.collection.update_one(filter, update).await?;
+        Ok(())
+    }
+
+    #[allow(dead_code)] // Used in tests
+    pub async fn purge_all(&self) -> Result<(), Error> {
+        self.collection.delete_many(Document::new()).await?;
+        Ok(())
+    }
 }

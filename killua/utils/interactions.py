@@ -98,7 +98,6 @@ class ConfirmButtonRow(discord.ui.ActionRow):
         label="confirm", style=discord.ButtonStyle.green, custom_id="confirm"
     )
     async def confirm(self, *_):
-        print("Confirming")
         self.__view.value = True
         self.__view.timed_out = False
         self.__view.stop()
