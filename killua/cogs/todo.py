@@ -455,6 +455,84 @@ class TodoSystem(commands.Cog):
             allowed_mentions=discord.AllowedMentions.none(),
         )
 
+    async def _update_name(
+        self, todo_list: TodoList, new_name: str
+    ) -> Optional[str]:
+        """Updates the name of a todo list"""
+        if len(new_name) > 30:
+            return "Name can't be longer than 30 characters"
+        await todo_list.set_property("title", new_name)
+        return None
+
+    async def _update_custom_id(
+        self, todo_list: TodoList, new_custom_id: str, user: User
+    ) -> Optional[str]:
+        """Updates the custom id of a todo list"""
+        if not user.is_premium:
+            return "You need to be a premium user to use custom ids"
+
+        if len(new_custom_id) > 20:
+            return "Your custom id can have max 20 characters"
+
+        if new_custom_id.lower().isdigit():
+            return "Your custom id needs to contain at least one character that isn't an integer"
+
+        try:
+            await TodoList.new(new_custom_id.lower())
+        except TodoListNotFound:
+            pass
+        else:
+            return "This custom id is already taken"
+
+        await todo_list.set_property("custom_id", new_custom_id.lower())
+        return None # None means success
+    
+    async def _update_color(
+        self, todo_list: TodoList, color: str
+    ) -> Optional[str]:
+        """Updates the color of a todo list"""
+        if not todo_list.has_addon("color"):
+            return "You can't customize this property, you need to buy it in the shop"
+        if color.lower() == "none":
+            await todo_list.set_property("color", None)
+            return None
+        else:
+            try:
+                await todo_list.set_property("color", int(color, 16))
+                return None
+            except ValueError:
+                return "Color needs to be a valid hexadecimal number"
+    
+    async def _update_thumbnail(
+        self, todo_list: TodoList, thumbnail: str
+    ) -> Optional[str]:
+        """Updates the thumbnail of a todo list"""
+        if not todo_list.has_addon("thumbnail"):
+            return "You can't customize this property, you need to buy it in the shop"
+        search_url = re.search(URL_REGEX, thumbnail)
+
+        if search_url:
+            image = re.search(r"png|jpg|gif|svg", thumbnail)
+        else:
+            return "You didn't provide a valid url with an image! Please make sure your url is valid"
+
+        if image:
+            await todo_list.set_property("thumbnail", thumbnail)
+            return None
+        else:
+            return "You didn't provide a valid url with an image! Please make sure your url is valid"
+    
+    async def _update_description(
+        self, todo_list: TodoList, description: str
+    ) -> Optional[str]:
+        """Updates the description of a todo list"""
+        if not todo_list.has_addon("description"):
+            return "You can't customize this property, you need to buy it in the shop"
+        if len(description) > 200:
+            return "Description can't be longer than 200 characters"
+        await todo_list.set_property("description", description)
+        return None
+
     @check()
     @todo.command(
         extras={"category": Category.TODO, "id": 105}, usage="update <settings>"
@@ -489,13 +567,10 @@ class TodoSystem(commands.Cog):
 
         user = await User.new(ctx.author.id)
         if name:
-            if len(name) > 30:
-                return await ctx.send(
-                    "Name can't be longer than 20 characters", ephemeral=True
-                )  #
-            else:
-                await res.set_property("title", name)
-                updated.append("title")
+            error = await self._update_name(res, name)
+            if error:
+                return await ctx.send(error, ephemeral=True)
+            updated.append("name")
 
         if status:
             await res.set_property("status", status)
@@ -506,86 +581,28 @@ class TodoSystem(commands.Cog):
             updated.append("delete_when_done")
 
         if custom_id:
-
-            if not user.is_premium:
-                return await ctx.send(
-                    "You need to be a premium user to use custom ids", ephemeral=True
-                )
-
-            if len(custom_id) > 20:
-                return await ctx.send(
-                    "Your custom id can have max 20 characters", ephemeral=True
-                )
-
-            if custom_id.lower().isdigit():
-                return await ctx.send(
-                    "Your custom id needs to contain at least one character that isn't an integer",
-                    ephemeral=True,
-                )
-
-            try:
-                await TodoList.new(custom_id.lower())
-            except TodoListNotFound:
-                pass
-            else:
-                return await ctx.send("This custom id is already taken", ephemeral=True)
-
-            await res.set_property("custom_id", custom_id.lower())
+            error = await self._update_custom_id(res, custom_id, user)
+            if error:
+                return await ctx.send(error, ephemeral=True)
             updated.append("custom_id")
 
         if color:
-            if not res.has_addon("color"):
-                return await ctx.send(
-                    "You can't customize this property, you need to buy it in the shop",
-                    ephemeral=True,
-                )
-            if color.lower() == "none":
-                await res.set_property("color", None)
-            else:
-                try:
-                    await res.set_property("color", int(color, 16))
-                    updated.append("color")
-                except ValueError:
-                    return await ctx.send(
-                        "Color needs to be a valid hexadecimal number", ephemeral=True
-                    )
+            error = await self._update_color(res, color)
+            if error:
+                return await ctx.send(error, ephemeral=True)
+            updated.append("color")
 
         if thumbnail:
-            if not res.has_addon("thumbnail"):
-                return await ctx.send(
-                    "You can't customize this property, you need to buy it in the shop",
-                    ephemeral=True,
-                )
-            search_url = re.search(URL_REGEX, thumbnail)
-
-            if search_url:
-                image = re.search(r"png|jpg|gif|svg", thumbnail)
-            else:
-                await ctx.send(
-                    "You didn't provide a valid url with an image! Please make sure your url is valid"
-                )
-
-            if image:
-                await res.set_property("thumbnail", thumbnail)
-                updated.append("thumbnail")
-            else:
-                await ctx.send(
-                    "You didn't provide a valid url with an image! Please make sure your url is valid"
-                )
+            error = await self._update_thumbnail(res, thumbnail)
+            if error:
+                return await ctx.send(error, ephemeral=True)
+            updated.append("thumbnail")
 
         if description:
-            if not res.has_addon("description"):
-                return await ctx.send(
-                    "You can't customize this property, you need to buy it in the shop",
-                    ephemeral=True,
-                )
-            if len(description) > 200:
-                return await ctx.send(
-                    "Description can't be longer than 200 characters", ephemeral=True
-                )
-            else:
-                await res.set_property("description", description)
-                updated.append("description")
+            error = await self._update_description(res, description)
+            if error:
+                return await ctx.send(error, ephemeral=True)
+            updated.append("description")
 
         await ctx.send(
             f"Successfully updated {', '.join(updated)} of your todo list!",

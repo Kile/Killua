@@ -449,7 +449,13 @@ class Actions(commands.GroupCog, group_name="action"):
                 await self._save_stat_for(user, action, True)
 
             await self._save_stat_for(author, action, False, len(allowed))
-            embed, file = await self.action_embed(action, author, users, disabled, user_installed=messageable.interaction and messageable.interaction.is_user_integration())
+            interaction = messageable if isinstance(messageable, discord.Interaction) else messageable.interaction
+            user_installed = interaction and interaction.is_user_integration()
+            if interaction and user_installed: 
+                # If this is true the image will be fetched and uploaded,
+                # which may take longer than the 3 second limit for interaction responses
+                await interaction.response.defer()
+            embed, file = await self.action_embed(action, author, users, disabled, user_installed=user_installed)
 
         if isinstance(embed, str):
             await self.client.send_message(messageable, content=embed)

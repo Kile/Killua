@@ -154,7 +154,7 @@ class Shop(commands.Cog):
                     # There is just one D item so there is a really high
                     # probability of it being in the shop EVERY TIME
                     card = choice(cards)
-                    if not card.id in shop_items:
+                    if card.id not in shop_items:
                         shop_items.append(card.id)
 
                 if randint(1, 10) > 6:  # 40% to have an item in the shop reduced
@@ -224,9 +224,9 @@ class Shop(commands.Cog):
     async def shop(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
             if ctx.command.parent:
-                subcommands = [c for c in ctx.command.parent.commands]
+                subcommands = list(ctx.command.parent.commands)
             else:
-                subcommands = [c for c in ctx.command.commands]
+                subcommands = list(ctx.command.commands)
 
             view = View(ctx.author.id)
             view.add_item(
@@ -266,7 +266,7 @@ class Shop(commands.Cog):
 
         sh = await DB.const.find_one({"_id": "shop"})
         shop_items = sh["offers"]
-        if not sh["reduced"] is None:
+        if sh["reduced"] is not None:
             reduced_item = sh["reduced"]["reduced_item"]
             reduced_by = sh["reduced"]["reduced_by"]
             formatted = await self._format_offers(shop_items, reduced_item, reduced_by)
@@ -400,7 +400,7 @@ class Shop(commands.Cog):
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
-        if not card.id in shop_items:
+        if card.id not in shop_items:
             return await ctx.send(
                 f"This card is not for sale at the moment! Find what cards are in the shop with `{(await self.client.command_prefix(self.client, ctx.message))[2]}shop`",
                 allowed_mentions=discord.AllowedMentions.none(),
@@ -409,7 +409,7 @@ class Shop(commands.Cog):
         _price = PRICES[card.rank] + (
             PRICE_INCREASE_FOR_SPELL if card.type == "spell" else 0
         )
-        if not shop_data["reduced"] is None:
+        if shop_data["reduced"] is not None:
             if shop_items.index(card.id) == shop_data["reduced"]["reduced_item"]:
 
                 price = int(
@@ -447,7 +447,7 @@ class Shop(commands.Cog):
                 raise
         await user.remove_jenny(
             price
-        )  # Always putting substracting points before giving the item so if the payment errors no item is given
+        )  # Always putting subtracting points before giving the item so if the payment errors no item is given
         return await ctx.send(
             f"Successfully bought card number `{card.id}` {card.emoji} for {price} Jenny. Check it out in your inventory with `{(await self.client.command_prefix(self.client, ctx.message))[2]}book`!",
             allowed_mentions=discord.AllowedMentions.none(),
@@ -482,7 +482,7 @@ class Shop(commands.Cog):
             if not box:
                 return await ctx.send("This lootbox is not for sale!")
 
-        if not int(box) in LOOTBOXES or not LOOTBOXES[int(box)]["available"]:
+        if int(box) not in LOOTBOXES or not LOOTBOXES[int(box)]["available"]:
             return await ctx.send("This lootbox is not for sale!")
 
         user = await User.new(ctx.author.id)
@@ -496,6 +496,69 @@ class Shop(commands.Cog):
         await user.add_lootbox(int(box))
         return await ctx.send(
             f"Successfully bought lootbox {LOOTBOXES[int(box)]['emoji']} {LOOTBOXES[int(box)]['name']}!"
+        )
+
+    async def _todo_buy_space(self, ctx: commands.Context, todo_list: TodoList, user: User) -> discord.Message:
+        """Handles buying more space for a todo list"""
+        if user.jenny < (todo_list.spots * 100 * 0.5):
+            return await ctx.send(
+                f"You don't have enough Jenny to buy more space for your todo list. You need {todo_list['spots']*100} Jenny"
+            )
+
+        if todo_list.spots >= 100:
+            return await ctx.send("You can't buy more than 100 spots")
+
+        view = ConfirmButton(ctx.author.id, f"Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points", timeout=10)
+        msg = await ctx.send(
+            view=view,
+        )
+        await view.wait()
+        await view.disable(msg)
+
+        if not view.value:
+            if view.timed_out:
+                return await ctx.send("Timed out")
+            else:
+                return await ctx.send(f"Alright, see you later then :3")
+
+        await user.remove_jenny(int(100 * todo_list.spots * 0.5))
+        await todo_list.add_spots(10)
+        return await ctx.send(
+            "Congrats! You just bought 10 more todo spots for the current todo list!"
+        )
+    
+    async def _todo_buy_timing(self, ctx: commands.Context, todo_list: TodoList, user: User) -> discord.Message:
+        """Handles buying the timing addon for a todo list"""
+        if todo_list.has_addon("due_in"):
+            return await ctx.send("You already have this addon!")
+
+        if user.jenny < 2000:
+            return await ctx.send(
+                f"You don't have enough Jenny to buy this item. You need 2000 Jenny while you currently have {user.jenny}"
+            )
+
+        await user.remove_jenny(2000)
+        await todo_list.enable_addon("due_in")
+        return await ctx.send(
+            "Congrats! You just bought the timing addon for the current todo list! You can now specifiy the `due_in` parameter when adding a todo."
+        )
+    
+    async def _todo_buy_other(
+        self, ctx: commands.Context, todo_list: TodoList, user: User, what: str
+    ) -> discord.Message:
+        """Handles buying other addons for a todo list"""
+        if todo_list.has_addon(what):
+            return await ctx.send("You already have this addon!")
+
+        if user.jenny < 1000:
+            return await ctx.send(
+                f"You don't have enough Jenny to buy this item. You need 1000 Jenny while you currently have {user.jenny}"
+            )
+
+        await user.remove_jenny(1000)
+        await todo_list.enable_addon(what)
+        return await ctx.send(
+            f"Successfully bought {what} for 1000 Jenny! Customize it with `{(await self.client.command_prefix(self.client, ctx.message))[2]}todo update {what}`"
         )
 
     @check(2)
@@ -520,56 +583,11 @@ class Shop(commands.Cog):
         user = await User.new(ctx.author.id)
 
         if what == "space":
-            if user.jenny < (todo_list.spots * 100 * 0.5):
-                return await ctx.send(
-                    f"You don't have enough Jenny to buy more space for your todo list. You need {todo_list['spots']*100} Jenny"
-                )
-
-            if todo_list.spots >= 100:
-                return await ctx.send("You can't buy more than 100 spots")
-
-            view = ConfirmButton(ctx.author.id, f"Do you want to buy 10 more to-do spots for this list? \nCurrent spots: {todo_list.spots} \nCost: {int(todo_list.spots*100*0.5)} points", timeout=10)
-            msg = await ctx.send(
-                view=view,
-            )
-            await view.wait()
-            await view.disable(msg)
-
-            if not view.value:
-                if view.timed_out:
-                    return await ctx.send("Timed out")
-                else:
-                    return await ctx.send(f"Alright, see you later then :3")
-
-            await user.remove_jenny(int(100 * todo_list.spots * 0.5))
-            await todo_list.add_spots(10)
-            return await ctx.send(
-                "Congrats! You just bought 10 more todo spots for the current todo list!"
-            )
+            return await self._todo_buy_space(ctx, todo_list, user)
         elif what == "timing":
-            if todo_list.has_addon("due_in"):
-                return await ctx.send("You already have this addon!")
-            if user.jenny < 2000:
-                return await ctx.send(
-                    f"You don't have enough Jenny to buy this item. You need 2000 Jenny while you currently have {user.jenny}"
-                )
-            await user.remove_jenny(2000)
-            await todo_list.enable_addon("due_in")
-            return await ctx.send(
-                "Congrats! You just bought the timing addon for the current todo list! You can now specifiy the `due_in` parameter when adding a todo."
-            )
+            return await self._todo_buy_timing(ctx, todo_list, user)
         else:
-            if todo_list.has_addon(what):
-                return await ctx.send("You already have this addon!")
-            if user.jenny < 1000:
-                return await ctx.send(
-                    f"You don't have enough Jenny to buy this item. You need 1000 Jenny while you currently have {user.jenny}"
-                )
-            await user.remove_jenny(1000)
-            await todo_list.enable_addon(what)
-            return await ctx.send(
-                f"Successfully bought {what} for 1000 Jenny! Customize it with `{(await self.client.command_prefix(self.client, ctx.message))[2]}todo update {what}`"
-            )
+            return await self._todo_buy_other(ctx, todo_list, user, what)
 
     ################################################ Give commands ################################################
 

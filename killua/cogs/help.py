@@ -1,5 +1,5 @@
 import discord, os
-from typing import List, Union, cast
+from typing import List, Union, cast, Tuple
 from discord.ext import commands
 from datetime import datetime
 from inspect import getsourcelines
@@ -62,6 +62,57 @@ class HelpCommand(commands.Cog):
         location = os.path.relpath(filename).replace("\\", "/")
 
         return f"{base_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}"
+    
+    def _is_user_installable(self, command: commands.HybridCommand) -> bool:
+        """Checks if a command is user installable"""
+        return (
+            (command.parent and command.app_command.parent.allowed_installs and command.app_command.parent.allowed_installs.user)
+            or command.extras.get("clone_top_level", False)  # if a clone exists as a user installable command
+        )
+    
+    def _slash_usage(self, command: commands.HybridCommand) -> str:
+        """Gets the slash usage of a command"""
+        return (
+            "```css\n/"
+            + command.qualified_name.replace(command.name, "")
+            + command.usage
+            + "\n```"
+            if not isinstance(command.cog, commands.GroupCog)
+            else "```css\n/"
+            + command.cog.__cog_group_name__
+            + " "
+            + command.usage
+            + "\n```"
+        )
+    
+    def _message_usage(self, command: commands.HybridCommand, prefix: str) -> str:
+        """Gets the message usage of a command"""
+        return (
+            "```css\n"
+            + prefix
+            + command.qualified_name.replace(command.name, "")
+            + command.usage
+            + "\n```"
+            if not isinstance(command.cog, commands.GroupCog)
+            else "```css\n" + prefix + command.usage + "\n```"
+        )
+    
+    def _checks_info(self, command: commands.HybridCommand) -> Tuple[bool, bool, Union[bool, int]]:
+        """Gets info about the checks of a command"""
+        checks = command.checks
+
+        premium_guild, premium_user, cooldown = False, False, False
+
+        if any(c for c in checks if hasattr(c, "premium_guild_only")):
+            premium_guild = True
+
+        if any(c for c in checks if hasattr(c, "premium_user_only")):
+            premium_user = True
+
+        if res := next((c for c in checks if hasattr(c, "cooldown")), None):
+            cooldown = getattr(res, "cooldown", False)
+
+        return premium_guild, premium_user, cooldown
 
     def get_command_help(
         self, command: commands.HybridCommand, prefix: str
@@ -79,18 +130,7 @@ class HelpCommand(commands.Cog):
             value=cast(Category, command.extras["category"]).value["name"],
         )
 
-        checks = command.checks
-
-        premium_guild, premium_user, cooldown = False, False, False
-
-        if any(c for c in checks if hasattr(c, "premium_guild_only")):
-            premium_guild = True
-
-        if any(c for c in checks if hasattr(c, "premium_user_only")):
-            premium_user = True
-
-        if res := next((c for c in checks if hasattr(c, "cooldown")), None):
-            cooldown = getattr(res, "cooldown", False)
+        premium_guild, premium_user, cooldown = self._checks_info(command)
 
         if premium_guild or premium_user:
             embed.description += f"\n{'<:premium_guild_badge:883473807292121149>' if premium_guild else '<:tier_one_badge:879390548857880597>'} `[Premium {'servers' if premium_guild else 'users'} only]`"
@@ -103,44 +143,15 @@ class HelpCommand(commands.Cog):
             name="User installable",
             value=(
                 "Yes"
-                if (
-                    command.parent
-                    and cast(
-                        commands.HybridCommand, command
-                    ).app_command.parent.allowed_installs
-                    and cast(
-                        commands.HybridCommand, command
-                    ).app_command.parent.allowed_installs.user
-                )
-                or command.extras.get(
-                    "clone_top_level", False
-                )  # if a clone exists as a user installable command
+                if self._is_user_installable(command)
                 else "No"
             ),
         )
 
         # print(command, command.parent, command.qualified_name, type(command.parent), type(command.cog))
-        usage_slash = (
-            "```css\n/"
-            + command.qualified_name.replace(command.name, "")
-            + command.usage
-            + "\n```"
-            if not isinstance(command.cog, commands.GroupCog)
-            else "```css\n/"
-            + command.cog.__cog_group_name__
-            + " "
-            + command.usage
-            + "\n```"
-        )
-        usage_message = (
-            "```css\n"
-            + prefix
-            + command.qualified_name.replace(command.name, "")
-            + command.usage
-            + "\n```"
-            if not isinstance(command.cog, commands.GroupCog)
-            else "```css\n" + prefix + command.usage + "\n```"
-        )
+        usage_slash = self._slash_usage(command)
+        usage_message = self._message_usage(command, prefix)
+
         embed.add_field(
             name="Usage",
             value="Slash:\n" + usage_slash + "\nMessage:\n" + usage_message,
@@ -161,7 +172,7 @@ class HelpCommand(commands.Cog):
 
         c = self.client.get_formatted_commands()[group.name.lower()]["commands"]
 
-        def make_embed(page, embed, pages):
+        def make_embed(page, _, pages):
             embed = self.get_command_help(c[page - 1], prefix)
             source = self.find_source(c[page - 1])
             embed.description += f"\n[Source code]({source})"
@@ -239,6 +250,123 @@ class HelpCommand(commands.Cog):
             if current.lower()
             in ((self.client._get_group(command) or "") + " " + command.name).strip()
         ][:25]
+    
+    def _get_help_view(self, user_id: int) -> View:
+        """Gets the help view with buttons"""
+        view = View(user_id=user_id, timeout=None)
+        view.add_item(
+            Select(
+                [
+                    discord.SelectOption(
+                        label=k, value=str(i), emoji=v["emoji"]["unicode"]
+                    )
+                    for i, (k, v) in enumerate(
+                        self.client.get_formatted_commands().items()
+                    )
+                ],
+                placeholder="Select a command group",
+            )
+        )
+
+        view.add_item(
+            discord.ui.Button(
+                url=self.client.support_server_invite, label="Support server"
+            )
+        )
+        view.add_item(
+            discord.ui.Button(
+                url="https://github.com/kile/killua", label="Source code"
+            )
+        )
+        view.add_item(discord.ui.Button(url="https://killua.dev", label="Website"))
+        view.add_item(
+            discord.ui.Button(url="https://patreon.com/kilealkuri", label="Premium")
+        )
+
+        return view
+    
+    async def _help_menu(
+        self, ctx: commands.Context, prefix: str
+    ) -> None:
+        """Displays the help menu"""
+        all_formatted_commands = self.client.get_formatted_commands()
+
+        embed = HelpEmbed(str(ctx.me.avatar.url))
+
+        for k, v in all_formatted_commands.items():
+            embed.add_field(
+                name=f"{v['emoji']['normal']} `{k}` ({len(v['commands'])} commands)",
+                value=v["description"],
+                inline=False,
+            )
+
+        embed.add_field(
+            name="** **",
+            value="\nFor more info to a specific command, use ```css\nhelp <command_name>```",
+            inline=False,
+        )
+        view = self._get_help_view(ctx.author.id)
+
+        msg = await ctx.send(
+            embed=embed, view=view, ephemeral=self.client.is_user_installed(ctx)
+        )
+
+        await view.wait()
+        if view.timed_out or view.value is None:
+            view.children[0].disabled = (
+                True  # Instead of looping through all the children, we just disable the select menu since we want the links to remain clickable
+            )
+            return await msg.edit(view=view)
+        else:
+            # await msg.edit(embed=msg.embeds[0], view=discord.ui.View())
+            if not self.client.is_user_installed(ctx):
+                await msg.delete()
+            else:
+                await view.disable(msg)
+            paginator = self.get_group_help(
+                ctx,
+                self.find_category(list(all_formatted_commands.keys())[view.value]),
+                prefix,
+            )
+            return await paginator.start()
+        
+    async def _help_command_argument(self, ctx: commands.Context, command_name: str, prefix: str) -> discord.Message:
+        """Handles help for a single command"""
+        all_commands = self.client.get_raw_formatted_commands()
+
+        if command_name.lower() not in [c.qualified_name for c in all_commands]:
+            return await ctx.send(
+                f'No command called "{command_name}" found.', ephemeral=True
+            )
+
+        cmd = next(c for c in all_commands if c.qualified_name == command_name.lower())
+        return await self.handle_command(ctx, cmd, prefix)
+    
+    async def _help_group_argument(self, ctx: commands.Context, group: str, prefix: str) -> discord.Message:
+        """If only "group" is specified when using the help command"""
+        # Check if the group exists
+        if self.find_category(group):
+            paginator = self.get_group_help(
+                ctx, self.find_category(group), prefix
+            )
+            return await paginator.start()
+
+        return await ctx.send(
+            f'No group called "{group}" found.', ephemeral=True
+        )
+        
+    async def _help_single_argument(self, ctx: commands.Context, group: str, prefix: str) -> discord.Message:
+        """If only "group" is specified when using the help command"""
+        # Check if the group exists
+        if self.find_category(group):
+            paginator = self.get_group_help(
+                ctx, self.find_category(group), prefix
+            )
+            return await paginator.start()
+
+        # If the group doesn't exist, check if it's a command
+        return await self._handle_command_help(ctx, group, prefix)
+
 
     @commands.hybrid_command(usage="help [group] [command]", extras={"id": 45})
     @discord.app_commands.describe(
@@ -250,120 +378,20 @@ class HelpCommand(commands.Cog):
     async def help(
         self, ctx: commands.Context, group: str = None, command: str = None
     ) -> None:
-        """Displays helfpul information about a command, group, or the bot itself."""
+        """Displays helpful information about a command, group, or the bot itself."""
         message_prefix = (await Guild.new(ctx.guild.id)).prefix if ctx.guild else "k!"
 
         if not (group or command):
-            all_formatted_commands = self.client.get_formatted_commands()
-
-            embed = HelpEmbed(str(ctx.me.avatar.url))
-
-            for k, v in all_formatted_commands.items():
-                embed.add_field(
-                    name=f"{v['emoji']['normal']} `{k}` ({len(v['commands'])} commands)",
-                    value=v["description"],
-                    inline=False,
-                )
-
-            embed.add_field(
-                name="** **",
-                value="\nFor more info to a specific command, use ```css\nhelp <command_name>```",
-                inline=False,
-            )
-            view = View(user_id=ctx.author.id, timeout=None)
-            view.add_item(
-                Select(
-                    [
-                        discord.SelectOption(
-                            label=k, value=str(i), emoji=v["emoji"]["unicode"]
-                        )
-                        for i, (k, v) in enumerate(all_formatted_commands.items())
-                    ],
-                    placeholder="Select a command group",
-                )
-            )
-
-            view.add_item(
-                discord.ui.Button(
-                    url=self.client.support_server_invite, label="Support server"
-                )
-            )
-            view.add_item(
-                discord.ui.Button(
-                    url="https://github.com/kile/killua", label="Source code"
-                )
-            )
-            view.add_item(discord.ui.Button(url="https://killua.dev", label="Website"))
-            view.add_item(
-                discord.ui.Button(url="https://patreon.com/kilealkuri", label="Premium")
-            )
-
-            msg = await ctx.send(
-                embed=embed, view=view, ephemeral=self.client.is_user_installed(ctx)
-            )
-
-            await view.wait()
-            if view.timed_out or view.value is None:
-                view.children[0].disabled = (
-                    True  # Instead of looping through all the children, we just disable the select menu since we want the links to remain clickable
-                )
-                return await msg.edit(view=view)
-            else:
-                # await msg.edit(embed=msg.embeds[0], view=discord.ui.View())
-                if not self.client.is_user_installed(ctx):
-                    await msg.delete()
-                else:
-                    await view.disable(msg)
-                paginator = self.get_group_help(
-                    ctx,
-                    self.find_category(list(all_formatted_commands.keys())[view.value]),
-                    message_prefix,
-                )
-                return await paginator.start()
+            return await self._help_menu(ctx, prefix=message_prefix)
 
         elif group and not command:  # if group is specified, but not command
-            # Check if the group exists
-            if self.find_category(group):
-                paginator = self.get_group_help(
-                    ctx, self.find_category(group), message_prefix
-                )
-                return await paginator.start()
-
-            all_commands = self.client.get_raw_formatted_commands()
-
-            # if command not in [c.qualified_name for c in self.client.commands]:
-            #     return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
-            if group.lower() not in [c.qualified_name for c in all_commands]:
-                return await ctx.send(
-                    f'No command or group called "{group}" found.', ephemeral=True
-                )
-
-            cmd = next(c for c in all_commands if c.qualified_name == group.lower())
-            return await self.handle_command(ctx, cmd, message_prefix)
+            return await self._help_single_argument(ctx, group, message_prefix)
 
         elif command:  # If both command and group exist, command takes priority
-            all_commands = self.client.get_raw_formatted_commands()
-
-            # if command not in [c.qualified_name for c in self.client.commands]:
-            #     return await ctx.send(f"No command called \"{command}\" found.", ephemeral=True)
-            if command.lower() not in [c.qualified_name for c in all_commands]:
-                return await ctx.send(
-                    f'No command called "{command}" found.', ephemeral=True
-                )
-
-            cmd = next(c for c in all_commands if c.qualified_name == command.lower())
-            return await self.handle_command(ctx, cmd, message_prefix)
+            return await self._help_command_argument(ctx, command, message_prefix)
 
         elif group:
-            if not self.find_category(group):
-                return await ctx.send(
-                    f'No group called "{group}" found.', ephemeral=True
-                )
-
-            paginator = self.get_group_help(
-                ctx, self.find_category(group), message_prefix
-            )
-            return await paginator.start()
+            return await self._help_group_argument(ctx, group, message_prefix)
 
 
 Cog = HelpCommand

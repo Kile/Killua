@@ -65,7 +65,7 @@ class PrometheusCog(commands.Cog):
         not_spam = 0
         for key, val in cast(dict, json["usage"]).items():
             reqs += val["request_count"]
-            if not key in API_ROUTES:
+            if key not in API_ROUTES:
                 continue
             not_spam += val["request_count"]
             new_requests = val["request_count"] - self.api_previous.get(key, {}).get(
@@ -136,8 +136,8 @@ class PrometheusCog(commands.Cog):
         for cmd in cmds:
             if (
                 not cmd.extras
-                or not "id" in cmd.extras
-                or not str(cmd.extras["id"]) in usage_data
+                or "id" not in cmd.extras
+                or str(cmd.extras["id"]) not in usage_data
             ):
                 continue
             COMMAND_USAGE.labels(
@@ -250,7 +250,7 @@ class PrometheusCog(commands.Cog):
         if old:
             LOCALE.labels(old).dec()
 
-        if not interaction.type in [InteractionType.application_command]:
+        if interaction.type not in [InteractionType.application_command]:
             # don't save just any interaction
             return
 

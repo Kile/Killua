@@ -125,7 +125,8 @@ class NewsMessage:
         return f"{'http://localhost:5173' if self.client.is_dev else'https://beta.killua.dev'}/news/{self.id}"
 
     async def _make_view(
-        self
+        self,
+        include_ping=True
     ) -> Tuple[discord.ui.LayoutView, Optional[List[discord.File]]]:
         """Creates a discord.ui.Container for the news message"""
         last_version = None
@@ -148,10 +149,10 @@ class NewsMessage:
             discord.ui.TextDisplay(
                 "-# **New "
                 + (
-                    f"Update `v{last_version}` -> `v{self.version}`**\n"
+                    f"Update `{last_version}` -> `{self.version}`**\n"
                     if last_version
                     else f"{self._type.capitalize()}**\n"
-                ) + f"-# <@&{self.relevant_ping}>\n"
+                ) + (f"-# <@&{self.relevant_ping}>\n" if include_ping else "")
                 + "# "
                 + self.title
             ),

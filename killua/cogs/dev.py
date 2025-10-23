@@ -431,7 +431,7 @@ class Dev(commands.GroupCog, group_name="dev"):
                 return await ctx.send("That version does not exist", ephemeral=True)
             
         news = NewsMessage.from_data(self.client, data)
-        view, files = await news._make_view()
+        view, files = await news._make_view(include_ping=False)
         await ctx.send(view=view, files=files, allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
     @commands.is_owner()

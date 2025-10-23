@@ -128,8 +128,8 @@ class Card1008(Card, IndividualCard):
         await self._attack_defense_check(self.ctx, other, target_card)
 
         await author.remove_card(self.id)
-        removed_card_other = other.remove_card(target_card)
-        removed_card_author = author.remove_card(
+        removed_card_other = await other.remove_card(target_card)
+        removed_card_author = await author.remove_card(
             random.choice([x[0] for x in author.all_cards if x[0] != 0])
         )
         await other.add_card(removed_card_author[0], removed_card_author[1]["fake"])

@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 import math
 from dataclasses import dataclass, field
 
@@ -17,22 +17,22 @@ from killua.utils.paginator import Paginator
 class Tag:
     found: bool
     tags: list = field(default_factory=list)
-    name: str = None
-    created_at: datetime = None
-    owner: int = None
-    content: str = None
-    uses: int = None
-    guild_id: int = None
-    indx: int = None
+    name: Optional[str] = None
+    created_at: Optional[datetime] = None
+    owner: Optional[int] = None
+    content: Optional[str] = None
+    uses: Optional[int] = None
+    guild_id: Optional[int] = None
+    indx: Optional[int] = None
 
     @classmethod
     async def new(cls, guild_id: int, tag_name: str) -> "Tag":
         raw = await DB.guilds.find_one({"id": guild_id})
         if raw is None:
             return Tag(found=False)
-        if not "tags" in raw:
+        if "tags" not in raw:
             return Tag(found=False)
-        if not tag_name.lower() in [r[0] for r in raw["tags"]]:
+        if tag_name.lower() not in [r[0] for r in raw["tags"]]:
             return Tag(found=False)
 
         indx = [r[0] for r in raw["tags"]].index(tag_name.lower())
@@ -78,11 +78,11 @@ class Member:
         raw = await DB.guilds.find_one({"id": guild_id})
         if raw is None:
             return Member(has_tags=False)
-        if not "tags" in raw:
+        if "tags" not in raw:
             return Member(has_tags=False)
 
         tags: list = raw["tags"]
-        if not user_id in [r[1]["owner"] for r in tags]:
+        if user_id not in [r[1]["owner"] for r in tags]:
             return Member(has_tags=False)
 
         owned_tags: list = []
@@ -146,7 +146,7 @@ class Tags(commands.Cog):
     ) -> List[discord.app_commands.Choice[str]]:
         """Returns a list of tags that match the message."""
         guild = await DB.guilds.find_one({"id": interaction.guild.id})
-        if not "tags" in guild:
+        if "tags" not in guild:
             return []
 
         tags = guild["tags"]
@@ -173,7 +173,7 @@ class Tags(commands.Cog):
         guild = await DB.guilds.find_one({"id": ctx.guild.id})
         member = await Member.new(ctx.author.id, ctx.guild.id)
 
-        if not (tag := await Tag.new(ctx.guild.id, name)).found is False:
+        if (tag := await Tag.new(ctx.guild.id, name)).found is not False:
             user = ctx.guild.get_member(tag.owner)
             return await ctx.send(
                 f"This tag already exists and is owned by {user or '`user left`'}", allowed_mentions=discord.AllowedMentions.none()
@@ -243,7 +243,7 @@ class Tags(commands.Cog):
 
         if (
             ctx.channel.permissions_for(ctx.author).manage_guild is False
-            and not ctx.author.id == tag.owner
+            and ctx.author.id != tag.owner
         ):
             return await ctx.send(
                 "You need to be tag owner or have the `manage server` permission to delete tags!"
@@ -264,7 +264,7 @@ class Tags(commands.Cog):
         if tag.found is False:
             return await ctx.send("A tag with that name does not exist!")
 
-        if not ctx.author.id == tag.owner:
+        if ctx.author.id != tag.owner:
             return await ctx.send("You need to be tag owner to edit this tag!")
 
         content = await self.client.get_text_response(
@@ -300,7 +300,7 @@ class Tags(commands.Cog):
                 "A tag with that name does not exist!", ephemeral=True
             )
 
-        if not ctx.author.id == tag.owner:
+        if ctx.author.id != tag.owner:
             return await ctx.send(
                 "You need to be tag owner to transfer this tag!", ephemeral=True
             )
@@ -367,7 +367,7 @@ class Tags(commands.Cog):
     async def list(self, ctx: commands.Context, page: int = 1):
         """Get a list of tags on the current server sorted by uses"""
         guild = await DB.guilds.find_one({"id": ctx.guild.id})
-        if not "tags" in guild:
+        if "tags" not in guild:
             return await ctx.send("Seems like this server doesn't have any tags!")
 
         s = sorted(

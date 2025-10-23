@@ -121,7 +121,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
     def initial_uwuing(self, text: str) -> str:
         t = []
         for w in text.split(" "):
-            chars = [c for c in w]
+            chars = list(w)
             if "r" in chars:
                 w = w.replace("r", "w")
             if "ng" in chars and randint(1, 2) == 1:
@@ -149,23 +149,27 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
     def cuteify(self, text: str, cuteness: int) -> str:
         s = text.split(" ")
         emotes = math.ceil(
-            (len([x for x in s if x[-1:] in [",", "."] and x[-2:] != ".."]) + 1)
+            (len([x for x in s if x[-1:] in [",", "."] and not x.endswith("..")]) + 1)
             * (cuteness / 10)
         )
         t = []
         for p, w in enumerate(s):
-            if emotes > 0:
-                if (
-                    w[-1:] in [",", "."] and w[-2:] != ".." and randint(1, 10) > 5
-                ) or p + 1 == len(s):
-                    t.append(
-                        w[: len(w) - (1 if w[-1:] in [",", "."] else 0)]
-                        + " "
-                        + choice(UWUS)
-                        + (w[-1:] if p != len(s) - 1 else "")
-                    )
-                    emotes = emotes - 1
-                    continue
+            if emotes > 0 and (
+                (
+                    (w.endswith(",") or w.endswith("."))
+                    and not w.endswith("..")
+                    and randint(1, 10) > 5
+                )
+                or p + 1 == len(s)
+            ):
+                t.append(
+                    w[: len(w) - (1 if w[-1:] in [",", "."] else 0)]
+                    + " "
+                    + choice(UWUS)
+                    + (w[-1:] if p != len(s) - 1 else "")
+                )
+                emotes = emotes - 1
+                continue
             t.append(w)
         return " ".join(t)
 
@@ -210,7 +214,10 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         await msg.edit(content=str("Pong in `" + str(1000 * (end - start))) + "` ms")
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.FUN, "id": 81, "clone_top_level": True}, usage="topic")
+    @commands.hybrid_command(
+        extras={"category": Category.FUN, "id": 81, "clone_top_level": True},
+        usage="topic",
+    )
     async def topic(self, ctx: commands.Context):
         """Sends a conversation starter"""
         await ctx.send(choice(TOPICS))
@@ -233,10 +240,14 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         question = question if len(question) < 2000 else question[:2000] + "..."
         embed = discord.Embed.from_dict(
             {
-                "title": f"8ball has spoken 🎱",
+                "title": "8ball has spoken 🎱",
                 "description": f"You asked:\n```\n{question}\n```\nMy answer is:\n```\n{choice(ANSWERS)}```",
                 "footer": {
-                    "icon_url": str(ctx.author.avatar.url if ctx.author.avatar else ctx.author.default_avatar.url),
+                    "icon_url": str(
+                        ctx.author.avatar.url
+                        if ctx.author.avatar
+                        else ctx.author.default_avatar.url
+                    ),
                     "text": f"Asked by {ctx.author}",
                 },
                 "color": 0x3E4A78,
@@ -371,7 +382,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         if hasattr(ctx, "invoked_by_context_menu") or not target:
             if ctx.interaction:
                 target = ctx.interaction.locale.value
-            elif (locale := (await User.new(ctx.author.id)).locale):
+            elif locale := (await User.new(ctx.author.id)).locale:
                 target = locale
         elif target.lower() in LANGS:
             target = LANGS[target.lower()]
@@ -380,8 +391,8 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
             await ctx.interaction.response.defer()
 
         if (
-            not target in LANGS.values() and not hasattr(ctx, "invoked_by_context_menu")
-        ) or not (source in LANGS.values()):
+            target not in LANGS.values() and not hasattr(ctx, "invoked_by_context_menu")
+        ) or (source not in LANGS.values()):
             return await ctx.send(
                 "Invalid language! This is how to use the command: `"
                 + ctx.command.usage
@@ -391,7 +402,6 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
 
         if len(source) > 1800:
             return await ctx.send("Too many characters to translate!", ephemeral=True)
-        
 
         chunks = text.split(".")
         formatted_chunks = []
@@ -413,31 +423,32 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
                 + coded_text
                 + "&langpair=en|"
                 + target.lower()
-                + "&de=kile@killua.dev" # increased usage limit
+                + "&de=kile@killua.dev"  # increased usage limit
             )
-            
-            if not (res.status == 200):
+
+            if res.status != 200:
                 return await ctx.send(":x: " + await res.text(), ephemeral=True)
 
             translation = await res.json()
-            if not "matches" in translation or len(translation["matches"]) < 1:
+            if "matches" not in translation or len(translation["matches"]) < 1:
                 if source == "autodetect":
                     return await ctx.send(
                         "Unfortunately the translators language detection is currently malfunctioning, please try again later!",
                         ephemeral=True,
                     )
                 return await ctx.send(
-                    "Translation failed!", ephemeral=hasattr(ctx, "invoked_by_context_menu")
+                    "Translation failed!",
+                    ephemeral=hasattr(ctx, "invoked_by_context_menu"),
                 )
-            
+
             full_translation = translation["responseData"]["translatedText"]
-            
+
             result += full_translation + "\n"
             quality += int(translation["matches"][0]["quality"])
 
         embed = discord.Embed.from_dict(
             {
-                "title": f"Translation Successfull",
+                "title": "Translation Successful",
                 "description": f"```\n{text}```\n`{source}` -> `{target}`\n\n```\n{result}```",
                 "color": 0x3E4A78,
                 "footer": {
@@ -454,7 +465,8 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
 
     @check()
     @commands.hybrid_command(
-        extras={"category": Category.FUN, "id": 89, "clone_top_level": True}, usage="calc <math>"
+        extras={"category": Category.FUN, "id": 89, "clone_top_level": True},
+        usage="calc <math>",
     )
     @discord.app_commands.describe(expression="The expression to calculate")
     async def calc(self, ctx: commands.Context, *, expression: str = None):
@@ -558,7 +570,10 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
             )
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.FUN, "id": 91, "clone_top_level": True}, usage="wyr")
+    @commands.hybrid_command(
+        extras={"category": Category.FUN, "id": 91, "clone_top_level": True},
+        usage="wyr",
+    )
     async def wyr(self, ctx: commands.Context):
         """Asks a random would you rather question and allows you to vote."""
 
@@ -586,14 +601,14 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
             name="B) " + B + " `[0 people]`", value="No takers", inline=False
         )
 
-        itemA = discord.ui.Button(
+        item_a = discord.ui.Button(
             style=discord.ButtonStyle.blurple, label="Option A", custom_id=f"wyr:opt-a:"
         )
-        itemB = discord.ui.Button(
+        item_b = discord.ui.Button(
             style=discord.ButtonStyle.blurple, label="Option B", custom_id=f"wyr:opt-b:"
         )
 
-        view.add_item(itemA).add_item(itemB)
+        view.add_item(item_a).add_item(item_b)
 
         await ctx.send(embed=embed, view=view)
 
