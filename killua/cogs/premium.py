@@ -137,8 +137,7 @@ class Premium(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        if self.invalid:
-            if not self.get_patrons.is_running():
+        if self.invalid and not self.get_patrons.is_running():
                 self.get_patrons.start()
 
     def _get_boosters(self) -> list:
@@ -189,9 +188,7 @@ class Premium(commands.Cog):
                     badges.remove(k)
 
             if d["tier"] is None:
-                await Guild.bulk_remove_premium(
-                    [int(x) for x in premium_guilds.keys()]
-                )
+                await Guild.bulk_remove_premium([int(x) for x in premium_guilds.keys()])
                 await user.clear_premium_guilds()
             else:
                 badges.append(d["tier"])
@@ -367,7 +364,7 @@ class Premium(commands.Cog):
                     "This guild is not a premium guild, so you don't remove it's premium status! Looking for premium? Visit https://www.patreon.com/KileAlkuri"
                 )
 
-            if not str(guild.id) in (
+            if str(guild.id) not in (
                 (user := await User.new(ctx.author.id)).premium_guilds.keys()
             ):
                 return await ctx.send(
@@ -375,13 +372,8 @@ class Premium(commands.Cog):
                 )
 
             if (
-                not (
-                    diff := (
-                        datetime.now() - user.premium_guilds[str(ctx.guild.id)]
-                    ).days
-                )
-                > 7
-            ):
+                diff := (datetime.now() - user.premium_guilds[str(ctx.guild.id)]).days
+            ) <= 7:
                 return await ctx.send(
                     f"You need to wait {7-int(diff)} more days before you can remove this servers premium status!"
                 )

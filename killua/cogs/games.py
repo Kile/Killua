@@ -450,9 +450,7 @@ class Trivia(CompetitiveGame):
             return
         await view.wait()
         await view.disable(msg)
-        if not view.value or view.timed_out:
-            pass
-        else:
+        if view.value or not view.timed_out:
             await self.play_against(other, jenny, replay=True)
 
 
@@ -469,7 +467,7 @@ class Rps(CompetitiveGame):
         self.emotes = {0: ":page_facing_up:", -1: ":moyai:", 1: ":scissors:"}
 
     def _get_options(self) -> List[discord.SelectOption]:
-        """Returns a new instance of the option list so itdoesn't get mixed up when editing"""
+        """Returns a new instance of the option list so it doesn't get mixed up when editing"""
         return [
             discord.SelectOption(label="rock", value="-1", emoji="\U0001f5ff"),
             discord.SelectOption(label="paper", value="0", emoji="\U0001f4c4"),
@@ -497,7 +495,7 @@ class Rps(CompetitiveGame):
     async def check_for_achievement(self, player: discord.User) -> None:
         """Checks wether someone has earend the "rps master" achivement"""
         user = await User.new(player.id)
-        if not "rps_master" in user.achievements and user.rps_stats["pve"]["won"] >= 25:
+        if "rps_master" not in user.achievements and user.rps_stats["pve"]["won"] >= 25:
             user.add_achievement("rps_master")
             card = Card(83)
             try:
@@ -1005,7 +1003,7 @@ class Games(commands.GroupCog, group_name="games"):
                 return await ctx.send(
                     f"You do not have enough Jenny for that. Your current balance is `{p1}`"
                 )
-            if not p2 is False and p2 < points:
+            if p2 is not False and p2 < points:
                 return await ctx.send(
                     f"Your opponent does not have enough Jenny for that. Their current balance is `{p2}`"
                 )
@@ -1044,7 +1042,7 @@ class Games(commands.GroupCog, group_name="games"):
         jenny: int = 50,
     ):
         """Play trivia either alone or against someone else to test your knowledge!"""
-        if topic and not topic.lower() in [k.lower() for k in TRIVIA_TOPICS]:
+        if topic and topic.lower() not in [k.lower() for k in TRIVIA_TOPICS]:
             return await ctx.send(
                 "That is not a valid topic. Please choose from the following: "
                 + ", ".join(TRIVIA_TOPICS)

@@ -323,7 +323,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             ctx,
             to_be_gained,
             "all "
-            + (sell_opt.name if not sell_opt.name == "all" else "free slots")
+            + (sell_opt.name if sell_opt.name != "all" else "free slots")
             + " cards",
         )
         if not confirmed:
@@ -332,7 +332,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         await user.bulk_remove(to_be_sold)
         await user.add_jenny(to_be_gained)
         await ctx.send(
-            f"You sold all your {sell_opt.name if not sell_opt.name == 'all' else 'free slots cards'} for {to_be_gained} Jenny!"
+            f"You sold all your {sell_opt.name if sell_opt.name != 'all' else 'free slots cards'} for {to_be_gained} Jenny!"
         )
 
     async def _sell_single(
@@ -601,7 +601,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             if message.author.id not in past_users:
                 past_users.append(message.author.id)
 
-        if not user.id in past_users:
+        if user.id not in past_users:
             return await ctx.send(
                 "The user you tried to approach has not send a message in this channel recently",
                 ephemeral=True,
@@ -647,7 +647,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             return await ctx.send("This card does not exist!")
 
         if not user.has_any_card(card.id):
-            return await ctx.send("You are not in possesion of this card!")
+            return await ctx.send("You are not in possession of this card!")
 
         if card.id == 0:
             return await ctx.send("You cannot discard this card!")
@@ -712,7 +712,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                         for k, v in cast(
                             IndividualCard, card_class
                         ).exec.__annotations__.items()
-                        if not str(k) == "return"
+                        if str(k) != "return"
                     ]
                 )
                 + "`"
@@ -802,9 +802,9 @@ class Cards(commands.GroupCog, group_name="cards"):
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
-        if not card.id in [
+        if card.id not in [
             x[0] for x in (await User.new(ctx.author.id)).fs_cards
-        ] and not card.id in [1036]:
+        ] and card.id not in [1036]:
             raise CheckFailure("You are not in possesion of this card!")
 
         if card.type != "spell":
@@ -839,7 +839,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             [
                 x
                 for x in card_class.exec.__annotations__.items()
-                if not str(x[0]) == "return"
+                if str(x[0]) != "return"
             ]
         ):
             if len(args) > p and isinstance(args[p], v):
@@ -854,7 +854,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                     [
                         f"[{k}: {v.__name__}]"
                         for k, v in card_class.exec.__annotations__.items()
-                        if not str(k) == "return"
+                        if str(k) != "return"
                     ]
                 )
                 + "`",
@@ -1017,7 +1017,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             return await ctx.send(f"Added {item} Jenny to your account")
 
         if type == "lootbox":
-            if not item.isdigit() or not int(item) in list(LOOTBOXES.keys()):
+            if not item.isdigit() or int(item) not in list(LOOTBOXES.keys()):
                 return await ctx.send("Invalid lootbox!")
             for _ in range(amount):
                 await user.add_lootbox(int(item))
@@ -1027,7 +1027,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             )
 
         if type == "booster":
-            if not item.isdigit() or not int(item) in list(BOOSTERS.keys()):
+            if not item.isdigit() or int(item) not in list(BOOSTERS.keys()):
                 return await ctx.send("Invalid booster!")
             for _ in range(amount):
                 await user.add_booster(int(item))

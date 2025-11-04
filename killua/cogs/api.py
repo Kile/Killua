@@ -604,9 +604,9 @@ class IPCRoutes(commands.Cog):
             else cmd.cog.__cog_group_name__ + " " + cmd.usage
         )
         usage_message = (
-            (f"k!" + cmd.qualified_name.replace(cmd.name, "") + cmd.usage)
+            ("k!" + cmd.qualified_name.replace(cmd.name, "") + cmd.usage)
             if not isinstance(cmd.cog, commands.GroupCog)
-            else f"k!" + cmd.usage
+            else "k!" + cmd.usage
         )
 
         return {
@@ -934,7 +934,7 @@ class IPCRoutes(commands.Cog):
 
         # Prepare update data
         for key, value in data.items():
-            if not key in news_item:
+            if key not in news_item:
                 continue
             if key in ["news_id", "message_id"]:
                 continue
@@ -971,8 +971,8 @@ class IPCRoutes(commands.Cog):
     async def _send_discord_message(self, data: dict) -> int:
         """Send a Discord message for a news item"""
         news_message = NewsMessage.from_data(self.client, data)
-        if news_message.timestamp < UPDATE_AFTER:
-            # Don't send messages for old news items
+        if news_message.timestamp < UPDATE_AFTER or self.client.is_dev:
+            # Don't send messages for old news items or in dev mode
             return None
         message_id = await news_message.send()
         return message_id
@@ -981,7 +981,7 @@ class IPCRoutes(commands.Cog):
         """Edit an existing Discord message"""
         try:
             news_message = NewsMessage.from_data(self.client, data)
-            if news_message.timestamp < UPDATE_AFTER:
+            if news_message.timestamp < UPDATE_AFTER or self.client.is_dev:
                 # If the news item is old, do nothing
                 return None
             await news_message.edit(message_id)

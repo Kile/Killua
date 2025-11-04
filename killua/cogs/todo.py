@@ -718,13 +718,11 @@ class TodoSystem(commands.Cog):
         Autocomplete for the due in parameter
         """
         times = ["1m", "5m", "10m", "30m", "1h", "12h", "1d", "7d"]
-        return list(
-            [
+        return [
                 discord.app_commands.Choice(name=opt, value=opt)
                 for opt in times
                 if opt.lower().startswith(current.lower())
             ]
-        )
 
     @check()
     @todo.command(extras={"category": Category.TODO, "id": 108}, usage="add <text>")
@@ -795,7 +793,7 @@ class TodoSystem(commands.Cog):
         if todo_list is None:
             return
 
-        if not ctx.author.id == todo_list.owner:
+        if ctx.author.id != todo_list.owner:
             return await ctx.send(
                 "You have to own the todo list to remove permissions from users"
             )
@@ -990,7 +988,7 @@ class TodoSystem(commands.Cog):
         if todo_list is None:
             return
 
-        if not user.id == todo_list.owner and not user.id in todo_list.editor:
+        if user.id != todo_list.owner and user.id not in todo_list.editor:
             return await ctx.send(
                 "You can only assign people todos who have permission to edit this todo list"
             )
@@ -1003,7 +1001,7 @@ class TodoSystem(commands.Cog):
             )
 
         if user.id in todos[todo_number - 1]["assigned_to"]:
-            if not ctx.author == user:
+            if ctx.author != user:
                 embed = discord.Embed.from_dict(
                     {
                         "title": f"Removed assignment to todo on list {todo_list.name} (ID: {todo_list.id})",
@@ -1028,7 +1026,7 @@ class TodoSystem(commands.Cog):
         todos[todo_number - 1]["assigned_to"].append(user.id)
         todo_list.set_property("todos", todos)
 
-        if not ctx.author == user:
+        if ctx.author != user:
             embed = discord.Embed.from_dict(
                 {
                     "title": f"Assigned to todo on list {todo_list.name} (ID: {todo_list.id})",
@@ -1065,8 +1063,8 @@ class TodoSystem(commands.Cog):
             return
 
         if (
-            not ctx.author.id == todo_list.owner
-            and not ctx.author.id in todo_list.editor
+            ctx.author.id != todo_list.owner
+            and ctx.author.id not in todo_list.editor
         ):
             return await ctx.send(
                 "You can only reorder tasks who have permission to edit this todo list"
@@ -1100,7 +1098,7 @@ class TodoSystem(commands.Cog):
         except TodoListNotFound:
             return await ctx.send("No todo list with this id exists")
 
-        if not ctx.author.id == todo_list.owner:
+        if ctx.author.id != todo_list.owner:
             return await ctx.send("Only the owner of a todo list can delete it")
 
         await todo_list.delete()
@@ -1138,7 +1136,7 @@ class TodoSystem(commands.Cog):
 
         embed = discord.Embed.from_dict(
             {
-                "title": f"Your todo lists and permissions",
+                "title": "Your todo lists and permissions",
                 "description": f"**todo lists you own**\n\n{l_o or 'No todo lists'}\n\n**todo lists you have viewing permissions**\n\n{l_v or 'No todo lists'}\n\n**todo lists you have editing permissions**\n\n{l_e or 'No todo lists'}",
                 "color": 0x3E4A78,
                 "footer": {

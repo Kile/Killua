@@ -71,7 +71,7 @@ class Economy(commands.GroupCog, group_name="econ"):
         res: List[dict] = []  # The fields to be returned
 
         for lb in lootboxes:
-            if not lb in (l := [y for _, y in lbs]):
+            if lb not in (l := [y for _, y in lbs]):
                 lbs.append((1, lb))
             else:
                 indx = l.index(lb)

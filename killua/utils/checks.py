@@ -142,7 +142,9 @@ def check(time: int = 0):
             str(command.extras["id"]), data.get(str(command.extras["id"]), 0) + 1
         )
 
-    async def custom_cooldown(ctx: commands.Context, time: int, user: User, guild: Guild) -> bool:
+    async def custom_cooldown(
+        ctx: commands.Context, time: int, user: User, guild: Guild
+    ) -> bool:
         global cooldowndict
         now = datetime.now()
         try:
@@ -198,7 +200,7 @@ def check(time: int = 0):
         if not guild:
             return True
 
-        if not ctx.command.name in guild.commands:
+        if ctx.command.name not in guild.commands:
             return True
 
         command = guild.commands[ctx.command.name]
@@ -220,12 +222,12 @@ def check(time: int = 0):
             return False
 
         # Checking if the channel is whitelisted if it is only whitelisted to a few channels
-        if not ctx.channel.id in command["restricted_to_channels"]:
+        if ctx.channel.id not in command["restricted_to_channels"]:
             return False
 
         # Checking if the user has a role the command is restricted to
         if (
-            not len(
+            len(
                 [
                     i
                     for i, j in zip(
@@ -235,7 +237,7 @@ def check(time: int = 0):
                     if i == j
                 ]
             )
-            > 0
+            <= 0
             and len(command["restricted_to_roles"]) > 0
         ):
             return False
@@ -266,11 +268,15 @@ def check(time: int = 0):
         return True
 
     async def predicate(ctx: commands.Context) -> bool:
-        if ctx.guild and ctx.guild.member_count is not None and (
-            (ctx.guild.member_count < 10_000 and not ctx.guild.chunked)
-            or abs(ctx.guild.member_count - len(ctx.guild.members))
-            > int(ctx.guild.member_count / 10_000)
-        ): # If the guild is not chunked, or, for large guilds, if the member count is off by more than 0.01%
+        if (
+            ctx.guild
+            and ctx.guild.member_count is not None
+            and (
+                (ctx.guild.member_count < 10_000 and not ctx.guild.chunked)
+                or abs(ctx.guild.member_count - len(ctx.guild.members))
+                > int(ctx.guild.member_count / 10_000)
+            )
+        ):  # If the guild is not chunked, or, for large guilds, if the member count is off by more than 0.01%
             # This is a workaround for the fact that Discord literally cannot keep up with meber join
             # dispatches on large guilds
             await ctx.defer()  # Chunking can take a while
@@ -278,8 +284,10 @@ def check(time: int = 0):
 
         if await blcheck(ctx.author.id):
             return False
-        
-        guild = await Guild.new(ctx.guild.id, ctx.guild.member_count) if ctx.guild else None
+
+        guild = (
+            await Guild.new(ctx.guild.id, ctx.guild.member_count) if ctx.guild else None
+        )
         user = await User.new(ctx.author.id)
 
         try:

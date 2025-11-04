@@ -167,7 +167,7 @@ class Card1011(Card, IndividualCard):
         await author.remove_card(self.id)
 
         self._has_cards_check(
-            other.rs_cards, f" in their restricted slots!", uses_up=True
+            other.rs_cards, " in their restricted slots!", uses_up=True
         )
         card = random.choice([x for x in other.rs_cards if x[0] != 0])
         await self._is_maxed_check(card[0])
@@ -329,7 +329,7 @@ class Card1026(Card, IndividualCard):
         try:
             self._has_effect_check(author, str(self.id))
         except CheckFailure:
-            if not author.count_card(self.id) > 1:
+            if author.count_card(self.id) <= 1:
                 raise CheckFailure(
                     "You don't have another copy of this card to renew the effect"
                 )
@@ -373,7 +373,7 @@ class Card1028(Card, IndividualCard):
         self._has_cards_check(other.fs_cards, " in their free slots")
 
         target_card = random.choice(
-            [x for x in other.fs_cards if not x[0] in INDESTRUCTIBLE]
+            [x for x in other.fs_cards if x[0] not in INDESTRUCTIBLE]
         )
         await author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
@@ -397,7 +397,7 @@ class Card1029(Card, IndividualCard):
         self._has_cards_check(other.rs_cards, " in their restricted slots")
 
         target_card = random.choice(
-            [x for x in other.rs_cards if not x[0] in INDESTRUCTIBLE and x[0] != 0]
+            [x for x in other.rs_cards if x[0] not in INDESTRUCTIBLE and x[0] != 0]
         )
         await author.remove_card(self.id)
         await self._attack_defense_check(self.ctx, other, target_card)
@@ -453,7 +453,7 @@ class Card1035(Card, IndividualCard):
         await author.remove_card(self.id)
         await author.add_effect(
             f"page_protection_{page}", datetime.now()
-        )  # The valuedoesn't matter here
+        )  # The value doesn't matter here
         await self.ctx.send(f"Success! Page {page} is now permanently protected")
 
 
@@ -462,16 +462,16 @@ class Card1036(Card, IndividualCard):
     async def exec(self, effect: str, card_id: int) -> None:
         author = await User.new(self.ctx.author.id)
 
-        if not str(self.id) in author.effects and not author.has_fs_card(self.id):
+        if str(self.id) not in author.effects and not author.has_fs_card(self.id):
             raise CheckFailure(
                 f"You need to have used the card {self.id} once to use this command"
             )
 
-        if author.has_fs_card(self.id) and not str(self.id) in author.effects:
+        if author.has_fs_card(self.id) and str(self.id) not in author.effects:
             await author.remove_card(self.id)
         await author.add_effect(str(self.id), datetime.now())
 
-        if not effect.lower() in ["list", "analysis", "1031", "1038"]:
+        if effect.lower() not in ["list", "analysis", "1031", "1038"]:
             raise CheckFailure(
                 f"Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{await self.client.command_prefix(self.client, self.ctx.message)[2]}use {self.id} <list/analysis> <card_id>`"
             )

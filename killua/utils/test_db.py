@@ -11,7 +11,7 @@ class TestingDatabase:
 
     @property
     def collection(self) -> str:
-        if not self._collection in self.db:
+        if self._collection not in self.db:
             self.db[self._collection] = []
         return self._collection
 

@@ -11,6 +11,7 @@ pub trait ResultExt<T> {
 }
 impl<T, E> ResultExt<T> for Result<T, E> {
     fn context(self, message: &str) -> Result<T, BadRequest<Json<Value>>> {
+        error!("{}", message);
         self.map_err(|_| BadRequest(Json(json!({ "error": message }))))
     }
 }
@@ -57,7 +58,7 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
 
     assert!(socket.set_sndtimeo(1000).is_ok());
     assert!(socket.set_connect_timeout(5000).is_ok());
-    let address = std::env::var("ZMQ_ADDRESS").unwrap_or("tcp://0.0.0.0:3210".to_string());
+    let address = std::env::var("ZMQ_ADDRESS").unwrap_or("tcp://127.0.0.1:3210".to_string());
     assert!(socket.connect(&address).is_ok());
     assert!(socket.set_identity("api-client".as_bytes()).is_ok());
 
@@ -73,7 +74,6 @@ pub fn make_request_inner<'a, T: Serialize + Deserialize<'a>>(
     data.extend_from_slice(request_json.as_bytes());
     socket.send("", zmq::SNDMORE)?; // delimiter
     socket.send(data, 0)?;
-
     socket.recv(&mut msg, 0)?; // Receive acknowledgment from the server
     socket.recv(&mut msg, 0)?; // Receive the actual response
 

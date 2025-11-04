@@ -372,7 +372,7 @@ class Card:
         real_owners = []
         for o in await card.owners():
             # Get the total number of owners
-            if not o in real_owners:
+            if o not in real_owners:
                 real_owners.append(o)
         embed = discord.Embed.from_dict(
             {

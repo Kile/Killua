@@ -192,7 +192,7 @@ class User:
         u = await DB.teams.find_one({"id": user_id})
         if u is None:
             return False
-        if not "cards" in u:
+        if "cards" not in u:
             return False
 
         return True
@@ -341,7 +341,7 @@ class User:
 
     async def remove_badge(self, badge: str) -> None:
         """Removes a badge from a user"""
-        if not badge.lower() in self.badges:
+        if badge.lower() not in self.badges:
             return  # don't really care if that happens
         self._badges.remove(badge.lower())
         await self._update_val("badges", badge.lower(), "$pull")
@@ -431,7 +431,7 @@ class User:
         self, action: str, was_target: bool = False, amount: int = 1
     ) -> Optional[str]:
         """Adds an action to the action stats. If a badge was a added, returns the name of the badge."""
-        if not action in self.action_stats:
+        if action not in self.action_stats:
             self.action_stats[action] = {
                 "used": 0 if was_target else amount,
                 "targeted": 1 if was_target else 0,
@@ -653,11 +653,10 @@ class User:
             return fs_cards
 
         for item in args:
-            if item[0] < 100:
-                if not self.has_rs_card(item[0]):
-                    if not item[0] in [x[0] for x in rs_cards]:
-                        rs_cards.append(item)
-                        continue
+            if item[0] < 100 and not self.has_rs_card(item[0]):
+                if item[0] not in [x[0] for x in rs_cards]:
+                    rs_cards.append(item)
+                    continue
             fs_append(item)
 
         self.rs_cards = [*self.rs_cards, *rs_cards]
@@ -738,7 +737,7 @@ class User:
 
     async def add_met_user(self, user_id: int) -> None:
         """Adds a user to a "previously met" list which is a parameter in some spell cards"""
-        if not user_id in self.met_user:
+        if user_id not in self.met_user:
             self.met_user.append(user_id)
             await self._update_val("met_user", user_id, "$push")
 
@@ -805,7 +804,7 @@ class User:
 
     async def add_achievement(self, achievement: str) -> None:
         """Adds an achievement to the user's achievements"""
-        if not achievement in self.achievements:
+        if achievement not in self.achievements:
             self.achievements.append(achievement)
             await self._update_val("achievements", achievement, "$push")
 

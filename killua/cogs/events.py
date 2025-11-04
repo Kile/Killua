@@ -715,7 +715,7 @@ class Events(commands.Cog):
                 # find component and remove the vote if in close button
                 for component in interaction.message.components[0].children:
 
-                    if not (encrypted in component.custom_id):
+                    if encrypted not in component.custom_id:
                         continue
 
                     component.custom_id = re.sub(

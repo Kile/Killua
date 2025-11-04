@@ -74,7 +74,7 @@ This would eventually enable the command to boil down to:
             [
                 x
                 for x in card_class.exec.__annotations__.items()
-                if not str(x[0]) == "return"
+                if str(x[0]) != "return"
             ]
         ):
             if len(args) > p and isinstance(args[p], v):
@@ -89,7 +89,7 @@ This would eventually enable the command to boil down to:
                     [
                         f"[{k}: {v.__name__}]"
                         for k, v in card_class.exec.__annotations__.items()
-                        if not str(k) == "return"
+                        if str(k) != "return"
                     ]
                 )
                 + "`",

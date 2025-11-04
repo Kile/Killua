@@ -34,7 +34,7 @@ class TodoList:
     def __get_cache(cls, list_id: Union[int, str]):
         """Returns a cached object"""
         if isinstance(list_id, str) and not list_id.isdigit():
-            if not list_id in cls.custom_id_cache:
+            if list_id not in cls.custom_id_cache:
                 return None
             list_id = cls.custom_id_cache[list_id]
         return cls.cache[int(list_id)] if list_id in cls.cache else None
@@ -243,7 +243,7 @@ class TodoList:
 
     async def enable_addon(self, addon: str) -> None:
         """Adds an attribute to the bought list to be able to be used"""
-        if not addon.lower() in self._bought:
+        if addon.lower() not in self._bought:
             await self._update_val("bought", addon.lower(), "$push")
             self._bought.append(addon.lower())
 

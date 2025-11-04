@@ -219,7 +219,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         if not group:
             return
 
-        if not group.lower() in possible_groups:
+        if group.lower() not in possible_groups:
             return await ctx.send("That is not a valid group", ephemeral=True)
         else:
             top = [
@@ -352,7 +352,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         spam = 0
         data = []
         for key, val in cast(dict, json["usage"]).items():
-            if not key in API_ROUTES:
+            if key not in API_ROUTES:
                 spam += val["request_count"]
                 continue
             reqs: int = cast(dict, val).get("request_count")

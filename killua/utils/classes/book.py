@@ -40,7 +40,7 @@ class Book:
         """Creates the book image of the current page and returns it"""
         background = await self._get_background(0 if len(data) == 10 else 1)
         if restricted_slots:
-            background = await self._numbers(background, data, page)
+            background = self._numbers(background, data, page)
         background = await self._cards(background, data, 0 if len(data) == 10 else 1)
         background = self._set_page(background, page)
         return background
@@ -148,16 +148,15 @@ class Book:
         # Multiply all by scalar
         card_pos = [[(x * self.scalar, y * self.scalar) for x, y in i] for i in card_pos]
         for n, i in enumerate(data):
-            if i:
-                if i[1]:
-                    if not str(i[0]) in self.card_cache:
-                        self.card_cache[str(i[0])] = await self._get_card(i[1])
+            if i and i[1]:
+                if str(i[0]) not in self.card_cache:
+                    self.card_cache[str(i[0])] = await self._get_card(i[1])
 
-                    card = self.card_cache[str(i[0])]
-                    image.paste(card, (card_pos[option][n]), card)
+                card = self.card_cache[str(i[0])]
+                image.paste(card, (card_pos[option][n]), card)
         return image
 
-    async def _numbers(self, image: Image.Image, data: list, page: int) -> Image.Image:
+    def _numbers(self, image: Image.Image, data: list, page: int) -> Image.Image:
         """Puts the numbers on the restricted slots in the book"""
         page -= 1
         numbers_pos: list = [
@@ -326,9 +325,9 @@ class Book:
                 # By calculating where the list should start, I make the code faster because I don't need to
                 # make a list of all cards and I also don't need to deal with a problem I had when trying to get
                 # the right part out of the list. It also saves me lines!
-            while not len(rs_cards) % 18 == 0 or len(rs_cards) == 0:
+            while len(rs_cards) % 18 != 0 or len(rs_cards) == 0:
                 # I killed my pc multiple times while testing, don't use while loops!
-                if not i in [x[0] for x in person.rs_cards]:
+                if i not in [x[0] for x in person.rs_cards]:
                     rs_cards.append([i, None])
                 else:
                     rs_cards.append(
