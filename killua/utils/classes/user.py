@@ -852,4 +852,23 @@ class User:
         """Toggles message tracking for the user"""
         self.message_tracking_enabled = not self.message_tracking_enabled
         await self._update_val("message_tracking_enabled", self.message_tracking_enabled)
+        
+        if not self.message_tracking_enabled:
+            await self._delete_message_tracking_data()
+
         return self.message_tracking_enabled
+    
+    async def _delete_message_tracking_data(self) -> None:
+        """Deletes all message tracking data for the user"""
+        from killua.utils.classes.guild import Guild
+
+        result = await DB.guilds.update_many(
+            {f"message_stats.{self.id}": {"$exists": True}},
+            {"$unset": {f"message_stats.{self.id}": ""}},
+        )
+
+        for guild_id, guild in Guild.cache.items():
+            if self.id in guild.message_stats:
+                del guild.message_stats[self.id]
+                
+        logging.info(f"Deleted message tracking data for user {self.id} in {result.modified_count} guild(s)")

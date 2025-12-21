@@ -6,6 +6,7 @@ from typing import Optional
 from killua.bot import BaseBot
 from killua.utils.classes.guild import Guild
 from killua.utils.classes.user import User
+from killua.utils.views import ConfirmView
 
 TRACKING_SINCE = "2025-12-21"  # The date message tracking was added MUST BE UPDATED IF DEPLOYED
 
@@ -75,11 +76,35 @@ class Message(commands.GroupCog, group_name="message"):
         await interaction.response.defer(ephemeral=True)
 
         guild = await Guild.new(interaction.guild.id)
-        new_status = await guild.toggle_message_tracking()
 
-        status_text = "enabled" if new_status else "disabled"
-        status_emoji = "✅" if new_status else "❌"
-        await interaction.followup.send(f"{status_emoji} Message tracking has been {status_text} for this server.", ephemeral=True)
+        if guild.message_tracking_enabled:
+            embed = discord.Embed(
+                title="⚠️ Warning",
+                description="Disabling message tracking will remove all message counts from this server's stats and leaderboards. Are you sure you want to proceed?",
+                color=discord.Color.orange()
+            )
+            view = ConfirmView(interaction.user.id)
+            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+            await view.wait()
+
+            if not view.value:
+                return # cancelled
+
+        new_status = await guild.toggle_message_tracking()
+        if new_status:
+            embed = discord.Embed(
+                title="✅ Message Tracking Enabled",
+                description="Message tracking has been enabled for this server. Future messages from users who have enabled message tracking will be counted in stats and leaderboards.",
+                color=discord.Color.green()
+            )
+        else:
+            embed = discord.Embed(
+                title="❌ Message Tracking Disabled",
+                description="Message tracking has been disabled for this server. All message counts have been removed from stats and leaderboards.",
+                color=discord.Color.red()
+            )
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="user_tracking", description="Toggle message tracking for your account")
     @app_commands.checks.cooldown(1, 10.0)
@@ -88,14 +113,37 @@ class Message(commands.GroupCog, group_name="message"):
         interaction: discord.Interaction,
     ):
         """Toggle message tracking for your account"""
-        await interaction.response.defer(ephemeral=True)
-
         user = await User.new(interaction.user.id)
+
+        if user.message_tracking_enabled:
+            embed = discord.Embed(
+                title="⚠️ Warning",
+                description="Disabling message tracking will remove your message counts from all guild leaderboards and stats. Are you sure you want to proceed?",
+                color=discord.Color.orange()
+            )
+            view = ConfirmView(interaction.user.id)
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            await view.wait()
+
+            if not view.value:
+                return # cancelled
+
         new_status = await user.toggle_message_tracking()
 
-        status_text = "enabled" if new_status else "disabled"
-        status_emoji = "✅" if new_status else "❌"
-        await interaction.followup.send(f"{status_emoji} Message tracking has been {status_text} for your account.", ephemeral=True)
+        if new_status:
+            embed = discord.Embed(
+                title="✅ Message Tracking Enabled",
+                description="You have enabled message tracking for your account. Your future messages will be counted in guild stats and leaderboards.",
+                color=discord.Color.green()
+            )
+        else:
+            embed = discord.Embed(
+                title="❌ Message Tracking Disabled",
+                description="You have disabled message tracking for your account. Your message counts have been removed from all guild stats and leaderboards.",
+                color=discord.Color.red()
+            )
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     async def _show_user_stats(
         self, 
@@ -198,4 +246,5 @@ class Message(commands.GroupCog, group_name="message"):
             )
         else:
             raise error
+        
 Cog = Message

@@ -24,6 +24,7 @@ class Guild:
     added_on: Optional[datetime] = None
     message_stats: Dict[int, int] = field(default_factory=dict)  # user_id: message_count
     message_tracking_enabled: bool = False
+    tracking_since: Optional[datetime] = None
     cache: ClassVar[Dict[int, Guild]] = {}
 
     @classmethod
@@ -73,6 +74,7 @@ class Guild:
         message_stats_raw = raw.get("message_stats", {})
         raw["message_stats"] = {int(k): v for k, v in message_stats_raw.items()} if message_stats_raw else {}
         raw["message_tracking_enabled"] = raw.get("message_tracking_enabled", False)
+        raw["tracking_since"] = raw.get("tracking_since", None)
 
         guild = cls.from_dict(raw)
         cls.cache[guild_id] = guild
@@ -179,4 +181,14 @@ class Guild:
         """Toggles message tracking for the guild"""
         self.message_tracking_enabled = not self.message_tracking_enabled
         await self._update_val("message_tracking_enabled", self.message_tracking_enabled)
+        if self.message_tracking_enabled:
+            # Remove all users who have disabled tracking from message_stats
+            tracked_stats = {k: v for k, v in self.message_stats.items() if (await User.new(k)).message_tracking_enabled}
+            self.message_stats = tracked_stats
+            await self._update_val("message_stats", {str(k): v for k, v in tracked_stats.items()})
+            self.tracking_since = datetime.now()
+            await self._update_val("tracking_since", self.tracking_since)
+        else:
+            self.message_stats = {}
+            await self._update_val("message_stats", {})
         return self.message_tracking_enabled
