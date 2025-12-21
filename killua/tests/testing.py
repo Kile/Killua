@@ -50,12 +50,18 @@ class Testing:
     def all_tests(self) -> List[Testing]:
         """Automatically checks what functions are test based on their name and the overlap with the Cog method names"""
         cog_methods = []
-        for cmd in [(command.name, command) for command in self.cog.get_commands()]:
-            if hasattr(cmd[1], "walk_commands") and cmd[1].walk_commands():
-                for child in cmd[1].walk_commands():
-                    cog_methods.append((child.name, child))
-            else:
-                cog_methods.append(cmd)
+
+        # handle app commands and normal commands
+        if hasattr(self.cog, '__cog_app_commands__'):
+            for cmd in self.cog.__cog_app_commands__:
+                cog_methods.append((cmd.name, cmd))
+        else:
+            for cmd in [(command.name, command) for command in self.cog.get_commands()]:
+                if hasattr(cmd[1], "walk_commands") and cmd[1].walk_commands():
+                    for child in cmd[1].walk_commands():
+                        cog_methods.append((child.name, child))
+                else:
+                    cog_methods.append(cmd)
 
         command_classes: List[Testing] = []
 
