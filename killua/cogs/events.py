@@ -1157,7 +1157,6 @@ class Events(commands.Cog):
         try:
             user = await User.new(message.author.id)
             await user.increment_message_count(message.guild.id)
-            logging.info(f"Incremented message count for user {message.author.id} in guild {message.guild.id}")
         except Exception as e:
             logging.error(f"Failed to increment message count for user {message.author.id} in guild {message.guild.id}: {e}")
 
