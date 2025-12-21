@@ -1140,5 +1140,25 @@ class Events(commands.Cog):
             pass  # This theoretically should be covered by all the cases above,
             # but handling it again here can't hurt
 
+    @commands.Cog.listener()
+    async def on_message(self,message: discord.Message):
+        # ignore bot messages
+        if message.author.bot:
+            return
+        
+        # do not track DMs
+        if not message.guild:
+            return
+        
+        # ignore system messages
+        if message.type != discord.MessageType.default:
+            return
+
+        try:
+            user = await User.new(message.author.id)
+            await user.increment_message_count(message.guild.id)
+            logging.info(f"Incremented message count for user {message.author.id} in guild {message.guild.id}")
+        except Exception as e:
+            logging.error(f"Failed to increment message count for user {message.author.id} in guild {message.guild.id}: {e}")
 
 Cog = Events
