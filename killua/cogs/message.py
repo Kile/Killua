@@ -30,11 +30,19 @@ class Message(commands.GroupCog, group_name="message"):
         await interaction.response.defer()
 
         guild = await Guild.new(interaction.guild.id)
+        if not guild.message_tracking_enabled:
+            await interaction.followup.send("❌ Message tracking is disabled for this server.", ephemeral=True)
+            return
 
-        if user:
-            await self._show_user_stats(interaction, guild, user)
-        else:
-            await self._show_user_stats(interaction, guild, interaction.user)
+        if not user:
+            user = interaction.user
+
+        member = await User.new(user.id)
+        if not member.message_tracking_enabled:
+            await interaction.followup.send(f"❌ {user.mention} has disabled message tracking for their account.", ephemeral=True)
+            return
+    
+        await self._show_user_stats(interaction, guild, user)
 
     @app_commands.command(name="leaderboard", description="Show the message leaderboard for this guild")
     @app_commands.describe(
@@ -51,6 +59,9 @@ class Message(commands.GroupCog, group_name="message"):
         await interaction.response.defer()
 
         guild = await Guild.new(interaction.guild.id)
+        if not guild.message_tracking_enabled:
+            await interaction.followup.send("❌ Message tracking is disabled for this server.", ephemeral=True)
+            return
         await self._show_leaderboard(interaction, guild, limit)
 
     @app_commands.command(name="server_tracking", description="Toggle message tracking for this server")

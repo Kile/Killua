@@ -157,8 +157,8 @@ class Guild:
 
     async def get_top_senders(self, limit: int = 10) -> List[tuple[int, int]]:
         """Fetch the top message senders in the guild. Returns a list of (user_id, message_count) tuples"""
-        # Sort the in-memory message_stats and return top N
-        sorted_stats = sorted(self.message_stats.items(), key=lambda x: x[1], reverse=True)
+        tracked_stats = {k: v for k, v in self.message_stats.items() if (await User.new(k)).message_tracking_enabled}
+        sorted_stats = sorted(tracked_stats.items(), key=lambda x: x[1], reverse=True)
         return sorted_stats[:limit]
     
     async def get_total_messages(self) -> int:
