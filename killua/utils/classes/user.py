@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Any, ClassVar, Dict, List, Optional, Union, cast, Literal, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass\
+
+import logging
 
 from killua.static.constants import (
     DB,
@@ -43,6 +45,7 @@ class User:
     email: Optional[str]
     email_notifications: Dict[Literal["news", "updates", "posts"], bool]
     cache: ClassVar[Dict[int, User]] = {}
+    message_stats: Dict[int, int] # guild_id, message_count
 
     async def set_email(self, email: str) -> None:
         """Sets the user's email address"""
@@ -108,6 +111,7 @@ class User:
                 "email_notifications",
                 {"news": False, "updates": False, "posts": False},
             ),
+            message_stats=data.get("message_stats", {}),
         )
 
         cls.cache[user_id] = instance
@@ -253,6 +257,7 @@ class User:
                         "updates": False,
                         "posts": False,
                     },
+                    "message_stats": {},
                 }
             )
 
@@ -842,3 +847,14 @@ class User:
         self.achievements.append("logged_into_website")
         await self._update_val("achievements", self.achievements)
         return True
+
+    async def increment_message_count(self, guild_id: int, amount: int = 1) -> None:
+        """Increments the message count for this user in a specific guild"""
+        guild_id_str = str(guild_id)
+        current_count = self.message_stats.get(guild_id, 0)
+        self.message_stats[guild_id] = current_count + amount
+        await self._update_val(f"message_stats.{guild_id_str}", self.message_stats[guild_id])
+
+    async def get_message_count(self, guild_id: int) -> int:
+        """Gets the message count for this user in a specific guild"""
+        return self.message_stats.get(guild_id, 0)

@@ -136,3 +136,55 @@ class Guild:
         """Updates the votes of a poll"""
         self.polls[str(id)]["votes"] = updated
         await self._update_val(f"polls.{id}.votes", updated)
+
+    async def get_top_senders(self, limit: int = 10) -> List[tuple[int, int]]:
+        """Fetch the top message senders in the guild. Returns a list of (user_id, message_count) tuples"""
+        guild_id = str(self.id)
+        pipeline = [
+            {"$match": {f"message_stats.{guild_id}": {"$exists": True}}},
+            {
+                "$project": {
+                    "id": 1,
+                    "message_count": f"$message_stats.{guild_id}",
+                }
+            },
+            {"$sort": {"message_count": -1}},
+            {"$limit": limit},
+        ]
+
+        cursor = await DB.teams.aggregate(pipeline)
+        result = await cursor.to_list(length=limit)
+        return [(doc["id"], doc["message_count"]) for doc in result]
+    
+    async def get_total_messages(self) -> int:
+        """Gets the total number of messages sent in this guild"""
+        guild_id = str(self.id)
+        pipeline = [
+            {"$match": {f"message_stats.{guild_id}": {"$exists": True}}},
+            {
+                "$group": {
+                    "_id": None,
+                    "total_messages": {"$sum": f"$message_stats.{guild_id}"},
+                }
+            },
+        ]
+
+        cursor = await DB.teams.aggregate(pipeline)
+        result = await cursor.to_list(length=1)
+        if result:
+            return result[0]["total_messages"]
+        return 0
+    
+    async def get_user_rank(self, user_id: int) -> Optional[int]:
+        """Gets the rank of a user in this guild based on message count"""
+        guild_id = str(self.id)
+        user = await User.new(user_id)
+        user_message_count = user.message_stats.get(guild_id, 0)
+
+        if user_message_count == 0:
+            return None
+        
+        rank = await DB.teams.count_documents(
+            {f"message_stats.{guild_id}": {"$gt": user_message_count}}
+        ) + 1
+        return rank + 1
