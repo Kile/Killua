@@ -44,8 +44,8 @@ class User:
     has_user_installed: bool
     email: Optional[str]
     email_notifications: Dict[Literal["news", "updates", "posts"], bool]
+    message_tracking_enabled: bool = False
     cache: ClassVar[Dict[int, User]] = {}
-    message_stats: Dict[int, int] # guild_id, message_count
 
     async def set_email(self, email: str) -> None:
         """Sets the user's email address"""
@@ -111,7 +111,7 @@ class User:
                 "email_notifications",
                 {"news": False, "updates": False, "posts": False},
             ),
-            message_stats=data.get("message_stats", {}),
+            message_tracking_enabled=data.get("message_tracking_enabled", False),
         )
 
         cls.cache[user_id] = instance
@@ -257,7 +257,7 @@ class User:
                         "updates": False,
                         "posts": False,
                     },
-                    "message_stats": {},
+                    "message_tracking_enabled": False,
                 }
             )
 
@@ -848,13 +848,8 @@ class User:
         await self._update_val("achievements", self.achievements)
         return True
 
-    async def increment_message_count(self, guild_id: int, amount: int = 1) -> None:
-        """Increments the message count for this user in a specific guild"""
-        guild_id_str = str(guild_id)
-        current_count = self.message_stats.get(guild_id, 0)
-        self.message_stats[guild_id] = current_count + amount
-        await self._update_val(f"message_stats.{guild_id_str}", self.message_stats[guild_id])
-
-    async def get_message_count(self, guild_id: int) -> int:
-        """Gets the message count for this user in a specific guild"""
-        return self.message_stats.get(guild_id, 0)
+    async def toggle_message_tracking(self) -> bool:
+        """Toggles message tracking for the user"""
+        self.message_tracking_enabled = not self.message_tracking_enabled
+        await self._update_val("message_tracking_enabled", self.message_tracking_enabled)
+        return self.message_tracking_enabled

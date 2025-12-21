@@ -57,16 +57,15 @@ class Stats(TestingMessage):
         member.id = 42
         member.mention = "<@42>"
         member.display_name = "TestUser"
-        member.get_message_count = AsyncMock(return_value=0)
 
-        # mock guild
+        # mock guild with no messages for this user
         mock_guild = MagicMock()
         mock_guild.id = 123
+        mock_guild.get_message_count = MagicMock(return_value=0)
         mock_guild.get_user_rank = AsyncMock(return_value=None)
         mock_guild.get_total_messages = AsyncMock(return_value=0)
 
-        with patch("killua.utils.classes.user.User.new", AsyncMock(return_value=member)), \
-             patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
+        with patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
             await self.cog.stats.callback(self.cog, interaction, user=member, limit=10)
 
         interaction.followup.send.assert_awaited()
@@ -87,16 +86,15 @@ class Stats(TestingMessage):
         member.id = 42
         member.mention = "<@42>"
         member.display_name = "TestUser"
-        member.get_message_count = AsyncMock(return_value=50)
 
-        # mock guild
+        # mock guild with messages for this user
         mock_guild = MagicMock()
         mock_guild.id = 123
+        mock_guild.get_message_count = MagicMock(return_value=50)
         mock_guild.get_user_rank = AsyncMock(return_value=5)
         mock_guild.get_total_messages = AsyncMock(return_value=200)
 
-        with patch("killua.utils.classes.user.User.new", AsyncMock(return_value=member)), \
-             patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
+        with patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
             await self.cog.stats.callback(self.cog, interaction, user=member, limit=10)
 
         interaction.followup.send.assert_awaited()

@@ -1155,8 +1155,15 @@ class Events(commands.Cog):
             return
 
         try:
+            guild = await Guild.new(message.guild.id)
+            if not guild.message_tracking_enabled:
+                return # guild has opted out
+
             user = await User.new(message.author.id)
-            await user.increment_message_count(message.guild.id)
+            if not user.message_tracking_enabled:
+                return # user has opted out
+            
+            await guild.increment_message_count(message.author.id)
         except Exception as e:
             logging.error(f"Failed to increment message count for user {message.author.id} in guild {message.guild.id}: {e}")
 

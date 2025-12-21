@@ -46,8 +46,7 @@ class Message(commands.GroupCog, group_name="message"):
         member: discord.Member
     ):
         """Display stats for a specific user"""
-        user = await User.new(member.id)
-        message_count = await user.get_message_count(guild.id)
+        message_count = guild.get_message_count(member.id)
         rank = await guild.get_user_rank(member.id)
         total_messages = await guild.get_total_messages()
 

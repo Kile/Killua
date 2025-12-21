@@ -22,6 +22,8 @@ class Guild:
     polls: dict = field(default_factory=dict)
     tags: List[dict] = field(default_factory=list)
     added_on: Optional[datetime] = None
+    message_stats: Dict[int, int] = field(default_factory=dict)  # user_id: message_count
+    message_tracking_enabled: bool = False
     cache: ClassVar[Dict[int, Guild]] = {}
 
     @classmethod
@@ -67,6 +69,11 @@ class Guild:
         raw["approximate_member_count"] = await cls._member_count_helper(
             guild_id, raw.get("approximate_member_count", None), member_count
         )
+        # Convert message_stats string keys to int keys for in-memory use
+        message_stats_raw = raw.get("message_stats", {})
+        raw["message_stats"] = {int(k): v for k, v in message_stats_raw.items()} if message_stats_raw else {}
+        raw["message_tracking_enabled"] = raw.get("message_tracking_enabled", False)
+
         guild = cls.from_dict(raw)
         cls.cache[guild_id] = guild
 
@@ -80,7 +87,7 @@ class Guild:
     async def add_default(cls, guild_id: int, member_count: Optional[int]) -> None:
         """Adds a guild to the database"""
         await DB.guilds.insert_one(
-            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count or 0, "added_on": datetime.now()}
+            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count or 0, "added_on": datetime.now(), "message_stats": {}, "message_tracking_enabled": False}
         )
 
     @classmethod
@@ -137,54 +144,39 @@ class Guild:
         self.polls[str(id)]["votes"] = updated
         await self._update_val(f"polls.{id}.votes", updated)
 
+    async def increment_message_count(self, user_id: int, amount: int = 1) -> None:
+        """Increments the message count for a user in this guild"""
+        user_id_str = str(user_id)
+        current_count = self.message_stats.get(user_id, 0)
+        self.message_stats[user_id] = current_count + amount
+        await self._update_val(f"message_stats.{user_id_str}", amount, "$inc")
+
+    def get_message_count(self, user_id: int) -> int:
+        """Gets the message count for a user in this guild"""
+        return self.message_stats.get(user_id, 0)
+
     async def get_top_senders(self, limit: int = 10) -> List[tuple[int, int]]:
         """Fetch the top message senders in the guild. Returns a list of (user_id, message_count) tuples"""
-        guild_id = str(self.id)
-        pipeline = [
-            {"$match": {f"message_stats.{guild_id}": {"$exists": True}}},
-            {
-                "$project": {
-                    "id": 1,
-                    "message_count": f"$message_stats.{guild_id}",
-                }
-            },
-            {"$sort": {"message_count": -1}},
-            {"$limit": limit},
-        ]
-
-        cursor = await DB.teams.aggregate(pipeline)
-        result = await cursor.to_list(length=limit)
-        return [(doc["id"], doc["message_count"]) for doc in result]
+        # Sort the in-memory message_stats and return top N
+        sorted_stats = sorted(self.message_stats.items(), key=lambda x: x[1], reverse=True)
+        return sorted_stats[:limit]
     
     async def get_total_messages(self) -> int:
         """Gets the total number of messages sent in this guild"""
-        guild_id = str(self.id)
-        pipeline = [
-            {"$match": {f"message_stats.{guild_id}": {"$exists": True}}},
-            {
-                "$group": {
-                    "_id": None,
-                    "total_messages": {"$sum": f"$message_stats.{guild_id}"},
-                }
-            },
-        ]
-
-        cursor = await DB.teams.aggregate(pipeline)
-        result = await cursor.to_list(length=1)
-        if result:
-            return result[0]["total_messages"]
-        return 0
+        return sum(self.message_stats.values())
     
     async def get_user_rank(self, user_id: int) -> Optional[int]:
         """Gets the rank of a user in this guild based on message count"""
-        guild_id = str(self.id)
-        user = await User.new(user_id)
-        user_message_count = user.message_stats.get(guild_id, 0)
+        user_count = self.message_stats.get(user_id, 0)
 
-        if user_message_count == 0:
+        if user_count == 0:
             return None
         
-        rank = await DB.teams.count_documents(
-            {f"message_stats.{guild_id}": {"$gt": user_message_count}}
-        ) + 1
+        rank = sum(1 for count in self.message_stats.values() if count > user_count)
         return rank + 1
+    
+    async def toggle_message_tracking(self) -> bool:
+        """Toggles message tracking for the guild"""
+        self.message_tracking_enabled = not self.message_tracking_enabled
+        await self._update_val("message_tracking_enabled", self.message_tracking_enabled)
+        return self.message_tracking_enabled

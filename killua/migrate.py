@@ -56,12 +56,12 @@ async def migrate():
     
     logging.info("Migrated user achievements key to achievements successfully")
 
-    await DB.teams.update_many(
+    # Add message_stats field to all guilds
+    result = await DB.guilds.update_many(
         {"message_stats": {"$exists": False}},
         {"$set": {"message_stats": {}}}
     )
-
-    logging.info("Added message_stats field to all users successfully")
+    logging.info(f"Added message_stats field to {result.modified_count} guilds")
 
     await DB.const.update_one(
         {"_id": "migrate"},
