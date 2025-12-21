@@ -15,18 +15,16 @@ class Message(commands.GroupCog, group_name="message"):
     def __init__(self, client: BaseBot):
         self.client = client
 
-    @app_commands.command(name="stats", description="Get message stats in this guild")
+    @app_commands.command(name="stats", description="Get message stats for a user in this guild")
     @app_commands.describe(
         user="View stats for a specific user",
-        limit="Number of top users to show (default 10)",
     )
     @app_commands.guild_only()
     @app_commands.checks.cooldown(1, 5.0)
     async def stats(
         self, 
         interaction: discord.Interaction, 
-        user: Optional[discord.Member] = None, 
-        limit: Optional[int] = 10
+        user: discord.Member = None,
     ):
         """View message stats for a user or top users in the guild."""
         await interaction.response.defer()
@@ -36,9 +34,58 @@ class Message(commands.GroupCog, group_name="message"):
         if user:
             await self._show_user_stats(interaction, guild, user)
         else:
-            await self._show_leaderboard(interaction, guild, limit)
+            await self._show_user_stats(interaction, guild, interaction.user)
 
-        
+    @app_commands.command(name="leaderboard", description="Show the message leaderboard for this guild")
+    @app_commands.describe(
+        limit="Number of top users to display (max 25)",
+    )
+    @app_commands.guild_only()
+    @app_commands.checks.cooldown(1, 10.0)
+    async def leaderboard(
+        self,
+        interaction: discord.Interaction,
+        limit: int = 10,
+    ):
+        """Display the message leaderboard for this guild."""
+        await interaction.response.defer()
+
+        guild = await Guild.new(interaction.guild.id)
+        await self._show_leaderboard(interaction, guild, limit)
+
+    @app_commands.command(name="server_tracking", description="Toggle message tracking for this server")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_guild=True)
+    async def server_tracking(
+        self,
+        interaction: discord.Interaction,
+    ):
+        """Toggle message tracking for this server"""
+        await interaction.response.defer(ephemeral=True)
+
+        guild = await Guild.new(interaction.guild.id)
+        new_status = await guild.toggle_message_tracking()
+
+        status_text = "enabled" if new_status else "disabled"
+        status_emoji = "✅" if new_status else "❌"
+        await interaction.followup.send(f"{status_emoji} Message tracking has been {status_text} for this server.", ephemeral=True)
+
+    @app_commands.command(name="user_tracking", description="Toggle message tracking for your account")
+    @app_commands.checks.cooldown(1, 10.0)
+    async def user_tracking(
+        self,
+        interaction: discord.Interaction,
+    ):
+        """Toggle message tracking for your account"""
+        await interaction.response.defer(ephemeral=True)
+
+        user = await User.new(interaction.user.id)
+        new_status = await user.toggle_message_tracking()
+
+        status_text = "enabled" if new_status else "disabled"
+        status_emoji = "✅" if new_status else "❌"
+        await interaction.followup.send(f"{status_emoji} Message tracking has been {status_text} for your account.", ephemeral=True)
+
     async def _show_user_stats(
         self, 
         interaction: discord.Interaction, 

@@ -63,6 +63,18 @@ async def migrate():
     )
     logging.info(f"Added message_stats field to {result.modified_count} guilds")
 
+    result = await DB.guilds.update_many(
+        {"message_tracking_enabled": {"$exists": False}},
+        {"$set": {"message_tracking_enabled": False}}
+    )
+    logging.info(f"Added message_tracking_enabled field to {result.modified_count} guilds")
+
+    result = await DB.teams.update_many(
+        {"message_tracking_enabled": {"$exists": False}},
+        {"$set": {"message_tracking_enabled": False}}
+    )
+    logging.info(f"Added message_tracking_enabled field to {result.modified_count} users")
+
     await DB.const.update_one(
         {"_id": "migrate"},
         {"$set": {"value": True}},

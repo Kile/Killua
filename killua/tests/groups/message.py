@@ -11,37 +11,6 @@ class TestingMessage(Testing):
 class Stats(TestingMessage):
     def __init__(self):
         super().__init__()
-    
-    @test
-    async def leaderboard_renders(self) -> None:
-        # mock member
-        member = MagicMock()
-        member.id = 42
-        member.mention = "<@42>"
-        member.display_name = "TestUser"
-
-        # mock interaction
-        interaction = MagicMock()
-        interaction.guild.id = 123
-        interaction.guild.name = "Test Guild"
-        interaction.guild.get_member = MagicMock(return_value=member)
-        interaction.guild.fetch_member = AsyncMock(side_effect=Exception())
-        interaction.followup.send = AsyncMock()
-        interaction.response.defer = AsyncMock()
-        interaction.user.display_name = "Tester"
-
-        # mock guild
-        mock_guild = MagicMock()
-        mock_guild.id = 123
-        mock_guild.get_top_senders = AsyncMock(return_value=[(1, 100), (2, 80), (3, 60)])
-        mock_guild.get_total_messages = AsyncMock(return_value=240)
-
-        with patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
-            await self.cog.stats.callback(self.cog, interaction, user=None, limit=3)
-
-        interaction.followup.send.assert_awaited()
-        sent_embed = interaction.followup.send.call_args.kwargs.get("embed")
-        assert sent_embed is not None, "Expected an embed to be sent"
 
     @test
     async def user_with_no_messages(self) -> None:
@@ -66,7 +35,7 @@ class Stats(TestingMessage):
         mock_guild.get_total_messages = AsyncMock(return_value=0)
 
         with patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
-            await self.cog.stats.callback(self.cog, interaction, user=member, limit=10)
+            await self.cog.stats.callback(self.cog, interaction, user=member)
 
         interaction.followup.send.assert_awaited()
         sent_embed = interaction.followup.send.call_args.kwargs.get("embed")
@@ -95,7 +64,7 @@ class Stats(TestingMessage):
         mock_guild.get_total_messages = AsyncMock(return_value=200)
 
         with patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
-            await self.cog.stats.callback(self.cog, interaction, user=member, limit=10)
+            await self.cog.stats.callback(self.cog, interaction, user=member)
 
         interaction.followup.send.assert_awaited()
         sent_embed = interaction.followup.send.call_args.kwargs.get("embed")
@@ -104,6 +73,41 @@ class Stats(TestingMessage):
         assert "Messages Sent" in field_names, "Expected 'Messages Sent' field in embed"
         assert "Rank" in field_names, "Expected 'Rank' field in embed"
         assert "Percentage of Total Messages" in field_names, "Expected 'Percentage of Total Messages' field in embed"
+
+class Leaderboard(TestingMessage):
+    def __init__(self):
+        super().__init__()
+    
+    @test
+    async def leaderboard_renders(self) -> None:
+        # mock member
+        member = MagicMock()
+        member.id = 42
+        member.mention = "<@42>"
+        member.display_name = "TestUser"
+
+        # mock interaction
+        interaction = MagicMock()
+        interaction.guild.id = 123
+        interaction.guild.name = "Test Guild"
+        interaction.guild.get_member = MagicMock(return_value=member)
+        interaction.guild.fetch_member = AsyncMock(side_effect=Exception())
+        interaction.followup.send = AsyncMock()
+        interaction.response.defer = AsyncMock()
+        interaction.user.display_name = "Tester"
+
+        # mock guild
+        mock_guild = MagicMock()
+        mock_guild.id = 123
+        mock_guild.get_top_senders = AsyncMock(return_value=[(1, 100), (2, 80), (3, 60)])
+        mock_guild.get_total_messages = AsyncMock(return_value=240)
+
+        with patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
+            await self.cog.leaderboard.callback(self.cog, interaction, limit=3)
+
+        interaction.followup.send.assert_awaited()
+        sent_embed = interaction.followup.send.call_args.kwargs.get("embed")
+        assert sent_embed is not None, "Expected an embed to be sent"
 
     @test
     async def leaderboard_no_messages(self) -> None:
@@ -121,7 +125,7 @@ class Stats(TestingMessage):
         mock_guild.get_total_messages = AsyncMock(return_value=0)
 
         with patch("killua.utils.classes.guild.Guild.new", AsyncMock(return_value=mock_guild)):
-            await self.cog.stats.callback(self.cog, interaction, user=None, limit=10)
+            await self.cog.leaderboard.callback(self.cog, interaction, limit=10)
 
         interaction.followup.send.assert_awaited()
         sent_embed = interaction.followup.send.call_args.kwargs.get("embed")
