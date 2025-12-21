@@ -125,6 +125,12 @@ class test(object):
 
     async def __call__(self, obj: Testing, *args, **kwargs):
         from .types import Result, ResultData
+        from ..utils.test_db import TestingDatabase
+        from ..utils.classes import Guild, User
+        
+        TestingDatabase.db.clear()
+        Guild.cache.clear()
+        User.cache.clear()
 
         try:
             logging.debug(
