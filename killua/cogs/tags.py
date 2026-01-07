@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, cast, Union
 import math
 from dataclasses import dataclass, field
 
@@ -27,45 +27,68 @@ class Tag:
 
     @classmethod
     async def new(cls, guild_id: int, tag_name: str) -> "Tag":
-        raw = await DB.guilds.find_one({"id": guild_id})
-        if raw is None:
-            return Tag(found=False)
-        if "tags" not in raw:
-            return Tag(found=False)
-        if tag_name.lower() not in [r[0] for r in raw["tags"]]:
-            return Tag(found=False)
+        try:
+            guild = await Guild.new(guild_id)
+        except Exception:
+            return Tag(found=False, guild_id=guild_id)
+        if tag_name.lower() not in [cast(str, r["name"]).lower() for r in guild.tags]:
+            return Tag(tags=guild.tags, found=False, guild_id=guild_id)
 
-        indx = [r[0] for r in raw["tags"]].index(tag_name.lower())
-        tag = raw["tags"][indx]
+        indx = [cast(str, r["name"]).lower() for r in guild.tags].index(tag_name.lower())
+        tag = guild.tags[indx]
         return Tag(
             found=True,
             indx=indx,
             guild_id=guild_id,
-            tags=raw["tags"],
+            tags=guild.tags,
             # By saving it that way it is non case sensitive when searching but keeps case sensitivity when displayed
-            name=tag[1]["name"],
-            created_at=tag[1]["created_at"],
-            owner=tag[1]["owner"],
-            content=tag[1]["content"],
-            uses=tag[1]["uses"],
+            name=tag["name"],
+            created_at=tag["created_at"],
+            owner=tag["owner"],
+            content=tag["content"],
+            uses=tag["uses"],
         )
 
-    async def update(self, new_content) -> None:
-        self.tags[self.indx][1]["content"] = new_content
-        await DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
+    async def _sync(self) -> None:
+        guild = await Guild.new(self.guild_id)
+        guild.tags = self.tags
+        await guild._update_val("tags", self.tags)
+
+    async def update(self, key: str, value: Union[str, int, datetime]) -> None:
+        self.tags[self.indx][key] = value
+        await self._sync()
 
     async def delete(self) -> None:
         self.tags.pop(self.indx)
-        await DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
+        await self._sync()
 
     async def add_use(self) -> None:
-        self.tags[self.indx][1]["uses"] = self.tags[self.indx][1]["uses"] + 1
-        await DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
+        self.tags[self.indx]["uses"] += 1
+        await self._sync()
 
     async def transfer(self, to: int) -> None:
         """Transfers the ownership of a tag to the new id"""
-        self.tags[self.indx][1]["owner"] = to
-        await DB.guilds.update_one({"id": self.guild_id}, {"$set": {"tags": self.tags}})
+        self.tags[self.indx]["owner"] = to
+        await self._sync()
+
+    async def create(self, name: str, content: str, owner: int) -> None:
+        if self.found:
+            raise ValueError("Tag already exists")
+        self.name = name
+        self.owner = owner
+        self.content = content
+        self.tags.append(
+            {
+                "name": self.name,
+                "created_at": datetime.now(),
+                "owner": self.owner,
+                "content": self.content,
+                "uses": 0,
+            }
+        )
+        self.found = True
+        self.indx = len(self.tags) - 1
+        await self._sync()
 
 
 @dataclass
@@ -75,19 +98,19 @@ class Member:
 
     @classmethod
     async def new(cls, user_id: int, guild_id: int) -> "Member":
-        raw = await DB.guilds.find_one({"id": guild_id})
+        raw = (await Guild.new(guild_id)).tags
         if raw is None:
             return Member(has_tags=False)
         if "tags" not in raw:
             return Member(has_tags=False)
 
         tags: list = raw["tags"]
-        if user_id not in [r[1]["owner"] for r in tags]:
+        if user_id not in [r["owner"] for r in tags]:
             return Member(has_tags=False)
 
         owned_tags: list = []
         for x in tags:
-            owned_tags.append([x[1]["name"], [x[1]["uses"]]])
+            owned_tags.append([x["name"], [x["uses"]]])
 
         return Member(has_tags=True, tags=owned_tags)
 
@@ -145,22 +168,52 @@ class Tags(commands.Cog):
         current: str,
     ) -> List[discord.app_commands.Choice[str]]:
         """Returns a list of tags that match the message."""
-        guild = await DB.guilds.find_one({"id": interaction.guild.id})
-        if "tags" not in guild:
-            return []
-
-        tags = guild["tags"]
+        guild = await Guild.new(interaction.guild.id)
 
         return [
-            discord.app_commands.Choice(name=t[1]["name"], value=t[1]["name"])
-            for t in tags
-            if current.lower() in t[0] or current in t[0]
+            discord.app_commands.Choice(name=t["name"], value=t["name"])
+            for t in guild.tags
+            if current.lower() in t["name"]
         ][:25]
 
     @commands.hybrid_group(hidden=True, extras={"category": Category.TAGS})
     async def tag(self, _: commands.Context):
         """Tag commands. Only usable in premium guilds."""
         ...
+
+    @staticmethod
+    def _validate_tag_details(name: Optional[str], content: Optional[str]) -> Optional[str]:
+        if name and len(name) > 30:
+            return "The tag title has too many characters!"
+
+        if name and len(name) == 0:
+            return "The tag title cannot be empty!"
+        
+        if content and len(content) == 0:
+            return "The tag content cannot be empty!"
+        
+        if content and len(content) > 4000:
+            return "The tag content has too many characters!"
+
+    @staticmethod
+    async def initial_new_tag_validation(name: str, guild: discord.Guild, db_guild: Guild, member_id: int) -> Optional[str]:
+        tag = await Tag.new(guild.id, name)
+        if tag.found is not False:
+            owner = guild.get_member(tag.owner)
+            return f"This tag already exists and is owned by {owner.display_name if owner else '`user left`'}"
+        
+        if len(db_guild.tags) >= 20 and not db_guild.is_premium:
+            return "Your server has reached the limit of tags! Buy premium to up to 250 tags!"
+        
+        if len(db_guild.tags) >= 250:
+            return "Your server has reached the maximum limit of tags!"
+        
+        member = await Member.new(member_id, guild.id)
+        
+        if member.has_tags and len(member.tags) >= 15:
+                return "You can't own more than 15 tags on a guild, consider deleting one"
+
+        return None
 
     @check()
     @commands.guild_only()
@@ -170,33 +223,12 @@ class Tags(commands.Cog):
     @discord.app_commands.describe(name="The name of the tag you want to create")
     async def create(self, ctx: commands.Context, *, name: str):
         """Create a tag with this command"""
-        guild = await DB.guilds.find_one({"id": ctx.guild.id})
-        member = await Member.new(ctx.author.id, ctx.guild.id)
+        guild = await Guild.new(ctx.guild.id)
 
-        if (tag := await Tag.new(ctx.guild.id, name)).found is not False:
-            user = ctx.guild.get_member(tag.owner)
-            return await ctx.send(
-                f"This tag already exists and is owned by {user or '`user left`'}", allowed_mentions=discord.AllowedMentions.none()
-            )
+        initial_validation = await self.initial_new_tag_validation(name, ctx.guild, guild, member_id=ctx.author.id)
 
-        if "tags" in guild:
-            tags = guild["tags"]
-        else:
-            tags = []
-
-        if len(tags) >= 10 and not (await Guild.new(ctx.guild.id)).is_premium:
-            return await ctx.send(
-                "Your server has reached the limit of tags! Buy premium to up to 250 tags!"
-            )
-
-        if member.has_tags:
-            if len(member.tags) > 50:
-                return await ctx.send(
-                    "You can't own more than 15 tags on a guild, consider deleting one"
-                )
-
-        if len(name) > 30:
-            return await ctx.send("The tag title has too many characters!")
+        if initial_validation is not None:
+            return await ctx.send(initial_validation)
 
         content = await self.client.get_text_response(
             ctx,
@@ -205,25 +237,12 @@ class Tags(commands.Cog):
             min_length=1,
             max_length=2000,
         )
-        if not content:
-            return
 
-        if len(content) > 2000:
-            return await ctx.send("Too many characters!")
+        if (error := Tags._validate_tag_details(name, content)):
+            return await ctx.send(error)
 
-        tags.append(
-            [
-                name.lower(),
-                {
-                    "name": name,
-                    "created_at": datetime.now(),
-                    "owner": ctx.author.id,
-                    "content": content,
-                    "uses": 0,
-                },
-            ]
-        )
-        await DB.guilds.update_one({"id": ctx.guild.id}, {"$set": {"tags": tags}})
+        tag = await Tag.new(ctx.guild.id, name)
+        await tag.create(name, content, ctx.author.id)
 
         return await ctx.send(f"Successfully created tag `{name}`", allowed_mentions=discord.AllowedMentions.none())
 
@@ -275,8 +294,8 @@ class Tags(commands.Cog):
             max_length=2000,
         )
 
-        if len(content) > 2000:
-            return await ctx.send("Too many characters!")
+        if (error := Tags._validate_tag_details(name, content)):
+            return await ctx.send(error)
 
         await tag.update(content)
         return await ctx.send(f"Successfully updated tag `{tag.name}`", allowed_mentions=discord.AllowedMentions.none())
@@ -287,7 +306,7 @@ class Tags(commands.Cog):
         extras={"category": Category.TAGS, "id": 95}, usage="transfer <user> <tag_name>"
     )
     @discord.app_commands.describe(
-        user="The user to tranfer the tag ownership to",
+        user="The user to transfer the tag ownership to",
         name="The name of the tag you want to transfer",
     )
     @discord.app_commands.autocomplete(name=tag_autocomplete)
@@ -339,15 +358,15 @@ class Tags(commands.Cog):
         if tag.found is False:
             return await ctx.send("There is no tag with that name!")
 
-        guild = await DB.guilds.find_one({"id": ctx.guild.id})
+        guild = await Guild.new(ctx.guild.id)
         owner = self.client.get_user(tag.owner) or await self.client.fetch_user(
             tag.owner
         )
 
         s = sorted(
-            zip([x[0] for x in guild["tags"]], [x[1]["uses"] for x in guild["tags"]])
+            zip([x["name"] for x in guild.tags], [x["uses"] for x in guild.tags])
         )
-        rank = [x[0] for x in s].index(name.lower()) + 1
+        rank = [cast(str, x[0]).lower() for x in s].index(name.lower()) + 1
         embed = discord.Embed.from_dict(
             {
                 "title": f'Information about tag "{tag.name}"',
@@ -372,8 +391,8 @@ class Tags(commands.Cog):
 
         s = sorted(
             zip(
-                [x[1]["name"] for x in guild["tags"]],
-                [x[1]["uses"] for x in guild["tags"]],
+                [x["name"] for x in guild["tags"]],
+                [x["uses"] for x in guild["tags"]],
             )
         )
 

@@ -13,11 +13,13 @@ from asyncio import create_task
 from PIL import Image, ImageDraw, ImageChops
 from typing import Tuple, Optional
 from logging import error
+from copy import deepcopy
 
 from killua.bot import BaseBot
-from killua.metrics import VOTES
+from killua.metrics import VOTES, COMMAND_USAGE
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
+from killua.cogs.tags import Tag, Tags
 from killua.static.constants import (
     DB,
     LOOTBOXES,
@@ -282,6 +284,7 @@ class IPCRoutes(commands.Cog):
                     :-1
                 ]  # The first parts are metadata, the last part is the actual data
                 try:
+                    print(f"IPC Route called: {decoded['route']}")
                     res = await getattr(self, decoded["route"].replace("/", "_"))(
                         decoded["data"]
                     )
@@ -1007,5 +1010,173 @@ class IPCRoutes(commands.Cog):
             # Message was already deleted, ignore
             pass
 
+    async def guild_editable(self, data: dict) -> dict:
+        """Returns whether a guild is editable by the bot"""
+        guild_ids = data.get("guild_ids")
+        bot_is_on = []
+
+        for gid in guild_ids:
+            guild = self.client.get_guild(int(gid))
+            if guild:
+                bot_is_on.append(gid)
+
+        return {
+            "editable": bot_is_on,
+            "premium": await Guild.get_premium_subset(bot_is_on),
+        }
+    
+    async def guild_info(self, data: dict) -> dict:
+        """Gets guild info by Discord ID and returns it with name and icon URL"""
+        guild_id = data.get("guild_id")
+        if not guild_id:
+            raise ValueError("Guild ID is required")
+
+        # Convert guild_id to int if it's a string
+        try:
+            guild_id = int(guild_id)
+        except (ValueError, TypeError):
+            raise ValueError("Invalid guild ID format")
+
+        # Get Discord guild
+        guild = self.client.get_guild(guild_id)
+        if not guild:
+            raise ValueError("Guild not found")
+        
+        db_guild = await Guild.new(guild_id)
+
+        tag_copy = deepcopy(db_guild.tags) 
+        # Do not want to mass up the cached tags with datetime objects
+        for tag in tag_copy:
+            if "created_at" in tag:
+                tag["created_at"] = cast(datetime, tag["created_at"]).isoformat()
+
+            owner_id = tag.get("owner")
+            owner_obj = guild.get_member(owner_id) or await self.client.fetch_user(owner_id)
+            tag["owner"] = {
+                "user_id": owner_obj.id,
+                "display_name": owner_obj.display_name,
+                "avatar_url": owner_obj.avatar.url if owner_obj.avatar else None
+            }
+
+        command_stats = COMMAND_USAGE.collect()
+
+        return {
+            "member_count": guild.approximate_member_count or 0,
+            "prefix": db_guild.prefix,
+            "is_premium": db_guild.is_premium,
+            "bot_added_on": db_guild.added_on.isoformat() if db_guild.added_on else None,
+            "tags": tag_copy,
+        }
+    
+    async def guild_edit(self, data: dict) -> dict:
+        """Edits guild info by Discord ID. Only certain fields are editable."""
+        guild_id = data.get("guild_id")
+        if not guild_id:
+            raise ValueError("Guild ID is required")
+
+        # Convert guild_id to int if it's a string
+        try:
+            guild_id = int(guild_id)
+        except (ValueError, TypeError):
+            raise ValueError("Invalid guild ID format")
+
+        # Get guild data from database
+        guild = await Guild.new(guild_id)
+
+        # Editable fields
+        editable_fields = {
+            "prefix",
+            "tags",
+        }
+
+        update_data = {}
+        for key in editable_fields:
+            if key in data and data[key] is not None:
+                update_data[key] = data[key]
+
+        if update_data:
+            for key, value in update_data.items():
+                # The format of the input is trusted to be correct due to 
+                # Rust's strict typing on the API side
+                setattr(guild, key, value)
+                await guild._update_val(key, value)
+
+        return {"success": True, "message": "Guild updated successfully"}
+    
+    async def guild_tag_create(self, data: dict) -> dict:
+        """Creates a new tag in the guild"""
+        guild_id = data.get("guild_id")
+        if not guild_id:
+            raise ValueError("Guild ID is required")
+        
+        guild = self.client.get_guild(guild_id)
+        if not guild:
+            raise ValueError("Guild not found")
+        db_guild = await Guild.new(guild_id)
+
+        # Create the tag
+        error = await Tags.initial_new_tag_validation(data["name"], guild, db_guild, data["user_id"])
+
+        if error:
+            return {"success": False, "message": error}
+        
+        error = Tags._validate_tag_details(data["name"], data["content"])
+
+        if error:
+            return {"success": False, "message": error}
+
+        tag = await Tag.new(guild_id, data["name"])
+        await tag.create(name=data["name"], content=data["content"], owner=data["user_id"])
+
+        return {"success": True, "message": "Tag created successfully"}
+    
+    async def guild_tag_delete(self, data: dict) -> dict:
+        """Deletes a tag in the guild"""
+        guild_id = data.get("guild_id")
+        if not guild_id:
+            raise ValueError("Guild ID is required")
+        
+        guild = self.client.get_guild(guild_id)
+        if not guild:
+            raise ValueError("Guild not found")
+
+        tag = await Tag.new(guild_id, data["name"])
+
+        if tag.found is False:
+            return {"success": False, "message": "Tag not found"}
+
+        await tag.delete()
+
+        return {"success": True, "message": "Tag deleted successfully"}
+    
+    async def guild_tag_edit(self, data: dict) -> dict:
+        """Edits a tag in the guild"""
+        guild_id = data.get("guild_id")
+        if not guild_id:
+            raise ValueError("Guild ID is required")
+        
+        guild = self.client.get_guild(guild_id)
+        if not guild:
+            raise ValueError("Guild not found")
+
+        tag = await Tag.new(guild_id, data["name"])
+
+        if tag.found is False:
+            return {"success": False, "message": "Tag not found"}
+
+        error = Tags._validate_tag_details(data.get("new_name", None), data.get("content", None))
+
+        if error:
+            return {"success": False, "message": error}
+
+        if "new_name" in data and data["new_name"] and data["new_name"] != tag.name:
+            await tag.update(key="name", value=data["new_name"])
+        if "content" in data and data["content"] and data["content"] != tag.content:
+            await tag.update(key="content", value=data["content"])
+
+        if "new_owner" in data and data["new_owner"] and data["new_owner"] != tag.owner:
+            await tag.transfer(to=data["new_owner"])
+
+        return {"success": True, "message": "Tag edited successfully"}
 
 Cog = IPCRoutes

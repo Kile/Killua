@@ -98,6 +98,16 @@ class Guild:
             {"id": {"$in": guild_ids}}, {"$pull": {"badges": "premium"}}
         )
 
+    @classmethod
+    async def get_premium_subset(cls, guild_ids: List[int]) -> List[int]:
+        """Returns a list of guild ids that have premium from the given list"""
+        cursor = DB.guilds.find(
+            {"id": {"$in": guild_ids}, "badges": {"$in": ["premium", "partner"]}},
+            {"id": 1, "_id": 0},
+        )
+        results = await cursor.to_list(length=None)
+        return [guild["id"] for guild in results]
+
     async def _update_val(self, key: str, value: Any, operator: str = "$set") -> None:
         """An easier way to update a value"""
         await DB.guilds.update_one({"id": self.id}, {operator: {key: value}})

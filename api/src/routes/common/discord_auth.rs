@@ -48,7 +48,10 @@ pub enum DiscordAuthError {
     DiscordApiError,
 }
 
-pub struct DiscordAuth(pub DiscordUser);
+pub struct DiscordAuth {
+    pub user: DiscordUser,
+    pub token: String, // The full "Bearer <token>" string
+}
 
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for DiscordAuth {
@@ -68,7 +71,10 @@ impl<'r> FromRequest<'r> for DiscordAuth {
 
         // Verify the token with Discord API
         match verify_discord_token(auth_header).await {
-            Ok(user) => Outcome::Success(DiscordAuth(user)),
+            Ok(user) => Outcome::Success(DiscordAuth {
+                user,
+                token: auth_header.to_string(),
+            }),
             Err(_) => Outcome::Error((Status::Forbidden, DiscordAuthError::Invalid)),
         }
     }
@@ -140,6 +146,35 @@ fn verify_discord_token_test(token: &str) -> Result<DiscordUser, DiscordAuthErro
     }
 }
 
+/// Permission flag for MANAGE_SERVER (1 << 5 = 32)
+pub const MANAGE_SERVER: u64 = 1 << 5;
+
+// Test guild permissions - maps user_id -> guild_id -> permissions
+static TEST_GUILD_PERMISSIONS: std::sync::atomic::AtomicPtr<String> =
+    std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
+
+/// Set test guild permissions for testing
+/// Format: "user_id:guild_id:permissions,user_id:guild_id:permissions,..."
+#[allow(dead_code)]
+pub fn set_test_guild_permissions(permissions: String) {
+    let boxed_string = Box::new(permissions);
+    let ptr = Box::into_raw(boxed_string);
+    TEST_GUILD_PERMISSIONS.store(ptr, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Clear test guild permissions
+#[allow(dead_code)]
+pub fn clear_test_guild_permissions() {
+    let null_ptr = std::ptr::null_mut();
+    TEST_GUILD_PERMISSIONS.store(null_ptr, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Check if test mode is enabled
+#[allow(dead_code)]
+pub fn is_test_mode() -> bool {
+    TEST_MODE.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 impl DiscordAuth {
     /// Check if the authenticated user is an admin
     pub fn is_admin(&self) -> bool {
@@ -151,20 +186,20 @@ impl DiscordAuth {
             if !test_admin_ids_ptr.is_null() {
                 let test_admin_ids = unsafe { &*test_admin_ids_ptr };
                 let admin_ids: Vec<&str> = test_admin_ids.split(',').collect();
-                return admin_ids.contains(&self.0.id.as_str());
+                return admin_ids.contains(&self.user.id.as_str());
             }
         }
 
         // Use environment variable
         let admin_ids = env::var("ADMIN_IDS").unwrap_or_default();
         let admin_ids: Vec<&str> = admin_ids.split(',').collect();
-        admin_ids.contains(&self.0.id.as_str())
+        admin_ids.contains(&self.user.id.as_str())
     }
 
     /// Check if the authenticated user can access data for the given user_id
     pub fn can_access_user(&self, user_id: &str) -> bool {
         // Users can always access their own data
-        if self.0.id == user_id {
+        if self.user.id == user_id {
             return true;
         }
 
@@ -174,5 +209,116 @@ impl DiscordAuth {
         }
 
         false
+    }
+
+    /// Check if the authenticated user has MANAGE_SERVER permission for a guild
+    /// Uses Discord API to verify permissions via the guilds endpoint
+    pub async fn has_manage_server_permission(&self, guild_id: &str) -> bool {
+        // Admins always have permission
+        if self.is_admin() {
+            return true;
+        }
+
+        // Check via Discord API
+        check_guild_permission(&self.token, guild_id)
+            .await
+            .unwrap_or(false)
+    }
+
+    /// Get the user's ID
+    pub fn get_user_id(&self) -> &str {
+        &self.user.id
+    }
+
+    /// Get the auth token
+    pub fn get_token(&self) -> &str {
+        &self.token
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DiscordGuildInfo {
+    pub id: String,
+    pub name: String,
+    pub icon: Option<String>,
+    pub permissions: String, // Discord returns this as a string
+}
+
+/// Check if user has MANAGE_SERVER permission for a guild via Discord API
+pub async fn check_guild_permission(token: &str, guild_id: &str) -> Result<bool, DiscordAuthError> {
+    // Parse guild_id as i64 and use get_editable_guilds
+    let guild_id_i64: i64 = guild_id.parse().map_err(|_| DiscordAuthError::Invalid)?;
+    let editable = get_editable_guilds(token, &[guild_id_i64]).await?;
+    Ok(editable.contains(&guild_id_i64))
+}
+
+/// Get the list of guilds where user has MANAGE_SERVER permission
+pub async fn get_editable_guilds(
+    token: &str,
+    guild_ids: &[i64],
+) -> Result<Vec<i64>, DiscordAuthError> {
+    // Check if we're in test mode
+    let test_mode = TEST_MODE.load(std::sync::atomic::Ordering::Relaxed);
+    if test_mode {
+        // In test mode, use the test permissions set via set_test_guild_permissions
+        let user = verify_discord_token(token).await?;
+        let mut editable = Vec::new();
+        let test_perms_ptr = TEST_GUILD_PERMISSIONS.load(std::sync::atomic::Ordering::Relaxed);
+        if !test_perms_ptr.is_null() {
+            let test_perms = unsafe { &*test_perms_ptr };
+            for entry in test_perms.split(',') {
+                let parts: Vec<&str> = entry.split(':').collect();
+                if parts.len() == 3 {
+                    let test_user = parts[0];
+                    let test_guild = parts[1];
+                    let perms: u64 = parts[2].parse().unwrap_or(0);
+                    if test_user == user.id && (perms & MANAGE_SERVER) != 0 {
+                        if let Ok(guild_id) = test_guild.parse::<i64>() {
+                            if guild_ids.contains(&guild_id) {
+                                editable.push(guild_id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return Ok(editable);
+    }
+
+    let client = reqwest::Client::new();
+
+    let response = client
+        .get("https://discord.com/api/v10/users/@me/guilds")
+        .header("Authorization", token)
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) => {
+            if resp.status().is_success() {
+                let response_text = resp.text().await.unwrap_or_default();
+
+                match serde_json::from_str::<Vec<DiscordGuildInfo>>(&response_text) {
+                    Ok(guilds) => {
+                        let mut editable = Vec::new();
+                        for guild in guilds {
+                            if let Ok(guild_id) = guild.id.parse::<i64>() {
+                                if guild_ids.contains(&guild_id) {
+                                    let perms: u64 = guild.permissions.parse().unwrap_or(0);
+                                    if (perms & MANAGE_SERVER) != 0 {
+                                        editable.push(guild_id);
+                                    }
+                                }
+                            }
+                        }
+                        Ok(editable)
+                    }
+                    Err(_e) => Err(DiscordAuthError::DiscordApiError),
+                }
+            } else {
+                Err(DiscordAuthError::Invalid)
+            }
+        }
+        Err(_e) => Err(DiscordAuthError::DiscordApiError),
     }
 }

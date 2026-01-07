@@ -26,8 +26,14 @@ fn test_discord_auth_admin_check() {
         email: Some("user@example.com".to_string()),
     };
 
-    let admin_auth = DiscordAuth(admin_user);
-    let regular_auth = DiscordAuth(regular_user);
+    let admin_auth = DiscordAuth {
+        user: admin_user,
+        token: String::new(),
+    };
+    let regular_auth = DiscordAuth {
+        user: regular_user,
+        token: String::new(),
+    };
 
     // Admin should be able to access any user's data
     assert!(admin_auth.can_access_user(TEST_USER_1));
@@ -71,9 +77,18 @@ fn test_discord_auth_multiple_admins() {
         email: Some("user@example.com".to_string()),
     };
 
-    let admin_auth = DiscordAuth(admin_user);
-    let second_admin_auth = DiscordAuth(second_admin);
-    let regular_auth = DiscordAuth(regular_user);
+    let admin_auth = DiscordAuth {
+        user: admin_user,
+        token: String::new(),
+    };
+    let second_admin_auth = DiscordAuth {
+        user: second_admin,
+        token: String::new(),
+    };
+    let regular_auth = DiscordAuth {
+        user: regular_user,
+        token: String::new(),
+    };
 
     // Both admins should be able to access any user's data
     assert!(admin_auth.can_access_user(TEST_USER_1));
@@ -115,8 +130,14 @@ fn test_discord_auth_self_access() {
         email: Some("user2@example.com".to_string()),
     };
 
-    let user1_auth = DiscordAuth(user1);
-    let user2_auth = DiscordAuth(user2);
+    let user1_auth = DiscordAuth {
+        user: user1,
+        token: String::new(),
+    };
+    let user2_auth = DiscordAuth {
+        user: user2,
+        token: String::new(),
+    };
 
     // Users should always be able to access their own data
     assert!(user1_auth.can_access_user(TEST_USER_1));
@@ -150,8 +171,14 @@ fn test_discord_auth_no_admins() {
         email: Some("user2@example.com".to_string()),
     };
 
-    let user1_auth = DiscordAuth(user1);
-    let user2_auth = DiscordAuth(user2);
+    let user1_auth = DiscordAuth {
+        user: user1,
+        token: String::new(),
+    };
+    let user2_auth = DiscordAuth {
+        user: user2,
+        token: String::new(),
+    };
 
     // Users should only be able to access their own data
     assert!(user1_auth.can_access_user(TEST_USER_1));
@@ -204,8 +231,14 @@ fn test_discord_auth_is_admin() {
         email: Some("user@example.com".to_string()),
     };
 
-    let admin_auth = DiscordAuth(admin_user);
-    let regular_auth = DiscordAuth(regular_user);
+    let admin_auth = DiscordAuth {
+        user: admin_user,
+        token: String::new(),
+    };
+    let regular_auth = DiscordAuth {
+        user: regular_user,
+        token: String::new(),
+    };
 
     assert!(admin_auth.is_admin());
     assert!(!regular_auth.is_admin());
@@ -226,7 +259,10 @@ fn test_discord_auth_edge_cases() {
         email: Some("admin@example.com".to_string()),
     };
 
-    let admin_auth = DiscordAuth(admin_user);
+    let admin_auth = DiscordAuth {
+        user: admin_user,
+        token: String::new(),
+    };
 
     // Should still work with extra spaces
     assert!(admin_auth.is_admin());
@@ -251,7 +287,10 @@ fn test_discord_auth_multiple_identical_admins() {
         email: Some("admin@example.com".to_string()),
     };
 
-    let auth = DiscordAuth(admin_user);
+    let auth = DiscordAuth {
+        user: admin_user,
+        token: String::new(),
+    };
 
     // Should still work with duplicates
     assert!(auth.is_admin());
@@ -275,7 +314,10 @@ fn test_discord_auth_empty_user_id() {
         email: Some("empty@example.com".to_string()),
     };
 
-    let auth = DiscordAuth(user);
+    let auth = DiscordAuth {
+        user,
+        token: String::new(),
+    };
 
     // Should handle empty user ID gracefully
     assert!(auth.can_access_user("")); // Can access own empty ID
@@ -295,7 +337,10 @@ fn test_discord_auth_special_characters_in_user_id() {
         email: Some("special@example.com".to_string()),
     };
 
-    let auth = DiscordAuth(user);
+    let auth = DiscordAuth {
+        user,
+        token: String::new(),
+    };
 
     // Should handle special characters correctly
     assert!(auth.can_access_user(special_user_id));
@@ -315,7 +360,10 @@ fn test_discord_auth_unicode_characters() {
         email: Some("unicode@example.com".to_string()),
     };
 
-    let auth = DiscordAuth(user);
+    let auth = DiscordAuth {
+        user,
+        token: String::new(),
+    };
 
     // Should handle unicode characters correctly
     assert!(auth.can_access_user(unicode_user_id));
@@ -335,7 +383,10 @@ fn test_discord_auth_very_long_user_id() {
         email: Some("long@example.com".to_string()),
     };
 
-    let auth = DiscordAuth(user);
+    let auth = DiscordAuth {
+        user,
+        token: String::new(),
+    };
 
     // Should handle very long user IDs correctly
     assert!(auth.can_access_user(&long_user_id));
@@ -357,7 +408,10 @@ fn test_discord_auth_admin_with_special_characters() {
         email: Some("special_admin@example.com".to_string()),
     };
 
-    let auth = DiscordAuth(admin_user);
+    let auth = DiscordAuth {
+        user: admin_user,
+        token: String::new(),
+    };
 
     // Should work with special characters in admin ID
     assert!(auth.is_admin());
@@ -415,8 +469,14 @@ fn test_discord_auth_access_patterns() {
         email: Some("user@example.com".to_string()),
     };
 
-    let admin_auth = DiscordAuth(admin_user);
-    let regular_auth = DiscordAuth(regular_user);
+    let admin_auth = DiscordAuth {
+        user: admin_user,
+        token: String::new(),
+    };
+    let regular_auth = DiscordAuth {
+        user: regular_user,
+        token: String::new(),
+    };
 
     // Admin access patterns
     assert!(admin_auth.can_access_user(ADMIN_USER)); // Self access

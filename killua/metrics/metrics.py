@@ -81,7 +81,7 @@ USER_INSTALLS = Gauge(
 COMMAND_USAGE = Gauge(
     METRIC_PREFIX + "command_usage",
     "Amount of times a command was used",
-    ["group", "command", "command_id"],
+    ["group", "command", "command_id", "guild_id"],
 )
 
 PREMIUM_USERS = Gauge(

@@ -117,6 +117,30 @@ pub fn test_zmq_server() {
                 "news/delete" => r#"{"status": "deleted"}"#,
                 "news/edit" => r#"{"news_id": "test_news_id", "message_id": 1234567890123456789}"#,
                 "user/edit" => r#"{"success": true, "message": "User settings updated successfully"}"#,
+                "guild/info" => r#"{
+                    "member_count": 1500,
+                    "prefix": "!",
+                    "is_premium": true,
+                    "bot_added_on": "2024-01-15T12:00:00",
+                    "tags": [
+                        {
+                            "name": "welcome",
+                            "created_at": "2024-02-01T10:30:00",
+                            "owner": {
+                                "user_id": 123456789,
+                                "display_name": "Test User",
+                                "avatar_url": "https://cdn.discordapp.com/avatars/123456789/avatar.png"
+                            },
+                            "content": "Welcome to the server!",
+                            "uses": 42
+                        }
+                    ]
+                }"#,
+                "guild/edit" => r#"{"success": true, "message": "Guild settings updated successfully"}"#,
+                "guild/editable" => r#"{"editable": [111222333444555666], "premium": [111222333444555666]}"#,
+                "guild/tag/create" => r#"{"success": true, "message": "Tag created successfully"}"#,
+                "guild/tag/edit" => r#"{"success": true, "message": "Tag updated successfully"}"#,
+                "guild/tag/delete" => r#"{"success": true, "message": "Tag deleted successfully"}"#,
                 _ => r#"{}"#,
             }.to_string()
             };

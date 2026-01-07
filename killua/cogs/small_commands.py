@@ -243,12 +243,8 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
                 "title": "8ball has spoken 🎱",
                 "description": f"You asked:\n```\n{question}\n```\nMy answer is:\n```\n{choice(ANSWERS)}```",
                 "footer": {
-                    "icon_url": str(
-                        ctx.author.avatar.url
-                        if ctx.author.avatar
-                        else ctx.author.default_avatar.url
-                    ),
-                    "text": f"Asked by {ctx.author}",
+                    "icon_url":ctx.author.display_avatar.url,
+                    "text": f"Asked by {ctx.author.display_name}",
                 },
                 "color": 0x3E4A78,
             }

@@ -16,6 +16,7 @@ limits_config:
   volume_enabled: true
   # global retention (7 days)
   retention_period: 168h
+  max_query_lookback: 168h
 
 schema_config:
   configs:

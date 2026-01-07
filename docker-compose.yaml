@@ -138,6 +138,22 @@ services:
         max-file: "5"
         max-size: "10m"
 
+  loki-compactor:
+    image: grafana/loki:latest
+    container_name: loki-compactor
+    command: -target=compactor -config.file=/etc/loki/config.yml
+    volumes:
+      - ./loki/config.yml:/etc/loki/config.yml
+      - loki_data:/loki               # Shared data directory with main Loki
+    depends_on:
+      - loki
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "3"
+        max-size: "10m"
+
   alloy:
     image: grafana/alloy:latest
     container_name: alloy

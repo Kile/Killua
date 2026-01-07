@@ -957,14 +957,14 @@ class TodoSystem(commands.Cog):
             return await user.send(f"Successfully reported {ctx.author.display_name}!")
 
         if role == "viewer":
-            todo_list.add_viewer(user.id)
+            await todo_list.add_viewer(user.id)
 
         if role == "editor":
             if user.id in todo_list.viewer:
                 todo_list.kick_viewer(
                     user.id
                 )  # handled like a promotion and exchanges viewer perms for edit perms
-            todo_list.add_editor(user.id)
+            await todo_list.add_editor(user.id)
 
         await user.send(
             f"Success! You have now {role} permissions in the todo list `{todo_list.name}`",

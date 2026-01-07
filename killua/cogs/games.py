@@ -176,7 +176,7 @@ class Trivia(CompetitiveGame):
         self.embed = discord.Embed.from_dict(
             {
                 "title": f"Trivia of category {self.data['category']}",
-                "description": f"**difficulty:** {self.data['difficulty']}\n\n**Question:**\n{question}",
+                "description": f"**Difficulty:** {self.data['difficulty']}\n\n**Question:**\n{question}",
                 "color": 0x3E4A78,
             }
         )
@@ -605,7 +605,7 @@ class Rps(CompetitiveGame):
         resp = await self._wait_for_dm_response(
             [self.ctx.author],
             self.create_view,
-            "You chose to play rock paper scissors, what's your choice hunter?",
+            "You chose to play Rock Paper Scissors, what's your choice hunter?",
         )
         if not resp:
             return
@@ -674,7 +674,7 @@ class Rps(CompetitiveGame):
         res = await self._wait_for_dm_response(
             [self.ctx.author, self.other],
             self.create_view,
-            "You chose to play rock paper scissors, what's your choice hunter?",
+            "You chose to play Rock Paper Scissors, what's your choice hunter?",
         )
         if not res:
             return
