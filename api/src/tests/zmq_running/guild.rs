@@ -64,10 +64,13 @@ fn test_guild_info_with_permission() {
     let body: Value = serde_json::from_str(&response.into_string().unwrap()).unwrap();
 
     // Check that the response has the expected structure
-    assert!(body.get("member_count").is_some());
+    assert!(body.get("approximate_member_count").is_some());
     assert!(body.get("prefix").is_some());
     assert!(body.get("is_premium").is_some());
     assert!(body.get("tags").is_some());
+    assert!(body.get("badges").is_some());
+    assert!(body.get("name").is_some());
+    assert!(body.get("icon_url").is_some());
 
     cleanup_test_environment();
 }
@@ -91,7 +94,7 @@ fn test_guild_info_admin_access() {
     assert_eq!(response.status(), Status::Ok);
 
     let body: Value = serde_json::from_str(&response.into_string().unwrap()).unwrap();
-    assert!(body.get("member_count").is_some());
+    assert!(body.get("approximate_member_count").is_some());
 
     // Clean up
     std::env::remove_var("ADMIN_IDS");
@@ -166,10 +169,13 @@ fn test_guild_info_response_structure() {
     let body: Value = serde_json::from_str(&response.into_string().unwrap()).unwrap();
 
     // Check field types
-    assert!(body.get("member_count").unwrap().is_number());
+    assert!(body.get("approximate_member_count").unwrap().is_number());
     assert!(body.get("prefix").unwrap().is_string());
     assert!(body.get("is_premium").unwrap().is_boolean());
     assert!(body.get("tags").unwrap().is_array());
+    assert!(body.get("badges").unwrap().is_array());
+    assert!(body.get("name").unwrap().is_string());
+    assert!(body.get("icon_url").unwrap().is_string() || body.get("icon_url").unwrap().is_null());
 
     // Check tags structure
     let tags = body.get("tags").unwrap().as_array().unwrap();
@@ -466,6 +472,40 @@ fn test_guild_editable_response_structure() {
 
     // Premium field should also be present (already verified as array above)
     assert_eq!(editable[0].as_i64().unwrap(), 111222333444555666_i64);
+
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_guild_editable_bot_returns_empty_list() {
+    // Test when the bot returns [] instead of {"editable": [], "premium": []}
+    setup_test_environment();
+
+    // Set permission for guild ID 0
+    set_test_guild_permissions(format!("{}:0:32", TEST_USER_ID));
+
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+
+    let payload = serde_json::json!({
+        "guild_ids": [0_i64]
+    });
+
+    let response = client
+        .post("/guild/editable")
+        .header(auth_header)
+        .header(Header::new("Content-Type", "application/json"))
+        .body(payload.to_string())
+        .dispatch();
+
+    // The API should handle the bot returning [] and return a proper object
+    assert_eq!(response.status(), Status::Ok);
+
+    let body: Value = serde_json::from_str(&response.into_string().unwrap()).unwrap();
+    assert!(body.get("editable").is_some());
+    assert!(body.get("editable").unwrap().is_array());
+    assert!(body.get("premium").is_some());
+    assert!(body.get("premium").unwrap().is_array());
 
     cleanup_test_environment();
 }
@@ -1098,6 +1138,298 @@ fn test_tag_edit_with_transfer_and_content() {
         .dispatch();
 
     assert_eq!(response.status(), Status::Ok);
+
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_with_permission() {
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let now = chrono::Utc::now().timestamp() as f64;
+    let from = now - 86400.0;
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1h",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(auth_header)
+        .dispatch();
+
+    assert_eq!(response.status(), Status::Ok);
+    let body: Value = serde_json::from_str(&response.into_string().unwrap()).unwrap();
+    assert!(body.is_array());
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_without_permission() {
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:0", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let now = chrono::Utc::now().timestamp() as f64;
+    let from = now - 86400.0;
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1h",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(auth_header)
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_missing_params() {
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let response = client
+        .get(format!("/guild/{}/command-usage", TEST_GUILD_ID))
+        .header(auth_header)
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_to_smaller_than_from() {
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let now = chrono::Utc::now().timestamp() as f64;
+    let from = now;
+    let to = now - 86400.0;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1h",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(auth_header)
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_from_too_old() {
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let now = chrono::Utc::now().timestamp() as f64;
+    let from = now - (15.0 * 24.0 * 60.0 * 60.0);
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1h",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(auth_header)
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_invalid_interval_format() {
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let now = chrono::Utc::now().timestamp() as f64;
+    let from = now - 3600.0;
+    let to = now;
+    // Test invalid unit
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1x",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(create_auth_header(TEST_USER_ID))
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+
+    // Test invalid number
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=abc1h",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(create_auth_header(TEST_USER_ID))
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_too_many_data_points() {
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let now = chrono::Utc::now().timestamp() as f64;
+    // 14 days with 1s interval would generate way too many data points
+    let from = now - (14.0 * 24.0 * 60.0 * 60.0);
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1s",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(auth_header)
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+
+    let body: Value = serde_json::from_str(&response.into_string().unwrap()).unwrap();
+    assert!(body
+        .get("error")
+        .unwrap()
+        .as_str()
+        .unwrap()
+        .contains("exceeds the maximum of 100"));
+
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_exactly_100_data_points() {
+    // Test that exactly 100 data points is allowed (boundary case)
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let now = chrono::Utc::now().timestamp() as f64;
+    // 100 seconds with 1s interval = exactly 100 data points
+    let from = now - 100.0;
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1s",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(auth_header)
+        .dispatch();
+    assert_eq!(response.status(), Status::Ok);
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_101_data_points_rejected() {
+    // Test that 101 data points is rejected (boundary case)
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let now = chrono::Utc::now().timestamp() as f64;
+    // 101 seconds with 1s interval = 101 data points (exceeds limit)
+    let from = now - 101.0;
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1s",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(auth_header)
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+
+    let body: Value = serde_json::from_str(&response.into_string().unwrap()).unwrap();
+    assert!(body
+        .get("error")
+        .unwrap()
+        .as_str()
+        .unwrap()
+        .contains("exceeds the maximum of 100"));
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_data_points_with_different_intervals() {
+    // Test data point calculation with different interval units
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let now = chrono::Utc::now().timestamp() as f64;
+
+    // Test with minutes: 100 minutes with 1m interval = 100 data points (allowed)
+    let from = now - (100.0 * 60.0);
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1m",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(create_auth_header(TEST_USER_ID))
+        .dispatch();
+    assert_eq!(response.status(), Status::Ok);
+
+    // Test with hours: 101 hours with 1h interval = 101 data points (rejected)
+    let from = now - (101.0 * 3600.0);
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1h",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(create_auth_header(TEST_USER_ID))
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
+
+    // Test with days: 2 days with 1d interval = 2 data points (allowed)
+    let from = now - (2.0 * 86400.0);
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1d",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(create_auth_header(TEST_USER_ID))
+        .dispatch();
+    assert_eq!(response.status(), Status::Ok);
+
+    cleanup_test_environment();
+}
+
+#[test]
+fn test_command_usage_data_points_with_fractional_intervals() {
+    // Test data point calculation with fractional time ranges
+    setup_test_environment();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let now = chrono::Utc::now().timestamp() as f64;
+
+    // 50.5 seconds with 1s interval = 51 data points (ceil(50.5) = 51, allowed)
+    let from = now - 50.5;
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1s",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(create_auth_header(TEST_USER_ID))
+        .dispatch();
+    assert_eq!(response.status(), Status::Ok);
+
+    // 100.1 seconds with 1s interval = 101 data points (ceil(100.1) = 101, rejected)
+    let from = now - 100.1;
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1s",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(create_auth_header(TEST_USER_ID))
+        .dispatch();
+    assert_eq!(response.status(), Status::BadRequest);
 
     cleanup_test_environment();
 }

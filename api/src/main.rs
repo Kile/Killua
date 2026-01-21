@@ -15,7 +15,8 @@ use routes::commands::get_commands;
 use routes::diagnostics::get_diagnostics;
 use routes::discord_webhooks::{handle_discord_webhook, webhook_health_check};
 use routes::guild::{
-    create_tag, delete_tag, edit_guild, edit_tag, get_editable_guilds, get_guild_info,
+    create_tag, delete_tag, edit_guild, edit_tag, get_command_usage, get_editable_guilds,
+    get_guild_info,
 };
 use routes::image::{delete, edit, image, list, upload};
 use routes::news::{delete_news, edit_news, get_news, get_news_by_id, like_news, save_news};
@@ -62,6 +63,7 @@ fn rocket() -> _ {
                 get_guild_info,
                 edit_guild,
                 get_editable_guilds,
+                get_command_usage,
                 create_tag,
                 edit_tag,
                 delete_tag,

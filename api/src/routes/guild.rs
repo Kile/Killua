@@ -1,3 +1,4 @@
+use chrono::Utc;
 use rocket::response::status::BadRequest;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
@@ -41,11 +42,14 @@ pub struct GuildTag {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GuildInfoResponse {
-    pub member_count: i32,
+    pub badges: Vec<String>,
     pub prefix: String,
     pub is_premium: bool,
     pub bot_added_on: Option<String>,
     pub tags: Vec<GuildTag>,
+    pub approximate_member_count: Option<i64>,
+    pub name: String,
+    pub icon_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -130,6 +134,30 @@ pub struct TagDeleteRequest {
 pub struct TagResponse {
     pub success: bool,
     pub message: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CommandUsageRequest {
+    pub guild_id: i64,
+    pub user_id: i64,
+    pub from: f64,
+    pub to: f64,
+    pub interval: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CommandUsageItem {
+    pub name: String,
+    pub group: String,
+    pub command_id: i32,
+    pub values: Vec<(String, i32)>, // (timestamp, count)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CommandUsageResponse {
+    Error { error: String },
+    Success(Vec<CommandUsageItem>),
 }
 
 #[get("/guild/<guild_id>/info")]
@@ -247,11 +275,18 @@ pub async fn get_editable_guilds(
         .await
         .context("Failed to communicate with Killua bot to check guild membership")?;
 
-    let bot_response: GuildEditableResponse = serde_json::from_str(&response).map_err(|e| {
-        BadRequest(Json(serde_json::json!({
-            "error": format!("Failed to parse response from Killua bot: {}", e)
-        })))
-    })?;
+    let bot_response: GuildEditableResponse = if response.is_empty() || response == "[]" {
+        GuildEditableResponse {
+            editable: vec![],
+            premium: vec![],
+        }
+    } else {
+        serde_json::from_str(&response).map_err(|e| {
+            BadRequest(Json(serde_json::json!({
+                "error": format!("Failed to parse response from Killua bot: {}", e)
+            })))
+        })?
+    };
 
     Ok(Json(bot_response))
 }
@@ -410,4 +445,176 @@ pub async fn delete_tag(
     })?;
 
     Ok(Json(tag_response))
+}
+
+#[get("/guild/<guild_id>/command-usage?<from>&<to>&<interval>")]
+pub async fn get_command_usage(
+    auth: DiscordAuth,
+    guild_id: i64,
+    from: Option<f64>,
+    to: Option<f64>,
+    interval: Option<String>,
+) -> Result<Json<CommandUsageResponse>, BadRequest<Json<Value>>> {
+    // Check if user has MANAGE_SERVER permission via Discord API
+    if !auth
+        .has_manage_server_permission(&guild_id.to_string())
+        .await
+    {
+        return Err(BadRequest(Json(serde_json::json!({
+            "error": "Access denied: You need MANAGE_SERVER permission for this guild"
+        }))));
+    }
+
+    // Validate required parameters
+    let from_ts = from.ok_or_else(|| {
+        BadRequest(Json(serde_json::json!({
+            "error": "Missing required parameter: from"
+        })))
+    })?;
+
+    let to_ts = to.ok_or_else(|| {
+        BadRequest(Json(serde_json::json!({
+            "error": "Missing required parameter: to"
+        })))
+    })?;
+
+    let interval_str = interval.ok_or_else(|| {
+        BadRequest(Json(serde_json::json!({
+            "error": "Missing required parameter: interval"
+        })))
+    })?;
+
+    // Validate: to may never be smaller than from
+    if to_ts < from_ts {
+        return Err(BadRequest(Json(serde_json::json!({
+            "error": "Parameter 'to' must be greater than or equal to 'from'"
+        }))));
+    }
+
+    // Validate: from (as a timestamp) may not be longer ago than 2 weeks
+    let now = Utc::now().timestamp() as f64;
+    let two_weeks_ago = now - (14.0 * 24.0 * 60.0 * 60.0);
+    if from_ts < two_weeks_ago {
+        return Err(BadRequest(Json(serde_json::json!({
+            "error": "Parameter 'from' cannot be more than 2 weeks ago"
+        }))));
+    }
+
+    // Validate interval format (must be <int>(s|m|h|d))
+    validate_interval_format(&interval_str)?;
+
+    // Check that the number of data points doesn't exceed 100
+    let interval_seconds = parse_interval_to_seconds(&interval_str)?;
+    let time_range = to_ts - from_ts;
+    let data_points = (time_range / interval_seconds).ceil() as i64;
+
+    if data_points > 100 {
+        return Err(BadRequest(Json(serde_json::json!({
+            "error": format!("The requested time range and interval would generate {} data points, which exceeds the maximum of 100", data_points)
+        }))));
+    }
+
+    let user_id: i64 = auth.get_user_id().parse().map_err(|_| {
+        BadRequest(Json(serde_json::json!({
+            "error": "Invalid user ID format"
+        })))
+    })?;
+
+    let request_data = CommandUsageRequest {
+        guild_id,
+        user_id,
+        from: from_ts,
+        to: to_ts,
+        interval: interval_str,
+    };
+
+    let response = make_request("guild/command_usage", request_data, 0_u8, false)
+        .await
+        .context("Failed to communicate with Killua bot to retrieve command usage")?;
+
+    // Parse response - could be error or success
+    let usage_response: CommandUsageResponse = if response.trim().is_empty() {
+        CommandUsageResponse::Success(vec![])
+    } else {
+        let parsed: Value = serde_json::from_str(&response).map_err(|e| {
+            BadRequest(Json(serde_json::json!({
+                "error": format!("Failed to parse response from Killua bot: {}", e)
+            })))
+        })?;
+
+        if parsed.get("status").and_then(|v| v.as_str()) == Some("ok") {
+            CommandUsageResponse::Success(vec![])
+        } else {
+            serde_json::from_value(parsed).map_err(|e| {
+                BadRequest(Json(serde_json::json!({
+                    "error": format!("Failed to parse response from Killua bot: {}", e)
+                })))
+            })?
+        }
+    };
+
+    Ok(Json(usage_response))
+}
+
+/// Validate interval format (e.g., "1s", "5m", "2h", "1d")
+fn validate_interval_format(interval: &str) -> Result<(), BadRequest<Json<Value>>> {
+    if interval.is_empty() {
+        return Err(BadRequest(Json(serde_json::json!({
+            "error": "Interval cannot be empty"
+        }))));
+    }
+
+    let (num_str, unit) = interval.split_at(interval.len() - 1);
+
+    if num_str.is_empty() {
+        return Err(BadRequest(Json(serde_json::json!({
+            "error": "Interval must include a number"
+        }))));
+    }
+
+    // Validate that num_str is a valid integer
+    num_str.parse::<i64>().map_err(|_| {
+        BadRequest(Json(serde_json::json!({
+            "error": format!("Invalid interval format: '{}' is not a valid number", num_str)
+        })))
+    })?;
+
+    // Validate unit is one of: s, m, h, d
+    match unit {
+        "s" | "m" | "h" | "d" => Ok(()),
+        _ => Err(BadRequest(Json(serde_json::json!({
+            "error": format!("Invalid interval unit: '{}'. Must be one of: s, m, h, d", unit)
+        })))),
+    }
+}
+
+/// Parse interval string to seconds for calculation purposes
+/// Assumes the interval format has already been validated
+fn parse_interval_to_seconds(interval: &str) -> Result<f64, BadRequest<Json<Value>>> {
+    let (num_str, unit) = interval.split_at(interval.len() - 1);
+    let num: f64 = num_str.parse().map_err(|_| {
+        BadRequest(Json(serde_json::json!({
+            "error": format!("Invalid interval format: '{}' is not a valid number", num_str)
+        })))
+    })?;
+
+    let seconds = match unit {
+        "s" => num,
+        "m" => num * 60.0,
+        "h" => num * 3600.0,
+        "d" => num * 86400.0,
+        _ => {
+            return Err(BadRequest(Json(serde_json::json!({
+                "error": format!("Invalid interval unit: '{}'. Must be one of: s, m, h, d", unit)
+            }))));
+        }
+    };
+
+    if seconds <= 0.0 {
+        return Err(BadRequest(Json(serde_json::json!({
+            "error": "Interval must be greater than 0"
+        }))));
+    }
+
+    Ok(seconds)
 }

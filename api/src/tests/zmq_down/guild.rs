@@ -324,3 +324,42 @@ fn test_tag_delete_zmq_down_without_auth() {
     // Should return Forbidden due to missing auth, not ZMQ error
     assert_eq!(response.status(), Status::Forbidden);
 }
+
+#[test]
+fn test_command_usage_zmq_down() {
+    enable_test_mode();
+    set_test_guild_permissions(format!("{}:{}:32", TEST_USER_ID, TEST_GUILD_ID));
+    let client = Client::tracked(rocket()).unwrap();
+    let auth_header = create_auth_header(TEST_USER_ID);
+    let now = chrono::Utc::now().timestamp() as f64;
+    let from = now - 86400.0;
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1h",
+            TEST_GUILD_ID, from, to
+        ))
+        .header(auth_header)
+        .dispatch();
+    assert!(
+        response.status() == Status::InternalServerError
+            || response.status() == Status::BadRequest
+            || response.status() == Status::ServiceUnavailable
+    );
+    disable_test_mode();
+}
+
+#[test]
+fn test_command_usage_zmq_down_without_auth() {
+    let client = Client::tracked(rocket()).unwrap();
+    let now = chrono::Utc::now().timestamp() as f64;
+    let from = now - 86400.0;
+    let to = now;
+    let response = client
+        .get(format!(
+            "/guild/{}/command-usage?from={}&to={}&interval=1h",
+            TEST_GUILD_ID, from, to
+        ))
+        .dispatch();
+    assert_eq!(response.status(), Status::Forbidden);
+}

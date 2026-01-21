@@ -5,7 +5,7 @@ from os import environ
 from random import choices
 from json import loads, dumps
 from asyncio import create_task, sleep
-from datetime import datetime
+from datetime import datetime, timedelta
 from zmq import ROUTER, Poller, POLLIN
 from zmq.asyncio import Context
 from io import BytesIO
@@ -295,10 +295,10 @@ class IPCRoutes(commands.Cog):
                     )
                     continue
 
-                if res:
-                    await socket.send_multipart([*metadata, dumps(res).encode()])
-                else:
+                if res is None:
                     await socket.send_multipart([*metadata, b'{"status":"ok"}'])
+                else:
+                    await socket.send_multipart([*metadata, dumps(res).encode()])
 
     async def download(self, url: str) -> Image.Image:
         """Downloads an image from the given url and returns it as a PIL Image"""
@@ -1058,14 +1058,15 @@ class IPCRoutes(commands.Cog):
                 "avatar_url": owner_obj.avatar.url if owner_obj.avatar else None
             }
 
-        command_stats = COMMAND_USAGE.collect()
-
         return {
-            "member_count": guild.approximate_member_count or 0,
+            "badges": db_guild.badges,
             "prefix": db_guild.prefix,
             "is_premium": db_guild.is_premium,
             "bot_added_on": db_guild.added_on.isoformat() if db_guild.added_on else None,
             "tags": tag_copy,
+            "approximate_member_count": db_guild.approximate_member_count,
+            "name": guild.name,
+            "icon_url": str(guild.icon.url) if guild.icon else None,
         }
     
     async def guild_edit(self, data: dict) -> dict:
@@ -1178,5 +1179,39 @@ class IPCRoutes(commands.Cog):
             await tag.transfer(to=data["new_owner"])
 
         return {"success": True, "message": "Tag edited successfully"}
+    
+    async def guild_command_usage(self, data: dict) -> Union[dict, list]:
+        """Returns command usage stats for the server"""
+        if self.client.run_in_docker is False:
+            return {"error": "Command usage stats are only available when running in Docker."}
+
+        _from = data.get("from", round((datetime.now() - timedelta(days=14)).timestamp(), 3))
+        to = data.get("to", round(datetime.now().timestamp(), 3))
+        interval = data.get("interval", "1h")
+        guild_id = data.get("guild_id", None)
+        if not guild_id:
+            return {"error": "Guild ID is required."}
+        
+        query = f"http://prometheus:9090/api/v1/query_range?query=discord_command_usage%7Bguild_id%3D%22{guild_id}%22%7D&step={interval}&start={_from}&end={to}"
+        res = await self.client.session.get(query)
+        body = await res.json()
+
+        if body["status"] == "error":
+            return {"error": body["error"]}
+
+        body = body["data"]["result"]
+
+        formatted = []
+        for res in body:
+            formatted.append(
+                {
+                    "name": res["metric"]["command"],
+                    "group": res["metric"]["group"],
+                    "command_id": int(res["metric"]["command_id"]),
+                    "values": [(str(timestamp), int(value)) for timestamp, value in res["values"]]
+                }
+            )
+
+        return formatted
 
 Cog = IPCRoutes
