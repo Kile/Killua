@@ -91,7 +91,7 @@ pub async fn edit_user(
     edit_data: Json<UserEditPayload>,
 ) -> Result<Json<UserEditResponse>, BadRequest<Json<Value>>> {
     // Use the authenticated user's ID
-    let user_id = auth.0.id.clone();
+    let user_id = auth.user.id.clone();
     edit_user_by_id(auth, Some(&user_id), edit_data).await
 }
 
@@ -103,7 +103,7 @@ pub async fn edit_user_by_id(
 ) -> Result<Json<UserEditResponse>, BadRequest<Json<Value>>> {
     let target_user_id = user_id
         .map(|s| s.to_string())
-        .unwrap_or_else(|| auth.0.id.clone());
+        .unwrap_or_else(|| auth.user.id.clone());
 
     // Check if the authenticated user can edit this user's data
     if !auth.can_access_user(&target_user_id) {
@@ -148,7 +148,7 @@ pub async fn get_userinfo(
     auth: DiscordAuth,
 ) -> Result<Json<FlatUserInfoResponse>, BadRequest<Json<Value>>> {
     // Use the authenticated user's ID
-    let user_id = auth.0.id.clone();
+    let user_id = auth.user.id.clone();
     get_userinfo_by_id(auth, Some(&user_id)).await
 }
 
@@ -159,7 +159,7 @@ pub async fn get_userinfo_by_id(
 ) -> Result<Json<FlatUserInfoResponse>, BadRequest<Json<Value>>> {
     let target_user_id = user_id
         .map(|s| s.to_string())
-        .unwrap_or_else(|| auth.0.id.clone());
+        .unwrap_or_else(|| auth.user.id.clone());
 
     // Check if the authenticated user can access this user's data
     if !auth.can_access_user(&target_user_id) {
@@ -168,7 +168,7 @@ pub async fn get_userinfo_by_id(
         }))));
     }
 
-    let from_admin: bool = auth.0.id != target_user_id;
+    let from_admin: bool = auth.user.id != target_user_id;
     get_userinfo_by_user_id(auth, target_user_id, from_admin).await
 }
 
@@ -182,7 +182,7 @@ async fn get_userinfo_by_user_id(
     let email = if from_admin {
         None
     } else {
-        auth.0.email.clone()
+        auth.user.email.clone()
     };
     let request_data = UserInfoRequest {
         user_id,

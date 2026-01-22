@@ -1,2 +1,6 @@
 # Including previous rust builds may cause errors in the build process
-target/*
+api/target/*
+# Git folder can be chunky
+.git/*
+# You do not need all images, they're mounted
+assets/*

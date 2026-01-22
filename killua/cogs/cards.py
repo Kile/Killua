@@ -216,11 +216,10 @@ class Cards(commands.GroupCog, group_name="cards"):
         if len(user.all_cards) == 0:
             return await ctx.send("You don't have any cards yet!")
 
-        if page:
-            if page > 7 + math.ceil(len(user.fs_cards) / 18) or page < 1:
-                return await ctx.send(
-                    f"Please choose a page number between 1 and {6+math.ceil(len(user.fs_cards)/18)}"
-                )
+        if page and page > 7 + math.ceil(len(user.fs_cards) / 18) or page < 1:
+            return await ctx.send(
+                f"Please choose a page number between 1 and {6+math.ceil(len(user.fs_cards)/18)}"
+            )
 
         async def make_embed(page, *_) -> Tuple[discord.Embed, discord.File]:
             return await Book(self.client).create(ctx.author, page)
@@ -323,9 +322,8 @@ class Cards(commands.GroupCog, group_name="cards"):
             ctx,
             to_be_gained,
             "all "
-            + (sell_opt.name if sell_opt.name != "all" else "free slots")
-            + " cards",
-        )
+            + (sell_opt.name[:-1] if sell_opt.name != "all" else "free slot"),
+        ) # Shave off the 's' at the end for grammar if not selling all
         if not confirmed:
             return
 

@@ -141,7 +141,7 @@ class PrometheusCog(commands.Cog):
             ):
                 continue
             COMMAND_USAGE.labels(
-                self.client._get_group(cmd), cmd.name, cmd.extras["id"]
+                self.client._get_group(cmd), cmd.name, cmd.extras["id"], None
             ).set(usage_data[str(cmd.extras["id"])])
 
         await self.update_api_stats()
@@ -240,6 +240,7 @@ class PrometheusCog(commands.Cog):
             self.client._get_group(ctx.command),
             ctx.command.name,
             str(ctx.command.extras["id"]),
+            ctx.guild.id if ctx.guild else None,
         ).inc()
 
     @commands.Cog.listener()

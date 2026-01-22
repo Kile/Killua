@@ -310,7 +310,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
             results = r.data["results"]
             embed = discord.Embed.from_dict(
                 {
-                    "title": f"Results for query {text}",
+                    "title": f"Results for query: {text}",
                     "color": 0x3E4A78,
                 }
             )

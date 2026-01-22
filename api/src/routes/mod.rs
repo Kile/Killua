@@ -3,6 +3,7 @@ pub mod commands;
 pub mod common;
 pub mod diagnostics;
 pub mod discord_webhooks;
+pub mod guild;
 pub mod image;
 pub mod news;
 pub mod stats;

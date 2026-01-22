@@ -186,7 +186,7 @@ class Card:
         )
 
         msg = await ctx.send(
-            f"<@{other.id}> {ctx.author} has used the spell `{self.id}` on you! You have {len(effect_instances)} spells to defend yourself. You can either choose one of them to defend yourself with or let the attack go through",
+            f"<@{other.id}> {ctx.author.display_name} has used the spell `{self.id}` on you! You have {len(effect_instances)} spells to defend yourself. You can either choose one of them to defend yourself with or let the attack go through",
             view=view,
         )
         await view.wait()
@@ -241,7 +241,7 @@ class Card:
         if other.has_effect("1026")[0]:
             if 1026 in [
                 x[0] for x in other.all_cards
-            ]:  # Card has to remain in posession
+            ]:  # Card has to remain in possession
                 if other.effects["1026"] - 1 == 0:
                     await other.remove_effect("1026")
                     await other.remove_card(1026)

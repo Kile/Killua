@@ -3,7 +3,7 @@ x-common-labels: &common-labels
     org.opencontainers.image.source: https://github.com/kile/Killua
     org.opencontainers.image.title: "Killua"
     org.opencontainers.image.description: "The Killua Discord bot with Rust API and ZMQ Proxy"
-    org.opencontainers.image.version: "1.2.0"
+    org.opencontainers.image.version: "1.5.0"
     org.opencontainers.image.authors: "kile@killua.dev"
 
 services:
@@ -110,8 +110,6 @@ services:
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-    ports:
-      - 9090:9090
     restart: unless-stopped
     volumes:
       - ./prometheus:/etc/prometheus
@@ -125,9 +123,7 @@ services:
   loki:
     image: grafana/loki:latest
     container_name: loki
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/config.yml
+    command: -target=all -config.file=/etc/loki/config.yml
     volumes:
       - ./loki/config.yml:/etc/loki/config.yml
       - loki_data:/loki               # Persistent data directory
@@ -141,10 +137,6 @@ services:
   alloy:
     image: grafana/alloy:latest
     container_name: alloy
-    ports:
-      - 12345:12345
-      - 4317:4317
-      - 4318:4318
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - ./logs:/tmp/app-logs/
@@ -170,8 +162,6 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
-    expose:
-      - "9100"
     logging:
       driver: "json-file"
       options:

@@ -125,7 +125,9 @@ pub async fn get_news(
             content: item.content,
             news_type: item.news_type,
             likes: item.likes.len() as u64,
-            liked: auth.as_ref().is_some_and(|a| item.likes.contains(&a.0.id)),
+            liked: auth
+                .as_ref()
+                .is_some_and(|a| item.likes.contains(&a.user.id)),
             author: author_info,
             version: item.version,
             published: item.published,
@@ -179,7 +181,7 @@ pub async fn get_news_by_id(
         likes: news_item.likes.len() as u64,
         liked: auth
             .as_ref()
-            .is_some_and(|a| news_item.likes.contains(&a.0.id)),
+            .is_some_and(|a| news_item.likes.contains(&a.user.id)),
         author: author_info,
         version: news_item.version,
         published: news_item.published,
@@ -209,7 +211,7 @@ pub async fn like_news(
         })?
         .ok_or_else(|| BadRequest(Json(serde_json::json!({"error": "News item not found"}))))?;
 
-    let user_id_str = auth.0.id.clone();
+    let user_id_str = auth.user.id.clone();
     let mut likes = news_item.likes.clone();
 
     let action = if likes.contains(&user_id_str) {
@@ -259,7 +261,7 @@ pub async fn save_news(
         "images": request.images,
         "published": request.published,
         "notify_users": request.notify_users,
-        "author": auth.0.id
+        "author": auth.user.id
     });
 
     let response = make_request("news/save", request_data, 0_u8, false)

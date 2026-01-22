@@ -2,20 +2,27 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
+  grpc_listen_port: 9095
+  log_level: info
 
 common:
-  replication_factor: 1
+  instance_addr: 127.0.0.1
   path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
   ring:
-    instance_addr: 0.0.0.0
     kvstore:
       store: inmemory
 
-limits_config:
-  allow_structured_metadata: true
-  volume_enabled: true
-  # global retention (7 days)
-  retention_period: 168h
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
 
 schema_config:
   configs:
@@ -25,7 +32,7 @@ schema_config:
       schema: v13
       index:
         prefix: index_
-        period: 24h      # required for compactor/retention to work. Minimum index period = 24h.
+        period: 24h
 
 storage_config:
   tsdb_shipper:
@@ -34,16 +41,16 @@ storage_config:
   filesystem:
     directory: /loki/chunks
 
+limits_config:
+  retention_period: 168h
+  max_query_lookback: 168h
+  allow_structured_metadata: true
+  volume_enabled: true
+
 compactor:
   working_directory: /loki/compactor
-  retention_enabled: true
   compaction_interval: 10m
+  retention_enabled: true
   retention_delete_delay: 2h
   retention_delete_worker_count: 50
-  # REQUIRED in Loki 3.x when retention_enabled = true:
   delete_request_store: filesystem
-  delete_request_store_key_prefix: index/
-  delete_request_store_db_type: boltdb
-
-pattern_ingester:
-  enabled: true

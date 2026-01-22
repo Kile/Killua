@@ -53,7 +53,7 @@ class HelpCommand(commands.Cog):
     def find_source(self, command: commands.HybridCommand) -> str:
         """Finds the source of a command and links the GitHub link to it"""
         base_url = "https://github.com/kile/killua"
-        branch = "master" if not self.client.is_dev else "v1.3.0"
+        branch = "master" if not self.client.is_dev else "v1.5.0"
 
         source = command.callback.__code__
         filename = source.co_filename
