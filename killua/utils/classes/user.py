@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Any, ClassVar, Dict, List, Optional, Union, cast, Literal, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass\
+
+import logging
 
 from killua.static.constants import (
     DB,
@@ -42,6 +44,7 @@ class User:
     has_user_installed: bool
     email: Optional[str]
     email_notifications: Dict[Literal["news", "updates", "posts"], bool]
+    message_tracking_enabled: bool = False
     cache: ClassVar[Dict[int, User]] = {}
 
     async def set_email(self, email: str) -> None:
@@ -108,6 +111,7 @@ class User:
                 "email_notifications",
                 {"news": False, "updates": False, "posts": False},
             ),
+            message_tracking_enabled=data.get("message_tracking_enabled", False),
         )
 
         cls.cache[user_id] = instance
@@ -253,6 +257,7 @@ class User:
                         "updates": False,
                         "posts": False,
                     },
+                    "message_tracking_enabled": False,
                 }
             )
 
@@ -842,3 +847,28 @@ class User:
         self.achievements.append("logged_into_website")
         await self._update_val("achievements", self.achievements)
         return True
+
+    async def toggle_message_tracking(self) -> bool:
+        """Toggles message tracking for the user"""
+        self.message_tracking_enabled = not self.message_tracking_enabled
+        await self._update_val("message_tracking_enabled", self.message_tracking_enabled)
+        
+        if not self.message_tracking_enabled:
+            await self._delete_message_tracking_data()
+
+        return self.message_tracking_enabled
+    
+    async def _delete_message_tracking_data(self) -> None:
+        """Deletes all message tracking data for the user"""
+        from killua.utils.classes.guild import Guild
+
+        result = await DB.guilds.update_many(
+            {f"message_stats.{self.id}": {"$exists": True}},
+            {"$unset": {f"message_stats.{self.id}": ""}},
+        )
+
+        for guild_id, guild in Guild.cache.items():
+            if self.id in guild.message_stats:
+                del guild.message_stats[self.id]
+                
+        logging.info(f"Deleted message tracking data for user {self.id} in {result.modified_count} guild(s)")

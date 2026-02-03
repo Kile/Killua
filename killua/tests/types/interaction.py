@@ -39,6 +39,26 @@ class ArgumentResponseInteraction:
     def is_done(self) -> bool:
         return self._is_done
 
+class ArgumentFollowup:
+    def __init__(self, interaction: ArgumentInteraction):
+        self.interaction = interaction
+        self.sent = []  # store sent followups
+
+    async def send(self, content = None, /, *, embed=None, embeds=None, ephemeral: bool = False, **kwargs):
+        # Normalize embeds
+        if embed is not None:
+            embeds = [embed]
+        elif embeds is None:
+            embeds = []
+
+        self.sent.append(
+            {
+                "content": content,
+                "embeds": embeds,
+                "ephemeral": ephemeral,
+                "kwargs": kwargs,
+            }
+        )
 
 class ArgumentInteraction:
     """This classes purpose is purely to be supplied to callbacks of message interactions"""
@@ -48,6 +68,7 @@ class ArgumentInteraction:
         self.context = context
         self.user = context.author
         self.response = ArgumentResponseInteraction(self)
+        self.followup = ArgumentFollowup(self)
 
 
 class TestingInteraction(Interaction):
