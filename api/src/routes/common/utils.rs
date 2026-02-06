@@ -9,10 +9,32 @@ use rocket::serde::json::Json;
 pub trait ResultExt<T> {
     fn context(self, message: &str) -> Result<T, BadRequest<Json<Value>>>;
 }
-impl<T, E> ResultExt<T> for Result<T, E> {
+
+fn extract_error_message<T: std::any::Any>(value: &T) -> Option<String> {
+    let text = (value as &dyn std::any::Any)
+        .downcast_ref::<String>()
+        .map(|value| value.as_str())?;
+    let parsed: Value = serde_json::from_str(text).ok()?;
+    parsed
+        .get("error")
+        .and_then(|value| value.as_str())
+        .map(|value| value.to_string())
+}
+
+impl<T: std::any::Any, E> ResultExt<T> for Result<T, E> {
     fn context(self, message: &str) -> Result<T, BadRequest<Json<Value>>> {
-        error!("{}", message);
-        self.map_err(|_| BadRequest(Json(json!({ "error": message }))))
+        match self {
+            Ok(value) => {
+                if let Some(error_message) = extract_error_message(&value) {
+                    return Err(BadRequest(Json(json!({ "error": error_message }))));
+                }
+                Ok(value)
+            }
+            Err(_) => {
+                error!("{}", message);
+                Err(BadRequest(Json(json!({ "error": message }))))
+            }
+        }
     }
 }
 
