@@ -136,7 +136,7 @@ I would like to give a big thank you to everyone who has helped me on this journ
 
 > Found a lot of hug images and also tracked down most artists of previously used ones to give them credit making Killua a much more considerate bot.
 
-*   [Scientia](https://github.com/ScientiaEtVeritas)
+*   [Scientia](https://github.com/retkowski)
 
 > Gave me the original idea for this bot and helped me in the early stages, enduring lots of pings and stupid questions.
 

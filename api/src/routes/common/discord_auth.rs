@@ -1,7 +1,44 @@
+use chrono::{DateTime, Utc};
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
+use std::sync::RwLock;
+use std::time::{Duration, Instant};
+
+// Token cache: maps "Bearer <token>" -> CachedToken
+// Guild permission cache: maps "Bearer <token>" -> CachedGuildPermissions
+lazy_static::lazy_static! {
+    static ref TOKEN_CACHE: RwLock<HashMap<String, CachedToken>> = RwLock::new(HashMap::new());
+    static ref GUILD_PERM_CACHE: RwLock<HashMap<String, CachedGuildPermissions>> = RwLock::new(HashMap::new());
+}
+
+/// Fallback TTL used only in test mode where there is no real Discord expiry
+const TEST_TOKEN_TTL: Duration = Duration::from_secs(600);
+
+/// How long guild permission data is cached (permissions may change while token is still valid)
+const GUILD_PERM_TTL: Duration = Duration::from_secs(300); // 5 minutes
+
+/// Response from Discord's GET /oauth2/@me endpoint
+#[derive(Debug, Deserialize)]
+struct OAuth2MeResponse {
+    expires: String,
+    user: DiscordUser,
+}
+
+#[derive(Clone)]
+struct CachedToken {
+    user: DiscordUser,
+    expires_at: Instant,
+}
+
+#[derive(Clone)]
+struct CachedGuildPermissions {
+    /// Guild IDs where the user has MANAGE_SERVER permission
+    editable_guild_ids: Vec<i64>,
+    expires_at: Instant,
+}
 
 // Test mode flag - set to true during tests
 static TEST_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -22,6 +59,8 @@ pub fn disable_test_mode() {
     // Clear test admin IDs
     let null_ptr = std::ptr::null_mut();
     TEST_ADMIN_IDS.store(null_ptr, std::sync::atomic::Ordering::Relaxed);
+    // Clear the token cache when leaving test mode
+    clear_token_cache();
 }
 
 /// Set test admin IDs for testing
@@ -32,7 +71,7 @@ pub fn set_test_admin_ids(admin_ids: String) {
     TEST_ADMIN_IDS.store(ptr, std::sync::atomic::Ordering::Relaxed);
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscordUser {
     pub id: String,
     pub username: String,
@@ -81,16 +120,35 @@ impl<'r> FromRequest<'r> for DiscordAuth {
 }
 
 async fn verify_discord_token(token: &str) -> Result<DiscordUser, DiscordAuthError> {
-    // Check if we're in test mode
-    let test_mode = TEST_MODE.load(std::sync::atomic::Ordering::Relaxed);
-    if test_mode {
-        return verify_discord_token_test(token);
+    // Check cache first (works in both test and production mode)
+    if let Some(user) = get_cached_token(token) {
+        return Ok(user);
     }
 
+    // Check if we're in test mode
+    let test_mode = TEST_MODE.load(std::sync::atomic::Ordering::Relaxed);
+
+    if test_mode {
+        let user = verify_discord_token_test(token)?;
+        cache_token_with_expiry(token, &user, Instant::now() + TEST_TOKEN_TTL);
+        return Ok(user);
+    }
+
+    // Production: call /oauth2/@me which returns user data + real token expiry
+    let (user, expires_at) = verify_discord_token_prod(token).await?;
+    cache_token_with_expiry(token, &user, expires_at);
+    Ok(user)
+}
+
+/// Calls Discord's /oauth2/@me to verify the token and retrieve both the user
+/// data and the token's actual expiry timestamp.
+async fn verify_discord_token_prod(
+    token: &str,
+) -> Result<(DiscordUser, Instant), DiscordAuthError> {
     let client = reqwest::Client::new();
 
     let response = client
-        .get("https://discord.com/api/v10/users/@me")
+        .get("https://discord.com/api/v10/oauth2/@me")
         .header("Authorization", token)
         .send()
         .await;
@@ -100,8 +158,11 @@ async fn verify_discord_token(token: &str) -> Result<DiscordUser, DiscordAuthErr
             if resp.status().is_success() {
                 let response_text = resp.text().await.unwrap_or_default();
 
-                match serde_json::from_str::<DiscordUser>(&response_text) {
-                    Ok(user) => Ok(user),
+                match serde_json::from_str::<OAuth2MeResponse>(&response_text) {
+                    Ok(oauth_resp) => {
+                        let expires_at = parse_discord_expiry(&oauth_resp.expires);
+                        Ok((oauth_resp.user, expires_at))
+                    }
                     Err(_e) => Err(DiscordAuthError::DiscordApiError),
                 }
             } else {
@@ -109,6 +170,105 @@ async fn verify_discord_token(token: &str) -> Result<DiscordUser, DiscordAuthErr
             }
         }
         Err(_e) => Err(DiscordAuthError::DiscordApiError),
+    }
+}
+
+/// Convert Discord's ISO-8601 `expires` string into a `std::time::Instant`.
+fn parse_discord_expiry(expires: &str) -> Instant {
+    if let Ok(expiry_dt) = expires.parse::<DateTime<Utc>>() {
+        let remaining = expiry_dt
+            .signed_duration_since(Utc::now())
+            .to_std()
+            .unwrap_or(Duration::ZERO);
+        Instant::now() + remaining
+    } else {
+        // If parsing fails, fall back to a short TTL so we re-verify soon
+        Instant::now() + Duration::from_secs(60)
+    }
+}
+
+// ===== Token Cache Helpers =====
+
+/// Look up a token in the cache, returning the user if it's present and not expired
+fn get_cached_token(token: &str) -> Option<DiscordUser> {
+    let cache = TOKEN_CACHE.read().ok()?;
+    if let Some(cached) = cache.get(token) {
+        if cached.expires_at > Instant::now() {
+            return Some(cached.user.clone());
+        }
+    }
+    None
+}
+
+/// Store a verified token with an explicit expiry instant
+fn cache_token_with_expiry(token: &str, user: &DiscordUser, expires_at: Instant) {
+    if let Ok(mut cache) = TOKEN_CACHE.write() {
+        cache.insert(
+            token.to_string(),
+            CachedToken {
+                user: user.clone(),
+                expires_at,
+            },
+        );
+    }
+}
+
+/// Public helper that caches with the test-mode fallback TTL (used by tests)
+#[allow(dead_code)]
+pub fn cache_token(token: &str, user: &DiscordUser) {
+    cache_token_with_expiry(token, user, Instant::now() + TEST_TOKEN_TTL);
+}
+
+/// Remove a specific token from the cache (used by the logout endpoint)
+pub fn invalidate_token(token: &str) {
+    if let Ok(mut cache) = TOKEN_CACHE.write() {
+        cache.remove(token);
+    }
+    if let Ok(mut cache) = GUILD_PERM_CACHE.write() {
+        cache.remove(token);
+    }
+}
+
+/// Clear all tokens and guild permissions from the cache
+#[allow(dead_code)]
+pub fn clear_token_cache() {
+    if let Ok(mut cache) = TOKEN_CACHE.write() {
+        cache.clear();
+    }
+    if let Ok(mut cache) = GUILD_PERM_CACHE.write() {
+        cache.clear();
+    }
+}
+
+/// Check if a token is currently cached (for testing)
+#[allow(dead_code)]
+pub fn is_token_cached(token: &str) -> bool {
+    get_cached_token(token).is_some()
+}
+
+// ===== Guild Permission Cache Helpers =====
+
+/// Look up cached guild permissions for a token
+fn get_cached_guild_permissions(token: &str) -> Option<Vec<i64>> {
+    let cache = GUILD_PERM_CACHE.read().ok()?;
+    if let Some(cached) = cache.get(token) {
+        if cached.expires_at > Instant::now() {
+            return Some(cached.editable_guild_ids.clone());
+        }
+    }
+    None
+}
+
+/// Store guild permission data in the cache
+fn cache_guild_permissions(token: &str, editable_guild_ids: &[i64]) {
+    if let Ok(mut cache) = GUILD_PERM_CACHE.write() {
+        cache.insert(
+            token.to_string(),
+            CachedGuildPermissions {
+                editable_guild_ids: editable_guild_ids.to_vec(),
+                expires_at: Instant::now() + GUILD_PERM_TTL,
+            },
+        );
     }
 }
 
@@ -257,6 +417,15 @@ pub async fn get_editable_guilds(
     token: &str,
     guild_ids: &[i64],
 ) -> Result<Vec<i64>, DiscordAuthError> {
+    // Check guild permission cache first
+    if let Some(cached_editable) = get_cached_guild_permissions(token) {
+        let filtered: Vec<i64> = cached_editable
+            .into_iter()
+            .filter(|id| guild_ids.contains(id))
+            .collect();
+        return Ok(filtered);
+    }
+
     // Check if we're in test mode
     let test_mode = TEST_MODE.load(std::sync::atomic::Ordering::Relaxed);
     if test_mode {
@@ -274,15 +443,19 @@ pub async fn get_editable_guilds(
                     let perms: u64 = parts[2].parse().unwrap_or(0);
                     if test_user == user.id && (perms & MANAGE_SERVER) != 0 {
                         if let Ok(guild_id) = test_guild.parse::<i64>() {
-                            if guild_ids.contains(&guild_id) {
-                                editable.push(guild_id);
-                            }
+                            editable.push(guild_id);
                         }
                     }
                 }
             }
         }
-        return Ok(editable);
+        // Cache the full list of editable guilds, then filter for the requested ones
+        cache_guild_permissions(token, &editable);
+        let filtered: Vec<i64> = editable
+            .into_iter()
+            .filter(|id| guild_ids.contains(id))
+            .collect();
+        return Ok(filtered);
     }
 
     let client = reqwest::Client::new();
@@ -300,18 +473,28 @@ pub async fn get_editable_guilds(
 
                 match serde_json::from_str::<Vec<DiscordGuildInfo>>(&response_text) {
                     Ok(guilds) => {
-                        let mut editable = Vec::new();
-                        for guild in guilds {
-                            if let Ok(guild_id) = guild.id.parse::<i64>() {
-                                if guild_ids.contains(&guild_id) {
-                                    let perms: u64 = guild.permissions.parse().unwrap_or(0);
-                                    if (perms & MANAGE_SERVER) != 0 {
-                                        editable.push(guild_id);
-                                    }
+                        // Collect ALL guilds the user can manage, then cache them
+                        let all_editable: Vec<i64> = guilds
+                            .iter()
+                            .filter_map(|guild| {
+                                let guild_id = guild.id.parse::<i64>().ok()?;
+                                let perms: u64 = guild.permissions.parse().unwrap_or(0);
+                                if (perms & MANAGE_SERVER) != 0 {
+                                    Some(guild_id)
+                                } else {
+                                    None
                                 }
-                            }
-                        }
-                        Ok(editable)
+                            })
+                            .collect();
+
+                        cache_guild_permissions(token, &all_editable);
+
+                        // Return only the requested guild IDs
+                        let filtered: Vec<i64> = all_editable
+                            .into_iter()
+                            .filter(|id| guild_ids.contains(id))
+                            .collect();
+                        Ok(filtered)
                     }
                     Err(_e) => Err(DiscordAuthError::DiscordApiError),
                 }

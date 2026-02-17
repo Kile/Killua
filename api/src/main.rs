@@ -23,6 +23,7 @@ use routes::news::{delete_news, edit_news, get_news, get_news_by_id, like_news, 
 use routes::stats::get_stats;
 use routes::update::{update, update_cors};
 use routes::user::{edit_user, edit_user_by_id, get_userinfo, get_userinfo_by_id};
+use routes::auth::logout;
 use routes::vote::register_vote;
 
 use fairings::cors::Cors;
@@ -67,6 +68,7 @@ fn rocket() -> _ {
                 create_tag,
                 edit_tag,
                 delete_tag,
+                logout,
             ],
         )
         .attach(db::init())

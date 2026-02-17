@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod cards;
 pub mod commands;
 pub mod common;
