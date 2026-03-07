@@ -35,25 +35,28 @@ discovery.docker "linux" {
   host = "unix:///var/run/docker.sock"
 }
 
-// Define a relabeling rule to create a service name from the container name.
-discovery.relabel "logs_integrations_docker" {
-      targets = []
-  
-      rule {
-          source_labels = ["__meta_docker_container_name"]
-          regex = "/(.*)"
-          target_label = "service_name"
-      }
+// Filter to only keep api, bot, and proxy containers, and extract service name.
+discovery.relabel "docker_logs_filter" {
+  targets = discovery.docker.linux.targets
 
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(api|bot|proxy)"
+    action        = "keep"
   }
 
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "service_name"
+  }
+}
 
-// Configure a loki.source.docker component to collect logs from Docker containers.
+// Collect logs only from filtered Docker containers.
 loki.source.docker "default" {
   host       = "unix:///var/run/docker.sock"
-  targets    = discovery.docker.linux.targets
+  targets    = discovery.relabel.docker_logs_filter.output
   labels     = {"platform" = "docker"}
-  relabel_rules = discovery.relabel.logs_integrations_docker.rules
   forward_to = [loki.write.local.receiver]
 }
 

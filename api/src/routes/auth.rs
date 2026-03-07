@@ -8,5 +8,8 @@ use super::common::discord_auth::{invalidate_token, DiscordAuth};
 #[post("/logout")]
 pub fn logout(auth: DiscordAuth) -> (Status, Json<Value>) {
     invalidate_token(&auth.token);
-    (Status::Ok, Json(json!({ "message": "Successfully logged out" })))
+    (
+        Status::Ok,
+        Json(json!({ "message": "Successfully logged out" })),
+    )
 }

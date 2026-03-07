@@ -10,6 +10,7 @@ mod routes;
 mod tests;
 
 // import routes
+use routes::auth::logout;
 use routes::cards::{get_cards, get_public_cards};
 use routes::commands::get_commands;
 use routes::diagnostics::get_diagnostics;
@@ -23,7 +24,6 @@ use routes::news::{delete_news, edit_news, get_news, get_news_by_id, like_news, 
 use routes::stats::get_stats;
 use routes::update::{update, update_cors};
 use routes::user::{edit_user, edit_user_by_id, get_userinfo, get_userinfo_by_id};
-use routes::auth::logout;
 use routes::vote::register_vote;
 
 use fairings::cors::Cors;

@@ -373,7 +373,10 @@ fn test_invalidate_single_token() {
 
     invalidate_token(token1);
 
-    assert!(!is_token_cached(token1), "Invalidated token should be removed");
+    assert!(
+        !is_token_cached(token1),
+        "Invalidated token should be removed"
+    );
     assert!(is_token_cached(token2), "Other tokens should remain cached");
 
     clear_token_cache();
@@ -426,7 +429,10 @@ fn test_disable_test_mode_clears_cache() {
 
     // disable_test_mode also clears the cache
     disable_test_mode();
-    assert!(!is_token_cached(token), "Cache should be cleared when test mode is disabled");
+    assert!(
+        !is_token_cached(token),
+        "Cache should be cleared when test mode is disabled"
+    );
 }
 
 #[test]
@@ -540,7 +546,10 @@ fn test_token_cached_after_first_request() {
 
     // Auth succeeds (request may fail later due to ZMQ, but not with 403)
     assert_ne!(response.status(), Status::Forbidden);
-    assert!(is_token_cached(token), "Token should be cached after successful auth");
+    assert!(
+        is_token_cached(token),
+        "Token should be cached after successful auth"
+    );
 
     disable_test_mode();
 }
@@ -586,7 +595,10 @@ fn test_invalid_token_not_cached() {
         .dispatch();
 
     assert_eq!(response.status(), Status::Forbidden);
-    assert!(!is_token_cached(bad_token), "Invalid tokens must not be cached");
+    assert!(
+        !is_token_cached(bad_token),
+        "Invalid tokens must not be cached"
+    );
 
     disable_test_mode();
 }
@@ -617,7 +629,10 @@ fn test_logout_removes_token_from_cache() {
     assert_eq!(response.status(), Status::Ok);
     let body: serde_json::Value = serde_json::from_str(&response.into_string().unwrap()).unwrap();
     assert_eq!(body["message"], "Successfully logged out");
-    assert!(!is_token_cached(token), "Token must be removed from cache after logout");
+    assert!(
+        !is_token_cached(token),
+        "Token must be removed from cache after logout"
+    );
 
     disable_test_mode();
 }
