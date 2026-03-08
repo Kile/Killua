@@ -26,6 +26,7 @@ class TestingMember(User):
             "communication_disabled_until", ""
         )
         self.premium_since: Union[datetime, None] = kwargs.pop("premium_since", None)
+        self.display_avatar = self.avatar
 
     @property
     def display_name(self) -> str:

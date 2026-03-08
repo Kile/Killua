@@ -22,6 +22,9 @@ class Guild:
     polls: dict = field(default_factory=dict)
     tags: List[dict] = field(default_factory=list)
     added_on: Optional[datetime] = None
+    message_stats: Dict[int, int] = field(default_factory=dict)  # user_id: message_count
+    message_tracking_enabled: bool = False
+    tracking_since: Optional[datetime] = None
     cache: ClassVar[Dict[int, Guild]] = {}
 
     @classmethod
@@ -67,6 +70,12 @@ class Guild:
         raw["approximate_member_count"] = await cls._member_count_helper(
             guild_id, raw.get("approximate_member_count", None), member_count
         )
+        # Convert message_stats string keys to int keys for in-memory use
+        message_stats_raw = raw.get("message_stats", {})
+        raw["message_stats"] = {int(k): v for k, v in message_stats_raw.items()} if message_stats_raw else {}
+        raw["message_tracking_enabled"] = raw.get("message_tracking_enabled", False)
+        raw["tracking_since"] = raw.get("tracking_since", None)
+
         guild = cls.from_dict(raw)
         cls.cache[guild_id] = guild
 
@@ -80,7 +89,7 @@ class Guild:
     async def add_default(cls, guild_id: int, member_count: Optional[int]) -> None:
         """Adds a guild to the database"""
         await DB.guilds.insert_one(
-            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count or 0, "added_on": datetime.now()}
+            {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count or 0, "added_on": datetime.now(), "message_stats": {}, "message_tracking_enabled": False}
         )
 
     @classmethod
@@ -146,3 +155,50 @@ class Guild:
         """Updates the votes of a poll"""
         self.polls[str(id)]["votes"] = updated
         await self._update_val(f"polls.{id}.votes", updated)
+
+    async def increment_message_count(self, user_id: int, amount: int = 1) -> None:
+        """Increments the message count for a user in this guild"""
+        user_id_str = str(user_id)
+        current_count = self.message_stats.get(user_id, 0)
+        self.message_stats[user_id] = current_count + amount
+        await self._update_val(f"message_stats.{user_id_str}", amount, "$inc")
+
+    def get_message_count(self, user_id: int) -> int:
+        """Gets the message count for a user in this guild"""
+        return self.message_stats.get(user_id, 0)
+
+    async def get_top_senders(self, limit: int = 10) -> List[tuple[int, int]]:
+        """Fetch the top message senders in the guild. Returns a list of (user_id, message_count) tuples"""
+        tracked_stats = {k: v for k, v in self.message_stats.items() if (await User.new(k)).message_tracking_enabled}
+        sorted_stats = sorted(tracked_stats.items(), key=lambda x: x[1], reverse=True)
+        return sorted_stats[:limit]
+    
+    async def get_total_messages(self) -> int:
+        """Gets the total number of messages sent in this guild"""
+        return sum(self.message_stats.values())
+    
+    async def get_user_rank(self, user_id: int) -> Optional[int]:
+        """Gets the rank of a user in this guild based on message count"""
+        user_count = self.message_stats.get(user_id, 0)
+
+        if user_count == 0:
+            return None
+        
+        rank = sum(1 for count in self.message_stats.values() if count > user_count)
+        return rank + 1
+    
+    async def toggle_message_tracking(self) -> bool:
+        """Toggles message tracking for the guild"""
+        self.message_tracking_enabled = not self.message_tracking_enabled
+        await self._update_val("message_tracking_enabled", self.message_tracking_enabled)
+        if self.message_tracking_enabled:
+            # Remove all users who have disabled tracking from message_stats
+            tracked_stats = {k: v for k, v in self.message_stats.items() if (await User.new(k)).message_tracking_enabled}
+            self.message_stats = tracked_stats
+            await self._update_val("message_stats", {str(k): v for k, v in tracked_stats.items()})
+            self.tracking_since = datetime.now()
+            await self._update_val("tracking_since", self.tracking_since)
+        else:
+            self.message_stats = {}
+            await self._update_val("message_stats", {})
+        return self.message_tracking_enabled

@@ -1140,5 +1140,31 @@ class Events(commands.Cog):
             pass  # This theoretically should be covered by all the cases above,
             # but handling it again here can't hurt
 
+    @commands.Cog.listener()
+    async def on_message(self,message: discord.Message):
+        # ignore bot messages
+        if message.author.bot:
+            return
+        
+        # do not track DMs
+        if not message.guild:
+            return
+        
+        # ignore system messages
+        if message.type != discord.MessageType.default:
+            return
+
+        try:
+            guild = await Guild.new(message.guild.id)
+            if not guild.message_tracking_enabled:
+                return # guild has opted out
+
+            user = await User.new(message.author.id)
+            if not user.message_tracking_enabled:
+                return # user has opted out
+            
+            await guild.increment_message_count(message.author.id)
+        except Exception as e:
+            logging.error(f"Failed to increment message count for user {message.author.id} in guild {message.guild.id}: {e}")
 
 Cog = Events
