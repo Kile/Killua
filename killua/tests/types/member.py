@@ -8,6 +8,8 @@ from datetime import datetime
 
 from .utils import get_random_discord_id, random_date
 from .user import TestingUser as User
+from .role import TestingRole
+from .permissions import Permissions
 
 
 class TestingMember(User):
@@ -26,10 +28,21 @@ class TestingMember(User):
             "communication_disabled_until", ""
         )
         self.premium_since: Union[datetime, None] = kwargs.pop("premium_since", None)
+        self.top_role = kwargs.pop("top_role", TestingRole(position=1))
+        self.guild_permissions = kwargs.pop("guild_permissions", Permissions(administrator=True))
+        self._timed_out = kwargs.pop("timed_out", False)
+        self.premium_subscribers = []
 
     @property
     def display_name(self) -> str:
         return self.nick or self.username
+
+    def is_timed_out(self) -> bool:
+        return self._timed_out
+
+    async def ban(self, **kwargs): ...
+    async def kick(self, **kwargs): ...
+    async def timeout(self, *args, **kwargs): ...
 
     def __random_roles(self) -> List[Snowflake]:
         """Creates a random list of roles a user has"""

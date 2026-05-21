@@ -108,7 +108,7 @@ class Card:
             self.ctx = ctx
             return
 
-        if not cards_id:
+        if cards_id is None:
             raise CardNotFound
 
         raw = next(c for c in self.raw if c["id"] == cards_id)
@@ -266,7 +266,7 @@ class Card:
         perms = ctx.channel.permissions_for(member)
         if not perms.send_messages or not perms.read_messages:
             raise CheckFailure(
-                f"You can only attack a user in a channel they have read and write permissions to which isn't the case with {self.Member.display_name}"
+                f"You can only attack a user in a channel they have read and write permissions to which isn't the case with {member.display_name}"
             )
 
     def _has_cards_check(

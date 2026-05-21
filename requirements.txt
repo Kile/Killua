@@ -20,7 +20,8 @@ jishaku==2.6.0
 kiwisolver==1.4.7
 matplotlib==3.9.3
 multidict==6.1.0
-numpy==2.0.2
+numpy==2.0.2; python_version < "3.13"
+numpy>=2.1.0; python_version >= "3.13"
 packaging==25.0
 pillow==11.0.0
 prometheus_client==0.22.1

@@ -344,7 +344,7 @@ class Premium(commands.Cog):
 
             if (
                 len(user.premium_guilds.keys())
-                > PATREON_TIERS[user.premium_tier]["premium_guilds"]
+                >= PATREON_TIERS[user.premium_tier]["premium_guilds"]
             ):
                 return await ctx.send(
                     "You first need to remove premium perks from one of your other servers to give this server premium status"

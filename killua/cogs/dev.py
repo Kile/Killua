@@ -174,7 +174,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         )
         return embed, file
 
-    async def all_top(self, ctx: commands.Context, top: List[tuple]) -> None:
+    async def all_top(self, ctx: commands.Context, top: List[tuple]) -> None:  # pragma: no cover
         """Shows a list of all top commands"""
 
         def make_embed(page, embed: discord.Embed, pages):
@@ -203,7 +203,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
     async def group_top(
         self, ctx: commands.Context, top: List[tuple], interaction: discord.Interaction
-    ) -> None:
+    ) -> None:  # pragma: no cover
         """Displays a pie chart of the top used commands in a group"""
         # A list of all valid groups as strings
         possible_groups = [
@@ -263,7 +263,7 @@ class Dev(commands.GroupCog, group_name="dev"):
             c = self.client.get_command(cmd.split(" ")[-1])
         return c.extras
 
-    async def initial_top(self, ctx: commands.Context) -> None:
+    async def initial_top(self, ctx: commands.Context) -> None:  # pragma: no cover
         # Convert the ids to actually command names
         usage_data: Dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
             "command_usage"

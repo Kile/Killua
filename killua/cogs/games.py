@@ -79,7 +79,9 @@ class CompetitiveGame:
             data.append((msg, view))
 
         done, pending = await asyncio.wait(
-            [v.wait() for _, v in data], return_when=asyncio.ALL_COMPLETED, timeout=100
+            [asyncio.create_task(v.wait()) for _, v in data],
+            return_when=asyncio.ALL_COMPLETED,
+            timeout=100,
         )
 
         for m, v in data:

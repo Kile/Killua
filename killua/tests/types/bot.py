@@ -1,5 +1,6 @@
 import sys, os
 from aiohttp import ClientSession
+import discord
 
 # This is a necessary hacky fix for importing issues
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,7 +12,7 @@ from ...bot import BaseBot
 from .channel import TestingTextChannel
 from .user import TestingUser
 
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, Tuple
 from asyncio import get_event_loop, TimeoutError, sleep
 
 
@@ -84,9 +85,56 @@ class TestingBot(BaseBot):
 
     async def send_message(self, messageable: Messageable, *args, **kwargs) -> Message:
         """We do not want a tip sent which would ruin the test checks so this is overwritten"""
+        content = kwargs.pop("content", None)
+        if args and isinstance(args[0], str):
+            content = args[0]
+            args = args[1:]
         return await messageable.send(
-            content=kwargs.pop("content", None), *args, **kwargs
+            content=content, *args, **kwargs
         )
+
+    async def find_dominant_color(self, url: str) -> int:
+        return 0x3E4A78
+
+    def sha256_for_api(self, endpoint: str, expires_in_seconds: int) -> Tuple[str, str]:
+        return ("fake_token", "9999999999")
+
+    def api_url(self, *, to_fetch=False, is_for_cards=False):
+        return "http://localhost:6060"
+
+    async def make_embed_from_api(
+        self,
+        image_url: str,
+        embed: discord.Embed,
+        expire_in: int = 60 * 60 * 24 * 7,
+        no_token: bool = False,
+        thumbnail: bool = False,
+        force_fetch: bool = False,
+    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+        if thumbnail:
+            embed.set_thumbnail(url=image_url)
+        else:
+            embed.set_image(url=image_url)
+        return embed, None
+
+    def convert_to_timestamp(self, snowflake_id: int) -> str:
+        return f"<t:{int((snowflake_id >> 22) / 1000 + 1420070400)}:f>"
+
+    def get_lootbox_from_name(self, name: str):
+        from ...static.constants import LOOTBOXES
+        for lb_id, lb in LOOTBOXES.items():
+            if lb["name"].lower() == name.lower():
+                return lb_id
+        return None
+
+    async def fetch_user(self, user_id: int):
+        return TestingUser(id=user_id)
+
+    async def _dm_check(self, user) -> bool:
+        return True
+
+    def is_user_installed(self, ctx) -> bool:
+        return False
 
     async def setup_hook(self) -> None:
         self.session = ClientSession()

@@ -769,7 +769,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         """Converts the data to a discord.Member if possible"""
         try:
             return await commands.MemberConverter().convert(ctx, data)
-        except (commands.BadArgument, TypeError):
+        except (commands.BadArgument, TypeError, AttributeError):
             return None
 
     async def _use_converter(
@@ -779,6 +779,8 @@ class Cards(commands.GroupCog, group_name="cards"):
         if not args:
             return None
         elif isinstance(args, int):
+            return args
+        elif isinstance(args, discord.Member):
             return args
         elif m := await self._member_converter(ctx, args):
             return m
@@ -821,7 +823,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             if isinstance(args, int) and int(args) < 1:
                 raise CheckFailure("You can't use an integer less than 1")
 
-        if add_args and add_args < 1:
+        if add_args is not None and int(add_args) < 1:
             raise CheckFailure("You can't use an integer less than 1")
 
         return card

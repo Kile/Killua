@@ -218,7 +218,7 @@ class Actions(commands.GroupCog, group_name="action"):
             ):  # embed titles have a max length of 256 characters.
                 # If the name list contains too many names, stuff breaks.
                 # This prevents that and displays the other people as "and x more"
-                userlist = userlist + f" *and {len(user)-(p+1)} more*"
+                userlist = userlist + f" *and {len(users)-(p+1)} more*"
                 break
             if users[-1] == user and len(users) != 1:
                 userlist = userlist + f" and {user.display_name}"

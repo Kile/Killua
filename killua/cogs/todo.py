@@ -634,7 +634,7 @@ class TodoSystem(commands.Cog):
         if len(todo_numbers) == len(failed):
             return await ctx.send("All inputs are invalid task ids. Please try again.")
 
-        todo_list.set_property("todos", todos)
+        await todo_list.set_property("todos", todos)
         return await ctx.send(
             f"You removed todo number{'s' if len(todo_numbers) > 1 else ''} {', '.join([str(x) for x in todo_numbers])} successfully"
             + (
@@ -804,14 +804,14 @@ class TodoSystem(commands.Cog):
             )
 
         if user.id in todo_list.editor:
-            todo_list.kick_editor(user.id)
+            await todo_list.kick_editor(user.id)
             await ctx.send(
                 f"You have successfully taken the editor permission from {user}",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
         if user.id in todo_list.viewer:
-            todo_list.kick_viewer(user.id)
+            await todo_list.kick_viewer(user.id)
             await ctx.send(
                 f"You have successfully taken the viewer permission from {user}",
                 allowed_mentions=discord.AllowedMentions.none(),
@@ -961,7 +961,7 @@ class TodoSystem(commands.Cog):
 
         if role == "editor":
             if user.id in todo_list.viewer:
-                todo_list.kick_viewer(
+                await todo_list.kick_viewer(
                     user.id
                 )  # handled like a promotion and exchanges viewer perms for edit perms
             await todo_list.add_editor(user.id)
@@ -1018,13 +1018,13 @@ class TodoSystem(commands.Cog):
                 except discord.Forbidden:
                     pass
             todos[todo_number - 1]["assigned_to"].remove(user.id)
-            todo_list.set_property("todos", todos)
+            await todo_list.set_property("todos", todos)
             return await ctx.send(
                 f"Successfully removed assignment of todo task {todo_number} of {user}"
             )
 
         todos[todo_number - 1]["assigned_to"].append(user.id)
-        todo_list.set_property("todos", todos)
+        await todo_list.set_property("todos", todos)
 
         if ctx.author != user:
             embed = discord.Embed.from_dict(
@@ -1081,7 +1081,7 @@ class TodoSystem(commands.Cog):
             )
 
         todo_list.todos.insert(new_position - 1, todo_list.todos.pop(position - 1))
-        todo_list.set_property("todos", todo_list.todos)
+        await todo_list.set_property("todos", todo_list.todos)
         return await ctx.send(
             f"Successfully reordered todo task {position} to position {new_position}"
         )

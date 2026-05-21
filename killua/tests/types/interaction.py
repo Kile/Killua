@@ -3,7 +3,7 @@ from __future__ import annotations
 from discord import Interaction
 from discord.ext.commands import Context
 
-from typing import Literal
+from typing import Literal, Optional, Any
 from .utils import get_random_discord_id, random_name
 
 
@@ -28,7 +28,9 @@ class ArgumentResponseInteraction:
         if self._is_done:
             raise Exception("Interaction can only be responded to once.")
         self._is_done = True
-        # await self.interaction.message.edit(*args, **kwargs)
+        msg = getattr(self.interaction, "message", None)
+        if msg is not None and hasattr(msg, "edit"):
+            await msg.edit(*args, **kwargs)
 
     async def send_modal(self, *args, **kwargs) -> None:
         if self._is_done:
@@ -41,12 +43,27 @@ class ArgumentResponseInteraction:
 
 
 class ArgumentInteraction:
-    """This classes purpose is purely to be supplied to callbacks of message interactions"""
+    """Supplied to View item callbacks (buttons/selects). Optional user/message match Discord interaction shape."""
 
-    def __init__(self, context: Context, **kwargs):
-        self.__dict__ = kwargs
+    def __init__(
+        self,
+        context: Context,
+        *,
+        user: Any = None,
+        message: Any = None,
+        **kwargs: Any,
+    ) -> None:
         self.context = context
-        self.user = context.author
+        self.user = user if user is not None else context.author
+        if message is not None:
+            self.message = message
+        elif context.result is not None and getattr(context.result, "message", None):
+            self.message = context.result.message
+        else:
+            self.message = None
+        self.data = kwargs.pop("data", {})
+        for k, v in kwargs.items():
+            setattr(self, k, v)
         self.response = ArgumentResponseInteraction(self)
 
 

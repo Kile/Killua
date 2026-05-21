@@ -33,7 +33,9 @@ async def main():
         return await migrate()
 
     if args.test is not None:
-        return await run_tests(args.test)
+        return await run_tests(
+            args.test, json_output=getattr(args, "test_json", False)
+        )
 
     if args.download:
         return await download(args.download.lower())

@@ -608,6 +608,7 @@ class BaseBot(commands.AutoShardedBot):
         return (
             await self._send_interaction_response(messageable, *args, **kwargs)
             if isinstance(messageable, discord.Interaction)
+            or getattr(messageable, "_killua_test_send_as_interaction", False)
             else await self._send_messageable_response(messageable, *args, **kwargs)
         )
 

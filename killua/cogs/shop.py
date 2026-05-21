@@ -37,7 +37,7 @@ class ShopPaginator(Paginator):
             Button(label="Menu", style=discord.ButtonStyle.blurple, custom_id="menu")
         )
 
-    async def start(self):
+    async def start(self):  # pragma: no cover
         view = await self._start()
 
         if view.ignore:
@@ -108,7 +108,7 @@ class Shop(commands.Cog):
             self.cards_shop_update.start()
 
     @tasks.loop(hours=6)
-    async def cards_shop_update(self):
+    async def cards_shop_update(self):  # pragma: no cover
         # There have to be 4-5 shop items, inserted into the db as a list with the card numbers
         # the challenge is to create a balanced system with good items rare enough but not too rare
         try:
@@ -502,7 +502,7 @@ class Shop(commands.Cog):
         """Handles buying more space for a todo list"""
         if user.jenny < (todo_list.spots * 100 * 0.5):
             return await ctx.send(
-                f"You don't have enough Jenny to buy more space for your todo list. You need {todo_list['spots']*100} Jenny"
+                f"You don't have enough Jenny to buy more space for your todo list. You need {int(todo_list.spots * 100 * 0.5)} Jenny"
             )
 
         if todo_list.spots >= 100:

@@ -70,6 +70,19 @@ class TestingTextChannel:
                 self.ctx.current_view.wait = partial(self.ctx.respond_to_view, self.ctx)
         return message
 
-    def permissions_for(self, member: Guild.Member) -> ui.Permissions:
+    async def typing(self):
+        pass
+
+    async def fetch_message(self, message_id: int):
+        return Message(author=None, channel=self)
+
+    def permissions_for(self, member: Guild.Member):
         """Gets the permissions for a member"""
-        return self._has_permission
+        from .permissions import Permissions
+        if isinstance(self._has_permission, Permissions):
+            return self._has_permission
+        return Permissions(
+            send_messages=self._has_permission,
+            read_messages=self._has_permission,
+            manage_guild=self._has_permission,
+        )

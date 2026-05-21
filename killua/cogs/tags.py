@@ -98,19 +98,17 @@ class Member:
 
     @classmethod
     async def new(cls, user_id: int, guild_id: int) -> "Member":
-        raw = (await Guild.new(guild_id)).tags
-        if raw is None:
-            return Member(has_tags=False)
-        if "tags" not in raw:
+        tag_list = (await Guild.new(guild_id)).tags
+        if not tag_list:
             return Member(has_tags=False)
 
-        tags: list = raw["tags"]
-        if user_id not in [r["owner"] for r in tags]:
+        if user_id not in [r["owner"] for r in tag_list]:
             return Member(has_tags=False)
 
         owned_tags: list = []
-        for x in tags:
-            owned_tags.append([x["name"], [x["uses"]]])
+        for x in tag_list:
+            if x["owner"] == user_id:
+                owned_tags.append([x["name"], x["uses"]])
 
         return Member(has_tags=True, tags=owned_tags)
 
@@ -297,7 +295,7 @@ class Tags(commands.Cog):
         if (error := Tags._validate_tag_details(name, content)):
             return await ctx.send(error)
 
-        await tag.update(content)
+        await tag.update("content", content)
         return await ctx.send(f"Successfully updated tag `{tag.name}`", allowed_mentions=discord.AllowedMentions.none())
 
     @check()

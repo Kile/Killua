@@ -6,6 +6,7 @@ class _Args:
     development: Optional[bool] = None
     migrate: Optional[bool] = None
     test: Optional[bool] = None
+    test_json: bool = False
     log: Optional[str] = None
     download: Optional[str] = None
 
@@ -34,6 +35,12 @@ class _Args:
             nargs="*",
             default=None,
             metavar=("cog", "command"),
+        )
+        parser.add_argument(
+            "--json",
+            dest="test_json",
+            action="store_true",
+            help="With --test, print only a JSON report to stdout (exit 1 if any test failed).",
         )
         parser.add_argument(
             "-l",
@@ -68,9 +75,13 @@ class _Args:
 
         parsed = parser.parse_args()
 
+        if getattr(parsed, "test_json", False) and parsed.test is None:
+            parser.error("--json requires -t/--test")
+
         cls.development = parsed.development
         cls.migrate = parsed.migrate
         cls.test = parsed.test
+        cls.test_json = parsed.test_json
         cls.log = parsed.log
         cls.download = parsed.download
         cls.docker = parsed.docker

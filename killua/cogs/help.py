@@ -364,8 +364,8 @@ class HelpCommand(commands.Cog):
             )
             return await paginator.start()
 
-        # If the group doesn't exist, check if it's a command
-        return await self._handle_command_help(ctx, group, prefix)
+        # If the group doesn't exist, treat the token as a command name (qualified or name).
+        return await self._help_command_argument(ctx, group, prefix)
 
 
     @commands.hybrid_command(usage="help [group] [command]", extras={"id": 45})

@@ -41,7 +41,7 @@ discovery.relabel "docker_logs_filter" {
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/(api|bot|proxy)"
+    regex         = "/(rust_api|python_bot|zmq_proxy|api|bot|proxy)"
     action        = "keep"
   }
 

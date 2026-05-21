@@ -477,9 +477,9 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         )
         answer = await r.json()
 
-        if "error" not in answer or "result" not in answer:
+        if not isinstance(answer, dict) or "result" not in answer:
             return await ctx.send("An unknown error occurred during calculation!")
-        if answer["error"]:
+        if answer.get("error"):
             return await ctx.send(
                 "The following error occurred while calculating:\n`{}`".format(
                     answer["error"]

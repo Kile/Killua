@@ -3,8 +3,9 @@ from __future__ import annotations
 from discord import Guild, Asset
 
 from .utils import get_random_discord_id, random_name
+from .asset import Asset as TestingAsset
 
-from typing import Union
+from typing import Union, List
 
 
 class TestingGuild:
@@ -16,6 +17,7 @@ class TestingGuild:
         self.id: int = kwargs.pop("id", get_random_discord_id())
         self.name: str = kwargs.pop("name", random_name())
         self.owner_id: int = kwargs.pop("owner_id", get_random_discord_id())
+        self.owner = kwargs.pop("owner", None)
         self.region: str = kwargs.pop("region", "us")
         self.afk_channel_id: int = kwargs.pop("afk_channel_id", None)
         self.afk_timeout: int = kwargs.pop("afk_timeout", 1)
@@ -41,3 +43,31 @@ class TestingGuild:
         self.stickers: list = kwargs.pop("stickers", [])
         self.stage_instances: list = kwargs.pop("stage_instances", [])
         self.guild_scheduled_events: list = kwargs.pop("guild_sceduled_events", [])
+        self.icon = kwargs.pop("icon", TestingAsset())
+        self.member_count: int = kwargs.pop("member_count", 10)
+        self.members: List = kwargs.pop("members", [])
+        self.chunked: bool = True
+        # Ban list entries: objects with .user (TestingUser-like) for unban by name
+        self._ban_list: List = kwargs.pop("_ban_list", [])
+
+    async def ban(self, user, **kwargs) -> None:
+        """No-op; tests may assert call via patch."""
+
+    async def unban(self, user) -> None:
+        """No-op; tests may patch."""
+
+    async def bans(self, limit: int = 100):
+        for entry in self._ban_list[:limit]:
+            yield entry
+
+    def get_member(self, user_id: int):
+        for m in self.members:
+            if m.id == user_id:
+                return m
+        return None
+
+    def get_member_named(self, name: str):
+        return None
+
+    async def chunk(self):
+        pass

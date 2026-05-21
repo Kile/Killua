@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 from zmq import ROUTER, Poller, POLLIN
 from zmq.asyncio import Context
 from io import BytesIO
-from asyncio import create_task
 from PIL import Image, ImageDraw, ImageChops
 from typing import Tuple, Optional
+import logging
 from logging import error
 from copy import deepcopy
 
@@ -20,6 +20,7 @@ from killua.metrics import VOTES, COMMAND_USAGE
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
 from killua.cogs.tags import Tag, Tags
+from killua.utils.topgg import post_announcement
 from killua.static.constants import (
     DB,
     LOOTBOXES,
@@ -39,6 +40,9 @@ from killua.static.constants import (
 )
 
 from typing import List, Dict, Optional, Union, cast
+
+TOPGG_ANNOUNCEMENT_TITLE_MAX = 100
+TOPGG_ANNOUNCEMENT_CONTENT_MAX = 2000
 
 
 class NewsMessage:
@@ -91,7 +95,7 @@ class NewsMessage:
         if not obj:
             raise ValueError("News item not found")
 
-        cls.from_data(client, dict(obj))
+        return cls.from_data(client, dict(obj))
 
     @classmethod
     def relevant_channel_id(cls, _type: str) -> int:
@@ -124,7 +128,7 @@ class NewsMessage:
 
     @property
     def url(self) -> str:
-        return f"{'http://localhost:5173' if self.client.is_dev else'https://beta.killua.dev'}/news/{self.id}"
+        return f"{'http://localhost:5173' if self.client.is_dev else'https://killua.dev'}/news/{self.id}"
 
     async def _make_view(
         self,
@@ -226,7 +230,7 @@ class NewsMessage:
             raise ValueError("Invalid channel")
 
         view, files = await self._make_view()
-        message = await channel.send(view=view, files=files)
+        message: discord.Message = await channel.send(view=view, files=files)
 
         return message.id
 
@@ -249,10 +253,14 @@ class IPCRoutes(commands.Cog):
 
     def __init__(self, client: BaseBot):
         self.client = client
-        create_task(self.start())
         self.command_cache = {}
+        self._zmq_task = None
 
-    async def start(self):
+    async def cog_load(self):  # pragma: no cover
+        """Start the ZMQ listener once the bot event loop is running."""
+        self._zmq_task = create_task(self.start())
+
+    async def start(self):  # pragma: no cover
         """Starts the zmq server asynchronously and handles incoming requests"""
         context = Context()
         socket = context.socket(ROUTER)
@@ -897,6 +905,7 @@ class IPCRoutes(commands.Cog):
         if data.get("published", False):
             # If published, send Discord message
             message_id = await self._send_discord_message(news_item)
+            await self._publish_topgg_announcement(news_item)
             await DB.news.update_one(
                 {"_id": news_id}, {"$set": {"messageId": message_id}}
             )
@@ -955,6 +964,7 @@ class IPCRoutes(commands.Cog):
                 # Publishing for the first time - send Discord message
                 message_id = await self._send_discord_message(news_item)
                 news_item["messageId"] = message_id
+                await self._publish_topgg_announcement(news_item)
             elif old_published and new_published and news_item.get("messageId"):
                 # Already published, edit existing message
                 await self._edit_discord_message(news_item["messageId"], news_item)
@@ -974,13 +984,61 @@ class IPCRoutes(commands.Cog):
     async def _send_discord_message(self, data: dict) -> int:
         """Send a Discord message for a news item"""
         news_message = NewsMessage.from_data(self.client, data)
-        if news_message.timestamp < UPDATE_AFTER or self.client.is_dev:
+        if news_message.timestamp < UPDATE_AFTER: # or self.client.is_dev:
             # Don't send messages for old news items or in dev mode
             return None
         message_id = await news_message.send()
         return message_id
 
-    async def _edit_discord_message(self, message_id: str, data: dict) -> None:
+    async def _publish_topgg_announcement(self, data: dict) -> None:
+        """Publish an announcement to Top.gg when a news item is published."""
+        news_message = NewsMessage.from_data(self.client, data)
+        if news_message.timestamp < UPDATE_AFTER or self.client.is_dev:
+            logging.info(
+                "Skipping Top.gg announcement for news %s",
+                data.get("_id"),
+            )
+            return
+
+        title = self._format_topgg_title(data["type"], data["title"])
+        content = self._format_topgg_content(news_message, data["content"])
+        ok = await post_announcement(
+            self.client.session, title=title, content=content
+        )
+        if not ok:
+            logging.warning(
+                "Top.gg announcement was not posted for news %s (title=%r)",
+                data.get("_id"),
+                title,
+            )
+
+    @staticmethod
+    def _format_topgg_title(
+        news_type: str, title: str, *, max_len: int = TOPGG_ANNOUNCEMENT_TITLE_MAX
+    ) -> str:
+        full = f"{news_type.capitalize()}: {title}"
+        if len(full) <= max_len:
+            return full
+        return full[: max_len - 3] + "..."
+
+    @staticmethod
+    def _format_topgg_content(
+        news_message: NewsMessage,
+        content: str,
+        *,
+        max_len: int = TOPGG_ANNOUNCEMENT_CONTENT_MAX,
+    ) -> str:
+        if len(content) <= max_len:
+            return content
+        suffix = f"Read the rest at {news_message.url}"
+        suffix_block = f"\n\n{suffix}"
+        max_body = max_len - len(suffix_block)
+        if max_body < 1:
+            suffix_block = suffix
+            max_body = max_len - len(suffix_block)
+        return content[:max_body].rstrip() + suffix_block
+
+    async def _edit_discord_message(self, message_id: str, data: dict) -> None:  # pragma: no cover
         """Edit an existing Discord message"""
         try:
             news_message = NewsMessage.from_data(self.client, data)
@@ -1180,7 +1238,7 @@ class IPCRoutes(commands.Cog):
 
         return {"success": True, "message": "Tag edited successfully"}
     
-    async def guild_command_usage(self, data: dict) -> Union[dict, list]:
+    async def guild_command_usage(self, data: dict) -> Union[dict, list]:  # pragma: no cover
         """Returns command usage stats for the server"""
         if self.client.run_in_docker is False:
             return {"error": "Command usage stats are only available when running in Docker."}
@@ -1206,7 +1264,7 @@ class IPCRoutes(commands.Cog):
             formatted.append(
                 {
                     "name": res["metric"]["command"],
-                    "group": res["metric"]["group"],
+                    "group": res["metric"].get("group", None),
                     "command_id": int(res["metric"]["command_id"]),
                     "values": [(str(timestamp), int(value)) for timestamp, value in res["values"]]
                 }

@@ -25,3 +25,15 @@ class TestingRole:
     @property
     def permissions(self) -> int:
         return Permissions(self._permissions)
+
+    def __lt__(self, other):
+        return self.position < other.position
+
+    def __gt__(self, other):
+        return self.position > other.position
+
+    def __le__(self, other):
+        return self.position <= other.position
+
+    def __ge__(self, other):
+        return self.position >= other.position

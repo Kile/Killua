@@ -30,9 +30,16 @@ assets/cdn/*
 #python stuff
 **/__pycache__
 
+# coverage.py
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
 # Rust build
 **/target
 
 **/env
+**/.venv
 
 **/.DS_Store

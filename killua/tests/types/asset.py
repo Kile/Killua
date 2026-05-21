@@ -12,3 +12,6 @@ class Asset:
     @property
     def url(self) -> str:
         return "https://images.com/image.png" if self._url is None else self._url
+
+    def is_animated(self) -> bool:
+        return False

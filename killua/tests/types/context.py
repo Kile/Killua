@@ -24,6 +24,9 @@ class TestingContext:
         self.channel: TextChannel = self.message.channel
         self.author: Member = self.message.author
         self.command: Union[Command, None] = None
+        self.invoked_subcommand = kwargs.pop("invoked_subcommand", None)
+        self.interaction = None
+        self.guild = self.message.channel.guild
 
         self.current_view: Union[View, None] = None
         self.message.channel.ctx: TestingContext = self
@@ -63,6 +66,10 @@ class TestingContext:
                 self.current_view.wait = partial(self.respond_to_view, self)
         message.ctx = self
         return message
+
+    async def defer(self, *args, **kwargs) -> None:
+        """Defers the interaction response"""
+        ...
 
     async def invoke(self, command: str, *args, **kwargs) -> None:
         """Invokes a command"""

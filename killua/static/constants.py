@@ -43,6 +43,7 @@ class DBProperty(Generic[T]):
 
 class DB:
     _DB = None
+    _test_const_seeded: bool = False
 
     def __init__(self):
         if not args.Args.test:
@@ -64,8 +65,11 @@ class DB:
     def const(self) -> Union[AsyncCollection, Database]:
         if args.Args.test is not None:
             db = Database("const")
-            db.insert_many(CONST_DEFAULT)
+            if not DB._test_const_seeded:
+                from copy import deepcopy
 
+                Database.db["const"] = [deepcopy(d) for d in CONST_DEFAULT]
+                DB._test_const_seeded = True
             return db
         else:
             return self._DB["const"]
