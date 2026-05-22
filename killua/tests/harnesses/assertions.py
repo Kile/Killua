@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Tuple, Union
+from typing import Any, Sequence
 
 from killua.utils.classes import User
 
@@ -13,7 +13,7 @@ def last_content(ctx: Any) -> str:
     return ctx.result.message.content or ""
 
 
-def embed_at(ctx: Any, index: int = -1):
+def embed_at(ctx: Any, index: int = -1) -> Any | None:
     raw = ctx.result.message.embeds if ctx.result else None
     if raw is None:
         return None
@@ -26,7 +26,7 @@ def embed_at(ctx: Any, index: int = -1):
     return None
 
 
-def assert_content_contains(ctx: Any, needle: str, *, msg: Optional[str] = None) -> None:
+def assert_content_contains(ctx: Any, needle: str, *, msg: str | None = None) -> None:
     content = last_content(ctx)
     assert needle in content, msg or f"expected {needle!r} in {content!r}"
 
@@ -52,7 +52,7 @@ async def assert_inventory(
     *,
     has: Sequence[int] = (),
     lacks: Sequence[int] = (),
-    count: Optional[dict[int, int]] = None,
+    count: dict[int, int] | None = None,
 ) -> User:
     user = await reload_user(user_id)
     for cid in has:

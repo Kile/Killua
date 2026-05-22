@@ -1,12 +1,14 @@
-from ..types import *
-from ...utils.classes import *
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+from unittest.mock import patch
+
+from ..types import ArgumentInteraction
+from ...utils.classes import User
 from ..testing import Testing, test
 from ...cogs.economy import Economy
 from ...static.constants import LOOTBOXES, BOOSTERS
 from ...utils.classes.guild import Guild as KilluaGuild
-
-from datetime import datetime, timedelta
-from unittest.mock import patch
 
 from ...utils.classes import lootbox as lootbox_mod
 

@@ -5,10 +5,9 @@ from __future__ import annotations
 from datetime import datetime
 from unittest.mock import patch
 
-from ...static.constants import FREE_SLOTS, INDESTRUCTIBLE
+from ...static.constants import FREE_SLOTS
 from ...utils.classes import User
 from ...utils.classes.card import Card
-from ...utils.paginator import Buttons
 from ..harnesses import (
     ATTACK_TIMEOUT_FRAGMENT,
     DEFAULT_ATTACK_SPELL,
@@ -405,7 +404,7 @@ class UseSpell1032(TestingUseSpell):
         for i in range(FREE_SLOTS):
             try:
                 await user.add_card(1000 + (i % 50))
-            except Exception:
+            except Exception:  # inventory full or duplicate slot — stop seeding
                 break
         await invoke_use(self, 1032)
         assert_content_contains(self.base_context, "don't have any space")

@@ -5,7 +5,7 @@ import json
 import time
 from random import randint, choice
 import math
-from typing import List, Literal
+from typing import Literal
 from urllib.parse import quote
 
 
@@ -348,7 +348,7 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
 
     async def lang_autocomplete(
         self, _: commands.Context, current: str
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """Returns a list of flags that match the current string since there are too many flags for it to use the options feature"""
         return [
             discord.app_commands.Choice(name=i.title(), value=i)

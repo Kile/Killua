@@ -1,14 +1,15 @@
-from ..types import *
-from ...utils.classes import *
-from ..testing import Testing, test
-from ...cogs.premium import Premium
-from ...utils.classes.guild import Guild as KilluaGuild
-from ...static.constants import DB, LOOTBOXES, PATREON_TIERS
+from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from ...utils.classes import User
+from ..testing import Testing, test
+from ...cogs.premium import Premium
+from ...utils.classes.guild import Guild as KilluaGuild
+from ...static.constants import DB, PATREON_TIERS
 
-def _reset_guild_state():
+
+def _reset_guild_state() -> None:
     KilluaGuild.cache.clear()
     DB.guilds.db["guilds"] = []
 

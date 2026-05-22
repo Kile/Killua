@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from typing import Any
+
 import discord
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Union, Optional
 
 from killua.utils.classes.user import User
 from killua.utils.classes.card import Card
@@ -24,18 +25,18 @@ class Book:
         self.session = client.session
         self.base_url = client.api_url(to_fetch=True)
         self.client = client
-        self._book_token_cache: Optional[Tuple[str, str]] = None
+        self._book_token_cache: tuple[str, str] | None = None
         self.scalar = 2
 
     @property
-    def book_token_cache(self) -> Tuple[str, str]:
+    def book_token_cache(self) -> tuple[str, str]:
         # No token is permanent, so it may need to be refreshed if the token is older than 24 hours
         if self._book_token_cache is None or datetime.fromtimestamp(float(self._book_token_cache[1])) < datetime.now():
             self._book_token_cache = self.client.sha256_for_api("book", 60 * 60 * 24)
         return self._book_token_cache
 
     async def create_image(
-        self, data: list, restricted_slots: bool, page: int
+        self, data: list[list[Any]], restricted_slots: bool, page: int
     ) -> Image.Image:
         """Creates the book image of the current page and returns it"""
         background = await self._get_background(0 if len(data) == 10 else 1)
@@ -45,7 +46,7 @@ class Book:
         background = self._set_page(background, page)
         return background
 
-    def _get_from_cache(self, types: int) -> Union[Image.Image, None]:
+    def _get_from_cache(self, types: int) -> Image.Image | None:
         """Gets background from the cache if it exists, otherwise returns None"""
         if types == 0:
             if "first_page" in self.background_cache:
@@ -109,9 +110,9 @@ class Book:
         )
         return font
 
-    async def _cards(self, image: Image.Image, data: list, option: int) -> Image.Image:
+    async def _cards(self, image: Image.Image, data: list[list[Any]], option: int) -> Image.Image:
         """Puts the cards on the background if there are any"""
-        card_pos: list = [
+        card_pos: list[list[tuple[int, int]]] = [
             [
                 (112, 143),
                 (318, 15),
@@ -156,10 +157,10 @@ class Book:
                 image.paste(card, (card_pos[option][n]), card)
         return image
 
-    def _numbers(self, image: Image.Image, data: list, page: int) -> Image.Image:
+    def _numbers(self, image: Image.Image, data: list[list[Any]], page: int) -> Image.Image:
         """Puts the numbers on the restricted slots in the book"""
         page -= 1
-        numbers_pos: list = [
+        numbers_pos: list[list[tuple[int, int]]] = [
             [
                 (130, 188),
                 (338, 60),
@@ -308,7 +309,7 @@ class Book:
         page: int,
         client: Bot,
         just_fs_cards: bool = False,
-    ) -> Tuple[discord.Embed, discord.File]:
+    ) -> tuple[discord.Embed, discord.File]:
         """Gets a formatted embed containing the book for the user"""
         rs_cards = []
         fs_cards = []
@@ -381,5 +382,5 @@ class Book:
         user: discord.Member,
         page: int,
         just_fs_cards: bool = False,
-    ) -> Tuple[discord.Embed, discord.File]:
+    ) -> tuple[discord.Embed, discord.File]:
         return await self._get_book(user, page, self.client, just_fs_cards)

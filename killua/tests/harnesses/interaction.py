@@ -6,9 +6,8 @@ Minimal interaction-shaped objects for Path B tests (cog `on_interaction` listen
 
 from __future__ import annotations
 
-import discord
 from discord import InteractionType
-from typing import Any, Optional
+from typing import Any
 
 
 class _MockFollowup:
@@ -79,7 +78,7 @@ class MockComponentInteraction:
         self.guild_id = getattr(context.guild, "id", None)
         self.response = _MockInteractionResponse(self)
         self.followup = _MockFollowup(self)
-        self._response_message: Optional[Any] = None
+        self._response_message: Any | None = None
         self.interaction = None
 
     async def send(self, *args: Any, **kwargs: Any) -> Any:

@@ -6,11 +6,9 @@ from datetime import datetime
 from io import BytesIO
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import discord
-from discord.ext import commands
 from PIL import Image
 
-from ..testing import Testing, test, collect_test_classes
+from ..testing import Testing, test, collect_test_classes, expect_raises
 from ..types import Bot
 from ...cogs.api import IPCRoutes, NewsMessage
 from ...static.constants import DB, NEWS_CHANNEL, POST_CHANNEL, UPDATE_CHANNEL
@@ -98,11 +96,8 @@ class NewsMessageTests(_ApiTests):
                 "timestamp": datetime.now(),
             },
         )
-        try:
+        async with expect_raises(ValueError):
             _ = msg.relevant_ping
-            assert False
-        except ValueError:
-            pass
 
     @test
     async def from_data_round_trip(self) -> None:
@@ -126,11 +121,8 @@ class NewsMessageTests(_ApiTests):
     @test
     async def from_id_missing_raises(self) -> None:
         DB.news.db["news"] = []
-        try:
+        async with expect_raises(ValueError):
             await NewsMessage.from_id(Bot, "missing")
-            assert False
-        except ValueError:
-            pass
 
     @test
     async def from_id_returns_instance(self) -> None:
@@ -304,11 +296,8 @@ class IpcHandlerTests(_ApiTests):
     async def news_delete_missing_raises(self) -> None:
         ipc = self.cog
         DB.news.db["news"] = []
-        try:
+        async with expect_raises(ValueError):
             await ipc.news_delete({"news_id": "missing"})
-            assert False, "expected ValueError"
-        except ValueError:
-            pass
 
     @test
     async def news_delete_with_message(self) -> None:
@@ -408,11 +397,8 @@ class IpcHandlerTests(_ApiTests):
     @test
     async def user_info_requires_id(self) -> None:
         ipc = self.cog
-        try:
+        async with expect_raises(ValueError):
             await ipc.user_info({})
-            assert False
-        except ValueError:
-            pass
 
     @test
     async def commands_payload(self) -> None:
@@ -442,11 +428,8 @@ class IpcHandlerTests(_ApiTests):
     @test
     async def user_get_basic_details_invalid_id(self) -> None:
         ipc = self.cog
-        try:
+        async with expect_raises(ValueError):
             await ipc.user_get_basic_details({"user_id": "not-a-number"})
-            assert False
-        except ValueError:
-            pass
 
     @test
     async def news_save_publishes_message(self) -> None:
@@ -669,6 +652,8 @@ from ...utils.topgg import (
 
 
 class _MockTopggResponse:
+    """Minimal aiohttp response stub for Top.gg ``session.request`` mocks."""
+
     def __init__(self, status: int = 200, body: str = "") -> None:
         self.status = status
         self._body = body
@@ -684,13 +669,17 @@ class _MockTopggResponse:
 
 
 def _mock_topgg_session(session, *, status: int = 200, body: str = "") -> MagicMock:
+    """Replace ``session.request`` and return the mock for assertion."""
     mock_request = MagicMock(return_value=_MockTopggResponse(status, body))
     session.request = mock_request
     return mock_request
 
 
 class TopggAnnouncementTests(_ApiTests):
-    def _news_item(self, *, news_type="news", title="Launch", content="Body text here"):
+    def _news_item(
+        self, *, news_type: str = "news", title: str = "Launch", content: str = "Body text here"
+    ) -> dict:
+        """Minimal published news document for Top.gg announcement tests."""
         return {
             "_id": "topgg1",
             "title": title,

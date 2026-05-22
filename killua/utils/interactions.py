@@ -1,12 +1,12 @@
 import discord
 
-from typing import Union, List, Any
+from typing import Any
 
 
 class View(discord.ui.View):
     """Subclassing this for buttons enabled us to not have to define interaction_check anymore, also not if we want a select menu"""
 
-    def __init__(self, user_id: Union[int, List[int]], **kwargs):
+    def __init__(self, user_id: int | list[int], **kwargs):
         super().__init__(**kwargs)
         self.user_id = user_id
         self.value: Any = None
@@ -26,7 +26,7 @@ class View(discord.ui.View):
         self.interaction = interaction  # So we can respond to it anywhere
         return val
 
-    async def disable(self, msg: discord.Message) -> Union[discord.Message, None]:
+    async def disable(self, msg: discord.Message) -> discord.Message | None:
         """ "Disables the children inside of the view"""
         if not [
             c for c in self.children if not c.disabled

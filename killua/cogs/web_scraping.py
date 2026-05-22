@@ -4,7 +4,6 @@ from discord.ext import commands
 from bs4 import BeautifulSoup
 from html import escape
 from json import loads
-from typing import List, Union
 from pypxl import PxlClient
 from asyncio import wait_for, TimeoutError
 from urllib.parse import unquote, quote
@@ -52,7 +51,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
         for menu in menus:
             self.client.tree.add_command(menu)
 
-    def book_buying_links(self, book: dict) -> List[str]:
+    def book_buying_links(self, book: dict) -> list[str]:
         """Returns a list of links where the book can be bought"""
         available_to_buy = []
         if "ia" in book:
@@ -179,7 +178,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         return await Paginator(ctx, embeds, func=make_embed).start()
 
-    async def _get_token(self, query: str) -> Union[str, None]:
+    async def _get_token(self, query: str) -> str | None:
         """Gets a new token to be used in the image search"""
         try:
             res = await self.client.session.get(
@@ -194,7 +193,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
         except Exception:
             return
 
-    async def get_duckduckgo_images(self, query: str) -> Union[List[str], None]:
+    async def get_duckduckgo_images(self, query: str) -> list[str] | None:
         token = await self._get_token(query)
 
         if not token:
@@ -221,7 +220,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         return [r["image"] for r in results if r["image"]]
 
-    async def get_soup(self, url) -> Union[int, BeautifulSoup]:
+    async def get_soup(self, url) -> int | BeautifulSoup:
         """Make request and return BeautifulSoup object"""
         header = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36"
@@ -234,7 +233,7 @@ class WebScraping(commands.GroupCog, group_name="web"):
 
         return BeautifulSoup(await response.text(), "html.parser")
 
-    async def get_bing_images(self, query: str) -> List[str]:
+    async def get_bing_images(self, query: str) -> list[str]:
         """Make the request format it correctly and return the list of images"""
         BASE_URL = "http://www.bing.com/images/search?q={}&FORM=HDRSC2"
 

@@ -1,18 +1,19 @@
-from ..types import *
-from ...utils.classes import *
-from ..testing import Testing, test
-from ...cogs.todo import TodoSystem
-from ...static.constants import DB, editing
-from ...utils.classes.todo import TodoList, Todo
+from __future__ import annotations
 
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
-from ..harnesses import embed_footer_page, patch_user_confirm_dm, press_paginator_button
 from ..types import DiscordMember
+from ...utils.classes import User
+from ..testing import Testing, test
+from ...cogs.todo import TodoSystem
+from ...static.constants import DB, editing
+from ...utils.classes.todo import TodoList
+
+from ..harnesses import embed_footer_page, patch_user_confirm_dm, press_paginator_button
 
 
-def _clear_todo_state():
+def _clear_todo_state() -> None:
     """Reset TodoList caches, editing dict, and the todo DB collection."""
     TodoList.cache.clear()
     TodoList.custom_id_cache.clear()

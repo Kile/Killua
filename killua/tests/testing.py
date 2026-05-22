@@ -5,7 +5,8 @@ from discord.ext.commands.view import StringView
 
 import sys, traceback
 import logging
-from typing import TYPE_CHECKING, List, Coroutine, Optional
+from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING, Coroutine
 
 from . import config
 
@@ -13,14 +14,14 @@ if TYPE_CHECKING:
     from .types import Context, TestResult
 
 
-def _test_class_command_name(cls) -> str:
+def _test_class_command_name(cls: type) -> str:
     """Discord command name for this test class (defaults to class name)."""
     return getattr(cls, "command_name", None) or cls.__name__.lower()
 
 
-def collect_test_classes(group_cls: type) -> list:
+def collect_test_classes(group_cls: type) -> list[type]:
     """Return leaf test classes registered under a group (depth-first subclass walk)."""
-    found: list = []
+    found: list[type] = []
 
     def walk(base: type) -> None:
         for cls in base.__subclasses__():
@@ -31,6 +32,27 @@ def collect_test_classes(group_cls: type) -> list:
 
     walk(group_cls)
     return found
+
+
+class _ExcHolder:
+    """Populated by :func:`expect_raises` when the expected exception is caught."""
+
+    value: BaseException | None = None
+
+
+@asynccontextmanager
+async def expect_raises(exc_type: type[BaseException]):
+    """Assert that the wrapped block raises *exc_type* (async-compatible).
+
+    Yields an :class:`_ExcHolder` whose ``value`` is the caught exception instance.
+    """
+    holder = _ExcHolder()
+    try:
+        yield holder
+    except exc_type as exc:
+        holder.value = exc
+    else:
+        raise AssertionError(f"expected {exc_type.__name__} to be raised")
 
 
 class Testing:
@@ -92,7 +114,7 @@ class Testing:
         return False
 
     @property
-    def all_tests(self) -> List[Testing]:
+    def all_tests(self) -> list[type]:
         """Automatically checks what functions are test based on their name and the overlap with the Cog method names"""
         cog_methods = []
         for cmd in [(command.name, command) for command in self.cog.get_commands()]:
@@ -101,7 +123,7 @@ class Testing:
                 for child in cmd[1].walk_commands():
                     cog_methods.append((child.name, child))
 
-        command_classes: List[Testing] = []
+        command_classes: list[type] = []
 
         for cls in self.__class__.__subclasses__():
             # print(cls)
@@ -127,7 +149,7 @@ class Testing:
                 if command.name.lower() == want.lower():
                     return command
 
-    async def run_tests(self, only_command: Optional[str] = None) -> TestResult:
+    async def run_tests(self, only_command: str | None = None) -> TestResult:
         """The function that returns the test result for this group"""
         for test in self.all_tests:
             command = test()
@@ -152,7 +174,7 @@ class Testing:
             await method(self)
 
     @classmethod
-    async def press_confirm(cls, context: Context):
+    async def press_confirm(cls, context: Context) -> None:
         """Presses the confirm button of a ConfirmView or ConfirmButton"""
         from .harnesses.views import find_button
         from .types import ArgumentInteraction
@@ -162,7 +184,7 @@ class Testing:
             await button.callback(ArgumentInteraction(context))
 
     @classmethod
-    async def press_cancel(cls, context: Context):
+    async def press_cancel(cls, context: Context) -> None:
         """Presses the cancel button of a ConfirmView or ConfirmButton."""
         from .harnesses.views import find_button
         from .types import ArgumentInteraction

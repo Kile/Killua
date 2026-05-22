@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 
-from typing import List, Union, Literal
+from typing import Literal
 from aiohttp import ClientSession
 from datetime import datetime
 
@@ -23,7 +23,7 @@ from killua.static.constants import (
 
 class Patrons:
 
-    def __init__(self, patrons: List[dict]):
+    def __init__(self, patrons: list[dict]):
         self.patrons = patrons
         self.invalid = [x for x in self.patrons if x["discord"] is None]
 
@@ -43,17 +43,17 @@ class Patrons:
 class Patreon:
     """A class which returns all current patreons with the campain specified and their discord id or None"""
 
-    def __init__(self, session: ClientSession, token: str, campain_id: Union[str, int]):
+    def __init__(self, session: ClientSession, token: str, campain_id: str | int):
         self.session = session
         self.token = token
         self.campain_id = campain_id
         self.url = f"https://www.patreon.com/api/oauth2/v2/campaigns/{self.campain_id}/members?page%5B100%5D&include=currently_entitled_tiers%2Cuser&fields%5Bmember%5D=full_name%2Cis_follower%2Clast_charge_date%2Clast_charge_status%2Clifetime_support_cents%2Ccurrently_entitled_amount_cents%2Cpatron_status%2Cpledge_relationship_start&fields%5Buser%5D=social_connections&page%5Bcount%5D=100"
 
-    def _int_else(self, i: Union[str, None]) -> Union[int, None]:
+    def _int_else(self, i: str | None) -> int | None:
         """Turns a string into an integer if it exists, else returns None"""
         return int(i) if i else None
 
-    def _catch(self, d: dict) -> Union[str, None]:
+    def _catch(self, d: dict) -> str | None:
         """Tries to get the discord id from the response, if any step on the way fails it returns None"""
         try:
             return d["attributes"]["social_connections"]["discord"]["user_id"]
@@ -69,7 +69,7 @@ class Patreon:
         )
         return await res.json()
 
-    async def _paginate(self, data: dict, prev: List[dict]) -> List[dict]:
+    async def _paginate(self, data: dict, prev: list[dict]) -> list[dict]:
         """Paginates through all patreons and returns a list of all patreons"""
         if "links" in data.keys():
             res = await self._make_request(data["links"]["next"])
@@ -78,15 +78,15 @@ class Patreon:
         else:
             return prev
 
-    async def _get(self, data: dict) -> List[dict]:
+    async def _get(self, data: dict) -> list[dict]:
         """Gets a list of all discord ids of the patrons"""
-        prev: List[dict] = self._format_patrons(data)
+        prev: list[dict] = self._format_patrons(data)
         if "links" in data.keys():
             return await self._paginate(data, prev)
         else:
             return prev
 
-    def _get_user_info(self, data: list, user: str) -> dict:
+    def _get_user_info(self, data: list[dict], user: str) -> dict:
         """Finds the relevant info by comparing user ids"""
         return next(
             (
@@ -98,8 +98,8 @@ class Patreon:
             None,
         )  # Think this is stupid? Thank Python and Patreon
 
-    def _format_patrons(self, data: dict) -> List[dict]:
-        res: List[dict] = []
+    def _format_patrons(self, data: dict) -> list[dict]:
+        res: list[dict] = []
         for i in data["included"]:
             if i["type"] == "user":
                 user = self._get_user_info(data["data"], i["id"])
@@ -140,7 +140,7 @@ class Premium(commands.Cog):
         if self.invalid and not self.get_patrons.is_running():
                 self.get_patrons.start()
 
-    def _get_boosters(self) -> list:
+    def _get_boosters(self) -> list[int]:
         """Gets a list of all the boosters of the support server"""
         guild = self.client.get_guild(GUILD)
         if guild is None:
@@ -148,7 +148,7 @@ class Premium(commands.Cog):
             return []
         return [x.id for x in guild.members if BOOSTER_ROLE in [r.id for r in x.roles]]
 
-    def _get_differences(self, current: Patrons, saved: List[dict]) -> List[dict]:
+    def _get_differences(self, current: Patrons, saved: list[dict]) -> list[dict]:
         """Returns a list of dictionaries containing a user id and the badge to assign. If the badge is None, they will loose their premium badges"""
         boosters = self._get_boosters()
         new_patrons = [
@@ -176,7 +176,7 @@ class Premium(commands.Cog):
         ]
         return [*new_patrons, *removed_patrons, *different_badges]
 
-    async def _assign_badges(self, diff: List[dict]) -> None:
+    async def _assign_badges(self, diff: list[dict]) -> None:
         """Assigns the changed badges to the users"""
         for d in diff:
             user = await User.new(d["discord"])
@@ -196,8 +196,8 @@ class Premium(commands.Cog):
             await user.set_badges(badges)
 
     def _get_subscription_entitlements(
-        self, all: List[discord.Entitlement]
-    ) -> List[discord.Entitlement]:
+        self, all: list[discord.Entitlement]
+    ) -> list[discord.Entitlement]:
         """Compares entitlement IDs to cached SKU IDs to determine which are subscriptions"""
         entitlements = []
         for sku in self.client.cached_skus:
@@ -217,7 +217,7 @@ class Premium(commands.Cog):
 
     def _get_coresponding_consumable_sku(
         self, ent: discord.Entitlement
-    ) -> Union[discord.SKU, None]:
+    ) -> discord.SKU | None:
         """Gets the consumable SKU that corresponds to the entitlement"""
         for sku in self.client.cached_skus:
             if sku.type != discord.SKUType.consumable:

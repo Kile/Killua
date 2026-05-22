@@ -1,11 +1,12 @@
-from ..types import *
-from ...utils.classes import *
-from ..testing import Testing, test
-from ...cogs.dev import Dev
-from ...static.constants import DB, INFO
+from __future__ import annotations
 
 from datetime import datetime
 from unittest.mock import AsyncMock
+
+from ...utils.classes import User
+from ..testing import Testing, test
+from ...cogs.dev import Dev
+from ...static.constants import DB, INFO
 
 
 class TestingDev(Testing):

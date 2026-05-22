@@ -11,12 +11,12 @@ from PIL import Image
 from discord.ext import commands
 from discord.ext.commands import BadArgument
 
-from ..testing import Testing, test, collect_test_classes
+from ..testing import Testing, test, collect_test_classes, expect_raises
 from ..types import Bot, DiscordMember, Role
 from ...cogs.economy import Economy
 from ...cogs.api import IPCRoutes
 from ...cogs.image_manipulation import ImageManipulation
-from ...static.constants import DB, LOOTBOXES, daily_users
+from ...static.constants import DB, daily_users
 from ...static.enums import Booster
 from ...utils.checks import (
     blcheck,
@@ -91,11 +91,10 @@ class TimeConverterUnit(_UnitBoostTests):
     @test
     async def rejects_over_28_days(self) -> None:
         conv = TimeConverter()
-        try:
+        async with expect_raises(BadArgument) as exc_info:
             await conv.convert(self.base_context, "29d")
-            assert False, "expected BadArgument"
-        except BadArgument as exc:
-            assert "28 days" in str(exc).lower()
+        assert exc_info.value is not None
+        assert "28 days" in str(exc_info.value).lower()
 
     @test
     async def rejects_unknown_unit_via_dict(self) -> None:
@@ -103,21 +102,19 @@ class TimeConverterUnit(_UnitBoostTests):
         with patch.dict(
             "killua.utils.converters.time_dict", {"h": 3600}, clear=True
         ):
-            try:
+            async with expect_raises(BadArgument) as exc_info:
                 await conv.convert(self.base_context, "1m")
-                assert False, "expected BadArgument"
-            except BadArgument as exc:
-                assert "invalid time-key" in str(exc).lower()
+            assert exc_info.value is not None
+            assert "invalid time-key" in str(exc_info.value).lower()
 
     @test
     async def rejects_non_numeric_value(self) -> None:
         conv = TimeConverter()
         with patch("killua.utils.converters.float", side_effect=ValueError):
-            try:
+            async with expect_raises(BadArgument) as exc_info:
                 await conv.convert(self.base_context, "1h")
-                assert False, "expected BadArgument"
-            except BadArgument as exc:
-                assert "not a number" in str(exc).lower()
+            assert exc_info.value is not None
+            assert "not a number" in str(exc_info.value).lower()
 
 
 class ChecksUnit(_UnitBoostTests):

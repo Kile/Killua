@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from aiohttp import ClientSession
 
 logger = logging.getLogger(__name__)
 
 TOPGG_METRICS_URL = "https://top.gg/api/v1/projects/@me/metrics"
 TOPGG_ANNOUNCEMENTS_URL = "https://top.gg/api/v1/projects/@me/announcements"
+TOPGG_TITLE_MIN = 3
+TOPGG_TITLE_MAX = 100
+TOPGG_CONTENT_MIN = 10
+TOPGG_CONTENT_MAX = 2000
 
 
 def _normalize_token(raw: str) -> str:
@@ -21,7 +28,7 @@ def _normalize_token(raw: str) -> str:
     return token
 
 
-def _token() -> Optional[str]:
+def _token() -> str | None:
     value = os.getenv("TOPGG_TOKEN")
     if not value:
         return None
@@ -49,7 +56,9 @@ def _log_auth_failure(method: str, url: str, status: int, body: str) -> None:
     )
 
 
-async def _request(session, method: str, url: str, *, json: Optional[dict] = None) -> bool:
+async def _request(
+    session: ClientSession, method: str, url: str, *, json: dict | None = None
+) -> bool:
     token = _token()
     if not token:
         logger.warning("TOPGG_TOKEN is not set; skipping Top.gg %s %s", method, url)
@@ -70,10 +79,10 @@ async def _request(session, method: str, url: str, *, json: Optional[dict] = Non
 
 
 async def post_metrics(
-    session,
+    session: ClientSession,
     *,
     server_count: int,
-    shard_count: Optional[int] = None,
+    shard_count: int | None = None,
 ) -> bool:
     """Push guild/shard counts to Top.gg (v1 projects metrics)."""
     payload: dict[str, int] = {"server_count": server_count}
@@ -87,18 +96,24 @@ async def post_metrics(
     return await _request(session, "PATCH", TOPGG_METRICS_URL, json=payload)
 
 
-async def post_announcement(session, *, title: str, content: str) -> bool:
+async def post_announcement(
+    session: ClientSession, *, title: str, content: str
+) -> bool:
     """Create a Top.gg project announcement."""
-    if len(title) < 3 or len(title) > 100:
+    if len(title) < TOPGG_TITLE_MIN or len(title) > TOPGG_TITLE_MAX:
         logger.warning(
-            "Top.gg announcement title length %d is outside 3–100; skipping",
+            "Top.gg announcement title length %d is outside %d–%d; skipping",
             len(title),
+            TOPGG_TITLE_MIN,
+            TOPGG_TITLE_MAX,
         )
         return False
-    if len(content) < 10 or len(content) > 2000:
+    if len(content) < TOPGG_CONTENT_MIN or len(content) > TOPGG_CONTENT_MAX:
         logger.warning(
-            "Top.gg announcement content length %d is outside 10–2000; skipping",
+            "Top.gg announcement content length %d is outside %d–%d; skipping",
             len(content),
+            TOPGG_CONTENT_MIN,
+            TOPGG_CONTENT_MAX,
         )
         return False
     return await _request(

@@ -1,13 +1,14 @@
-from ..types import *
-from ...utils.classes import *
+from __future__ import annotations
+
+from datetime import datetime
+from unittest.mock import patch
+
+from ..types import DiscordMember
+from ..types.permissions import Permissions
 from ..testing import Testing, test
 from ...cogs.tags import Tags, Tag
 from ...utils.classes.guild import Guild as KilluaGuild
 from ...utils.test_db import TestingDatabase
-from ..types.permissions import Permissions
-
-from datetime import datetime
-from unittest.mock import patch
 
 from ..harnesses import (
     assert_embed_title,

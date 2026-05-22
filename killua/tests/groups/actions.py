@@ -1,17 +1,20 @@
-from ..types import *
-from ...utils.classes import *
+from __future__ import annotations
+
+from asyncio import create_task, wait
+from random import randrange, randint
+from typing import Any
+from unittest.mock import patch
+
+from ..types import ArgumentInteraction, Bot, Context, DiscordMember, Message
+from ..types.utils import get_random_discord_id
+from ...utils.classes import User
 from ..testing import Testing, test
 from ...cogs.actions import Actions, AnimeAsset, ArtistAsset
 
-from random import randrange, randint
-from asyncio import create_task, wait
-from unittest.mock import patch
-
-from ..types.utils import get_random_discord_id
 from ..harnesses import MockComponentInteraction
 
 
-def _embed0_actions(message):
+def _embed0_actions(message: Message) -> Any | None:
     raw = message.embeds
     if isinstance(raw, list) and raw:
         return raw[-1]

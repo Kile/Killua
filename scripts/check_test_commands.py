@@ -28,8 +28,7 @@ args_mod.Args.test = []  # in-memory DB for imports
 from discord.ext.commands import Command
 
 from killua.tests.groups import tests
-from killua.tests.testing import Testing, _test_class_command_name
-from killua.tests.types import Bot
+from killua.tests.testing import _test_class_command_name
 
 
 def _command_names_for_group(group_cls: type) -> set[str]:

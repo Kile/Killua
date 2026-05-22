@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence
+from typing import Any, Sequence
 
 import discord
 
@@ -44,7 +44,7 @@ def build_poll_message(
     message_id: int = 99001,
     option_index: int = 1,
     option_count: int = 2,
-    visible_voter_ids: Optional[Sequence[int]] = None,
+    visible_voter_ids: Sequence[int] | None = None,
     option_button_suffix: str = "",
     close_suffix: str = "",
 ) -> Any:
@@ -60,7 +60,7 @@ def build_poll_message(
             inline=False,
         )
 
-    buttons: List[ListenerFakeButton] = []
+    buttons: list[ListenerFakeButton] = []
     for pos in range(1, option_count + 1):
         suffix = option_button_suffix if pos == option_index else ""
         buttons.append(
@@ -90,7 +90,7 @@ def build_wyr_message(
     *,
     message_id: int = 99002,
     side: str = "b",
-    visible_voter_ids: Optional[Sequence[int]] = None,
+    visible_voter_ids: Sequence[int] | None = None,
     option_button_suffix: str = "",
 ) -> Any:
     visible_voter_ids = list(visible_voter_ids or [])

@@ -5,7 +5,7 @@ from discord import Guild, Asset
 from .utils import get_random_discord_id, random_name
 from .asset import Asset as TestingAsset
 
-from typing import Union, List
+from typing import Any
 
 
 class TestingGuild:
@@ -26,29 +26,29 @@ class TestingGuild:
             "default_message_notifications", 0
         )
         self.explicit_content_filter: int = kwargs.pop("explicit_content_filter", 0)
-        self.roles: list = kwargs.pop("roles", [])
+        self.roles: list[Any] = kwargs.pop("roles", [])
         self.mfa_level: int = kwargs.pop("mfa_level", 0)
         self.nsfw_level: int = kwargs.pop("nsfw_level", 0)
-        self.application_id: Union[int, None] = kwargs.pop("application_id", None)
-        self.system_channel_id: Union[int, None] = kwargs.pop("system_channel_id", None)
+        self.application_id: int | None = kwargs.pop("application_id", None)
+        self.system_channel_id: int | None = kwargs.pop("system_channel_id", None)
         self.system_channel_flags: int = kwargs.pop("system_channel_flags", 0)
-        self.rules_channel_id: Union[int, None] = kwargs.pop("rules_channel_id", None)
-        self.vanity_url_code: Union[int, None] = kwargs.pop("vanity_url_code", None)
-        self.banner: Union[Asset, None] = kwargs.pop("banner", None)
+        self.rules_channel_id: int | None = kwargs.pop("rules_channel_id", None)
+        self.vanity_url_code: int | None = kwargs.pop("vanity_url_code", None)
+        self.banner: Asset | None = kwargs.pop("banner", None)
         self.premium_tier: int = kwargs.pop("premium_tier", 0)
         self.preferred_locale: str = kwargs.pop("preferred_locale", "us")
-        self.public_updates_channel_id: Union[int, None] = kwargs.pop(
+        self.public_updates_channel_id: int | None = kwargs.pop(
             "public_updates_channel_id", None
         )
-        self.stickers: list = kwargs.pop("stickers", [])
-        self.stage_instances: list = kwargs.pop("stage_instances", [])
-        self.guild_scheduled_events: list = kwargs.pop("guild_sceduled_events", [])
+        self.stickers: list[Any] = kwargs.pop("stickers", [])
+        self.stage_instances: list[Any] = kwargs.pop("stage_instances", [])
+        self.guild_scheduled_events: list[Any] = kwargs.pop("guild_sceduled_events", [])
         self.icon = kwargs.pop("icon", TestingAsset())
         self.member_count: int = kwargs.pop("member_count", 10)
-        self.members: List = kwargs.pop("members", [])
+        self.members: list[Any] = kwargs.pop("members", [])
         self.chunked: bool = True
         # Ban list entries: objects with .user (TestingUser-like) for unban by name
-        self._ban_list: List = kwargs.pop("_ban_list", [])
+        self._ban_list: list[Any] = kwargs.pop("_ban_list", [])
 
     async def ban(self, user, **kwargs) -> None:
         """No-op; tests may assert call via patch."""

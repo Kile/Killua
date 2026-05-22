@@ -9,7 +9,7 @@ from datetime import datetime
 from discord.ext import commands, tasks
 from PIL import Image
 from enum import Enum
-from typing import Dict, List, Tuple, Optional, cast
+from typing import cast
 from matplotlib import pyplot as plt
 from pymongo.errors import ServerSelectionTimeoutError
 
@@ -407,7 +407,7 @@ class Events(commands.Cog):
             # except discord.Forbidden:
             #     pass
 
-    def _create_piechart(self, data: List[list], title: str) -> discord.File:
+    def _create_piechart(self, data: list[list], title: str) -> discord.File:
         """Creates a piechart with the given data"""
         data = [l for l in data if l[1] > 0]  # We want to avoid a 0% slice
 
@@ -485,7 +485,7 @@ class Events(commands.Cog):
                 for pos, field in enumerate(interaction.message.embeds[0].fields)
             ]
         else:
-            votes: Dict[int, list] = guild.polls[str(interaction.message.id)]["votes"]
+            votes: dict[int, list] = guild.polls[str(interaction.message.id)]["votes"]
             data = [
                 [f"Option {pos+1}", len(votes[str(pos)]), colours[pos]]
                 for pos, _ in enumerate(interaction.message.embeds[0].fields)
@@ -603,7 +603,7 @@ class Events(commands.Cog):
 
     def _parse_votes_for(
         self, custom_id: str, field: "discord.embeds._EmbedFieldProxy"
-    ) -> Tuple[List[int], List[str]]:
+    ) -> tuple[list[int], list[str]]:
         """
         Parses the votes for a poll or wyr
         """
@@ -624,7 +624,7 @@ class Events(commands.Cog):
         self,
         where: SaveType,
         interaction: discord.Interaction,
-        votes: Dict[int, Tuple[List[int], List[str]]],
+        votes: dict[int, tuple[list[int], list[str]]],
         option: int,
         encrypted: str,
         poll: bool = None,
@@ -659,12 +659,12 @@ class Events(commands.Cog):
         action: str,
         poll: bool,
         opt_votes: str,
-    ) -> Optional[Dict[int, Tuple[List[int], List[str]]]]:
+    ) -> dict[int, tuple[list[int], list[str]]] | None:
         """
         If a None is returned, an error was sent and the execution should stop.
         Else the votes are returned.
         """
-        votes: Dict[int, Tuple[List[int], List[str]]] = {}
+        votes: dict[int, tuple[list[int], list[str]]] = {}
         # This took me a bit to figure out when revisiting this
         # code. What is actually being stored here for each option
         # is:
@@ -793,14 +793,14 @@ class Events(commands.Cog):
         guild: Guild,
         option: int,
         poll: bool,
-    ) -> Dict[str, List[int]]:
+    ) -> dict[str, list[int]]:
         """
         If the poll is saved in the database, this function
         processes the vote
 
         Only available for premium guilds
         """
-        votes: Dict[int, List[int]] = guild.polls[str(interaction.message.id)]["votes"]
+        votes: dict[int, list[int]] = guild.polls[str(interaction.message.id)]["votes"]
 
         for pos, _ in enumerate(interaction.message.embeds[0].fields):
             if interaction.user.id in votes[str(pos)] and pos == option - 1:
@@ -820,12 +820,12 @@ class Events(commands.Cog):
     def _set_new_field_name_for_unsaved(
         self,
         field: "discord.embeds._EmbedFieldProxy",
-        votes: Dict[int, Tuple[List[int], List[str]]],
+        votes: dict[int, tuple[list[int], list[str]]],
         pos: int,
         interaction: discord.Interaction,
         poll: bool,
         option: int,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         close_votes = re.findall(
             rf";{pos+1};(.*?)[;:]",
             interaction.message.components[0].children[-1].custom_id,
@@ -873,10 +873,10 @@ class Events(commands.Cog):
     def _set_new_field_name_for_saved(
         self,
         field: "discord.embeds._EmbedFieldProxy",
-        votes: Dict[str, List[int]],
+        votes: dict[str, list[int]],
         pos: int,
         poll: bool,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         num_of_votes = len(votes[str(pos)])
         new_name = (
             field.name[: -self.find_counter_start(field.name)]

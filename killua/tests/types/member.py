@@ -3,7 +3,6 @@ from discord import Member
 from discord.types.snowflake import Snowflake
 
 from random import randint
-from typing import List, Union
 from datetime import datetime
 
 from .utils import get_random_discord_id, random_date
@@ -19,7 +18,7 @@ class TestingMember(User):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.roles: list = kwargs.pop("roles", self.__random_roles())
+        self.roles: list[int] = kwargs.pop("roles", self.__random_roles())
         self.joined_at: str = kwargs.pop("joined_at", str(random_date()))
         self.deaf: bool = kwargs.pop("deaf", False)
         self.muted: bool = kwargs.pop("muted", False)
@@ -27,7 +26,7 @@ class TestingMember(User):
         self.communication_disabled_until: str = kwargs.pop(
             "communication_disabled_until", ""
         )
-        self.premium_since: Union[datetime, None] = kwargs.pop("premium_since", None)
+        self.premium_since: datetime | None = kwargs.pop("premium_since", None)
         self.top_role = kwargs.pop("top_role", TestingRole(position=1))
         self.guild_permissions = kwargs.pop("guild_permissions", Permissions(administrator=True))
         self._timed_out = kwargs.pop("timed_out", False)
@@ -44,6 +43,6 @@ class TestingMember(User):
     async def kick(self, **kwargs): ...
     async def timeout(self, *args, **kwargs): ...
 
-    def __random_roles(self) -> List[Snowflake]:
+    def __random_roles(self) -> list[Snowflake]:
         """Creates a random list of roles a user has"""
         return [get_random_discord_id() for _ in range(randint(0, 10))]

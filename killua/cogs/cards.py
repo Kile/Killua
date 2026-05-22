@@ -4,17 +4,7 @@ import random
 from discord.ext import commands
 from datetime import datetime, timedelta
 
-from typing import (
-    Union,
-    List,
-    Optional,
-    Tuple,
-    Optional,
-    Dict,
-    Literal,
-    Any,
-    cast,
-)
+from typing import Literal, Any, cast
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -42,7 +32,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     def __init__(self, client: BaseBot):
         self.client = client
-        self.cardname_cache: Dict[int, Tuple[str, str]] = {}
+        self.cardname_cache: dict[int, tuple[str, str]] = {}
         self._init_menus()
 
     def _init_menus(self) -> None:
@@ -87,7 +77,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         self,
         interaction: discord.Interaction,
         current: str,
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         if not self.cardname_cache:
             for card in Card.raw:
@@ -121,7 +111,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             ],
         ][0:25]
 
-    def _get_single_reward(self, score: int) -> Tuple[int, int]:
+    def _get_single_reward(self, score: int) -> tuple[int, int]:
         if score == 1:
             if random.randint(1, 10) < 5:
                 return 1, random.choice(self.reward_cache["item"])
@@ -139,9 +129,9 @@ class Cards(commands.GroupCog, group_name="cards"):
         card = random.choice(self.reward_cache["monster"][rarities])
         return amount, card
 
-    def _construct_rewards(self, score: int) -> List[Tuple[int, Card]]:
+    def _construct_rewards(self, score: int) -> list[tuple[int, Card]]:
         # reward_score will be minutes/10080 which equals a week. Max rewards will get returned once a user has hunted for a week
-        rewards: List[Tuple[int, Card]] = []
+        rewards: list[tuple[int, Card]] = []
 
         if score >= 1:
             rewards.append(self._get_single_reward(1))
@@ -151,7 +141,7 @@ class Cards(commands.GroupCog, group_name="cards"):
             r = self._get_single_reward(score)
             rewards.append(r)
 
-        final_rewards: List[Tuple[int, Card]] = []
+        final_rewards: list[tuple[int, Card]] = []
         for reward in rewards:
             # This avoid duplicates e.g. 4xPaladins Necklace, 2xPaladins Necklace => 6xPaladins Necklace
             if reward[1] in (l := [y for _, y in final_rewards]):
@@ -165,11 +155,11 @@ class Cards(commands.GroupCog, group_name="cards"):
         return final_rewards
 
     async def _format_rewards(
-        self, rewards: List[Tuple[int, Card]], user: User
-    ) -> Tuple[List[List[Union[int, Dict[str, bool]]]], List[str], bool]:
+        self, rewards: list[tuple[int, Card]], user: User
+    ) -> tuple[list[list[int | dict[str, bool]]], list[str], bool]:
         """Formats the generated rewards for further use"""
-        formatted_rewards: List[List[Union[int, Dict[str, bool]]]] = []
-        formatted_text: List[str] = []
+        formatted_rewards: list[list[int | dict[str, bool]]] = []
+        formatted_text: list[str] = []
 
         added_in_jenny = 0
         for reward in rewards:
@@ -221,7 +211,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 f"Please choose a page number between 1 and {6+math.ceil(len(user.fs_cards)/18)}"
             )
 
-        async def make_embed(page, *_) -> Tuple[discord.Embed, discord.File]:
+        async def make_embed(page, *_) -> tuple[discord.Embed, discord.File]:
             return await Book(self.client).create(ctx.author, page)
 
         return await Paginator(
@@ -234,7 +224,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     async def _gen_to_be_sold(
         self, user: User, sell_opt: SellOptions
-    ) -> List[Tuple[int, Any]]:
+    ) -> list[tuple[int, Any]]:
         """
         Decides which cards to be sold based on the sell option
         """
@@ -262,7 +252,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         return to_be_sold
 
     async def _find_to_be_gained(
-        self, to_be_sold: List[Tuple[int, Any]], entitled_to_double: bool
+        self, to_be_sold: list[tuple[int, Any]], entitled_to_double: bool
     ) -> int:
         """Finds the money to be gained from selling the cards"""
         to_be_gained = 0
@@ -427,7 +417,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         self,
         interaction: discord.Interaction,
         current: str,
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """Autocomplete for the swap command"""
 
         if not self.cardname_cache:
@@ -765,7 +755,7 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     async def _member_converter(
         self, ctx: commands.Context, data: str
-    ) -> Optional[discord.Member]:
+    ) -> discord.Member | None:
         """Converts the data to a discord.Member if possible"""
         try:
             return await commands.MemberConverter().convert(ctx, data)
@@ -773,8 +763,8 @@ class Cards(commands.GroupCog, group_name="cards"):
             return None
 
     async def _use_converter(
-        self, ctx: commands.Context, args: Union[int, str, None]
-    ) -> Union[discord.Member, int, str, None]:
+        self, ctx: commands.Context, args: int | str | None
+    ) -> discord.Member | int | str | None:
         """Converts the args to a discord.Member, int or str if possible"""
         if not args:
             return None
@@ -793,12 +783,12 @@ class Cards(commands.GroupCog, group_name="cards"):
         self,
         ctx: commands.Context,
         card: str,
-        args: Optional[Union[discord.Member, int, str]],
-        add_args: Optional[int],
+        args: discord.Member | int | str | None,
+        add_args: int | None,
     ) -> Card:
         """Makes sure the inputs are valid if they exist"""
         try:
-            card: Union[IndividualCard, Card] = Card(card)
+            card: IndividualCard | Card = Card(card)
         except CardNotFound:
             raise CheckFailure("Invalid card id")
 
@@ -830,11 +820,11 @@ class Cards(commands.GroupCog, group_name="cards"):
 
     async def _use_core(self, ctx: commands.Context, card: Card, *args) -> None:
         """This passes the execution to the right class"""
-        card_class: Union[Card, IndividualCard] = next(
+        card_class: Card | IndividualCard = next(
             (c for c in Card.__subclasses__() if c.__name__ == f"Card{card.id}")
         )
 
-        l: List[Dict[str, Any]] = []
+        l: list[dict[str, Any]] = []
         for p, (k, v) in enumerate(
             [
                 x
@@ -873,7 +863,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         self,
         interaction: discord.Interaction,
         current: str,
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         if not self.cardname_cache:
             for card in Card.raw:
                 self.cardname_cache[card["id"]] = card["name"], card["type"]

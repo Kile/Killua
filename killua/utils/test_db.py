@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Any
 from copy import deepcopy
 from random import randint
 
@@ -6,28 +6,28 @@ from random import randint
 class AsyncCursor:
     """An async-iterable wrapper around a list, mimicking motor's AsyncIOMotorCursor."""
 
-    def __init__(self, items: List[dict]):
+    def __init__(self, items: list[dict]):
         self._items = items
         self._index = 0
 
-    def __aiter__(self):
+    def __aiter__(self) -> "AsyncCursor":
         self._index = 0
         return self
 
-    async def __anext__(self):
+    async def __anext__(self) -> dict:
         if self._index >= len(self._items):
             raise StopAsyncIteration
         item = self._items[self._index]
         self._index += 1
         return item
 
-    async def to_list(self, length=None):
+    async def to_list(self, length: int | None = None) -> list[dict]:
         if length is not None:
             return self._items[:length]
         return list(self._items)
 
-    def __await__(self):
-        async def _resolve():
+    def __await__(self) -> Any:
+        async def _resolve() -> list[dict]:
             return self._items
         return _resolve().__await__()
 
@@ -35,7 +35,7 @@ class AsyncCursor:
 class TestingDatabase:
     """A database class imitating pymongos collection classes"""
 
-    db: Dict[str, List[dict]] = {}
+    db: dict[str, list[dict]] = {}
 
     @classmethod
     def reset_all(cls) -> None:
@@ -52,7 +52,7 @@ class TestingDatabase:
         return self._collection
 
     @staticmethod
-    def _resolve_path(obj: dict, dotted_key: str):
+    def _resolve_path(obj: dict, dotted_key: str) -> tuple[dict, str]:
         """Traverses *obj* along a dotted key and returns (parent, final_key)."""
         parts = dotted_key.split(".")
         for part in parts[:-1]:
@@ -72,27 +72,28 @@ class TestingDatabase:
                 return False
         return True
 
-    async def find_one(self, where: dict, **kwargs) -> Optional[dict]:
+    async def find_one(self, where: dict, **kwargs) -> dict | None:
         coll = self.db[self.collection]
         for d in coll:
             if self._matches(d, where):
                 return deepcopy(d)
+        return None
 
     def find(self, where: dict, *args, **kwargs) -> AsyncCursor:
         coll = self.db[self.collection]
         results = [deepcopy(d) for d in coll if self._matches(d, where)]
         return AsyncCursor(results)
 
-    async def insert_one(self, object: dict) -> None:
-        if "_id" not in object:
-            object["_id"] = randint(0, 2**63)
-        self.db[self.collection].append(object)
+    async def insert_one(self, document: dict) -> None:
+        if "_id" not in document:
+            document["_id"] = randint(0, 2**63)
+        self.db[self.collection].append(document)
 
-    async def insert_many(self, objects: List[dict]) -> None:
+    async def insert_many(self, objects: list[dict]) -> None:
         for obj in objects:
             await self.insert_one(obj)
 
-    async def update_one(self, where: dict, update: Dict[str, dict]) -> dict:
+    async def update_one(self, where: dict, update: dict[str, dict]) -> dict:
         operator = list(update.keys())[0]
 
         for p, item in enumerate(self.db[self.collection]):
@@ -113,7 +114,8 @@ class TestingDatabase:
 
         return update
 
-    async def count_documents(self, where: dict = {}) -> int:
+    async def count_documents(self, where: dict | None = None) -> int:
+        where = where or {}
         return len([x async for x in self.find(where)])
 
     async def delete_one(self, where: dict) -> None:

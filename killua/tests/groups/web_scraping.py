@@ -1,10 +1,11 @@
-from ..types import *
-from ...utils.classes import *
-from ..testing import Testing, test
-from ...cogs.web_scraping import WebScraping
+from __future__ import annotations
 
 import inspect
+from typing import Any
 from unittest.mock import AsyncMock, patch
+
+from ..testing import Testing, test
+from ...cogs.web_scraping import WebScraping
 
 from ..harnesses import embed_footer_page, press_paginator_button
 

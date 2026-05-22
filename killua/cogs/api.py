@@ -4,13 +4,13 @@ from discord.ext import commands
 from os import environ
 from random import choices
 from json import loads, dumps
-from asyncio import create_task, sleep
+from asyncio import create_task
 from datetime import datetime, timedelta
 from zmq import ROUTER, Poller, POLLIN
 from zmq.asyncio import Context
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageChops
-from typing import Tuple, Optional
+from typing import cast
 import logging
 from logging import error
 from copy import deepcopy
@@ -20,7 +20,11 @@ from killua.metrics import VOTES, COMMAND_USAGE
 from killua.static.enums import Booster
 from killua.utils.classes import User, Guild
 from killua.cogs.tags import Tag, Tags
-from killua.utils.topgg import post_announcement
+from killua.utils.topgg import (
+    post_announcement,
+    TOPGG_TITLE_MAX,
+    TOPGG_CONTENT_MAX,
+)
 from killua.static.constants import (
     DB,
     LOOTBOXES,
@@ -39,12 +43,6 @@ from killua.static.constants import (
     UPDATE_AFTER,
 )
 
-from typing import List, Dict, Optional, Union, cast
-
-TOPGG_ANNOUNCEMENT_TITLE_MAX = 100
-TOPGG_ANNOUNCEMENT_CONTENT_MAX = 2000
-
-
 class NewsMessage:
     def __init__(
         self,
@@ -54,10 +52,10 @@ class NewsMessage:
         content: str,
         author: str,
         _type: str,
-        version: Optional[str],
-        images: List[str],
-        links: Optional[Dict[str, str]],
-        notify_users: Optional[List[int]],
+        version: str | None,
+        images: list[str],
+        links: dict[str, str] | None,
+        notify_users: list[int] | None,
         timestamp: datetime,
     ):
         self.client = client
@@ -123,7 +121,7 @@ class NewsMessage:
         raise ValueError("Invalid news type")
 
     @property
-    def guild(self) -> Optional[discord.Guild]:
+    def guild(self) -> discord.Guild | None:
         return self.client.get_guild(GUILD) or None
 
     @property
@@ -133,7 +131,7 @@ class NewsMessage:
     async def _make_view(
         self,
         include_ping=True
-    ) -> Tuple[discord.ui.LayoutView, Optional[List[discord.File]]]:
+    ) -> tuple[discord.ui.LayoutView, list[discord.File] | None]:
         """Creates a discord.ui.Container for the news message"""
         last_version = None
         if self._type == "update":
@@ -344,7 +342,7 @@ class IPCRoutes(commands.Cog):
         return im.copy()
 
     async def streak_image(
-        self, data: List[Union[discord.User, str]], reward: str = None
+        self, data: list[discord.User | str], reward: str = None
     ) -> BytesIO:
         """Creates an image of the streak path and returns it as a BytesIO"""
         if len(data) != 11:
@@ -429,7 +427,7 @@ class IPCRoutes(commands.Cog):
 
     def _create_path(
         self, streak: int, user: discord.User, url: str
-    ) -> List[Union[discord.User, str]]:
+    ) -> list[discord.User | str]:
         """
         Creates a path illustrating where the user currently is with vote rewards and what the next rewards are as well as already claimed ones like
         --:boxemoji:--⚫️--:boxemoji:--
@@ -492,7 +490,7 @@ class IPCRoutes(commands.Cog):
         await user.add_vote(platform)
         VOTES.labels(platform).inc()
         streak = user.voting_streak[platform]["streak"]
-        reward: Union[int, Booster] = self._get_reward(
+        reward: int | Booster = self._get_reward(
             streak,
             "isWeekend" in data and data["isWeekend"] is not None,
             # Could exist but be None so it needs an or False
@@ -569,7 +567,7 @@ class IPCRoutes(commands.Cog):
         except discord.HTTPException:
             pass
 
-    async def top(self, _) -> List[dict]:
+    async def top(self, _) -> list[dict]:
         """Returns a list of the top 50 users by the amount of jenny they have"""
         members = await DB.teams.find(
             {"id": {"$in": [x.id for x in self.client.users]}}
@@ -635,7 +633,7 @@ class IPCRoutes(commands.Cog):
         """Returns all commands with descriptions etc"""
         raw = self.client.get_raw_formatted_commands()
 
-        to_be_returned: Dict[str, Dict[str, Union[str, list]]] = {}
+        to_be_returned: dict[str, dict[str, str | list]] = {}
 
         for cmd in raw:
             formatted = self.format_command(cmd)
@@ -981,11 +979,11 @@ class IPCRoutes(commands.Cog):
 
         return {"news_id": news_id, "message_id": news_item.get("messageId")}
 
-    async def _send_discord_message(self, data: dict) -> int:
+    async def _send_discord_message(self, data: dict) -> int | None:
         """Send a Discord message for a news item"""
         news_message = NewsMessage.from_data(self.client, data)
-        if news_message.timestamp < UPDATE_AFTER: # or self.client.is_dev:
-            # Don't send messages for old news items or in dev mode
+        if news_message.timestamp < UPDATE_AFTER:
+            # Don't send messages for old news items
             return None
         message_id = await news_message.send()
         return message_id
@@ -1014,7 +1012,7 @@ class IPCRoutes(commands.Cog):
 
     @staticmethod
     def _format_topgg_title(
-        news_type: str, title: str, *, max_len: int = TOPGG_ANNOUNCEMENT_TITLE_MAX
+        news_type: str, title: str, *, max_len: int = TOPGG_TITLE_MAX
     ) -> str:
         full = f"{news_type.capitalize()}: {title}"
         if len(full) <= max_len:
@@ -1026,7 +1024,7 @@ class IPCRoutes(commands.Cog):
         news_message: NewsMessage,
         content: str,
         *,
-        max_len: int = TOPGG_ANNOUNCEMENT_CONTENT_MAX,
+        max_len: int = TOPGG_CONTENT_MAX,
     ) -> str:
         if len(content) <= max_len:
             return content
@@ -1238,7 +1236,7 @@ class IPCRoutes(commands.Cog):
 
         return {"success": True, "message": "Tag edited successfully"}
     
-    async def guild_command_usage(self, data: dict) -> Union[dict, list]:  # pragma: no cover
+    async def guild_command_usage(self, data: dict) -> dict | list:  # pragma: no cover
         """Returns command usage stats for the server"""
         if self.client.run_in_docker is False:
             return {"error": "Command usage stats are only available when running in Docker."}

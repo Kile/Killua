@@ -1,14 +1,22 @@
-from ..types import *
-from ...utils.classes import *
-from ..testing import Testing, test
-from ...cogs.small_commands import SmallCommands
+from __future__ import annotations
 
+from typing import Any
 from unittest.mock import MagicMock, AsyncMock, patch
 
 import discord
 
+from ..types import DiscordMember
+from ..testing import Testing, test
+from ...cogs.small_commands import SmallCommands
 
-def _embed0(message):
+from ..harnesses import ListenerFakeButton, ListenerFakeRow
+
+# Backwards-compatible aliases for listener-style tests in this module.
+_ListenerFakeButton = ListenerFakeButton
+_ListenerFakeRow = ListenerFakeRow
+
+
+def _embed0(message) -> Any | None:
     raw = message.embeds
     if isinstance(raw, list) and raw:
         return raw[0]
@@ -17,13 +25,6 @@ def _embed0(message):
         if isinstance(inner, list) and inner:
             return inner[0]
     return raw[0] if raw else None
-
-
-from ..harnesses import ListenerFakeButton, ListenerFakeRow
-
-# Backwards-compatible aliases for listener-style tests in this module.
-_ListenerFakeButton = ListenerFakeButton
-_ListenerFakeRow = ListenerFakeRow
 
 
 class TestingSmallCommands(Testing):

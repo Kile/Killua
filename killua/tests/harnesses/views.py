@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterator, Optional
+from typing import Any, Iterator
 
 import discord
 
@@ -24,9 +24,9 @@ def iter_view_items(view: Any) -> Iterator[Any]:
 def find_button(
     view: Any,
     *,
-    custom_id: Optional[str] = None,
-    label: Optional[str] = None,
-) -> Optional[Any]:
+    custom_id: str | None = None,
+    label: str | None = None,
+) -> Any | None:
     for item in iter_view_items(view):
         if not isinstance(item, discord.ui.Button):
             continue
@@ -38,7 +38,7 @@ def find_button(
     return None
 
 
-def find_select(view: Any, *, custom_id: Optional[str] = None) -> Optional[Any]:
+def find_select(view: Any, *, custom_id: str | None = None) -> Any | None:
     for item in iter_view_items(view):
         if isinstance(item, discord.ui.Select) and (
             custom_id is None or getattr(item, "custom_id", None) == custom_id

@@ -3,7 +3,7 @@ from __future__ import annotations
 import discord
 from discord.ext import commands
 from random import sample, randint, choices, choice
-from typing import List, Dict, Union, cast, Tuple
+from typing import cast
 
 from killua.static.constants import DB
 from killua.static.enums import Booster
@@ -16,7 +16,7 @@ from killua.utils.classes.card import Card
 class _BoosterSelect(discord.ui.Select):
     """A class letting users pick an option when trying to use a booster"""
 
-    def __init__(self, used: List[int], inventory: Dict[str, int], **kwargs):
+    def __init__(self, used: list[int], inventory: dict[str, int], **kwargs):
         super().__init__(
             min_values=1,
             max_values=1,
@@ -59,7 +59,7 @@ class CancelButton(discord.ui.Button):
 
 
 class _OptionView(View):
-    def __init__(self, used: List[int], **kwargs):
+    def __init__(self, used: list[int], **kwargs):
         self.used = used
         super().__init__(**kwargs)
 
@@ -133,7 +133,7 @@ class _LootBoxButton(discord.ui.Button):
     def __init__(
         self,
         index: int,
-        rewards: List[Union[Card, Booster, int, None]] = None,
+        rewards: list[Card | Booster | int | None] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -146,12 +146,12 @@ class _LootBoxButton(discord.ui.Button):
         self.bomb = "<:bomb:1091111339226824776>"
 
     @property
-    def rewards(self) -> List[Union[Card, Booster, int, None]]:
+    def rewards(self) -> list[Card | Booster | int | None]:
         """Returns the rewards"""
         return self._rewards or self.view.rewards
 
     @property
-    def reward(self) -> Union[Card, Booster, int, None]:
+    def reward(self) -> Card | Booster | int | None:
         """Returns the reward of this button"""
         if self.index == 24:
             return None
@@ -291,7 +291,7 @@ class _LootBoxButton(discord.ui.Button):
         if booster == 1:
             # Treasure map. Find most valuable reward and highlight it by looking in self.rewards
             # and self.view.claimed
-            def _monetary_value(x: Union[Card, Booster, int, None]) -> int:
+            def _monetary_value(x: Card | Booster | int | None) -> int:
                 """Returns the monetary value of a reward"""
                 if isinstance(x, Card):
                     return PRICES[x.rank]
@@ -345,7 +345,7 @@ class _LootBoxButton(discord.ui.Button):
 
     async def _options_button(
         self, interaction: discord.Interaction
-    ) -> Union[None, discord.Message]:
+    ) -> None | discord.Message:
         """Handles the "options" button"""
         # Create a new view with options "save" and "use booster"
         view = _OptionView(self.view.used, user_id=interaction.user.id, timeout=None)
@@ -411,7 +411,7 @@ class _LootBoxButton(discord.ui.Button):
 
     async def callback(
         self, interaction: discord.Interaction
-    ) -> Union[None, discord.Message]:
+    ) -> None | discord.Message:
         """The callback of the button which calls the right method depending on the reward and index"""
         if self.index == 24:
             return await self._options_button(interaction)
@@ -426,11 +426,11 @@ class _LootBoxButton(discord.ui.Button):
 class LootBox:
     """A class which contains infos about a lootbox and can open one"""
 
-    def __init__(self, ctx: commands.Context, rewards: List[Union[None, Card, int]]):
+    def __init__(self, ctx: commands.Context, rewards: list[None | Card | int]):
         self.ctx = ctx
         self.rewards = rewards
 
-    def _assign_until_unique(self, taken: List[int]) -> int:
+    def _assign_until_unique(self, taken: list[int]) -> int:
         if taken[(res := randint(0, 23))]:
             return self._assign_until_unique(taken)
         return res
@@ -456,7 +456,7 @@ class LootBox:
         return view
 
     @staticmethod
-    def get_lootbox_from_sku(sku: discord.SKU) -> Tuple[int, int]:
+    def get_lootbox_from_sku(sku: discord.SKU) -> tuple[int, int]:
         """Gets a lootbox from a sku"""
         lootbox_amount = {
             7: 3,
@@ -475,7 +475,7 @@ class LootBox:
         )[0]
 
     @classmethod
-    async def generate_rewards(cls, box: int) -> List[Union[Card, int]]:
+    async def generate_rewards(cls, box: int) -> list[Card | int]:
         """Generates a list of rewards that can be used to pass to this class"""
         data = LOOTBOXES[box]
         rew = []

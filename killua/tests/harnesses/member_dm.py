@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from killua.cogs.games import RpsSelect
 from killua.utils.interactions import Select as KSelect
@@ -10,7 +10,7 @@ from killua.utils.interactions import Select as KSelect
 from ..types import ArgumentInteraction, Message
 
 
-def _find_rps_select(view: Any) -> Optional[Any]:
+def _find_rps_select(view: Any) -> Any | None:
     for child in getattr(view, "children", []) or []:
         if isinstance(child, RpsSelect):
             return child

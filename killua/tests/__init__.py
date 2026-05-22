@@ -1,12 +1,16 @@
 import json
 import logging
 import sys
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from . import config
 from .groups import tests
 from .types import Bot
 from ..static.enums import PrintColors
-from datetime import datetime
+
+if TYPE_CHECKING:
+    from .types import TestResult
 
 
 # CAREFUL. This is a fairly hacky fix as assertion erros still get printed even though they are caught for some reason.
@@ -27,7 +31,7 @@ async def _close_test_bot_session() -> None:
     await session.close()
 
 
-def _exit_code_for_result(tr) -> int:
+def _exit_code_for_result(tr: "TestResult") -> int:
     return 1 if (tr.failed or tr.errored) else 0
 
 
@@ -36,7 +40,7 @@ def _print_json_report(payload: dict, json_output: bool) -> None:
         print(json.dumps(payload, indent=2), flush=True)
 
 
-def _group_name(group) -> str:
+def _group_name(group: type) -> str:
     return group.__name__.replace("Testing", "")
 
 
@@ -83,10 +87,10 @@ def _log_run_heading(heading: str) -> None:
     logging.info(PrintColors.OKCYAN + heading + PrintColors.ENDC)
 
 
-async def run_tests(args, *, json_output: bool = False) -> int:
+async def run_tests(args: list[str] | None, *, json_output: bool = False) -> int:
     # sys.stderr = DevMod()
 
-    async def _test_prefix(*_):
+    async def _test_prefix(*_: Any) -> list[str]:
         return ["mention1", "mention2", "k!"]
 
     Bot.command_prefix = _test_prefix

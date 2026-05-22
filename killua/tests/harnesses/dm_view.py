@@ -7,7 +7,7 @@ from typing import Any
 from ..types import ArgumentInteraction, Message
 
 
-def _find_button(item, custom_id: str):
+def _find_button(item: Any, custom_id: str) -> Any | None:
     if getattr(item, "custom_id", None) == custom_id:
         return item
     for child in getattr(item, "children", []) or []:

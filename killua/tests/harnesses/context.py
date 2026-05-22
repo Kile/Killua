@@ -7,7 +7,7 @@ from typing import Any, Callable
 
 
 @contextmanager
-def respond_to_view(ctx: Any, callback: Callable):
+def respond_to_view(ctx: Any, callback: Callable[..., Any]):
     prev = ctx.respond_to_view
     ctx.respond_to_view = callback
     try:

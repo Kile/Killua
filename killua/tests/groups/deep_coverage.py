@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import discord
 from discord.ext import commands
 
 from ..testing import Testing, test, collect_test_classes
@@ -13,9 +11,7 @@ from ..types import Bot
 from ...cogs.dev import Dev
 from ...cogs.events import Events
 from ...cogs.shop import Shop
-from ...static.constants import DB
 from ...utils.checks import check
-from ...utils.classes import User, Guild
 
 
 class TestingDeep(Testing):
@@ -25,6 +21,7 @@ class TestingDeep(Testing):
         if not TestingDeep._menus_registered:
             TestingDeep._menus_registered = True
         else:
+            # Shop menu registration is global; skip re-init on subsequent group runs.
             Shop._init_menus = lambda self: None
         super().__init__(cog=Shop)
 

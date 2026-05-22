@@ -1,10 +1,11 @@
-from ..types import *
-from ...utils.classes import *
+from __future__ import annotations
+
+import io
+from typing import Any
+from unittest.mock import AsyncMock
+
 from ..testing import Testing, test
 from ...cogs.image_manipulation import ImageManipulation
-
-from unittest.mock import AsyncMock
-import io
 
 
 class MockPxlResult:
@@ -17,7 +18,7 @@ class MockPxlResult:
         return io.BytesIO(b"fake_image_data")
 
 
-def _normalize_embeds(message):
+def _normalize_embeds(message) -> list[Any]:
     e = getattr(message, "embeds", None) or []
     if isinstance(e, tuple) and e:
         inner = e[0]

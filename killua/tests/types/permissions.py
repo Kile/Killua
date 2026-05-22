@@ -1,5 +1,3 @@
-from typing import List
-
 
 class Permission:
     create_instant_invite = 1 << 0
@@ -54,11 +52,11 @@ class PermissionOverwrite:
         self.allow: int = 0
         self.deny: int = 0
 
-    def allow_perms(self, perms: List[Permission]) -> None:
+    def allow_perms(self, perms: list[Permission]) -> None:
         for val in perms:
             self.allow |= int(val)
 
-    def deny_perms(self, perms: List[Permission]) -> None:
+    def deny_perms(self, perms: list[Permission]) -> None:
         for val in perms:
             self.deny |= int(val)
 

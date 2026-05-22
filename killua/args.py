@@ -1,14 +1,13 @@
 import argparse
 
-from typing import Optional
 
 class _Args:
-    development: Optional[bool] = None
-    migrate: Optional[bool] = None
-    test: Optional[bool] = None
+    development: bool | None = None
+    migrate: bool | None = None
+    test: bool | None = None
     test_json: bool = False
-    log: Optional[str] = None
-    download: Optional[str] = None
+    log: str | None = None
+    download: str | None = None
 
     @classmethod
     def get_args(cls) -> None:

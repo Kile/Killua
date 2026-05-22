@@ -3,8 +3,6 @@ from discord import Role
 from .utils import random_name
 from .permissions import Permissions
 
-from typing import Optional
-
 
 class TestingRole:
 
@@ -16,8 +14,8 @@ class TestingRole:
         self.position: int = kwargs.pop("position", 0)
         self._colour: int = kwargs.pop("colour", 0)
         self.hoist: bool = kwargs.pop("hoist", False)
-        self._icon: Optional[str] = kwargs.pop("icon", None)
-        self.unicorn_emoji: Optional[str] = kwargs.pop("unicorn_emoji", None)
+        self._icon: str | None = kwargs.pop("icon", None)
+        self.unicorn_emoji: str | None = kwargs.pop("unicorn_emoji", None)
         self.managed: bool = kwargs.pop("managed", False)
         self.mentionable: bool = kwargs.pop("mentionable", False)
         self.tags = kwargs.pop("tags", None)

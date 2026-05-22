@@ -3,7 +3,7 @@ from .message import Message
 from discord.ext.commands import Command
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Result(Enum):
@@ -33,14 +33,14 @@ class TestResult:
         self.failed = []
         self.errored = []
         # One entry per @test run, in order, for this command class instance only.
-        self.records: List[Dict[str, Any]] = []
+        self.records: list[dict[str, Any]] = []
         # Populated on the per-cog Testing aggregate: command name -> list of record dicts.
-        self.by_command: Dict[str, List[Dict[str, Any]]] = {}
+        self.by_command: dict[str, list[dict[str, Any]]] = {}
 
     def completed_test(
         self, command: Command, result: Result, result_data: ResultData = None
     ) -> None:
-        err: Optional[str] = None
+        err: str | None = None
         if result_data is not None and result_data.error is not None:
             err = str(result_data.error)
         self.records.append(

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Union
-from functools import partial
+from typing import TYPE_CHECKING
 
 from .message import TestingMessage as Message
 from .guild import TestingGuild as Guild
@@ -14,27 +13,33 @@ if TYPE_CHECKING:
 
 from .utils import get_random_discord_id
 
+from functools import partial
+
 
 class TestingTextChannel:
     """A class imulating a discord text channel"""
 
     __class__ = TextChannel
 
-    def __init__(self, guild: Guild, permissions: List[dict] = [], **kwargs):
+    def __init__(
+        self, guild: Guild, permissions: list[dict] | None = None, **kwargs
+    ):
+        if permissions is None:
+            permissions = []
         self.guild: Guild = guild
         self.name: str = kwargs.pop("name", "test")
         self.id: int = kwargs.pop("id", get_random_discord_id())
         self.guild_i: int = kwargs.pop("guild_id", get_random_discord_id())
         self.position: int = kwargs.pop("position", 1)
-        self.permission_overwrites: List[PermissionOverwrite] = (
+        self.permission_overwrites: list[PermissionOverwrite] = (
             self.__handle_permissions(permissions)
         )
         self.nsfw: bool = kwargs.pop("nsfw", False)
-        self.parent: Union[CategoryChannel, None] = kwargs.pop("parent", None)
+        self.parent: CategoryChannel | None = kwargs.pop("parent", None)
         self.type: int = kwargs.pop("type", 0)
         self._has_permission: int = kwargs.pop("has_permission", True)
 
-        self.history_return: List[Message] = []
+        self.history_return: list[Message] = []
 
     def __handle_permissions(self, permissions) -> None:
         """Handles permissions"""
@@ -49,7 +54,7 @@ class TestingTextChannel:
 
     async def history(
         self, limit: int = None, before: Message = None, after: Message = None
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Gets the history of the channel"""
         for message in self.history_return[:limit]:
             yield message
@@ -60,7 +65,7 @@ class TestingTextChannel:
             author=self.me, channel=self.channel, content=content, *args, **kwargs
         )
         self.result = ResultData(message=message)
-        self.ctx.current_view: Union[ui.View, None] = kwargs.pop("view", None)
+        self.ctx.current_view: ui.View | None = kwargs.pop("view", None)
 
         if self.ctx.current_view:
             if self.ctx.timeout_view:

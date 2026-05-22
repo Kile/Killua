@@ -1,16 +1,17 @@
-from ..types import *
-from ...utils.classes import *
-from ..testing import Testing, test
-from ...cogs.cards import Cards
-from ...static.cards import Card as IndividualCard
-from ...utils.classes.card import Card
-from ...utils.paginator import Buttons
-from ...static.constants import PRICES, DEF_SPELLS, VIEW_DEF_SPELLS
+from __future__ import annotations
 
 from random import randint
 from math import ceil
 from datetime import datetime, timedelta
 from unittest.mock import patch
+
+from ..types import DiscordMember, Message, random_date
+from ...utils.classes import User
+from ..testing import Testing, test
+from ...cogs.cards import Cards
+from ...utils.classes.card import Card
+from ...utils.paginator import Buttons
+from ...static.constants import PRICES, DEF_SPELLS, VIEW_DEF_SPELLS
 
 from ..fixtures import ensure_test_cards
 from ..harnesses import embed_footer_page, press_paginator_button

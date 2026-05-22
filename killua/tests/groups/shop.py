@@ -1,15 +1,18 @@
-from ..types import *
-from ...utils.classes import *
+from __future__ import annotations
+
+import copy
+from datetime import datetime
+from unittest.mock import patch, AsyncMock
+
+from ..types import ArgumentInteraction
+from ...utils.classes import User
+from ...utils.classes.todo import TodoList
 from ..testing import Testing, test
 from ...static.constants import editing, DB
 from ...cogs.shop import Shop
 from ...static.constants import LOOTBOXES, PRICES
 from ..types.member import TestingMember
 from ...static.cards import Card
-
-import copy
-from datetime import datetime
-from unittest.mock import patch, AsyncMock
 
 from ..harnesses import embed_footer_page, press_paginator_button
 
@@ -175,7 +178,7 @@ class Lootboxes(TestingShop):
         assert fp[0] == 2 and fp[1] >= 2, fp
 
 
-def _seed_shop_offers_sync(card_ids: list) -> None:
+def _seed_shop_offers_sync(card_ids: list[int]) -> None:
     """Mutate shared test DB.const collection (same store as DB.const property)."""
     coll = DB.const.db.setdefault("const", [])
     for doc in coll:
@@ -187,7 +190,7 @@ def _seed_shop_offers_sync(card_ids: list) -> None:
     coll.append({"_id": "shop", "offers": card_ids, "reduced": None, "log": []})
 
 
-async def _seed_shop_offers(card_ids: list) -> None:
+async def _seed_shop_offers(card_ids: list[int]) -> None:
     _seed_shop_offers_sync(card_ids)
 
 
@@ -292,8 +295,6 @@ class BuyCmd(TestingShop):
 
     @test
     async def buy_space_insufficient_jenny(self) -> None:
-        from ...utils.classes.todo import TodoList
-
         todo_list = await TodoList.create(
             owner=self.base_author.id,
             title="Poor list",
@@ -313,8 +314,6 @@ class BuyCmd(TestingShop):
 
     @test
     async def buy_space_cancel(self) -> None:
-        from ...utils.classes.todo import TodoList
-
         todo_list = await TodoList.create(
             owner=self.base_author.id,
             title="Cancel list",
@@ -407,8 +406,6 @@ class BuyCmd(TestingShop):
     @test
     async def buy_space_confirm_adds_spots(self) -> None:
         """One ConfirmButton on ctx.send — press confirm via respond_to_view."""
-        from ...utils.classes.todo import TodoList
-
         todo_list = await TodoList.create(
             owner=self.base_author.id,
             title="Shop list",

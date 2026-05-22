@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from datetime import datetime
-from typing import List, Optional, cast, Union
+from typing import cast
 import math
 from dataclasses import dataclass, field
 
@@ -16,14 +16,14 @@ from killua.utils.paginator import Paginator
 @dataclass
 class Tag:
     found: bool
-    tags: list = field(default_factory=list)
-    name: Optional[str] = None
-    created_at: Optional[datetime] = None
-    owner: Optional[int] = None
-    content: Optional[str] = None
-    uses: Optional[int] = None
-    guild_id: Optional[int] = None
-    indx: Optional[int] = None
+    tags: list[dict] = field(default_factory=list)
+    name: str | None = None
+    created_at: datetime | None = None
+    owner: int | None = None
+    content: str | None = None
+    uses: int | None = None
+    guild_id: int | None = None
+    indx: int | None = None
 
     @classmethod
     async def new(cls, guild_id: int, tag_name: str) -> "Tag":
@@ -54,7 +54,7 @@ class Tag:
         guild.tags = self.tags
         await guild._update_val("tags", self.tags)
 
-    async def update(self, key: str, value: Union[str, int, datetime]) -> None:
+    async def update(self, key: str, value: str | int | datetime) -> None:
         self.tags[self.indx][key] = value
         await self._sync()
 
@@ -94,7 +94,7 @@ class Tag:
 @dataclass
 class Member:
     has_tags: bool
-    tags: list = field(default_factory=list)
+    tags: list[dict] = field(default_factory=list)
 
     @classmethod
     async def new(cls, user_id: int, guild_id: int) -> "Member":
@@ -105,7 +105,7 @@ class Member:
         if user_id not in [r["owner"] for r in tag_list]:
             return Member(has_tags=False)
 
-        owned_tags: list = []
+        owned_tags: list[list] = []
         for x in tag_list:
             if x["owner"] == user_id:
                 owned_tags.append([x["name"], x["uses"]])
@@ -136,7 +136,7 @@ class Tags(commands.Cog):
             self.client.tree.add_command(menu)
 
     def _build_embed(
-        self, ctx: commands.Context, content: list, page: int, user: discord.User = None
+        self, ctx: commands.Context, content: list[str], page: int, user: discord.User = None
     ) -> discord.Embed:
 
         if len(content) - page * 10 + 10 > 10:
@@ -164,7 +164,7 @@ class Tags(commands.Cog):
         self,
         interaction: discord.Interaction,
         current: str,
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """Returns a list of tags that match the message."""
         guild = await Guild.new(interaction.guild.id)
 
@@ -180,7 +180,7 @@ class Tags(commands.Cog):
         ...
 
     @staticmethod
-    def _validate_tag_details(name: Optional[str], content: Optional[str]) -> Optional[str]:
+    def _validate_tag_details(name: str | None, content: str | None) -> str | None:
         if name and len(name) > 30:
             return "The tag title has too many characters!"
 
@@ -194,7 +194,7 @@ class Tags(commands.Cog):
             return "The tag content has too many characters!"
 
     @staticmethod
-    async def initial_new_tag_validation(name: str, guild: discord.Guild, db_guild: Guild, member_id: int) -> Optional[str]:
+    async def initial_new_tag_validation(name: str, guild: discord.Guild, db_guild: Guild, member_id: int) -> str | None:
         tag = await Tag.new(guild.id, name)
         if tag.found is not False:
             owner = guild.get_member(tag.owner)
@@ -431,7 +431,7 @@ class Tags(commands.Cog):
         z = sorted(
             zip([x[1] for x in member.tags], [x[0] for x in member.tags]), reverse=True
         )
-        g: list = []
+        g: list[str] = []
         for i in z:
             uses, name = i
             g.append(f"`{name}` with `{uses}` uses")

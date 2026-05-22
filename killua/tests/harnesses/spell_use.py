@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import math
 from contextlib import contextmanager
-from typing import Any, Optional, Sequence, Tuple, Union
+from typing import Any, Sequence
 from unittest.mock import patch
 
 from killua.utils.interactions import Select as KSelect
@@ -19,27 +18,27 @@ from .assertions import (
     assert_inventory,
     embed_at,
     last_content,
-    reload_user,
 )
 
 SPELL_IDS_WITH_EXEC = [
+    # Spell card IDs that have a dedicated ``UseSpell*`` integration test class.
     1001, 1002, 1007, 1008, 1010, 1011, 1015, 1018, 1020, 1021, 1024, 1026,
     1028, 1029, 1031, 1032, 1035, 1036, 1038,
 ]
 DEFENSE_SPELL_IDS = list(DEF_SPELLS) + list(VIEW_DEF_SPELLS)
 DEFAULT_ATTACK_SPELL = 1021
 STEAL_TARGET_CARD = 50
-MET_ERROR_FRAGMENT = "haven't met this user yet"
+MET_ERROR_FRAGMENT = "haven't met this user yet"  # ``cards use`` on unmet target
 DEFENSE_SUCCESS_FRAGMENT = "successfully defended"
-ATTACK_TIMEOUT_FRAGMENT = "attack goes through"
+ATTACK_TIMEOUT_FRAGMENT = "attack goes through"  # defense window expired
 
 
 async def setup_author_spell(
     author_id: int,
     spell_id: int,
     *,
-    extra_fs: Optional[Sequence[int]] = None,
-    met_ids: Optional[Sequence[int]] = None,
+    extra_fs: Sequence[int] | None = None,
+    met_ids: Sequence[int] | None = None,
 ) -> User:
     user = await User.new(author_id)
     await user.nuke_cards("all")
@@ -54,12 +53,12 @@ async def setup_author_spell(
 async def setup_target_user(
     target_id: int,
     *,
-    fs_cards: Optional[Sequence] = None,
-    rs_cards: Optional[Sequence] = None,
-    defense_ids: Optional[Sequence[int]] = None,
-    effects: Optional[dict] = None,
+    fs_cards: Sequence[int | tuple] | None = None,
+    rs_cards: Sequence[int | tuple] | None = None,
+    defense_ids: Sequence[int] | None = None,
+    effects: dict | None = None,
     met_attacker: bool = True,
-    attacker_id: Optional[int] = None,
+    attacker_id: int | None = None,
 ) -> User:
     user = await User.new(target_id)
     await user.nuke_cards("all")
@@ -102,7 +101,7 @@ def _is_member_target(target: Any) -> bool:
 
 async def invoke_use(
     testing: Any,
-    card_id: Union[int, str],
+    card_id: int | str,
     *,
     target: Any = None,
     args: Any = None,
@@ -132,7 +131,7 @@ def make_target_member(testing: Any, target_id: int) -> DiscordMember:
     return member
 
 
-def target_member(testing: Any, offset: int) -> Tuple[DiscordMember, int]:
+def target_member(testing: Any, offset: int) -> tuple[DiscordMember, int]:
     target_id = testing.base_author.id + offset
     return make_target_member(testing, target_id), target_id
 
@@ -142,8 +141,8 @@ async def setup_met_view_spell(
     spell_id: int,
     offset: int,
     *,
-    fs_cards: Optional[Sequence] = None,
-) -> Tuple[DiscordMember, int]:
+    fs_cards: Sequence[int | tuple] | None = None,
+) -> tuple[DiscordMember, int]:
     member, target_id = target_member(testing, offset)
     await setup_author_spell(
         testing.base_author.id, spell_id, met_ids=[target_id]
@@ -236,8 +235,8 @@ async def run_attack_against_defender(
     stolen_card: int = STEAL_TARGET_CARD,
     use_defense: bool = True,
     attacker_in_met: bool = True,
-    patch_attacker_range: Optional[str] = None,
-) -> Tuple[DiscordMember, int]:
+    patch_attacker_range: str | None = None,
+) -> tuple[DiscordMember, int]:
     target_id = testing.base_author.id + 50_000
     target_member_obj = make_target_member(testing, target_id)
     await setup_author_spell(

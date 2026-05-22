@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 from discord.ext import commands
 
-from ..types import *
+from ..types import DiscordMember, DiscordUser, Role
 from ..types.permissions import Permissions
-from ...utils.classes import *
 from ..testing import Testing, test
 from ...cogs.moderation import Moderation
 from ...utils.classes.guild import Guild as KilluaGuild

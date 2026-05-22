@@ -3,7 +3,7 @@ from __future__ import annotations
 from discord import Interaction
 from discord.ext.commands import Context
 
-from typing import Literal, Optional, Any
+from typing import Literal, Any
 from .utils import get_random_discord_id, random_name
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any, ClassVar, Dict, List, Optional, Union, cast, Literal, Tuple
+from typing import Any, ClassVar, cast, Literal
 from dataclasses import dataclass
 
 from killua.static.constants import (
@@ -20,29 +20,29 @@ class User:
     id: int
     jenny: int
     daily_cooldown: datetime
-    met_user: List[int]
-    effects: Dict[str, Any]
-    rs_cards: List[List[int, Dict[str, Any]]]
-    fs_cards: List[List[int, Dict[str, Any]]]
-    _badges: List[str]
-    rps_stats: Dict[str, Dict[str, int]]
-    counting_highscore: Dict[str, int]
-    trivia_stats: Dict[str, Dict[str, int]]
-    achievements: List[str]
+    met_user: list[int]
+    effects: dict[str, Any]
+    rs_cards: list[list[int, dict[str, Any]]]
+    fs_cards: list[list[int, dict[str, Any]]]
+    _badges: list[str]
+    rps_stats: dict[str, dict[str, int]]
+    counting_highscore: dict[str, int]
+    trivia_stats: dict[str, dict[str, int]]
+    achievements: list[str]
     votes: int
-    voting_streak: Dict[str, int]
+    voting_streak: dict[str, int]
     voting_reminder: bool
-    premium_guilds: Dict[str, int]
-    lootboxes: List[int]
-    boosters: Dict[str, int]
-    weekly_cooldown: Optional[datetime]
-    action_settings: Dict[str, Any]
-    action_stats: Dict[str, Any]
+    premium_guilds: dict[str, int]
+    lootboxes: list[int]
+    boosters: dict[str, int]
+    weekly_cooldown: datetime | None
+    action_settings: dict[str, Any]
+    action_stats: dict[str, Any]
     locale: str
     has_user_installed: bool
-    email: Optional[str]
-    email_notifications: Dict[Literal["news", "updates", "posts"], bool]
-    cache: ClassVar[Dict[int, User]] = {}
+    email: str | None
+    email_notifications: dict[Literal["news", "updates", "posts"], bool]
+    cache: ClassVar[dict[int, User]] = {}
 
     async def set_email(self, email: str) -> None:
         """Sets the user's email address"""
@@ -114,7 +114,7 @@ class User:
         return instance
 
     @property
-    def badges(self) -> List[str]:
+    def badges(self) -> list[str]:
         badges = (
             self._badges.copy()
         )  # We do not want the badges added to _badges every time we call this property else it would add the same badge multiple times
@@ -134,7 +134,7 @@ class User:
         return badges
 
     @property
-    def all_cards(self) -> List[int, dict]:
+    def all_cards(self) -> list[int, dict]:
         return [*self.rs_cards, *self.fs_cards]
 
     @property
@@ -144,7 +144,7 @@ class User:
         return len([x for x in self.badges if x in PATREON_TIERS.keys()]) > 0
 
     @property
-    def premium_tier(self) -> Union[str, None]:
+    def premium_tier(self) -> str | None:
         if len((res := [x for x in self.badges if x in PREMIUM_ALIASES.keys()])) > 0:
             return PREMIUM_ALIASES[res]
         return (
@@ -257,7 +257,7 @@ class User:
             )
 
     @staticmethod
-    async def get_top_collector() -> Optional[Tuple[int, int]]:
+    async def get_top_collector() -> tuple[int, int] | None:
         """
         Returns the user id and the number of cards they have in their free slots of
         the user with the most non-fake cards in their free slots
@@ -346,7 +346,7 @@ class User:
         self._badges.remove(badge.lower())
         await self._update_val("badges", badge.lower(), "$pull")
 
-    async def set_badges(self, badges: List[str]) -> None:
+    async def set_badges(self, badges: list[str]) -> None:
         """Sets badges to anything"""
         self._badges = badges
         await self._update_val("badges", self._badges)
@@ -429,7 +429,7 @@ class User:
 
     async def add_action(
         self, action: str, was_target: bool = False, amount: int = 1
-    ) -> Optional[str]:
+    ) -> str | None:
         """Adds an action to the action stats. If a badge was a added, returns the name of the badge."""
         if action not in self.action_stats:
             self.action_stats[action] = {
@@ -455,7 +455,7 @@ class User:
 
     def _has_card(
         self,
-        cards: List[list],
+        cards: list[list],
         card_id: int,
         fake_allowed: bool,
         only_allow_fakes: bool,
@@ -514,11 +514,11 @@ class User:
 
     async def _find_match(
         self,
-        cards: List[list],
+        cards: list[list],
         card_id: int,
-        fake: Optional[bool],
-        clone: Optional[bool],
-    ) -> Tuple[Union[List[List[int, dict]], None], Union[List[int, dict], None]]:
+        fake: bool | None,
+        clone: bool | None,
+    ) -> tuple[list[list[int, dict]] | None, list[int, dict] | None]:
         counter = 0
         while counter != len(
             cards
@@ -543,7 +543,7 @@ class User:
         remove_fake: bool,
         clone: bool,
         no_exception: bool = False,
-    ) -> List[int, dict]:
+    ) -> list[int, dict]:
         """Handles the logic of the remove_card method"""
         attr = getattr(self, f"{card_type}_cards")
         cards, match = await self._find_match(attr, card_id, remove_fake, clone)
@@ -567,7 +567,7 @@ class User:
         remove_fake: bool = None,
         restricted_slot: bool = None,
         clone: bool = None,
-    ) -> List[int, dict]:
+    ) -> list[int, dict]:
         """Removes a card from a user"""
         if self.has_any_card(card_id) is False:
             raise NotInPossession(
@@ -587,7 +587,7 @@ class User:
 
     async def bulk_remove(
         self,
-        cards: List[List[int, dict]],
+        cards: list[list[int, dict]],
         fs_slots: bool = True,
         raise_if_failed: bool = False,
     ) -> None:
@@ -646,7 +646,7 @@ class User:
         fs_cards = []
         rs_cards = []
 
-        def fs_append(item: list):
+        def fs_append(item: list[Any]) -> list[Any]:
             if len([*self.fs_cards, *fs_cards]) >= 40:
                 return fs_cards
             fs_cards.append(item)
@@ -689,7 +689,7 @@ class User:
         else:
             return False  # Returned if the requirements haven't been met
 
-    async def swap(self, card_id: int) -> Union[bool, None]:
+    async def swap(self, card_id: int) -> bool | None:
         """
         Swaps a card from the free slots with one from the restricted slots.
         Usecase: swapping fake and real card
@@ -728,7 +728,7 @@ class User:
         self.effects.pop(effect, None)
         await self._update_val("cards.effects", self.effects)
 
-    def has_effect(self, effect: str) -> Tuple[bool, Any]:
+    def has_effect(self, effect: str) -> tuple[bool, Any]:
         """Checks if a user has an effect and returns what effect if the user has it"""
         if effect in self.effects:
             return True, self.effects[effect]
@@ -813,7 +813,7 @@ class User:
         self.voting_reminder = not self.voting_reminder
         await self._update_val("voting_reminder", not self.voting_reminder)
 
-    async def log_locale(self, locale: str) -> Optional[str]:
+    async def log_locale(self, locale: str) -> str | None:
         """Logs the locale of the user. Returns the old locale if it was different from the new one, else None"""
         if not self.locale or self.locale != locale:
             old = self.locale

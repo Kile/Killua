@@ -4,7 +4,7 @@ import discord
 from datetime import datetime
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.collection import AsyncCollection
-from typing import Any, Callable, TypeVar, Generic, Union, Dict, List, Tuple
+from typing import Any, Callable, TypeVar, Generic
 
 from killua.utils.test_db import TestingDatabase as Database
 import killua.args as args
@@ -50,19 +50,19 @@ class DB:
             self._DB = CLUSTER["Killua"]
 
     @DBProperty
-    def teams(self) -> Union[AsyncCollection, Database]:
+    def teams(self) -> AsyncCollection | Database:
         return self._DB["teams"] if args.Args.test is None else Database("teams")
 
     @DBProperty
-    def guilds(self) -> Union[AsyncCollection, Database]:
+    def guilds(self) -> AsyncCollection | Database:
         return self._DB["guilds"] if args.Args.test is None else Database("guilds")
 
     @DBProperty
-    def todo(self) -> Union[AsyncCollection, Database]:
+    def todo(self) -> AsyncCollection | Database:
         return self._DB["todo"] if args.Args.test is None else Database("todo")
 
     @DBProperty
-    def const(self) -> Union[AsyncCollection, Database]:
+    def const(self) -> AsyncCollection | Database:
         if args.Args.test is not None:
             db = Database("const")
             if not DB._test_const_seeded:
@@ -75,13 +75,13 @@ class DB:
             return self._DB["const"]
 
     @DBProperty
-    def APIstats(self) -> Union[AsyncCollection, Database]:
+    def APIstats(self) -> AsyncCollection | Database:
         return (
             self._DB["api-stats"] if args.Args.test is None else Database("api-stats")
         )
 
     @DBProperty
-    def news(self) -> Union[AsyncCollection, Database]:
+    def news(self) -> AsyncCollection | Database:
         return self._DB["news"] if args.Args.test is None else Database("news")
 
 
@@ -834,20 +834,7 @@ GUILD_BADGES = {
 }
 
 
-LOOTBOXES: Dict[
-    int,
-    Dict[
-        str,
-        Union[
-            str,
-            int,
-            bool,
-            Dict[
-                str, Union[Dict[int, int], Dict[str, List[str]], Tuple[int], List[int]]
-            ],
-        ],
-    ],
-] = {
+LOOTBOXES: dict[int, dict[str, str | int | bool | dict[str, dict[int, int] | dict[str, list[str]] | tuple[int] | list[int]]]] = {
     1: {
         "name": "Standard Box",
         "price": 250,

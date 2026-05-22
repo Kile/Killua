@@ -12,7 +12,8 @@ from ...bot import BaseBot
 from .channel import TestingTextChannel
 from .user import TestingUser
 
-from typing import Any, Optional, Callable, Tuple
+from typing import Any, Callable
+
 from asyncio import get_event_loop, TimeoutError, sleep
 
 
@@ -45,8 +46,8 @@ class TestingBot(BaseBot):
         event: str,
         /,
         *,
-        check: Optional[Callable[..., bool]] = None,
-        timeout: Optional[float] = None,
+        check: Callable[..., bool] | None = None,
+        timeout: float | None = None,
     ) -> Any:
         if self.fail_timeout:
             raise TimeoutError
@@ -96,7 +97,7 @@ class TestingBot(BaseBot):
     async def find_dominant_color(self, url: str) -> int:
         return 0x3E4A78
 
-    def sha256_for_api(self, endpoint: str, expires_in_seconds: int) -> Tuple[str, str]:
+    def sha256_for_api(self, endpoint: str, expires_in_seconds: int) -> tuple[str, str]:
         return ("fake_token", "9999999999")
 
     def api_url(self, *, to_fetch=False, is_for_cards=False):
@@ -110,7 +111,7 @@ class TestingBot(BaseBot):
         no_token: bool = False,
         thumbnail: bool = False,
         force_fetch: bool = False,
-    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+    ) -> tuple[discord.Embed, discord.File | None]:
         if thumbnail:
             embed.set_thumbnail(url=image_url)
         else:

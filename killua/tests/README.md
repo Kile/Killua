@@ -117,7 +117,7 @@ Killua uses Discord UI in two different ways. Tests mirror that split instead of
 
 Both paths funnel replies into the same place: `context.result.message` (content, embeds, components), so assertions stay identical to non-interactive commands.
 
-#### End-to-end flow (Path A — command-owned view)
+#### End-to-end flow (Path A: command-owned view)
 
 Typical case: `cards use` confirm (1026), defense select, paginator, `actions settings` select.
 
@@ -157,7 +157,7 @@ with respond_to_view(self.base_context, press_save):
 assert "saved" in self.base_context.result.message.content
 ```
 
-**Confirm / cancel** — reuse `Testing.press_confirm` / `press_cancel` as the `respond_to_view` callback (`cards_use_spells.py`, shop buy):
+**Confirm / cancel:** reuse `Testing.press_confirm` / `press_cancel` as the `respond_to_view` callback (`cards_use_spells.py`, shop buy):
 
 ```py
 from ..harnesses import respond_to_view
@@ -167,7 +167,7 @@ with respond_to_view(self.base_context, Testing.press_confirm):
     await invoke_use(self, 1026)
 ```
 
-**Paginator** — do not hand-roll `custom_id` strings; use `press_paginator_button` so the real `Buttons` callback runs:
+**Paginator:** do not hand-roll `custom_id` strings; use `press_paginator_button` so the real `Buttons` callback runs:
 
 ```py
 from ..harnesses import embed_footer_page, press_paginator_button
@@ -183,7 +183,7 @@ after = embed_footer_page(self.base_context.result.message.embeds[0])
 assert after[0] == before[0] + 1
 ```
 
-**Defense select** (attack flow waits on target’s view) — `spell_use.respond_defense_with_spell` finds the `Select` and passes `data={"values": [str(spell_id)]}`:
+**Defense select** (attack flow waits on target’s view): `spell_use.respond_defense_with_spell` finds the `Select` and passes `data={"values": [str(spell_id)]}`:
 
 ```py
 from ..harnesses import respond_defense_with_spell, run_attack_against_defender
@@ -194,7 +194,7 @@ await run_attack_against_defender(self, defense_id=1003, use_defense=True)
 
 Helpers: `harnesses/views.py` (`find_button`, `find_select`), `harnesses/context.py` (`respond_to_view` context manager restores the previous callback).
 
-#### End-to-end flow (Path B — cog `on_interaction`)
+#### End-to-end flow (Path B: cog `on_interaction`)
 
 Poll and WYR votes are **not** wired through `view.wait()` on the command that created the message. `Events.on_interaction` reads `interaction.data["custom_id"]`, edits the embed, and may write `guild.polls`. Tests build a **message-shaped fixture** (embed + fake component rows) and call the listener directly.
 
@@ -242,7 +242,7 @@ tail = encrypted_tail_on_button(updated_cid, "poll:opt-1:")
 assert len(tail) > 0
 ```
 
-`MockComponentInteraction` (`harnesses/interaction.py`) implements enough of `discord.Interaction` for listeners: `type`, `data`, `user`, `message`, `response.send_message` / `edit_message`, `followup`, and `original_response`. It is **not** used for Path A view callbacks — those use `ArgumentInteraction` in `types/interaction.py`, which ties `response.send_message` back to `context.send` and keeps `current_view` in sync.
+`MockComponentInteraction` (`harnesses/interaction.py`) implements enough of `discord.Interaction` for listeners: `type`, `data`, `user`, `message`, `response.send_message` / `edit_message`, `followup`, and `original_response`. It is **not** used for Path A view callbacks. Those use `ArgumentInteraction` in `types/interaction.py`, which ties `response.send_message` back to `context.send` and keeps `current_view` in sync.
 
 #### Path A in DMs (`member_dm`)
 
@@ -272,8 +272,8 @@ See [COVERAGE_AUDIT.md](COVERAGE_AUDIT.md) for scope, gaps, and command-scenario
 ## Coverage audit and games DM notes
 
 - **Living matrix**: [COVERAGE_AUDIT.md](COVERAGE_AUDIT.md) lists games / cards / todo / economy / moderation coverage and **exit criteria** for high-value commands.
-- **Games — DM flows**: use [`harnesses.member_dm.patch_member_rps_select`](harnesses/member_dm.py) on `Member.send` so `_wait_for_dm_response` completes via real `RpsSelect` callbacks (see `games.py` PvP/PvE tests). Do not stub `_wait_for_dm_response`.
-- **Cards spell `use`**: import from [`harnesses`](harnesses/) — `invoke_use`, `assert_steal_succeeded`, `setup_met_view_spell`, `respond_to_view`, etc. See `groups/cards_use_spells.py`.
+- **Games, DM flows:** use [`harnesses.member_dm.patch_member_rps_select`](harnesses/member_dm.py) on `Member.send` so `_wait_for_dm_response` completes via real `RpsSelect` callbacks (see `games.py` PvP/PvE tests). Do not stub `_wait_for_dm_response`.
+- **Cards spell `use`:** import from [`harnesses`](harnesses/) (`invoke_use`, `assert_steal_succeeded`, `setup_met_view_spell`, `respond_to_view`, etc.). See `groups/cards_use_spells.py`.
 - **Poll / WYR votes**: use [`harnesses/poll_wyr.py`](harnesses/poll_wyr.py) to build messages with 5+ embed voters and assert encrypted `custom_id` tails or premium `guild.polls` updates via `Events.on_interaction`.
 - **DM confirms** (e.g. todo invite): [`harnesses/dm_view.patch_user_confirm_dm`](harnesses/dm_view.py).
 

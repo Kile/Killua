@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from ..types import *
-from ...utils.classes import *
 from ..testing import Testing, test
 from ...cogs.help import HelpCommand, HelpPaginator
 from ...utils.classes.guild import Guild as KilluaGuild

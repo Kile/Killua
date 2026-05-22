@@ -8,7 +8,7 @@ import math
 from copy import deepcopy
 from aiohttp import ClientSession
 from urllib.parse import unquote
-from typing import Union, List, Tuple, Literal, Callable, cast, Optional
+from typing import Literal, Callable, cast
 
 from killua.bot import BaseBot
 from killua.utils.paginator import View
@@ -52,7 +52,7 @@ class CompetitiveGame:
         return True
 
     async def _timeout(
-        self, players: List[discord.Member], data: List[Tuple[discord.Message, View]]
+        self, players: list[discord.Member], data: list[tuple[discord.Message, View]]
     ) -> None:
         """A way to handle a timeout of not responding to Killua in dms"""
         for x in players:
@@ -63,11 +63,11 @@ class CompetitiveGame:
 
     async def _wait_for_dm_response(
         self,
-        users: List[discord.Member],
+        users: list[discord.Member],
         create_view: Callable,
-        content: Union[str, discord.Embed],
-    ) -> Union[None, List[View]]:
-        data: List[Tuple[discord.Message, View]] = []
+        content: str | discord.Embed,
+    ) -> None | list[View]:
+        data: list[tuple[discord.Message, View]] = []
         for u in users:
             view = create_view(u.id)
             view.user = u
@@ -225,7 +225,7 @@ class Trivia(CompetitiveGame):
             self._create_embed()
             self._create_view()
 
-    async def send_single(self) -> Union[discord.Message, None]:
+    async def send_single(self) -> discord.Message | None:
         """Sends the embed and view and awaits a response"""
         if self.failed:
             return await self.ctx.send(
@@ -244,8 +244,8 @@ class Trivia(CompetitiveGame):
             self.result = self.view.value
 
     async def send_result_single(
-        self, view: Optional[PlayAgainButton]
-    ) -> Optional[discord.Message]:
+        self, view: PlayAgainButton | None
+    ) -> discord.Message | None:
         """Sends the result of the trivia and hands out jenny as rewards"""
         user = await User.new(self.ctx.author.id)
 
@@ -275,7 +275,7 @@ class Trivia(CompetitiveGame):
                 view=view,
             )
 
-    def _play_again_view(self, players: List[discord.Member]) -> View:
+    def _play_again_view(self, players: list[discord.Member]) -> View:
         """Creates a button that, if clicked by both players, automatically launches another game"""
         view = View(user_id=[x.id for x in players])
         button = PlayAgainButton()
@@ -302,7 +302,7 @@ class Trivia(CompetitiveGame):
                 await self.play_single()
 
     async def send_multi(
-        self, other: discord.Member, jenny: int, view: Optional[PlayAgainButton]
+        self, other: discord.Member, jenny: int, view: PlayAgainButton | None
     ) -> None:
         """Sends the questions in players dms"""
         self.other = other
@@ -468,7 +468,7 @@ class Rps(CompetitiveGame):
         self.other = other
         self.emotes = {0: ":page_facing_up:", -1: ":moyai:", 1: ":scissors:"}
 
-    def _get_options(self) -> List[discord.SelectOption]:
+    def _get_options(self) -> list[discord.SelectOption]:
         """Returns a new instance of the option list so it doesn't get mixed up when editing"""
         return [
             discord.SelectOption(label="rock", value="-1", emoji="\U0001f5ff"),
@@ -524,7 +524,7 @@ class Rps(CompetitiveGame):
         choice2: int,
         player1: discord.Member,
         player2: discord.Member,
-        view: Optional[PlayAgainButton],
+        view: PlayAgainButton | None,
     ) -> discord.Message:
         """Evaluates the outcome, informs the players and handles the points"""
         p1 = await User.new(player1.id)
@@ -582,7 +582,7 @@ class Rps(CompetitiveGame):
                     view=view,
                 )
 
-    def _play_again_view(self, players: List[discord.Member]) -> View:
+    def _play_again_view(self, players: list[discord.Member]) -> View:
         """Creates a button that, if clicked by both players, automatically launches another game"""
         view = View(user_id=[x.id for x in players])
         button = PlayAgainButton()
@@ -595,7 +595,7 @@ class Rps(CompetitiveGame):
         view.add_item(select)
         return view
 
-    async def singleplayer(self) -> Union[None, discord.Message]:
+    async def singleplayer(self) -> None | discord.Message:
         """Handles the case of the user playing against the bot"""
         if await cast(BaseBot, self.ctx.bot)._dm_check(self.ctx.author) is False:
             return await self.ctx.send(
@@ -633,7 +633,7 @@ class Rps(CompetitiveGame):
         else:
             await self.singleplayer()
 
-    async def multiplayer(self, replay: bool = False) -> Union[None, discord.Message]:
+    async def multiplayer(self, replay: bool = False) -> None | discord.Message:
         """Handles the case of the user playing against self.other user"""
         if not replay:
             if await cast(BaseBot, self.ctx.bot)._dm_check(self.ctx.author) is False:
@@ -813,7 +813,7 @@ class CountGame:
             else 0
         )
 
-    def _assign_until_unique(self, already_assigned: List[int]) -> int:
+    def _assign_until_unique(self, already_assigned: list[int]) -> int:
         """Picks one random free spot to put the next number in"""
         r = random.randint(1, 25)
         if r in already_assigned:
@@ -1015,7 +1015,7 @@ class Games(commands.GroupCog, group_name="games"):
 
     async def _topic_autocomplete(
         self, _: commands.Context, argument: str
-    ) -> List[discord.app_commands.Choice]:
+    ) -> list[discord.app_commands.Choice]:
         """The function to call to get the autocomplete for the trivia topic"""
         return [
             discord.app_commands.Choice(name=i, value=i)
@@ -1266,14 +1266,14 @@ class Games(commands.GroupCog, group_name="games"):
             )
         )
 
-        all: List[dict] = await DB.teams.find(
+        all: list[dict] = await DB.teams.find(
             {}
             if where == "global"
             else {"id": {"$in": [m.id for m in ctx.guild.members]}}
         ).to_list(None)
 
         if game == GameOptions.rps:
-            top_5_pve: List[dict] = deepcopy(
+            top_5_pve: list[dict] = deepcopy(
                 all
             )  # Not get this resorted in the code below
             top_5_pve.sort(
@@ -1285,7 +1285,7 @@ class Games(commands.GroupCog, group_name="games"):
                 reverse=True,
             )
 
-            top_5_pvp: List[dict] = all
+            top_5_pvp: list[dict] = all
             top_5_pvp.sort(
                 key=lambda x: dict(x)
                 .get("stats", {})

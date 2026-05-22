@@ -1,20 +1,23 @@
-from ..types import *
-from ...utils.classes import *
+from __future__ import annotations
+
+from unittest.mock import AsyncMock, patch
+from typing import Any
+
+from ..types import ArgumentInteraction, DiscordMember
+from ...utils.classes import User
 from ..testing import Testing, test
 from ...cogs.games import Games
-from ...static.constants import TRIVIA_TOPICS, DB
 from ...utils.test_db import TestingDatabase
 from ..types.member import TestingMember
-from unittest.mock import AsyncMock, patch
 
 
-def _seed_teams(docs: list) -> None:
+def _seed_teams(docs: list[dict]) -> None:
     TestingDatabase.db["teams"] = []
     for d in docs:
         TestingDatabase.db["teams"].append(d)
 
 
-def _last_embed_title_description(message):
+def _last_embed_title_description(message) -> tuple[str, str]:
     raw = message.embeds
     embed = None
     if isinstance(raw, list) and raw:
@@ -27,7 +30,7 @@ def _last_embed_title_description(message):
     return embed.title or "", embed.description or ""
 
 
-async def _instant_sleep(*_a, **_k):
+async def _instant_sleep(*_a: Any, **_k: Any) -> None:
     return None
 
 

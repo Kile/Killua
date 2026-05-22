@@ -4,7 +4,7 @@ import discord
 from abc import ABC, abstractmethod
 from discord.ext import commands
 from datetime import datetime
-from typing import List, cast
+from typing import cast
 
 from .constants import (
     INDESTRUCTIBLE,
@@ -215,7 +215,7 @@ class Card1018(Card, IndividualCard):
         author = await User.new(self.ctx.author.id)
         await author.remove_card(self.id)
 
-        users: List[discord.Member] = []
+        users: list[discord.Member] = []
         stolen_cards = []
 
         async for message in self.ctx.channel.history(limit=20):
