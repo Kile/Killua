@@ -545,7 +545,9 @@ class UseDefense1004(TestingUseSpell):
 class UseDefense1019(TestingUseSpell):
     @test
     async def blocks_sr_attack(self) -> None:
-        _, tid = await run_attack_against_defender(self, defense_id=1019)
+        _, tid = await run_attack_against_defender(
+            self, defense_id=1019, patch_attacker_range="SR"
+        )
         await assert_steal_blocked_by_defense(
             self.base_context, self.base_author.id, tid, STEAL_TARGET_CARD
         )
