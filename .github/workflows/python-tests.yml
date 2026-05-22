@@ -23,6 +23,9 @@ jobs:
       - name: Command vs test class inventory (report)
         run: python scripts/check_test_commands.py
 
+      - name: Download cards for tests
+        run: python -m killua --download public
+
       - name: Tests and coverage gate
         run: |
           coverage run -m killua -t

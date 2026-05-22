@@ -8,29 +8,19 @@ from ..types.member import TestingMember
 from ...static.cards import Card
 
 import copy
+from datetime import datetime
 from unittest.mock import patch, AsyncMock
 
 from ..harnesses import embed_footer_page, press_paginator_button
 
-from pathlib import Path
-from datetime import datetime
-import json
-
-
-def _ensure_card_catalog() -> None:
-    if Card.raw:
-        return
-    cards_file = Path(__file__).parents[3] / "cards.json"
-    if cards_file.exists():
-        with open(cards_file) as f:
-            Card.raw = json.load(f)
+from ..fixtures import ensure_test_cards
 
 
 class TestingShop(Testing):
     requires_command = True
 
     def __init__(self):
-        _ensure_card_catalog()
+        ensure_test_cards()
         super().__init__(cog=Shop)
         self.base_context.command = self.command
 

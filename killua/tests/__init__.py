@@ -91,6 +91,9 @@ async def run_tests(args, *, json_output: bool = False) -> int:
 
     Bot.command_prefix = _test_prefix
     await Bot.setup_hook()
+    from .fixtures import ensure_test_cards
+
+    ensure_test_cards()
     if json_output:
         config.SUPPRESS_TEST_TRACEBACKS = True
         root = logging.getLogger()

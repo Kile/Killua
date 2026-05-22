@@ -7,13 +7,12 @@ from ...utils.classes.card import Card
 from ...utils.paginator import Buttons
 from ...static.constants import PRICES, DEF_SPELLS, VIEW_DEF_SPELLS
 
-import json
-from pathlib import Path
 from random import randint
 from math import ceil
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
+from ..fixtures import ensure_test_cards
 from ..harnesses import embed_footer_page, press_paginator_button
 
 
@@ -23,11 +22,7 @@ class TestingCards(Testing):
     _cards_initialized = False
 
     def __init__(self):
-        if not Card.raw:
-            cards_file = Path(__file__).parents[3] / "cards.json"
-            if cards_file.exists():
-                with open(cards_file) as f:
-                    Card.raw = json.load(f)
+        ensure_test_cards()
 
         super().__init__(cog=Cards)
         self._mock_cog_externals()
