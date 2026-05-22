@@ -787,9 +787,9 @@ class IPCRoutes(commands.Cog):
             "email_notifications": user_data.email_notifications,
         }
 
-        if data.get("from_admin", False) is False:
+        if not data.get("from_admin", False):
             # Fire and forget background task
-            create_task(self._register_login(user, user_data))
+            _login_task = create_task(self._register_login(user, user_data))
 
         return self.jsonify(response_data)
 
@@ -1262,7 +1262,7 @@ class IPCRoutes(commands.Cog):
             formatted.append(
                 {
                     "name": res["metric"]["command"],
-                    "group": res["metric"].get("group", None),
+                    "group": cast(dict, res["metric"]).get("group", ""),
                     "command_id": int(res["metric"]["command_id"]),
                     "values": [(str(timestamp), int(value)) for timestamp, value in res["values"]]
                 }
