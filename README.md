@@ -219,7 +219,7 @@ While running Killua using Docker is more convenient, running from source is mor
 > Not running Killua in Docker will make you unable to use Grafana or Prometheus. The code handles this on its own but if you want to use either of these you must run Killua using docker-compose. You also do not need to run the rust proxy as the IPC connection will be direct.
 
 ### Bot process
-Note: Killua runs on Python 3.9. Some later versions introduce breaking changes and are not supported. 
+Note: Killua supports **Python 3.9–3.13**. Use a virtual environment matching your installed version (`python3 -m venv env`).
 
 First, set up a virtual environment. Do so with `python3 -m venv env; source env/bin/activate` (for linux and macOS). To leave the virtual environment after you are done, simply run `deactivate`
 
@@ -257,7 +257,7 @@ To start the API, ideally you should use a different Terminal or screen/tmux ses
 
 <details>
 <summary><b>Running using Docker</b></summary>
-Running from Docker, while taking longer to start up, is much more convenient and allows you to use Grafana and Prometheus. To run Killua using Docker, follow these steps:
+Running from Docker, while taking longer to start up, is much more convenient and allows you to use Grafana and Prometheus. The bot image is built on **Python 3.13** (`killua/Dockerfile`). To run Killua using Docker, follow these steps:
 
 
 1) Clone the repository (you need the `docker-compose.yml` file)

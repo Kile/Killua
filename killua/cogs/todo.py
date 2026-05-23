@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands, tasks
 from datetime import datetime
 import math, re
-from typing import Union, Optional, List, Literal, cast
+from typing import Literal, cast
 
 from killua.bot import BaseBot
 from killua.static.enums import Category
@@ -115,7 +115,7 @@ class TodoSystem(commands.Cog):
                 final_todos = l[-(len(l) - page * 10 + 10) :]
 
         async def assigned_users(t: Todo) -> str:
-            at: List[discord.User] = []
+            at: list[discord.User] = []
             for user in t.assigned_to:
                 person = await self._get_user(user)
                 at.append(person)
@@ -150,7 +150,7 @@ class TodoSystem(commands.Cog):
         return embed
 
     async def todo_info_embed_generator(
-        self, ctx: commands.Context, list_id: Union[int, str]
+        self, ctx: commands.Context, list_id: int | str
     ) -> discord.Message:
         """outsourcing big embed production 🛠"""
         try:
@@ -194,7 +194,7 @@ class TodoSystem(commands.Cog):
         return await self.client.send_message(ctx, embed=embed)
 
     async def single_todo_info_embed_generator(
-        self, ctx: commands.Context, list_id: Union[int, str], task_id: int
+        self, ctx: commands.Context, list_id: int | str, task_id: int
     ) -> discord.Message:
         """outsourcing big embed production 🛠"""
         try:
@@ -259,7 +259,7 @@ class TodoSystem(commands.Cog):
             embed.set_thumbnail(url=todo_list.thumbnail)
         return await self.client.send_message(ctx, embed=embed)
 
-    async def _edit_check(self, ctx: commands.Context) -> Union[None, TodoList]:
+    async def _edit_check(self, ctx: commands.Context) -> None | TodoList:
         """A generic check before every command that edits a todo list property"""
         try:
             list_id = editing[ctx.author.id]
@@ -293,7 +293,7 @@ class TodoSystem(commands.Cog):
         name: str,
         status: Literal["public", "private"],
         delete_when_done: Literal["yes", "no"],
-        custom_id: Optional[str] = None,
+        custom_id: str | None = None,
     ):
         """Lets you create your todo list in an interactive menu"""
 
@@ -457,7 +457,7 @@ class TodoSystem(commands.Cog):
 
     async def _update_name(
         self, todo_list: TodoList, new_name: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """Updates the name of a todo list"""
         if len(new_name) > 30:
             return "Name can't be longer than 30 characters"
@@ -466,7 +466,7 @@ class TodoSystem(commands.Cog):
 
     async def _update_custom_id(
         self, todo_list: TodoList, new_custom_id: str, user: User
-    ) -> Optional[str]:
+    ) -> str | None:
         """Updates the custom id of a todo list"""
         if not user.is_premium:
             return "You need to be a premium user to use custom ids"
@@ -489,7 +489,7 @@ class TodoSystem(commands.Cog):
     
     async def _update_color(
         self, todo_list: TodoList, color: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """Updates the color of a todo list"""
         if not todo_list.has_addon("color"):
             return "You can't customize this property, you need to buy it in the shop"
@@ -505,7 +505,7 @@ class TodoSystem(commands.Cog):
     
     async def _update_thumbnail(
         self, todo_list: TodoList, thumbnail: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """Updates the thumbnail of a todo list"""
         if not todo_list.has_addon("thumbnail"):
             return "You can't customize this property, you need to buy it in the shop"
@@ -524,7 +524,7 @@ class TodoSystem(commands.Cog):
     
     async def _update_description(
         self, todo_list: TodoList, description: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """Updates the description of a todo list"""
         if not todo_list.has_addon("description"):
             return "You can't customize this property, you need to buy it in the shop"
@@ -549,13 +549,13 @@ class TodoSystem(commands.Cog):
     async def update(
         self,
         ctx: commands.Context,
-        name: Optional[str] = None,
-        status: Optional[Literal["private", "public"]] = None,
-        delete_when_done: Optional[Literal["yes", "no"]] = None,
-        custom_id: Optional[str] = None,
-        color: Optional[str] = None,
-        thumbnail: Optional[str] = None,
-        description: Optional[str] = None,
+        name: str | None = None,
+        status: Literal["private", "public"] | None = None,
+        delete_when_done: Literal["yes", "no"] | None = None,
+        custom_id: str | None = None,
+        color: str | None = None,
+        thumbnail: str | None = None,
+        description: str | None = None,
     ):
         """Update your todo list with this command (Only in editor mode)"""
 
@@ -634,7 +634,7 @@ class TodoSystem(commands.Cog):
         if len(todo_numbers) == len(failed):
             return await ctx.send("All inputs are invalid task ids. Please try again.")
 
-        todo_list.set_property("todos", todos)
+        await todo_list.set_property("todos", todos)
         return await ctx.send(
             f"You removed todo number{'s' if len(todo_numbers) > 1 else ''} {', '.join([str(x) for x in todo_numbers])} successfully"
             + (
@@ -648,7 +648,7 @@ class TodoSystem(commands.Cog):
 
     async def marked_as_autocomplete(
         self, _: discord.Interaction, current: str
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         return [
             discord.app_commands.Choice(name=x, value=x)
             for x in ["done", "in progress", "high priority", "low priority"]
@@ -713,7 +713,7 @@ class TodoSystem(commands.Cog):
 
     async def due_in_autocomplete(
         self, _: discord.Interaction, current: str
-    ) -> List[discord.app_commands.Choice[TimeConverter]]:
+    ) -> list[discord.app_commands.Choice[TimeConverter]]:
         """
         Autocomplete for the due in parameter
         """
@@ -733,7 +733,7 @@ class TodoSystem(commands.Cog):
         ctx: commands.Context,
         *,
         text: str,
-        due_in: Optional[TimeConverter] = None,
+        due_in: TimeConverter | None = None,
     ):
         """Add a todo to your list, *yay, more work* (Only in editor mode)"""
         todo_list = await self._edit_check(ctx)
@@ -804,14 +804,14 @@ class TodoSystem(commands.Cog):
             )
 
         if user.id in todo_list.editor:
-            todo_list.kick_editor(user.id)
+            await todo_list.kick_editor(user.id)
             await ctx.send(
                 f"You have successfully taken the editor permission from {user}",
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
         if user.id in todo_list.viewer:
-            todo_list.kick_viewer(user.id)
+            await todo_list.kick_viewer(user.id)
             await ctx.send(
                 f"You have successfully taken the viewer permission from {user}",
                 allowed_mentions=discord.AllowedMentions.none(),
@@ -961,7 +961,7 @@ class TodoSystem(commands.Cog):
 
         if role == "editor":
             if user.id in todo_list.viewer:
-                todo_list.kick_viewer(
+                await todo_list.kick_viewer(
                     user.id
                 )  # handled like a promotion and exchanges viewer perms for edit perms
             await todo_list.add_editor(user.id)
@@ -1018,13 +1018,13 @@ class TodoSystem(commands.Cog):
                 except discord.Forbidden:
                     pass
             todos[todo_number - 1]["assigned_to"].remove(user.id)
-            todo_list.set_property("todos", todos)
+            await todo_list.set_property("todos", todos)
             return await ctx.send(
                 f"Successfully removed assignment of todo task {todo_number} of {user}"
             )
 
         todos[todo_number - 1]["assigned_to"].append(user.id)
-        todo_list.set_property("todos", todos)
+        await todo_list.set_property("todos", todos)
 
         if ctx.author != user:
             embed = discord.Embed.from_dict(
@@ -1081,7 +1081,7 @@ class TodoSystem(commands.Cog):
             )
 
         todo_list.todos.insert(new_position - 1, todo_list.todos.pop(position - 1))
-        todo_list.set_property("todos", todo_list.todos)
+        await todo_list.set_property("todos", todo_list.todos)
         return await ctx.send(
             f"Successfully reordered todo task {position} to position {new_position}"
         )

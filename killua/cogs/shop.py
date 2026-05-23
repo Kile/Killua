@@ -5,7 +5,7 @@ from math import ceil
 from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 from random import randint, choice
-from typing import Union, Tuple, List, Literal, Dict
+from typing import Literal
 from pymongo.errors import ServerSelectionTimeoutError
 
 from killua.bot import BaseBot
@@ -37,7 +37,7 @@ class ShopPaginator(Paginator):
             Button(label="Menu", style=discord.ButtonStyle.blurple, custom_id="menu")
         )
 
-    async def start(self):
+    async def start(self):  # pragma: no cover
         view = await self._start()
 
         if view.ignore:
@@ -54,14 +54,14 @@ class Shop(commands.Cog):
 
     def __init__(self, client: BaseBot):
         self.client = client
-        self.cardname_cache: Dict[int, Tuple[str, str]] = {}
+        self.cardname_cache: dict[int, tuple[str, str]] = {}
         self.last_update = None
 
     async def _format_offers(
-        self, offers: list, reduced_item: int = None, reduced_by: int = None
-    ) -> List[Dict[str, str]]:
+        self, offers: list[int], reduced_item: int = None, reduced_by: int = None
+    ) -> list[dict[str, str]]:
         """Formats the offers for the shop"""
-        formatted: list = []
+        formatted: list[dict[str, str]] = []
         if reduced_item is not None and reduced_by is not None:
             # Past me made an error. if reduced_item is False if it is 0.
             # Needs to explicitly check if it is None
@@ -83,7 +83,7 @@ class Shop(commands.Cog):
         reduced_item: int = None,
         reduced_by: int = None,
         number: int = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Formats a single item for the shop"""
         item = Card(offer)
         price = PRICES[item.rank] + (
@@ -108,11 +108,11 @@ class Shop(commands.Cog):
             self.cards_shop_update.start()
 
     @tasks.loop(hours=6)
-    async def cards_shop_update(self):
+    async def cards_shop_update(self):  # pragma: no cover
         # There have to be 4-5 shop items, inserted into the db as a list with the card numbers
         # the challenge is to create a balanced system with good items rare enough but not too rare
         try:
-            shop_items: list = []
+            shop_items: list[int] = []
             number_of_items = randint(3, 5)  # How many items the shop has
             if randint(1, 100) > 95:
                 # Add a S/A card to the shop
@@ -389,7 +389,7 @@ class Shop(commands.Cog):
         """Buy a card from the shop with this command"""
 
         shop_data = await DB.const.find_one({"_id": "shop"})
-        shop_items: list = shop_data["offers"]
+        shop_items: list[int] = shop_data["offers"]
         user = await User.new(ctx.author.id)
 
         try:
@@ -455,7 +455,7 @@ class Shop(commands.Cog):
 
     async def lootbox_autocomplete(
         self, _: discord.Interaction, current: str
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """A function to autocomplete the lootbox name"""
         options = []
         for lb in LOOTBOXES.values():
@@ -502,7 +502,7 @@ class Shop(commands.Cog):
         """Handles buying more space for a todo list"""
         if user.jenny < (todo_list.spots * 100 * 0.5):
             return await ctx.send(
-                f"You don't have enough Jenny to buy more space for your todo list. You need {todo_list['spots']*100} Jenny"
+                f"You don't have enough Jenny to buy more space for your todo list. You need {int(todo_list.spots * 100 * 0.5)} Jenny"
             )
 
         if todo_list.spots >= 100:
@@ -600,7 +600,7 @@ class Shop(commands.Cog):
 
     async def _validate(
         self, ctx: commands.Context, other: discord.Member
-    ) -> Union[discord.Message, Tuple[User, User]]:
+    ) -> discord.Message | tuple[User, User]:
         """Validates if someone is a bot or the author and returns a tuple of users if correct, else a message"""
         if other == ctx.author:
             return await ctx.send("You can't give yourself anything!")
@@ -639,7 +639,7 @@ class Shop(commands.Cog):
         self,
         interaction: discord.Interaction,
         current: str,
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         if not self.cardname_cache:
             for card in Card.raw:
@@ -713,7 +713,7 @@ class Shop(commands.Cog):
 
     async def all_lootboxes_autocomplete(
         self, interaction: discord.Interaction, current: str
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """Autocomplete for all lootboxes"""
         name_boxes = [
             (x, LOOTBOXES[x]["name"])

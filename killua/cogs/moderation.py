@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from typing import List, Union
 from datetime import datetime
 
 from killua.bot import BaseBot
@@ -19,7 +18,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
 
     async def check_perms(
         self, ctx: commands.Context, member: discord.Member
-    ) -> Union[None, discord.Message]:
+    ) -> None | discord.Message:
         if member == ctx.me:
             return await ctx.send("Hey!", ephemeral=True)
 
@@ -194,7 +193,7 @@ class Moderation(commands.GroupCog, group_name="mod"):
 
     async def shush_autocomplete(
         self, _: discord.Interaction, current: str
-    ) -> List[Choice[TimeConverter]]:
+    ) -> list[Choice[TimeConverter]]:
         """
         Autocomplete for shush command
         """

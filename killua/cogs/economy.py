@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import Union, List, Tuple, Dict, cast
+from typing import cast
 from datetime import datetime
 from random import randint
 
@@ -57,18 +57,18 @@ class Economy(commands.GroupCog, group_name="econ"):
         for menu in menus:
             self.client.tree.add_command(menu)
 
-    async def _get_user(self, user_id: int) -> Union[discord.User, None]:
+    async def _get_user(self, user_id: int) -> discord.User | None:
         u = self.client.get_user(user_id)
         if not u:
             u = await self.client.fetch_user(user_id)
         return u
 
-    def _fieldify_lootboxes(self, lootboxes: List[int]) -> List[dict]:
+    def _fieldify_lootboxes(self, lootboxes: list[int]) -> list[dict]:
         """Creates a list of fields from the lootboxes in the passed list"""
-        lbs: List[Tuple[int, int]] = (
+        lbs: list[tuple[int, int]] = (
             []
         )  # A list containing the a tuple with the amount and id of the lootboxes owned
-        res: List[dict] = []  # The fields to be returned
+        res: list[dict] = []  # The fields to be returned
 
         for lb in lootboxes:
             if lb not in (l := [y for _, y in lbs]):
@@ -90,7 +90,7 @@ class Economy(commands.GroupCog, group_name="econ"):
 
         return res
 
-    def _fieldify_boosters(self, boosters: Dict[int, int]):
+    def _fieldify_boosters(self, boosters: dict[int, int]):
         """Creates a string from the boosters in the passed dict"""
         start = (
             "You have the following boosters:\n"
@@ -102,7 +102,7 @@ class Economy(commands.GroupCog, group_name="econ"):
         return start
 
     async def _getmember(
-        self, user: Union[discord.Member, discord.User]
+        self, user: discord.Member | discord.User
     ) -> discord.Embed:
         """A function to handle getting infos about a user for less messy code"""
         joined = self.client.convert_to_timestamp(user.id)
@@ -179,7 +179,7 @@ class Economy(commands.GroupCog, group_name="econ"):
 
     async def lootbox_autocomplete(
         self, _: discord.Interaction, current: str
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """A function to autocomplete the lootbox name"""
         options = []
         for id, lb in LOOTBOXES.items():

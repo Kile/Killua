@@ -6,14 +6,14 @@ import datetime
 from inspect import iscoroutinefunction
 from .interactions import View
 
-from typing import List, Union, Type, TypeVar, Coroutine, Tuple, Callable
+from typing import Type, TypeVar, Coroutine, Callable
 
 E = TypeVar("E", discord.Embed, Type[discord.Embed])
 R = TypeVar(
     "R",
     discord.Embed,
     Type[discord.Embed],
-    Tuple[Union[discord.Embed, Type[discord.Embed]], discord.File],
+    tuple[discord.Embed | Type[discord.Embed], discord.File],
 )
 T = TypeVar("T")
 
@@ -49,11 +49,11 @@ class Buttons(View):
     def __init__(
         self,
         user_id: int,
-        pages: Union[List[Union[str, int, dict]], None],
+        pages: list[str | int | dict] | None,
         timeout: int,
         page: int,
         max_pages: int,
-        func: Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None],
+        func: Callable[[int, E, T], R] | Coroutine[int, E, T, R] | None,
         embed: E,
         defer: bool,
         has_file: bool,
@@ -198,11 +198,11 @@ class Paginator:
     def __init__(
         self,
         ctx: commands.Context,
-        pages: Union[List[Union[str, int, dict]], None] = None,
-        timeout: Union[int, float] = 200,
+        pages: list[str | int | dict] | None = None,
+        timeout: int | float = 200,
         page: int = 1,
-        max_pages: Union[int, None] = None,
-        func: Union[Callable[[int, E, T], R], Coroutine[int, E, T, R], None] = None,
+        max_pages: int | None = None,
+        func: Callable[[int, E, T], R] | Coroutine[int, E, T, R] | None = None,
         embed: E = None,
         defer: bool = False,  # In case a pageturn can exceed 3 seconds this has to be set to True
         has_file: bool = False,

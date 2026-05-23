@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, ClassVar, Optional
+from typing import Any, ClassVar
 from dataclasses import dataclass, field
 from inspect import signature
 from datetime import datetime
@@ -15,14 +15,14 @@ class Guild:
     id: int
     prefix: str
     approximate_member_count: int = 0
-    badges: List[str] = field(default_factory=list)
+    badges: list[str] = field(default_factory=list)
     commands: dict = field(
         default_factory=dict
     )  # The logic behind this is not used and needs to be rewritten
     polls: dict = field(default_factory=dict)
-    tags: List[dict] = field(default_factory=list)
-    added_on: Optional[datetime] = None
-    cache: ClassVar[Dict[int, Guild]] = {}
+    tags: list[dict] = field(default_factory=list)
+    added_on: datetime | None = None
+    cache: ClassVar[dict[int, Guild]] = {}
 
     @classmethod
     def from_dict(cls, raw: dict):
@@ -31,7 +31,7 @@ class Guild:
         )
     
     @classmethod
-    async def update_member_count(cls, guild_id: int, old_member_count: Optional[int], member_count: int) -> Optional[int]:
+    async def update_member_count(cls, guild_id: int, old_member_count: int | None, member_count: int) -> int | None:
         """If saved member count is inaccurate by > 5%, update it"""
         old_member_count = old_member_count or 0
         if member_count > old_member_count * 1.05 or member_count < old_member_count * 0.95:
@@ -42,7 +42,7 @@ class Guild:
         return None
     
     @classmethod
-    async def _member_count_helper(cls, guild_id: int, approximate_member_count: Optional[int], member_count: Optional[int]) -> int:
+    async def _member_count_helper(cls, guild_id: int, approximate_member_count: int | None, member_count: int | None) -> int:
         """Helper function to get the member count"""
         if member_count:
             return await cls.update_member_count(
@@ -51,14 +51,14 @@ class Guild:
         return approximate_member_count or 0
 
     @classmethod
-    async def new(cls, guild_id: int, member_count: Optional[int] = None) -> Guild:
+    async def new(cls, guild_id: int, member_count: int | None = None) -> Guild:
         if guild_id in cls.cache:
             cls.cache[guild_id].approximate_member_count = await cls._member_count_helper(
                 guild_id, cls.cache[guild_id].approximate_member_count, member_count
             )
             return cls.cache[guild_id]
     
-        raw: Optional[dict] = await DB.guilds.find_one({"id": guild_id}) # type: ignore
+        raw: dict | None = await DB.guilds.find_one({"id": guild_id}) # type: ignore
         if raw is None:
             await cls.add_default(guild_id, member_count)
             raw: dict = await DB.guilds.find_one({"id": guild_id}) # type: ignore
@@ -77,14 +77,14 @@ class Guild:
         return ("partner" in self.badges) or ("premium" in self.badges)
 
     @classmethod
-    async def add_default(cls, guild_id: int, member_count: Optional[int]) -> None:
+    async def add_default(cls, guild_id: int, member_count: int | None) -> None:
         """Adds a guild to the database"""
         await DB.guilds.insert_one(
             {"id": guild_id, "points": 0, "items": "", "badges": [], "prefix": "k!", "approximate_member_count": member_count or 0, "added_on": datetime.now()}
         )
 
     @classmethod
-    async def bulk_remove_premium(cls, guild_ids: List[int]) -> None:
+    async def bulk_remove_premium(cls, guild_ids: list[int]) -> None:
         """Removes premium from all guilds specified, if possible"""
         for guild in guild_ids:
             try:
@@ -99,7 +99,7 @@ class Guild:
         )
 
     @classmethod
-    async def get_premium_subset(cls, guild_ids: List[int]) -> List[int]:
+    async def get_premium_subset(cls, guild_ids: list[int]) -> list[int]:
         """Returns a list of guild ids that have premium from the given list"""
         cursor = DB.guilds.find(
             {"id": {"$in": guild_ids}, "badges": {"$in": ["premium", "partner"]}},

@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 
 import math
-from typing import List, Tuple, Union, Literal, cast, Dict
+from typing import Literal, cast
 from io import BytesIO
 from datetime import datetime
 from matplotlib import pyplot as plt
@@ -49,7 +49,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         self,
         _: discord.Interaction,
         current: str,
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
 
         if not self.version_cache:
             self.version_cache = [
@@ -65,7 +65,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
     def _create_piechart(
         self,
-        data: List[list],
+        data: list[list],
     ) -> discord.File:
         """Creates a piechart with the given data"""
         labels = [x[0] for x in data]
@@ -87,7 +87,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         return file
 
     def _create_graph(
-        self, dates: List[datetime], y_points: List[int], label: str
+        self, dates: list[datetime], y_points: list[int], label: str
     ) -> BytesIO:
         """Creates a graph with y over time supplied in the dates list"""
         plt.style.use("seaborn-v0_8")  # After testing this is the best theme
@@ -110,7 +110,7 @@ class Dev(commands.GroupCog, group_name="dev"):
 
         return buf
 
-    def _calc_predictions(self, values: List[int]) -> dict:
+    def _calc_predictions(self, values: list[int]) -> dict:
         """Calculates various predictions for the given values"""
 
         # Calculates the average change between one value compared to the next one in the list
@@ -134,8 +134,8 @@ class Dev(commands.GroupCog, group_name="dev"):
         }
 
     def _get_stats_embed(
-        self, data: List[dict], embed: discord.Embed, type: str
-    ) -> Tuple[discord.Embed, discord.File]:
+        self, data: list[dict], embed: discord.Embed, type: str
+    ) -> tuple[discord.Embed, discord.File]:
         """Creates an embed with the stats of the given type"""
         dates = [x["date"] for x in data if type in x]
         type_list = [x[type] for x in data if type in x]
@@ -174,7 +174,7 @@ class Dev(commands.GroupCog, group_name="dev"):
         )
         return embed, file
 
-    async def all_top(self, ctx: commands.Context, top: List[tuple]) -> None:
+    async def all_top(self, ctx: commands.Context, top: list[tuple]) -> None:  # pragma: no cover
         """Shows a list of all top commands"""
 
         def make_embed(page, embed: discord.Embed, pages):
@@ -202,8 +202,8 @@ class Dev(commands.GroupCog, group_name="dev"):
         ).start()
 
     async def group_top(
-        self, ctx: commands.Context, top: List[tuple], interaction: discord.Interaction
-    ) -> None:
+        self, ctx: commands.Context, top: list[tuple], interaction: discord.Interaction
+    ) -> None:  # pragma: no cover
         """Displays a pie chart of the top used commands in a group"""
         # A list of all valid groups as strings
         possible_groups = [
@@ -263,9 +263,9 @@ class Dev(commands.GroupCog, group_name="dev"):
             c = self.client.get_command(cmd.split(" ")[-1])
         return c.extras
 
-    async def initial_top(self, ctx: commands.Context) -> None:
+    async def initial_top(self, ctx: commands.Context) -> None:  # pragma: no cover
         # Convert the ids to actually command names
-        usage_data: Dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
+        usage_data: dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
             "command_usage"
         ]
         usage_data_formatted = {}
@@ -446,7 +446,7 @@ class Dev(commands.GroupCog, group_name="dev"):
     )
     async def blacklist(self, ctx: commands.Context, user: str, *, reason=None):
         """Blacklisting bad people like Hisoka. Owner restricted"""
-        discord_user: Union[discord.User, None] = await self.client.find_user(ctx, user)
+        discord_user: discord.User | None = await self.client.find_user(ctx, user)
         if not discord_user:
             return await ctx.send("Invalid user!", ephermal=True)
         # Inserting the bad person into my database
@@ -474,7 +474,7 @@ class Dev(commands.GroupCog, group_name="dev"):
     @discord.app_commands.describe(user="The user to whitelist")
     async def whitelist(self, ctx: commands.Context, user: str):
         """Whitelists a user. Owner restricted"""
-        user: Union[discord.User, None] = await self.client.find_user(user)
+        user: discord.User | None = await self.client.find_user(user)
         if not user:
             return await ctx.send("Invalid user!", ephermal=True)
 

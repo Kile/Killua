@@ -223,6 +223,15 @@ pub async fn upload(
         ));
     }
 
+    // Tokio fs writes are dispatched to spawn_blocking; flush waits for completion
+    // before the handler returns and tests/clients read the file synchronously.
+    if file.flush().await.is_err() {
+        return Err((
+            rocket::http::Status::InternalServerError,
+            Json(serde_json::json!({"error": "Failed to flush file"})),
+        ));
+    }
+
     Ok(Json(serde_json::json!({
         "success": true,
         "message": "File uploaded successfully",

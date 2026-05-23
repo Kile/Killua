@@ -32,37 +32,44 @@ class TestingMessage:
         self.edited_timestamp = kwargs.pop("edited_timestamp", None)
         self.tts = (kwargs.pop("tts", False),)
         self.mention_everyone = (kwargs.pop("mention_everyone", False),)
-        self.mentions = (kwargs.pop("mentions", []),)
-        self.mention_roles = (kwargs.pop("mention_roles", []),)
-        self.attachments = (kwargs.pop("attachments", []),)
+        self.mentions = list(kwargs.pop("mentions", []))
+        self.mention_roles = list(kwargs.pop("mention_roles", []))
+        # Discord API shape: list of attachment-like objects with .url
+        self.attachments = list(kwargs.pop("attachments", []))
+        self.file = kwargs.pop("file", None)
+        self.files = kwargs.pop("files", None)
         self.embeds = (kwargs.get("embeds", []),)
         self.pinned = (kwargs.pop("pinned", False),)
         self.type = kwargs.pop(
             "type", 0
         )  # https://discord.com/developers/docs/resources/channel#message-object-message-types
-        self.referencing = kwargs.pop("reference", None)
-        self.reference = self
+        self.reference = kwargs.pop("reference", None)
 
         if "embed" in kwargs:
             self.embeds = [kwargs.pop("embed")]
 
     async def edit(self, **kwargs) -> None:
         """Edits the message"""
-        self.__dict__.update(kwargs)  # Changes the properties defined in the kwargs
         self.edited = True
-        self.ctx.current_view = kwargs.pop("view", None)
-        if "embed" in kwargs:
-            self.embeds.append(kwargs["embed"])
-
+        view = kwargs.pop("view", None)
+        content = kwargs.pop("content", None)
+        embed = kwargs.pop("embed", None)
+        if content is not None:
+            self.content = content
+        if embed is not None:
+            self.embeds = [embed]
+        self.__dict__.update(kwargs)
+        self.ctx.current_view = view
         if self.ctx.current_view:
             if not len(
-                [c for c in self.ctx.current_view.children if c.disabled]
+                [c for c in self.ctx.current_view.children if getattr(c, "disabled", False)]
             ) == len(self.ctx.current_view.children):
                 self.ctx.current_view.wait = partial(self.ctx.respond_to_view, self.ctx)
             else:
                 return
 
-        self.ctx.result.message = self
+        if self.ctx.result is not None and self.ctx.result.message is self:
+            self.ctx.result.message = self
         # print(
         #     "Edited view: ", self.view,
         #     "Edited embeds: ", self.embeds,

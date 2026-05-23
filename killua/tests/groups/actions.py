@@ -1,16 +1,49 @@
-from ..types import *
-from ...utils.classes import *
-from ..testing import Testing, test
-from ...cogs.actions import Actions
+from __future__ import annotations
 
+from asyncio import create_task, wait
 from random import randrange, randint
-from asyncio import wait
+from typing import Any
+from unittest.mock import patch
+
+from ..types import ArgumentInteraction, Bot, Context, DiscordMember, Message
+from ..types.utils import get_random_discord_id
+from ...utils.classes import User
+from ..testing import Testing, test
+from ...cogs.actions import Actions, AnimeAsset, ArtistAsset
+
+from ..harnesses import MockComponentInteraction
+
+
+def _embed0_actions(message: Message) -> Any | None:
+    raw = message.embeds
+    if isinstance(raw, list) and raw:
+        return raw[-1]
+    if isinstance(raw, tuple) and raw:
+        inner = raw[0]
+        if isinstance(inner, list) and inner:
+            return inner[-1]
+    return None
 
 
 class TestingActions(Testing):
+    requires_command = True
 
     def __init__(self):
         super().__init__(cog=Actions)
+        self._mock_cog_externals()
+
+    def _mock_cog_externals(self):
+        """Mocks external API calls on the cog so tests work offline"""
+        cog = self.cog
+
+        async def mock_request_action(endpoint):
+            return AnimeAsset(url="https://example.com/test.gif", anime_name="Test Anime")
+
+        async def mock_get_image_url(endpoint):
+            return ArtistAsset(url="http://localhost:6060/image/test.gif", artist=None, featured=False)
+
+        cog.request_action = mock_request_action
+        cog._get_image_url = mock_get_image_url
 
 
 class Settings(TestingActions):
@@ -50,34 +83,36 @@ class Settings(TestingActions):
 
     @test
     async def change_one_and_save(self) -> None:
+        from ...static.constants import ACTIONS
 
         self.base_context.view_counter = 0
+        self.base_context.timeout_view = False
+
+        # Select every action except hug (disables hug), then save — same as production UI.
+        select_values = [k for k in ACTIONS.keys() if k != "hug"]
 
         async def respond_to_view_changing(context: Context):
             if context.view_counter > 0:
                 await context.current_view.on_timeout()
                 return context.current_view.stop()
 
-            context.current_view.values = []
-            context.current_view.timed_out = False
-
+            select_ix = ArgumentInteraction(
+                context, data={"values": select_values}
+            )
             for child in context.current_view.children:
-                if child.custom_id != "save":
-                    for option in child.options:
-                        if option.label != "hug":
-                            context.current_view.values.append(option.value)
-
+                if getattr(child, "custom_id", None) == "select":
+                    await child.callback(select_ix)
+            context.current_view.interaction = select_ix
             for child in context.current_view.children:
-                if child.custom_id == "save":
+                if getattr(child, "custom_id", None) == "save":
                     await child.callback(ArgumentInteraction(context))
-            context.view_counter += 1  # This is to make sure the test is only run once
+            context.view_counter += 1
 
         self.base_context.respond_to_view = respond_to_view_changing
         await self.command(self.cog, self.base_context)
 
-        assert User(self.base_context.author.id).action_settings["hug"] is False, User(
-            self.base_context.author.id
-        ).action_settings["hug"]
+        user = await User.new(self.base_context.author.id)
+        assert user.action_settings["hug"] is False, user.action_settings["hug"]
         assert (
             self.base_context.result.message.embeds
         ), self.base_context.result.message.embeds
@@ -89,7 +124,7 @@ class _ActionCommand(TestingActions):
         super().__init__()
 
         self.base_context.command = self.command
-        self.__name__ = command  # This is to identify what command it came from
+        self.__name__ = command
 
     @test
     async def no_arguments_without_yes(self) -> None:
@@ -110,8 +145,8 @@ class _ActionCommand(TestingActions):
         )
         await wait(
             {
-                self.command(self.cog, self.base_context),
-                Bot.resolve("message", resolving_message),
+                create_task(self.command(self.cog, self.base_context)),
+                create_task(Bot.resolve("message", resolving_message)),
             }
         )
 
@@ -160,30 +195,28 @@ class _ActionCommand(TestingActions):
     @test
     async def single_member_action_disabled(self) -> None:
         member = DiscordMember(guild=self.base_guild)
-        await User.new(member.id).set_action_settings({self.command.name: False})
+        user = await User.new(member.id)
+        await user.set_action_settings({self.command.name: False})
         await self.command(self.cog, self.base_context, [member])
 
         assert (
             self.base_context.result.message.content
-            == f"**{member.display_name}** has disabled this action"
+            == f"All members targeted have disabled this action."
         ), self.base_context.result.message.content
 
     @test
     async def some_members_action_disabled(self) -> None:
         members = [
-            DiscordMember(guild=self.base_guild, id=id) for id in range(randint(4, 10))
+            DiscordMember(guild=self.base_guild, id=get_random_discord_id()) for _ in range(randint(4, 10))
         ]
         disabled = 0
         for p, member in enumerate(members):
-            if (
-                p < len(members) - 1
-            ):  # We do not want all members to have this action disabled
-                await User.new(member.id).set_action_settings(
-                    {self.command.name: False}
-                )
+            user = await User.new(member.id)
+            if p < len(members) - 1:
+                await user.set_action_settings({self.command.name: False})
                 disabled += 1
             else:
-                await User.new(member.id).set_action_settings({self.command.name: True})
+                await user.set_action_settings({self.command.name: True})
         await self.command(self.cog, self.base_context, members)
 
         assert (
@@ -198,12 +231,13 @@ class _ActionCommand(TestingActions):
     async def all_members_action_disabled(self) -> None:
         members = [DiscordMember(guild=self.base_guild) for _ in range(randint(4, 10))]
         for member in members:
-            await User.new(member.id).set_action_settings({self.command.name: False})
+            user = await User.new(member.id)
+            await user.set_action_settings({self.command.name: False})
         await self.command(self.cog, self.base_context, members)
 
         assert (
             self.base_context.result.message.content
-            == "All members targetted have disabled this action."
+            == "All members targeted have disabled this action."
         ), self.base_context.result.message.content
 
 
@@ -230,6 +264,42 @@ class _NoArgsCommand(TestingActions):
 class Hug(_ActionCommand):
     def __init__(self):
         super().__init__("hug")
+
+    @test
+    async def hug_back_button_invokes_return_hug(self) -> None:
+        """Path B: Actions.on_interaction when target presses Hug back (see killua/tests/component_interaction.py)."""
+        target = DiscordMember(guild=self.base_guild, id=self.base_author.id + 5000)
+        self.base_guild.members = [self.base_author, target]
+        await User.new(self.base_author.id)
+        await User.new(target.id)
+
+        enc = Bot._encrypt(target.id)
+        cid = f"action:hug:{self.base_author.id}:{enc}:"
+
+        with patch("killua.bot.randint", return_value=100):
+            await self.command(self.cog, self.base_context, [target])
+
+        msg = self.base_context.result.message
+        assert msg.embeds, msg.embeds
+
+        ix = MockComponentInteraction(
+            context=self.base_context,
+            custom_id=cid,
+            user=target,
+            message=msg,
+            client=Bot,
+        )
+        with patch("killua.bot.randint", return_value=100):
+            await self.cog.on_interaction(ix)
+
+        assert self.base_context.result.message.embeds, (
+            self.base_context.result.message.embeds
+        )
+        emb = _embed0_actions(self.base_context.result.message)
+        assert emb is not None
+        t = emb.title or ""
+        assert self.base_author.display_name in t, t
+        assert target.display_name in t, t
 
 
 class Pat(_ActionCommand):
@@ -262,11 +332,6 @@ class Dance(_NoArgsCommand):
         super().__init__("dance")
 
 
-class Neko(_NoArgsCommand):
-    def __init__(self):
-        super().__init__("neko")
-
-
 class Smile(_NoArgsCommand):
     def __init__(self):
         super().__init__("smile")
@@ -277,6 +342,21 @@ class Blush(_NoArgsCommand):
         super().__init__("blush")
 
 
-class Tail(_NoArgsCommand):
+class Cry(_NoArgsCommand):
     def __init__(self):
-        super().__init__("tail")
+        super().__init__("cry")
+
+
+class Smug(_NoArgsCommand):
+    def __init__(self):
+        super().__init__("smug")
+
+
+class Yawn(_NoArgsCommand):
+    def __init__(self):
+        super().__init__("yawn")
+
+
+class Nope(_NoArgsCommand):
+    def __init__(self):
+        super().__init__("nope")

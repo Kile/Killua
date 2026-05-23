@@ -32,10 +32,24 @@ class TestResult:
         self.passed = []
         self.failed = []
         self.errored = []
+        # One entry per @test run, in order, for this command class instance only.
+        self.records: list[dict[str, Any]] = []
+        # Populated on the per-cog Testing aggregate: command name -> list of record dicts.
+        self.by_command: dict[str, list[dict[str, Any]]] = {}
 
     def completed_test(
         self, command: Command, result: Result, result_data: ResultData = None
     ) -> None:
+        err: str | None = None
+        if result_data is not None and result_data.error is not None:
+            err = str(result_data.error)
+        self.records.append(
+            {
+                "name": getattr(command, "__name__", str(command)),
+                "result": result == Result.passed,
+                "error": err,
+            }
+        )
         if result == Result.passed:
             self.passed.append(command)
         elif result == Result.failed:

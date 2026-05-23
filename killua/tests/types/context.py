@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from discord.ext.commands import Context, Command
 from discord.ui import View
 
@@ -7,7 +9,6 @@ from .user import TestingUser as User
 from .channel import TestingTextChannel as TextChannel
 from .member import TestingMember as Member
 
-from typing import Union
 from functools import partial
 
 
@@ -17,15 +18,18 @@ class TestingContext:
     __class__ = Context
 
     def __init__(self, **kwargs):
-        self.result: Union[ResultData, None] = None
+        self.result: ResultData | None = None
         self.me: User = User()
         self.message: Message = kwargs.pop("message")
         self.bot: User = kwargs.pop("bot")
         self.channel: TextChannel = self.message.channel
         self.author: Member = self.message.author
-        self.command: Union[Command, None] = None
+        self.command: Command | None = None
+        self.invoked_subcommand = kwargs.pop("invoked_subcommand", None)
+        self.interaction = None
+        self.guild = self.message.channel.guild
 
-        self.current_view: Union[View, None] = None
+        self.current_view: View | None = None
         self.message.channel.ctx: TestingContext = self
         self.message.ctx: TestingContext = self
         self.timeout_view: bool = False
@@ -36,7 +40,7 @@ class TestingContext:
             author=self.me, channel=self.channel, content=content, *args, **kwargs
         )
         self.result = ResultData(message=message)
-        self.current_view: Union[View, None] = kwargs.pop("view", None)
+        self.current_view: View | None = kwargs.pop("view", None)
 
         if self.current_view:
             if self.timeout_view:
@@ -53,7 +57,7 @@ class TestingContext:
             author=self.me, channel=self.channel, content=content, *args, **kwargs
         )
         self.result = ResultData(message=message)
-        self.current_view: Union[View, None] = kwargs.pop("view", None)
+        self.current_view: View | None = kwargs.pop("view", None)
 
         if self.current_view:
             if self.timeout_view:
@@ -63,6 +67,10 @@ class TestingContext:
                 self.current_view.wait = partial(self.respond_to_view, self)
         message.ctx = self
         return message
+
+    async def defer(self, *args, **kwargs) -> None:
+        """Defers the interaction response"""
+        ...
 
     async def invoke(self, command: str, *args, **kwargs) -> None:
         """Invokes a command"""

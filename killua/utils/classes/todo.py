@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from random import randint
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing import Any, ClassVar
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -13,25 +13,25 @@ class TodoList:
     id: int
     owner: int
     name: str
-    _custom_id: Optional[str]
+    _custom_id: str | None
     status: str
     delete_done: bool
-    viewer: List[int]
-    editor: List[int]
-    created_at: Union[str, datetime]
+    viewer: list[int]
+    editor: list[int]
+    created_at: str | datetime
     spots: int
     views: int
-    todos: List[dict]
-    _bought: List[str]
-    thumbnail: Optional[str]
-    color: Optional[int]
-    description: Optional[str]
+    todos: list[dict]
+    _bought: list[str]
+    thumbnail: str | None
+    color: int | None
+    description: str | None
 
-    cache: ClassVar[Dict[int, TodoList]] = {}
-    custom_id_cache: ClassVar[Dict[str, int]] = {}
+    cache: ClassVar[dict[int, TodoList]] = {}
+    custom_id_cache: ClassVar[dict[str, int]] = {}
 
     @classmethod
-    def __get_cache(cls, list_id: Union[int, str]):
+    def __get_cache(cls, list_id: int | str):
         """Returns a cached object"""
         if isinstance(list_id, str) and not list_id.isdigit():
             if list_id not in cls.custom_id_cache:
@@ -40,7 +40,7 @@ class TodoList:
         return cls.cache[int(list_id)] if list_id in cls.cache else None
 
     @classmethod
-    async def new(cls, list_id: Union[int, str]) -> TodoList:
+    async def new(cls, list_id: int | str) -> TodoList:
         cached = cls.__get_cache(list_id)
         if cached is not None:
             return cached
@@ -88,7 +88,7 @@ class TodoList:
         return td_list
 
     @property
-    def custom_id(self) -> Union[str, None]:
+    def custom_id(self) -> str | None:
         return self._custom_id
 
     @custom_id.setter
@@ -258,15 +258,15 @@ class Todo:
     todo: str
     marked: str
     added_by: int
-    added_on: Union[str, datetime]
+    added_on: str | datetime
     views: int
-    assigned_to: List[int]
-    mark_log: List[dict]
+    assigned_to: list[int]
+    mark_log: list[dict]
     due_at: datetime = None
     notified: bool = None
 
     @classmethod
-    async def new(cls, position: Union[int, str], list_id: Union[int, str]) -> Todo:
+    async def new(cls, position: int | str, list_id: int | str) -> Todo:
         parent = await TodoList.new(list_id)
         task = parent.todos[int(position) - 1]
 

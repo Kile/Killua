@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-from typing import List, ClassVar, Dict, Tuple, Union, Tuple, TYPE_CHECKING, Type
-
-from killua.static.constants import DB
-from killua.bot import BaseBot
+from typing import Any, ClassVar, TYPE_CHECKING, Type, Callable
 
 import discord
 from io import BytesIO
 from discord.ext import commands
-from typing import List, Tuple, Optional, Callable
 
 from killua.static.constants import (
     ALLOWED_AMOUNT_MULTIPLE,
@@ -41,7 +37,7 @@ class CardNotFound(Exception):
 class Card:
     """A class preventing a circular import by providing the bare minimum of methods and properties. Only used in this module"""
 
-    raw: ClassVar[List[Dict[str, Union[str, int, bool]]]] = []  # Raw data from API
+    raw: ClassVar[list[dict[str, str | int | bool]]] = []  # Raw data from API
 
     id: int
     name: str
@@ -52,12 +48,12 @@ class Card:
     limit: int
     available: bool
     type: str = "normal"
-    range: Optional[str] = None
-    ctx: Optional[commands.Context] = None
-    _cls: Optional[List[str]] = None
+    range: str | None = None
+    ctx: commands.Context | None = None
+    _cls: list[str] | None = None
 
-    cache: ClassVar[Dict[int, Card]] = {}  # Cached objects
-    cached_raw: ClassVar[List[Tuple[str, int]]] = []  # String to int ID mapping
+    cache: ClassVar[dict[int, Card]] = {}  # Cached objects
+    cached_raw: ClassVar[list[tuple[str, int]]] = []  # String to int ID mapping
 
     @classmethod
     def _should_ignore(cls, cached: Type[Card]) -> bool:
@@ -82,7 +78,7 @@ class Card:
         return super().__new__(cls)
 
     @classmethod
-    def _find_card(cls, name_or_id: Union[int, str]) -> Union[int, None]:
+    def _find_card(cls, name_or_id: int | str) -> int | None:
 
         # This could be solved much easier but this allows the user to
         # have case insensitivity when looking for a card
@@ -101,14 +97,14 @@ class Card:
                 if c[1] == int(name_or_id):
                     return c[1]
 
-    def __init__(self, name_or_id: Union[str, int], ctx: Optional[commands.Context] = None):
+    def __init__(self, name_or_id: str | int, ctx: commands.Context | None = None):
         cards_id = self._find_card(name_or_id)
 
         if cards_id in self.cache and not self._should_ignore(self.cache[cards_id]):
             self.ctx = ctx
             return
 
-        if not cards_id:
+        if cards_id is None:
             raise CardNotFound
 
         raw = next(c for c in self.raw if c["id"] == cards_id)
@@ -129,14 +125,14 @@ class Card:
         self.cache[cards_id] = self
 
     @classmethod
-    def find(cls, conditions: Callable[dict, bool]) -> List[Card]:  # type: ignore
+    def find(cls, conditions: Callable[dict, bool]) -> list[Card]:  # type: ignore
         """
         Finds all cards that match the given conditions, replacing mongo's find method.
         Already parses the cards to Card classes in the return value
         """
         return [cls(c["id"]) for c in cls.raw if conditions(c)]
 
-    async def owners(self) -> List[int]:
+    async def owners(self) -> list[int]:
         return [
             entry["id"]
             async for entry in DB.teams.find(
@@ -171,7 +167,7 @@ class Card:
         if len(effects) == 0:
             return
 
-        effect_instances: List["Card"] = [Card(c) for c in effects]
+        effect_instances: list["Card"] = [Card(c) for c in effects]
         view = View(other.id, timeout=20)
         view.add_item(
             Select(
@@ -266,12 +262,12 @@ class Card:
         perms = ctx.channel.permissions_for(member)
         if not perms.send_messages or not perms.read_messages:
             raise CheckFailure(
-                f"You can only attack a user in a channel they have read and write permissions to which isn't the case with {self.Member.display_name}"
+                f"You can only attack a user in a channel they have read and write permissions to which isn't the case with {member.display_name}"
             )
 
     def _has_cards_check(
         self,
-        cards: List[list],
+        cards: list[list],
         card_type: str = "",
         is_self: bool = False,
         uses_up: bool = False,
@@ -298,7 +294,7 @@ class Card:
                 f"You haven't met this user yet! Use `{prefix}meet <@someone>` if they send a message in a channel to be able to use this card on them"
             )
 
-    def _has_other_card_check(self, cards: List[list]) -> None:
+    def _has_other_card_check(self, cards: list[list]) -> None:
         if len(cards) < 2:
             raise CheckFailure(f"You don't have any cards other than card {self.name}!")
 
@@ -325,7 +321,7 @@ class Card:
 
     async def _get_analysis_embed(
         self, card_id: int, client: BaseBot
-    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+    ) -> tuple[discord.Embed, discord.File | None]:
         card = Card(card_id)
         fields = [
             {"name": "Name", "value": card.name + " " + card.emoji, "inline": True},
@@ -366,7 +362,7 @@ class Card:
 
     async def _get_list_embed(
         self, card_id: int, client: BaseBot
-    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+    ) -> tuple[discord.Embed, discord.File | None]:
         card = Card(card_id)
 
         real_owners = []

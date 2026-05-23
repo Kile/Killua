@@ -3,7 +3,7 @@ from discord.ext import commands
 
 import re
 import io
-from typing import Union, Any, List, Coroutine, Optional, Literal
+from typing import Any, Coroutine, Literal
 from PIL import Image, ImageDraw, ImageChops
 from asyncio import wait_for, TimeoutError, CancelledError
 
@@ -43,7 +43,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
 
         return im.copy()
 
-    def _create_frames(self, image: Image.Image) -> List[Image.Image]:
+    def _create_frames(self, image: Image.Image) -> list[Image.Image]:
         """Creates the frames for the spin, slightly rotating each frame"""
         res = []
         for i in range(17):
@@ -102,7 +102,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
         return buffer
 
     async def _validate_input(
-        self, ctx: commands.Context, target: Optional[str]
+        self, ctx: commands.Context, target: str | None
     ) -> str:  # a useful check that looks for what url to pass pxlapi
         """Finds an image url to use from a command"""
         if target:
@@ -164,7 +164,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
     async def handle_command(
         self,
         ctx: commands.Context,
-        target: Union[discord.Member, discord.Emoji, str],
+        target: discord.Member | discord.Emoji | str,
         function: Coroutine,
         t: Any = None,
         censor: bool = False,
@@ -227,7 +227,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
 
     async def flag_autocomplete(
         self, _: commands.Context, current: str
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """Returns a list of flags that match the current string since there are too many flags for it to use the options feature"""
         return [
             discord.app_commands.Choice(name=i, value=i)

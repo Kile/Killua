@@ -5,7 +5,6 @@
 # transparent pixels with black pixels (among other issues) when the GIF is saved using PIL.Image.save().
 # This code works around the issue and allows us to properly generate transparent GIFs.
 
-from typing import Tuple, List, Union
 from collections import defaultdict
 from random import randrange
 from itertools import chain
@@ -127,11 +126,11 @@ class TransparentAnimatedGifConverter(object):
 
 
 def _create_animated_gif(
-    images: List[Image], durations: Union[int, List[int]]
-) -> Tuple[Image, dict]:
+    images: list[Image], durations: int | list[int]
+) -> tuple[Image, dict]:
     """If the image is a GIF, create an its thumbnail here."""
     save_kwargs = dict()
-    new_images: List[Image] = []
+    new_images: list[Image] = []
 
     for frame in images:
         thumbnail = frame.copy()  # type: Image
@@ -155,7 +154,7 @@ def _create_animated_gif(
 
 
 def save_transparent_gif(
-    images: List[Image], durations: Union[int, List[int]], save_file
+    images: list[Image], durations: int | list[int], save_file
 ):
     """Creates a transparent GIF, adjusting to avoid transparency issues that are present in the PIL library
 
@@ -163,7 +162,7 @@ def save_transparent_gif(
 
     Parameters:
         images: a list of PIL Image objects that compose the GIF frames
-        durations: an int or List[int] that describes the animation durations for the frames of this GIF
+        durations: an int or list[int] that describes the animation durations for the frames of this GIF
         save_file: A filename (string), pathlib.Path object or file object. (This parameter corresponds
                    and is passed to the PIL.Image.save() method.)
     Returns:

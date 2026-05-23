@@ -1,5 +1,8 @@
-from . import main
+import sys
 from asyncio import run
 
+from . import main
+
 if __name__ == "__main__":
-    run(main())
+    code = run(main())
+    sys.exit(code if isinstance(code, int) else 0)

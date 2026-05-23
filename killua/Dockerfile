@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9-slim AS base
+FROM python:3.13-slim AS base
 
 ARG MYUID=1000
 ARG MYGID=1000

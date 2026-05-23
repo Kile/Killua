@@ -1,10 +1,46 @@
-from typing import Optional, List, Dict
+from typing import Any
+from copy import deepcopy
+from random import randint
+
+
+class AsyncCursor:
+    """An async-iterable wrapper around a list, mimicking motor's AsyncIOMotorCursor."""
+
+    def __init__(self, items: list[dict]):
+        self._items = items
+        self._index = 0
+
+    def __aiter__(self) -> "AsyncCursor":
+        self._index = 0
+        return self
+
+    async def __anext__(self) -> dict:
+        if self._index >= len(self._items):
+            raise StopAsyncIteration
+        item = self._items[self._index]
+        self._index += 1
+        return item
+
+    async def to_list(self, length: int | None = None) -> list[dict]:
+        if length is not None:
+            return self._items[:length]
+        return list(self._items)
+
+    def __await__(self) -> Any:
+        async def _resolve() -> list[dict]:
+            return self._items
+        return _resolve().__await__()
 
 
 class TestingDatabase:
     """A database class imitating pymongos collection classes"""
 
-    db: Dict[str, List[dict]] = {}
+    db: dict[str, list[dict]] = {}
+
+    @classmethod
+    def reset_all(cls) -> None:
+        """Clear all in-memory collections (call between test groups)."""
+        cls.db.clear()
 
     def __init__(self, collection: str):
         self._collection = collection
@@ -15,129 +51,96 @@ class TestingDatabase:
             self.db[self._collection] = []
         return self._collection
 
-    # def _random_id(self) -> int:
-    #     """Creates a random 8 digit number"""
-    #     res = int(str(randint(0, 99999999)).zfill(8))
-    #     if res in [x["_id"] for x in self.db[self.collection]]:
-    #         return self._random_id()
-    #     else:
-    #         return res
+    @staticmethod
+    def _resolve_path(obj: dict, dotted_key: str) -> tuple[dict, str]:
+        """Traverses *obj* along a dotted key and returns (parent, final_key)."""
+        parts = dotted_key.split(".")
+        for part in parts[:-1]:
+            obj = obj[part]
+        return obj, parts[-1]
 
-    def _normalize_dict(self, dictionary: dict) -> dict:
-        """Changes the {one.two: } to {one: {two: }}"""
-        for _, d in dictionary.items():
-            if isinstance(d, dict):
-                for key, val in d.items():
-                    if "." in key:
-                        k1 = key.split(".")[0]
-                        k2 = key.split(".")[1]
-                        d[k1][k2] = val
-                        del d[key]
-        return dictionary
+    def _matches(self, doc: dict, where: dict) -> bool:
+        """Check if a document matches all conditions in *where*."""
+        for wk, wv in where.items():
+            if wk not in doc:
+                return False
+            if isinstance(wv, dict) and any(k.startswith("$") for k in wv):
+                if "$in" in wv and doc[wk] not in wv["$in"]:
+                    return False
+                continue
+            if doc[wk] != wv:
+                return False
+        return True
 
-    async def find_one(self, where: dict) -> Optional[dict]:
+    async def find_one(self, where: dict, **kwargs) -> dict | None:
         coll = self.db[self.collection]
         for d in coll:
-            for key, value in d.items():
-                if len([k for k, v in where.items() if k == key and v == value]) == len(
-                    where
-                ):  # When all conditions defined in "where" are met
-                    return d
+            if self._matches(d, where):
+                return deepcopy(d)
+        return None
 
-    async def find(self, where: dict) -> Optional[list]:
+    def find(self, where: dict, *args, **kwargs) -> AsyncCursor:
         coll = self.db[self.collection]
-        results = []
+        results = [deepcopy(d) for d in coll if self._matches(d, where)]
+        return AsyncCursor(results)
 
-        for d in coll:
-            for key, value in d.items():
-                if [
-                    x
-                    for x in list(where.values())
-                    if isinstance(x, dict) and "$in" in x.keys()
-                ]:
-                    for k, v in [
-                        (k, v)
-                        for k, v in list(where.items())
-                        if isinstance(v, dict) and "$in" in v.keys()
-                    ]:
-                        if k == key and value in v["$in"]:
-                            results.append(d)
+    async def insert_one(self, document: dict) -> None:
+        if "_id" not in document:
+            document["_id"] = randint(0, 2**63)
+        self.db[self.collection].append(document)
 
-                elif len(
-                    [k for k, v in where.items() if k == key and v == value]
-                ) == len(
-                    where
-                ):  # When all conditions defined in "where" are met
-                    results.append(d)
-
-        return results
-
-    async def insert_one(self, object: dict) -> None:
-        self.db[self.collection].append(object)
-
-    async def insert_many(self, objects: List[dict]) -> None:
+    async def insert_many(self, objects: list[dict]) -> None:
         for obj in objects:
             await self.insert_one(obj)
 
-    async def update_one(self, where: dict, update: Dict[str, dict]) -> dict:
-        # updated = False
-        operator = list(update.keys())[0]  # This does not support multiple keys
-
-        for v in update.values():  # Making sure it is all in the right format
-            v = self._normalize_dict(v)  # lgtm [py/multiple-definition]
+    async def update_one(self, where: dict, update: dict[str, dict]) -> dict:
+        operator = list(update.keys())[0]
 
         for p, item in enumerate(self.db[self.collection]):
-            for key, value in item.items():
-                if len([k for k, v in where.items() if key == k and value == v]) == len(
-                    where
-                ):
+            if self._matches(item, where):
+                record = self.db[self.collection][p]
+                for k, val in update[operator].items():
+                    parent, final = self._resolve_path(record, k)
+
                     if operator == "$set":
-                        for k, val in update[operator].items():
-                            if isinstance(val, dict):
-                                self.db[self.collection][p][k][list(val.keys())[0]] = (
-                                    list(val.values())[0]
-                                )
-                            else:
-                                self.db[self.collection][p][k] = val
-                    if operator == "$push":
-                        for k, val in update[operator].items():
-                            if isinstance(val, dict):
-                                self.db[self.collection][p][k][
-                                    list(val.keys())[0]
-                                ].append(list(val.values())[0])
-                            else:
-                                self.db[self.collection][p][k].append(val)
-                    if operator == "$pull":
-                        for k, val in update[operator].items():
-                            if isinstance(val, dict):
-                                self.db[self.collection][p][k][
-                                    list(val.keys())[0]
-                                ].remove(list(val.values())[0])
-                            else:
-                                self.db[self.collection][p][k].remove(val)
+                        parent[final] = val
+                    elif operator == "$push":
+                        parent[final].append(val)
+                    elif operator == "$pull":
+                        parent[final].remove(val)
                     elif operator == "$inc":
-                        for k, val in update[operator].items():
-                            if isinstance(val, dict):
-                                self.db[self.collection][p][k][
-                                    list(val.keys())[0]
-                                ] += list(val.values())[0]
-                            else:
-                                self.db[self.collection][p][k] += val
-                    # updated = True
+                        parent[final] += val
+                break
 
-        # if not updated:
-        #     self.insert_one(update)
+        return update
 
-        return update  # I only need this when the update would equal the object
-
-    async def count_documents(self, where: dict = {}) -> int:
-        return len(await self.find(where) or [])
+    async def count_documents(self, where: dict | None = None) -> int:
+        where = where or {}
+        return len([x async for x in self.find(where)])
 
     async def delete_one(self, where: dict) -> None:
-        ... # TODO: Implement this
+        coll = self.db[self.collection]
+        for i, d in enumerate(coll):
+            if self._matches(d, where):
+                coll.pop(i)
+                return
 
     async def delete_many(self, where: dict) -> None:
-        ... # TODO: Implement this
+        coll = self.db[self.collection]
+        self.db[self.collection] = [d for d in coll if not self._matches(d, where)]
 
     async def update_many(self, where: dict, update: dict) -> None:
-        ... # TODO: Implement this
+        operator = list(update.keys())[0]
+        for p, item in enumerate(self.db[self.collection]):
+            if self._matches(item, where):
+                record = self.db[self.collection][p]
+                for k, val in update[operator].items():
+                    parent, final = self._resolve_path(record, k)
+                    if operator == "$set":
+                        parent[final] = val
+                    elif operator == "$push":
+                        parent[final].append(val)
+                    elif operator == "$pull":
+                        parent[final].remove(val)
+                    elif operator == "$inc":
+                        parent[final] += val

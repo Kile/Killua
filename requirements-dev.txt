@@ -1,0 +1,2 @@
+# Dev / CI tooling (install after requirements.txt: pip install -r requirements-dev.txt)
+coverage>=7.6.0,<8

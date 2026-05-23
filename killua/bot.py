@@ -15,7 +15,7 @@ from hashlib import sha256
 from inspect import signature, Parameter
 from functools import partial
 from yaml import full_load
-from typing import Coroutine, Union, Dict, List, Optional, Tuple, cast
+from typing import Coroutine, cast
 
 from .static.enums import Category
 from .utils.interactions import Modal
@@ -75,9 +75,9 @@ class BaseBot(commands.AutoShardedBot):
         self.run_in_docker = False
         self.force_local = False
         self.startup_datetime = datetime.now()
-        self.__cached_formatted_commands: List[commands.Command] = []
-        self.cached_skus: List[discord.SKU] = []
-        self.cached_entitlements: List[discord.Entitlement] = []
+        self.__cached_formatted_commands: list[commands.Command] = []
+        self.cached_skus: list[discord.SKU] = []
+        self.cached_entitlements: list[discord.Entitlement] = []
 
         # Load ../api/Rocket.toml to get port under [debug]
         with open("api/Rocket.toml") as f:
@@ -211,9 +211,9 @@ class BaseBot(commands.AutoShardedBot):
 
     def __format_command(
         self,
-        res: Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]],
+        res: dict[str, dict[str, str | dict[str, str] | list[commands.Command]]],
         cmd: discord.app_commands.Command,
-    ) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
+    ) -> dict[str, dict[str, str | dict[str, str] | list[commands.Command]]]:
         """Adds a command to a dict of formatted commands"""
 
         if (
@@ -232,7 +232,7 @@ class BaseBot(commands.AutoShardedBot):
 
         return res
 
-    def _get_group(self, command: commands.HybridCommand) -> Optional[str]:
+    def _get_group(self, command: commands.HybridCommand) -> str | None:
         if isinstance(command.cog, commands.GroupCog):
             return command.cog.__cog_group_name__
         else:
@@ -240,7 +240,7 @@ class BaseBot(commands.AutoShardedBot):
 
     def get_formatted_commands(
         self,
-    ) -> Dict[str, Dict[str, Union[str, Dict[str, str], List[commands.Command]]]]:
+    ) -> dict[str, dict[str, str | dict[str, str] | list[commands.Command]]]:
         """Gets a dictionary of formatted commands"""
         if self.__cached_formatted_commands:
             return self.__cached_formatted_commands
@@ -264,15 +264,15 @@ class BaseBot(commands.AutoShardedBot):
         self.cached_commands = res
         return res
 
-    def get_raw_formatted_commands(self) -> List[commands.Command]:
+    def get_raw_formatted_commands(self) -> list[commands.Command]:
         # If the group doesn't exist, check if the command exists
         all_commands = [v["commands"] for v in self.get_formatted_commands().values()]
         # combine all individual lists in all_commands into one in one line
         return [item for sublist in all_commands for item in sublist]
 
     async def _get_bytes(
-        self, image: Union[discord.Attachment, str]
-    ) -> Union[None, BytesIO]:
+        self, image: discord.Attachment | str
+    ) -> None | BytesIO:
         if isinstance(image, discord.Attachment):
             return BytesIO(await image.read())
         else:
@@ -311,7 +311,7 @@ class BaseBot(commands.AutoShardedBot):
 
     async def find_user(
         self, ctx: commands.Context, user: str
-    ) -> Union[discord.Member, discord.User, None]:
+    ) -> discord.Member | discord.User | None:
         """Attempts to create a member or user object from the passed string"""
         try:
             res = await commands.MemberConverter().convert(ctx, user)
@@ -327,7 +327,7 @@ class BaseBot(commands.AutoShardedBot):
                     return
         return res
 
-    def get_lootbox_from_name(self, name: str) -> Union[int, None]:
+    def get_lootbox_from_name(self, name: str) -> int | None:
         """Gets a lootbox id from its name"""
         for k, v in LOOTBOXES.items():
             if name.lower() == v["name"].lower():
@@ -335,7 +335,7 @@ class BaseBot(commands.AutoShardedBot):
 
     def callback_from_command(
         self, command: Coroutine, message: bool, *args, **kwargs
-    ) -> Coroutine[discord.Interaction, Union[discord.Member, discord.Message], None]:
+    ) -> Coroutine[discord.Interaction, discord.Member | discord.Message, None]:
         """Turn a command function into a context menu callback"""
         if message:
 
@@ -367,7 +367,7 @@ class BaseBot(commands.AutoShardedBot):
         interaction: discord.Interaction = None,
         *args,
         **kwargs,
-    ) -> Union[str, None]:
+    ) -> str | None:
         """Gets a response from a textinput UI"""
         modal = Modal(title="Answer the question and click submit", timeout=timeout)
         textinput = discord.ui.TextInput(label=text, *args, **kwargs)
@@ -395,7 +395,7 @@ class BaseBot(commands.AutoShardedBot):
         timeout_message: str = None,
         *args,
         **kwargs,
-    ) -> Union[str, None]:
+    ) -> str | None:
         """Gets a response by waiting a message sent by the user"""
 
         def check(m: discord.Message):
@@ -429,7 +429,7 @@ class BaseBot(commands.AutoShardedBot):
         interaction: discord.Interaction = None,
         *args,
         **kwargs,
-    ) -> Union[str, None]:
+    ) -> str | None:
         """Gets a response from either a textinput UI or by waiting for a response"""
 
         if (ctx.interaction and not ctx.interaction.response.is_done()) or interaction:
@@ -441,7 +441,7 @@ class BaseBot(commands.AutoShardedBot):
                 ctx, text, timeout, timeout_message, *args, **kwargs
             )
 
-    def sha256_for_api(self, endpoint: str, expires_in_seconds: int) -> Tuple[str, str]:
+    def sha256_for_api(self, endpoint: str, expires_in_seconds: int) -> tuple[str, str]:
         """Generates a sha256 hash for the Killua API"""
         expiry = str(
             int((datetime.now() + timedelta(seconds=expires_in_seconds)).timestamp())
@@ -479,7 +479,7 @@ class BaseBot(commands.AutoShardedBot):
         no_token: bool = False,
         thumbnail: bool = False,
         force_fetch: bool = False,
-    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+    ) -> tuple[discord.Embed, discord.File | None]:
         """
         Makes an embed from a Killua API image url.
 
@@ -600,7 +600,7 @@ class BaseBot(commands.AutoShardedBot):
 
     async def send_message(
         self,
-        messageable: Union[discord.abc.Messageable, discord.Interaction],
+        messageable: discord.abc.Messageable | discord.Interaction,
         *args,
         **kwargs,
     ) -> discord.Message:
@@ -608,6 +608,7 @@ class BaseBot(commands.AutoShardedBot):
         return (
             await self._send_interaction_response(messageable, *args, **kwargs)
             if isinstance(messageable, discord.Interaction)
+            or getattr(messageable, "_killua_test_send_as_interaction", False)
             else await self._send_messageable_response(messageable, *args, **kwargs)
         )
 
@@ -639,7 +640,7 @@ class BaseBot(commands.AutoShardedBot):
             return False
         return not ctx.interaction.is_guild_integration()
 
-    def get_command_from_id(self, id: int) -> Union[discord.app_commands.Command, None]:
+    def get_command_from_id(self, id: int) -> discord.app_commands.Command | None:
         for cmd in [*self.walk_commands(), *self.tree.walk_commands()]:
             if cmd.extras["id"] == id:
                 return cmd

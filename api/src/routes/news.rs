@@ -107,7 +107,7 @@ pub async fn get_news(
 
     // Sort by timestamp descending (newest first)
     let mut sorted_items = news_items;
-    sorted_items.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+    sorted_items.sort_by_key(|item| std::cmp::Reverse(item.timestamp));
 
     // If the user is not authenticated or if they are authenticated but not an admin, filter out drafts
     if auth.is_none() || (auth.is_some() && !auth.as_ref().unwrap().is_admin()) {

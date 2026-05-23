@@ -4,7 +4,7 @@ from discord import Interaction, InteractionType
 import logging
 from pymongo.errors import ServerSelectionTimeoutError
 from prometheus_client import start_http_server
-from typing import cast, List, Dict
+from typing import cast
 from psutil import virtual_memory, cpu_percent
 
 from killua.metrics import *
@@ -30,7 +30,7 @@ class PrometheusCog(commands.Cog):
         self.client = client
         self.port = port
         self.initial = False
-        self.api_previous: Dict[str, Dict[str, int]] = {}
+        self.api_previous: dict[str, dict[str, int]] = {}
         self.spam_previous: int = 0
 
         if self.client.run_in_docker:
@@ -129,7 +129,7 @@ class PrometheusCog(commands.Cog):
         await self.save_locales()
 
         # Update command stats
-        usage_data: Dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
+        usage_data: dict[str, int] = (await DB.const.find_one({"_id": "usage"}))[
             "command_usage"
         ]
         cmds = self.client.get_raw_formatted_commands()
@@ -146,7 +146,7 @@ class PrometheusCog(commands.Cog):
 
         await self.update_api_stats()
 
-    def get_all_commands(self) -> List[commands.Command]:
+    def get_all_commands(self) -> list[commands.Command]:
         return self.client.get_raw_formatted_commands()
 
     def start_prometheus(self):

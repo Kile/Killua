@@ -4,7 +4,7 @@ import discord
 from abc import ABC, abstractmethod
 from discord.ext import commands
 from datetime import datetime
-from typing import List, cast
+from typing import cast
 
 from .constants import (
     INDESTRUCTIBLE,
@@ -215,7 +215,7 @@ class Card1018(Card, IndividualCard):
         author = await User.new(self.ctx.author.id)
         await author.remove_card(self.id)
 
-        users: List[discord.Member] = []
+        users: list[discord.Member] = []
         stolen_cards = []
 
         async for message in self.ctx.channel.history(limit=20):
@@ -473,7 +473,7 @@ class Card1036(Card, IndividualCard):
 
         if effect.lower() not in ["list", "analysis", "1031", "1038"]:
             raise CheckFailure(
-                f"Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{await self.client.command_prefix(self.client, self.ctx.message)[2]}use {self.id} <list/analysis> <card_id>`"
+                f"Invalid effect to use! You can use either `analysis` or `list` with this card. Usage: `{(await cast(BaseBot, self.ctx.bot).command_prefix(self.ctx.bot, self.ctx.message))[2]}use {self.id} <list/analysis> <card_id>`"
             )
 
         if effect.lower() in ["list", "1038"]:

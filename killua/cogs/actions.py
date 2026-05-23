@@ -3,7 +3,7 @@ from discord.ext import commands
 import asyncio, os, random
 from pathlib import Path
 from logging import info, warning
-from typing import List, Union, Optional, cast, Tuple, Dict, TypedDict
+from typing import cast, TypedDict
 
 from killua.bot import BaseBot
 from killua.utils.checks import check
@@ -43,7 +43,7 @@ class Artist(TypedDict):
 
 class ArtistAsset(TypedDict):
     url: str
-    artist: Optional[Artist]
+    artist: Artist | None
     featured: bool
 
     @classmethod
@@ -121,7 +121,7 @@ class Actions(commands.GroupCog, group_name="action"):
             f"{PrintColors.OKGREEN}{number_of_hug_imgs} hugs loaded.{PrintColors.ENDC}"
         )
 
-    async def request_action(self, endpoint: str) -> Union[AnimeAsset, ArtistAsset]:
+    async def request_action(self, endpoint: str) -> AnimeAsset | ArtistAsset:
         """
         Fetch an image from the API for the action commands
 
@@ -154,7 +154,7 @@ class Actions(commands.GroupCog, group_name="action"):
             raise APIException(json["message"] if "message" in json else await r.text())
 
     def add_credit(
-        self, embed: discord.Embed, asset: Union[ArtistAsset, AnimeAsset]
+        self, embed: discord.Embed, asset: ArtistAsset | AnimeAsset
     ) -> discord.Embed:
         """
         Adds the artist credit to the embed
@@ -192,7 +192,7 @@ class Actions(commands.GroupCog, group_name="action"):
         endpoint: str,
         targeted: bool = False,
         amount: int = 1,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Saves the action being done on a user and returns the badge if the user
         has reached a milestone for the action.
@@ -201,7 +201,7 @@ class Actions(commands.GroupCog, group_name="action"):
         badge = await db_user.add_action(endpoint, targeted, amount)
         return badge
 
-    def generate_users(self, users: List[discord.User], title: str) -> str:
+    def generate_users(self, users: list[discord.User], title: str) -> str:
         """
         Parses the list of members and returns a string with their names,
         making sure the string is not too long for the embed title
@@ -218,7 +218,7 @@ class Actions(commands.GroupCog, group_name="action"):
             ):  # embed titles have a max length of 256 characters.
                 # If the name list contains too many names, stuff breaks.
                 # This prevents that and displays the other people as "and x more"
-                userlist = userlist + f" *and {len(user)-(p+1)} more*"
+                userlist = userlist + f" *and {len(users)-(p+1)} more*"
                 break
             if users[-1] == user and len(users) != 1:
                 userlist = userlist + f" and {user.display_name}"
@@ -229,7 +229,7 @@ class Actions(commands.GroupCog, group_name="action"):
                     userlist = userlist + f", {user.display_name}"
         return userlist
 
-    async def _get_image_url(self, endpoint: str) -> Union[AnimeAsset, ArtistAsset]:
+    async def _get_image_url(self, endpoint: str) -> AnimeAsset | ArtistAsset:
         """
         Gets an image URL and extra info from the API for the action commands
         or, for the hug command, returns a random image from the list of images
@@ -256,11 +256,11 @@ class Actions(commands.GroupCog, group_name="action"):
     async def action_embed(
         self,
         endpoint: str,
-        author: Union[str, discord.User],
-        users: Union[str, List[discord.User]],
+        author: str | discord.User,
+        users: str | list[discord.User],
         disabled: int = 0,
         user_installed: bool = False,
-    ) -> Tuple[discord.Embed, Optional[discord.File]]:
+    ) -> tuple[discord.Embed, discord.File | None]:
         """
         Creates an embed for the action commands with the members and author provided
         as well as adding the image and action text
@@ -311,7 +311,7 @@ class Actions(commands.GroupCog, group_name="action"):
 
     async def no_argument(
         self, ctx: commands.Context
-    ) -> Optional[Tuple[discord.Embed, Optional[discord.File]]]:
+    ) -> tuple[discord.Embed, discord.File | None] | None:
         """
         The user didn't provide any (valid) arguments to the command, so they are asked if they
         want to be hugged. If they respond with "yes", the command is executed with the author as the target.
@@ -361,17 +361,17 @@ class Actions(commands.GroupCog, group_name="action"):
 
     async def get_allowed_users(
         self,
-        users: List[discord.User],
+        users: list[discord.User],
         command_name: str,
-    ) -> Tuple[List[discord.User], int, List[discord.User]]:
+    ) -> tuple[list[discord.User], int, list[discord.User]]:
         """
         Returns a list of users that are allowed to use the action command.
         Also provides the number of people that have user installed the bot.
         This is to avoid looping through the list of users twice.
         """
-        allowed: List[discord.User] = []
+        allowed: list[discord.User] = []
         disabled = 0
-        has_user_installed: List[discord.User] = []
+        has_user_installed: list[discord.User] = []
         for user in users:
             m = await User.new(user.id)
             if m.action_settings and self.has_disabled(m, command_name):
@@ -384,12 +384,12 @@ class Actions(commands.GroupCog, group_name="action"):
 
     async def _get_return_view(
         self,
-        messagable: Union[commands.Context, discord.Interaction],
+        messagable: commands.Context | discord.Interaction,
         action: str,
         author: discord.User,
-        users: List[discord.User],
-        has_user_installed: List[discord.User],
-    ) -> Optional[View]:
+        users: list[discord.User],
+        has_user_installed: list[discord.User],
+    ) -> View | None:
         if users is None:
             return None  # No users to return to
 
@@ -421,10 +421,10 @@ class Actions(commands.GroupCog, group_name="action"):
 
     async def _do_action(
         self,
-        messageable: Union[commands.Context, discord.Interaction],
-        users: List[discord.User],
+        messageable: commands.Context | discord.Interaction,
+        users: list[discord.User],
         action: str,
-        author: Union[discord.User, discord.Member],
+        author: discord.User | discord.Member,
     ) -> None:
         """
         Executes an action command with the given members
@@ -504,9 +504,9 @@ class Actions(commands.GroupCog, group_name="action"):
 
     async def do_action(
         self,
-        ctx: Union[commands.Context, discord.Interaction],
-        users: List[discord.User] = None,
-        action: Optional[str] = None,
+        ctx: commands.Context | discord.Interaction,
+        users: list[discord.User] = None,
+        action: str | None = None,
     ) -> None:
         """
         Wrapper for _do_action to catch any exceptions raised
@@ -801,8 +801,8 @@ class Actions(commands.GroupCog, group_name="action"):
     def adjust_settings_embed(
         self,
         embed: discord.Embed,
-        current: Dict[str, bool],
-        view_values: Optional[Dict[str, bool]] = None,
+        current: dict[str, bool],
+        view_values: dict[str, bool] | None = None,
     ) -> None:
         """
         Adjusts the embed to show the current settings for each action.

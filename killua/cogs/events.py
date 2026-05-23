@@ -9,7 +9,7 @@ from datetime import datetime
 from discord.ext import commands, tasks
 from PIL import Image
 from enum import Enum
-from typing import Dict, List, Tuple, Optional, cast
+from typing import cast
 from matplotlib import pyplot as plt
 from pymongo.errors import ServerSelectionTimeoutError
 
@@ -18,8 +18,8 @@ from killua.bot import BaseBot
 from killua.utils.classes import Guild, Book, User, Card
 from killua.static.enums import PrintColors
 from killua.migrate import migrate_requiring_bot
+from killua.utils.topgg import post_metrics
 from killua.static.constants import (
-    TOPGG_TOKEN,
     DBL_TOKEN,
     PatreonBanner,
     DB,
@@ -45,13 +45,14 @@ class Events(commands.Cog):
         self.client = client
         self.skipped_first = False
         self.status_started = False
+        self._initial_stats_posted = False
         self.log_channel_id = 718818548524384310
 
     @property
     def log_channel(self):
         return self.client.get_guild(GUILD).get_channel(self.log_channel_id)
 
-    async def _initialize_card_json(self, retry_timeout=5) -> None:
+    async def _initialize_card_json(self, retry_timeout=5) -> None:  # pragma: no cover
         """Initializes the card json"""
         status = None
         while status != 200:
@@ -89,17 +90,17 @@ class Events(commands.Cog):
                     "cards_loaded"
                 )  # Dispatches the event that the cards are loaded
 
-    async def _post_guild_count(self) -> None:
+    async def _post_guild_count(self) -> None:  # pragma: no cover
         """Posts relevant stats to the botlists Killua is on"""
         await self.client.session.post(
             f"https://discordbotlist.com/api/v1/bots/756206646396452975/stats",
             headers={"Authorization": DBL_TOKEN},
             data={"guilds": len(self.client.guilds)},
         )
-        await self.client.session.post(
-            f"https://top.gg/api/bots/756206646396452975/stats",
-            headers={"Authorization": "Bearer " + TOPGG_TOKEN},
-            data={"server_count": len(self.client.guilds)},
+        await post_metrics(
+            self.client.session,
+            server_count=len(self.client.guilds),
+            shard_count=self.client.shard_count or 0,
         )
 
     async def _load_cards_cache(self) -> None:
@@ -179,13 +180,11 @@ class Events(commands.Cog):
             f"{PrintColors.OKGREEN}Running bot in dev enviroment...{PrintColors.ENDC}"
         )
 
-    async def cog_load(self):
+    async def cog_load(self):  # pragma: no cover
         await self._insert_const_to_db()
         await self._set_patreon_banner()
         if self.client.is_dev:
             self.print_dev_text()
-        else:
-            await self._post_guild_count()
 
     @commands.Cog.listener()
     async def on_card_cache_loaded(self):
@@ -193,7 +192,7 @@ class Events(commands.Cog):
             await self._load_cards_cache()
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self):  # pragma: no cover
         if len(Card.raw) == 0:
             await self._initialize_card_json()
         if not self.save_guilds.is_running() and not self.client.is_dev:
@@ -222,9 +221,12 @@ class Events(commands.Cog):
         if (await DB.const.find_one({"_id": "migrate"}))["value"]:
             await migrate_requiring_bot(self.client)
             await DB.const.update_one({"_id": "migrate"}, {"$set": {"value": False}})
+        if not self.client.is_dev and not self._initial_stats_posted:
+            await self._post_guild_count()
+            self._initial_stats_posted = True
 
     @tasks.loop(hours=12)
-    async def status(self):
+    async def status(self):  # pragma: no cover
         await self.client.update_presence()  # For some reason this does not work in cog_load because it always fires before the bot is connected and
         # thus throws an error so I have to do it a bit more hacky in here
         if not self.client.is_dev:
@@ -240,7 +242,7 @@ class Events(commands.Cog):
         return hour
 
     @tasks.loop(minutes=1)
-    async def vote_reminders(self):
+    async def vote_reminders(self):  # pragma: no cover
         try:
             enabled = DB.teams.find({"voting_reminder": True})
             async for user in enabled:
@@ -301,7 +303,7 @@ class Events(commands.Cog):
             )
 
     @tasks.loop(hours=24)
-    async def save_guilds(self):
+    async def save_guilds(self):  # pragma: no cover
         from killua.static.constants import daily_users
 
         # Arguably this is a much better way of doing this as otherwise
@@ -405,7 +407,7 @@ class Events(commands.Cog):
             # except discord.Forbidden:
             #     pass
 
-    def _create_piechart(self, data: List[list], title: str) -> discord.File:
+    def _create_piechart(self, data: list[list], title: str) -> discord.File:
         """Creates a piechart with the given data"""
         data = [l for l in data if l[1] > 0]  # We want to avoid a 0% slice
 
@@ -483,7 +485,7 @@ class Events(commands.Cog):
                 for pos, field in enumerate(interaction.message.embeds[0].fields)
             ]
         else:
-            votes: Dict[int, list] = guild.polls[str(interaction.message.id)]["votes"]
+            votes: dict[int, list] = guild.polls[str(interaction.message.id)]["votes"]
             data = [
                 [f"Option {pos+1}", len(votes[str(pos)]), colours[pos]]
                 for pos, _ in enumerate(interaction.message.embeds[0].fields)
@@ -601,7 +603,7 @@ class Events(commands.Cog):
 
     def _parse_votes_for(
         self, custom_id: str, field: "discord.embeds._EmbedFieldProxy"
-    ) -> Tuple[List[int], List[str]]:
+    ) -> tuple[list[int], list[str]]:
         """
         Parses the votes for a poll or wyr
         """
@@ -622,7 +624,7 @@ class Events(commands.Cog):
         self,
         where: SaveType,
         interaction: discord.Interaction,
-        votes: Dict[int, Tuple[List[int], List[str]]],
+        votes: dict[int, tuple[list[int], list[str]]],
         option: int,
         encrypted: str,
         poll: bool = None,
@@ -657,12 +659,12 @@ class Events(commands.Cog):
         action: str,
         poll: bool,
         opt_votes: str,
-    ) -> Optional[Dict[int, Tuple[List[int], List[str]]]]:
+    ) -> dict[int, tuple[list[int], list[str]]] | None:
         """
         If a None is returned, an error was sent and the execution should stop.
         Else the votes are returned.
         """
-        votes: Dict[int, Tuple[List[int], List[str]]] = {}
+        votes: dict[int, tuple[list[int], list[str]]] = {}
         # This took me a bit to figure out when revisiting this
         # code. What is actually being stored here for each option
         # is:
@@ -791,14 +793,14 @@ class Events(commands.Cog):
         guild: Guild,
         option: int,
         poll: bool,
-    ) -> Dict[str, List[int]]:
+    ) -> dict[str, list[int]]:
         """
         If the poll is saved in the database, this function
         processes the vote
 
         Only available for premium guilds
         """
-        votes: Dict[int, List[int]] = guild.polls[str(interaction.message.id)]["votes"]
+        votes: dict[int, list[int]] = guild.polls[str(interaction.message.id)]["votes"]
 
         for pos, _ in enumerate(interaction.message.embeds[0].fields):
             if interaction.user.id in votes[str(pos)] and pos == option - 1:
@@ -818,12 +820,12 @@ class Events(commands.Cog):
     def _set_new_field_name_for_unsaved(
         self,
         field: "discord.embeds._EmbedFieldProxy",
-        votes: Dict[int, Tuple[List[int], List[str]]],
+        votes: dict[int, tuple[list[int], list[str]]],
         pos: int,
         interaction: discord.Interaction,
         poll: bool,
         option: int,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         close_votes = re.findall(
             rf";{pos+1};(.*?)[;:]",
             interaction.message.components[0].children[-1].custom_id,
@@ -871,10 +873,10 @@ class Events(commands.Cog):
     def _set_new_field_name_for_saved(
         self,
         field: "discord.embeds._EmbedFieldProxy",
-        votes: Dict[str, List[int]],
+        votes: dict[str, list[int]],
         pos: int,
         poll: bool,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         num_of_votes = len(votes[str(pos)])
         new_name = (
             field.name[: -self.find_counter_start(field.name)]

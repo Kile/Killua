@@ -1,5 +1,5 @@
 import discord, os
-from typing import List, Union, cast, Tuple
+from typing import cast
 from discord.ext import commands
 from datetime import datetime
 from inspect import getsourcelines
@@ -97,7 +97,7 @@ class HelpCommand(commands.Cog):
             else "```css\n" + prefix + command.usage + "\n```"
         )
     
-    def _checks_info(self, command: commands.HybridCommand) -> Tuple[bool, bool, Union[bool, int]]:
+    def _checks_info(self, command: commands.HybridCommand) -> tuple[bool, bool, bool | int]:
         """Gets info about the checks of a command"""
         checks = command.checks
 
@@ -226,7 +226,7 @@ class HelpCommand(commands.Cog):
             embed=embed, view=source_view, ephemeral=self.client.is_user_installed(ctx)
         )
 
-    def find_category(self, string: str) -> Union[Category, None]:
+    def find_category(self, string: str) -> Category | None:
         for cat in Category:
             if cast(str, cat.value["name"]).lower() == string.lower():
                 return cat
@@ -236,7 +236,7 @@ class HelpCommand(commands.Cog):
         self,
         _: discord.Interaction,
         current: str,
-    ) -> List[discord.app_commands.Choice[str]]:
+    ) -> list[discord.app_commands.Choice[str]]:
         """Autocomplete for all cards"""
         raw = self.client.get_raw_formatted_commands()
         return [
@@ -364,8 +364,8 @@ class HelpCommand(commands.Cog):
             )
             return await paginator.start()
 
-        # If the group doesn't exist, check if it's a command
-        return await self._handle_command_help(ctx, group, prefix)
+        # If the group doesn't exist, treat the token as a command name (qualified or name).
+        return await self._help_command_argument(ctx, group, prefix)
 
 
     @commands.hybrid_command(usage="help [group] [command]", extras={"id": 45})

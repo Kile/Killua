@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import Union, Type
+from typing import Type
 from datetime import datetime, timedelta
 from typing import cast
 
@@ -126,7 +126,7 @@ def check(time: int = 0):
             daily_users.users.append(userid)
 
     async def add_usage(
-        command: Union[commands.Command, Type[commands.Command]],
+        command: commands.Command | Type[commands.Command],
     ) -> None:
         """Adds one to the usage count of a command"""
         if isinstance(command, commands.HybridGroup) or isinstance(
