@@ -34,7 +34,9 @@ class Tag:
         if tag_name.lower() not in [cast(str, r["name"]).lower() for r in guild.tags]:
             return Tag(tags=guild.tags, found=False, guild_id=guild_id)
 
-        indx = [cast(str, r["name"]).lower() for r in guild.tags].index(tag_name.lower())
+        indx = [cast(str, r["name"]).lower() for r in guild.tags].index(
+            tag_name.lower()
+        )
         tag = guild.tags[indx]
         return Tag(
             found=True,
@@ -136,7 +138,11 @@ class Tags(commands.Cog):
             self.client.tree.add_command(menu)
 
     def _build_embed(
-        self, ctx: commands.Context, content: list[str], page: int, user: discord.User = None
+        self,
+        ctx: commands.Context,
+        content: list[str],
+        page: int,
+        user: discord.User = None,
     ) -> discord.Embed:
 
         if len(content) - page * 10 + 10 > 10:
@@ -186,44 +192,49 @@ class Tags(commands.Cog):
 
         if name and len(name) == 0:
             return "The tag title cannot be empty!"
-        
+
         if content and len(content) == 0:
             return "The tag content cannot be empty!"
-        
+
         if content and len(content) > 4000:
             return "The tag content has too many characters!"
 
     @staticmethod
-    async def initial_new_tag_validation(name: str, guild: discord.Guild, db_guild: Guild, member_id: int) -> str | None:
+    async def initial_new_tag_validation(
+        name: str, guild: discord.Guild, db_guild: Guild, member_id: int
+    ) -> str | None:
         tag = await Tag.new(guild.id, name)
         if tag.found is not False:
             owner = guild.get_member(tag.owner)
             return f"This tag already exists and is owned by {owner.display_name if owner else '`user left`'}"
-        
+
         if len(db_guild.tags) >= 20 and not db_guild.is_premium:
             return "Your server has reached the limit of tags! Buy premium to up to 250 tags!"
-        
+
         if len(db_guild.tags) >= 250:
             return "Your server has reached the maximum limit of tags!"
-        
+
         member = await Member.new(member_id, guild.id)
-        
+
         if member.has_tags and len(member.tags) >= 15:
-                return "You can't own more than 15 tags on a guild, consider deleting one"
+            return "You can't own more than 15 tags on a guild, consider deleting one"
 
         return None
 
     @check()
     @commands.guild_only()
     @tag.command(
-        extras={"category": Category.TAGS, "id": 92}, usage="create <tag_name>"
+        extras={"category": Category.TAGS, "id": 92, "no_interaction_defer": True},
+        usage="create <tag_name>",
     )
     @discord.app_commands.describe(name="The name of the tag you want to create")
     async def create(self, ctx: commands.Context, *, name: str):
         """Create a tag with this command"""
         guild = await Guild.new(ctx.guild.id)
 
-        initial_validation = await self.initial_new_tag_validation(name, ctx.guild, guild, member_id=ctx.author.id)
+        initial_validation = await self.initial_new_tag_validation(
+            name, ctx.guild, guild, member_id=ctx.author.id
+        )
 
         if initial_validation is not None:
             return await ctx.send(initial_validation)
@@ -234,15 +245,19 @@ class Tags(commands.Cog):
             timeout=600,
             min_length=1,
             max_length=2000,
+            style=discord.TextStyle.long
         )
 
-        if (error := Tags._validate_tag_details(name, content)):
+        if error := Tags._validate_tag_details(name, content):
             return await ctx.send(error)
 
         tag = await Tag.new(ctx.guild.id, name)
         await tag.create(name, content, ctx.author.id)
 
-        return await ctx.send(f"Successfully created tag `{name}`", allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.send(
+            f"Successfully created tag `{name}`",
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
 
     @check()
     @commands.guild_only()
@@ -267,11 +282,17 @@ class Tags(commands.Cog):
             )
 
         await tag.delete()
-        await ctx.send(f"Successfully deleted tag `{tag.name}`", allowed_mentions=discord.AllowedMentions.none())
+        await ctx.send(
+            f"Successfully deleted tag `{tag.name}`",
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
 
     @check()
     @commands.guild_only()
-    @tag.command(extras={"category": Category.TAGS, "id": 94}, usage="edit <tag_name>")
+    @tag.command(
+        extras={"category": Category.TAGS, "id": 94, "no_interaction_defer": True},
+        usage="edit <tag_name>",
+    )
     @discord.app_commands.describe(name="The name of the tag you want to edit")
     @discord.app_commands.autocomplete(name=tag_autocomplete)
     async def edit(self, ctx: commands.Context, *, name: str):
@@ -290,13 +311,17 @@ class Tags(commands.Cog):
             timeout=600,
             min_length=1,
             max_length=2000,
+            style=discord.TextStyle.long
         )
 
-        if (error := Tags._validate_tag_details(name, content)):
+        if error := Tags._validate_tag_details(name, content):
             return await ctx.send(error)
 
         await tag.update("content", content)
-        return await ctx.send(f"Successfully updated tag `{tag.name}`", allowed_mentions=discord.AllowedMentions.none())
+        return await ctx.send(
+            f"Successfully updated tag `{tag.name}`",
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
 
     @check()
     @commands.guild_only()
