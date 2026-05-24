@@ -7,8 +7,10 @@ from unittest.mock import AsyncMock
 
 from PIL import Image
 
-from ..testing import Testing, test, collect_test_classes
-from ..types import Bot
+from ..testing import Testing, test, collect_test_classes, expect_raises
+from ..types import Bot, ArgumentInteraction, InteractionResponded
+from ..harnesses import attach_command_interaction
+from ..types.utils import get_random_discord_id
 from ...cogs.help import HelpCommand
 
 
@@ -31,6 +33,12 @@ class BotHelperTests(_BotTests):
         enc = Bot._encrypt(12345, smallest=False)
         assert isinstance(enc, str)
         assert len(enc) > 0
+
+    @test
+    async def encrypt_zero_and_snowflake(self) -> None:
+        assert isinstance(Bot._encrypt(0), str)
+        assert isinstance(Bot._encrypt(get_random_discord_id()), str)
+        assert isinstance(Bot._encrypt(get_random_discord_id(), smallest=False), str)
 
     @test
     async def api_url_branches(self) -> None:
@@ -68,6 +76,22 @@ class BotHelperTests(_BotTests):
         ctx = self.base_context
         ctx.guild = None
         assert Bot.is_user_installed(ctx) in (True, False)
+
+    @test
+    async def interaction_response_rejects_double_defer(self) -> None:
+        response = ArgumentInteraction(self.base_context).response
+        await response.defer()
+        async with expect_raises(InteractionResponded):
+            await response.defer()
+
+    @test
+    async def global_defer_rejects_second_defer(self) -> None:
+        ctx = self.base_context
+        attach_command_interaction(ctx)
+        await Bot._defer_interaction_command(ctx)
+        assert ctx.interaction.response.deferred
+        async with expect_raises(InteractionResponded):
+            await ctx.interaction.response.defer()
 
     @test
     async def sha256_for_api(self) -> None:

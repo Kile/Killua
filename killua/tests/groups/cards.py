@@ -137,6 +137,18 @@ class Sell(TestingCards):
         ), self.base_context.result.message.content
 
     @test
+    async def sell_card_0(self) -> None:
+        user = await User.new(self.base_author.id)
+        await user.nuke_cards("all")
+        await user.add_card(0)
+
+        await self.command(self.cog, self.base_context, card="0")
+
+        assert (
+            self.base_context.result.message.content == "You cannot sell this card!"
+        ), self.base_context.result.message.content
+
+    @test
     async def cancel_sell(self) -> None:
         user = await User.new(self.base_author.id)
         await user.nuke_cards("all")
@@ -822,7 +834,7 @@ class Use(TestingUseSpell):
 
         assert (
             self.base_context.result.message.content
-            == "You are not in possesion of this card!"
+            == "You are not in possession of this card!"
         ), self.base_context.result.message.content
 
     @test

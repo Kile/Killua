@@ -9,10 +9,9 @@ from typing import Literal, Any, cast
 from killua.bot import BaseBot
 from killua.utils.checks import check
 from killua.utils.paginator import Paginator
-from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches
+from killua.utils.classes import User, CardNotFound, CheckFailure, Book, NoMatches, Card
 from killua.static.enums import Category, SellOptions
 from killua.utils.interactions import ConfirmButton
-from killua.utils.classes import Card, CardNotFound, Card
 from killua.static.cards import IndividualCard
 from killua.static.constants import (
     ALLOWED_AMOUNT_MULTIPLE,
@@ -86,12 +85,13 @@ class Cards(commands.GroupCog, group_name="cards"):
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
             for x in (await User.new(interaction.user.id)).all_cards
-            if self.cardname_cache[x[0]][0].lower().startswith(current.lower())
+            if not Card.is_book_completion_card(x[0])
+            and self.cardname_cache[x[0]][0].lower().startswith(current.lower())
         ]
         id_cards = [
             (x[0], self.cardname_cache[x[0]][0])
             for x in (await User.new(interaction.user.id)).all_cards
-            if str(x[0]).startswith(current)
+            if not Card.is_book_completion_card(x[0]) and str(x[0]).startswith(current)
         ]
         name_cards = list(dict.fromkeys(name_cards))
         id_cards = list(
@@ -336,7 +336,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 f"Seems you don't own enough copies of this card. You own {in_possesion} cop{'y' if in_possesion == 1 else 'ies'} of this card"
             )
 
-        if card == 0:
+        if Card.is_book_completion_card(card.id):
             return await ctx.send("You cannot sell this card!")
 
         _price = PRICES[card.rank] + (
@@ -428,12 +428,13 @@ class Cards(commands.GroupCog, group_name="cards"):
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
             for x in user.all_cards
-            if self.cardname_cache[x[0]][0].lower().startswith(current.lower())
+            if not Card.is_book_completion_card(x[0])
+            and self.cardname_cache[x[0]][0].lower().startswith(current.lower())
         ]
         id_cards = [
             (x[0], self.cardname_cache[x[0]][0])
             for x in user.all_cards
-            if str(x[0]).startswith(current)
+            if not Card.is_book_completion_card(x[0]) and str(x[0]).startswith(current)
         ]
 
         name_duplicates = []
@@ -479,7 +480,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         except CardNotFound:
             return await ctx.send("Please use a valid card number!")
 
-        if card.id == 0:
+        if Card.is_book_completion_card(card.id):
             return await ctx.send("You cannot swap out card No. 0!")
 
         sw = await user.swap(card.id)
@@ -519,9 +520,6 @@ class Cards(commands.GroupCog, group_name="cards"):
                 int(difference.seconds / 60 / 60 + difference.days * 24 * 60 * 60) < 12
             ):  # I don't think timedelta has an hours or minutes property :c
                 return await ctx.send("You must be at least hunting for twelve hours!")
-
-            if ctx.interaction and not ctx.interaction.response.is_done():
-                await ctx.defer()  # The following part may take longer than 3 secons
 
             minutes = int(difference.seconds / 60 + difference.days * 24 * 60)
             score = (
@@ -637,7 +635,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         if not user.has_any_card(card.id):
             return await ctx.send("You are not in possession of this card!")
 
-        if card.id == 0:
+        if Card.is_book_completion_card(card.id):
             return await ctx.send("You cannot discard this card!")
 
         view = ConfirmButton(
@@ -795,7 +793,7 @@ class Cards(commands.GroupCog, group_name="cards"):
         if card.id not in [
             x[0] for x in (await User.new(ctx.author.id)).fs_cards
         ] and card.id not in [1036]:
-            raise CheckFailure("You are not in possesion of this card!")
+            raise CheckFailure("You are not in possession of this card!")
 
         if card.type != "spell":
             raise CheckFailure("You can only use spell cards!")
@@ -810,7 +808,9 @@ class Cards(commands.GroupCog, group_name="cards"):
                 elif args.bot:
                     raise CheckFailure("You can't use spell cards on bots")
 
-            if isinstance(args, int) and int(args) < 1:
+            if isinstance(args, int) and (
+                int(args) < 1 or Card.is_book_completion_card(int(args))
+            ):
                 raise CheckFailure("You can't use an integer less than 1")
 
         if add_args is not None and int(add_args) < 1:
@@ -871,13 +871,16 @@ class Cards(commands.GroupCog, group_name="cards"):
         name_cards = [
             (x[0], self.cardname_cache[x[0]][0])
             for x in (await User.new(interaction.user.id)).all_cards
-            if self.cardname_cache[x[0]][0].lower().startswith(current.lower())
+            if not Card.is_book_completion_card(x[0])
+            and self.cardname_cache[x[0]][0].lower().startswith(current.lower())
             and self.cardname_cache[x[0]][1] == "spell"
         ]
         id_cards = [
             (x[0], self.cardname_cache[x[0]][0])
             for x in (await User.new(interaction.user.id)).all_cards
-            if str(x[0]).startswith(current) and self.cardname_cache[x[0]][1] == "spell"
+            if not Card.is_book_completion_card(x[0])
+            and str(x[0]).startswith(current)
+            and self.cardname_cache[x[0]][1] == "spell"
         ]
         name_cards = list(dict.fromkeys(name_cards))
         id_cards = list(
@@ -977,7 +980,7 @@ class Cards(commands.GroupCog, group_name="cards"):
                 card = Card(item)
             except CardNotFound:
                 return await ctx.send("Invalid card id")
-            if card.id == 0:
+            if Card.is_book_completion_card(card.id):
                 return await ctx.send("No")
             if len(await card.owners()) + amount > card.limit * ALLOWED_AMOUNT_MULTIPLE:
                 return await ctx.send("Sorry! Global card limit reached!")

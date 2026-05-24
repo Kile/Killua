@@ -8,7 +8,12 @@ from .role import TestingRole as Role
 from .user import TestingUser as DiscordUser
 from .guild import TestingGuild as DiscordGuild
 from .interaction import TestingInteraction as Interaction
-from .interaction import ArgumentInteraction, ArgumentResponseInteraction
+from .interaction import (
+    ArgumentInteraction,
+    ArgumentResponseInteraction,
+    InteractionResponded,
+    StrictInteractionResponse,
+)
 
 # from .db import TestingDatabase as Database
 # from .db_objects import TestingUser as User
@@ -38,6 +43,8 @@ __all__ = [
     "Interaction",
     "ArgumentInteraction",
     "ArgumentResponseInteraction",
+    "InteractionResponded",
+    "StrictInteractionResponse",
     # "Todo",
     # "TodoList",
     # "Card",

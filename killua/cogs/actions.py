@@ -451,10 +451,6 @@ class Actions(commands.GroupCog, group_name="action"):
             await self._save_stat_for(author, action, False, len(allowed))
             interaction = messageable if isinstance(messageable, discord.Interaction) else messageable.interaction
             user_installed = interaction and interaction.is_user_integration()
-            if interaction and user_installed: 
-                # If this is true the image will be fetched and uploaded,
-                # which may take longer than the 3 second limit for interaction responses
-                await interaction.response.defer()
             embed, file = await self.action_embed(action, author, users, disabled, user_installed=user_installed)
 
         if isinstance(embed, str):
@@ -851,7 +847,8 @@ class Actions(commands.GroupCog, group_name="action"):
             self.adjust_settings_embed(embed, current, view.values)
 
             await user.set_action_settings(current)
-            await view.interaction.response.defer()  # Ideally I would use the response to edit the message, however as view HAS to be redefined above before editing this is impossible
+            if not view.interaction.response.is_done():
+                await view.interaction.response.defer()
             view = self._get_view(ctx.author.id, current)
 
             await msg.edit(embed=embed, view=view)

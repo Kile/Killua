@@ -9,9 +9,11 @@ from __future__ import annotations
 from discord import InteractionType
 from typing import Any
 
+from ..types.interaction import InteractionResponded, StrictInteractionResponse
 
-class _MockFollowup:
-    def __init__(self, owner: "MockComponentInteraction") -> None:
+
+class MockFollowup:
+    def __init__(self, owner: Any) -> None:
         self._owner = owner
 
     async def send(self, *args: Any, **kwargs: Any) -> Any:
@@ -19,26 +21,15 @@ class _MockFollowup:
         return self._owner.context.result.message
 
 
-class _MockInteractionResponse:
-    def __init__(self, owner: "MockComponentInteraction") -> None:
-        self._owner = owner
-        self._done = False
-
-    def is_done(self) -> bool:
-        return self._done
-
+class MockInteractionResponse(StrictInteractionResponse):
     async def send_message(self, *args: Any, **kwargs: Any) -> Any:
-        if self._done:
-            raise RuntimeError("Interaction response already done")
-        self._done = True
+        self._mark_responded("send_message")
         await self._owner.context.send(*args, **kwargs)
         self._owner._response_message = self._owner.context.result.message
         return self._owner._response_message
 
     async def edit_message(self, *args: Any, **kwargs: Any) -> None:
-        if self._done:
-            raise RuntimeError("Interaction response already done")
-        self._done = True
+        self._mark_responded("edit_message")
         msg = self._owner.message
         embed = kwargs.get("embed")
         view = kwargs.get("view")
@@ -50,6 +41,52 @@ class _MockInteractionResponse:
             msg.components = [
                 type("_Row", (), {"children": list(view.children)})()
             ]
+
+    async def send_modal(self, *args: Any, **kwargs: Any) -> None:
+        self._mark_responded("send_modal")
+        await self._owner.context.send_modal(*args, **kwargs)
+
+
+class MockCommandInteraction:
+    """Slash/context-menu interaction attached to a command TestingContext."""
+
+    def __init__(self, context: Any) -> None:
+        self.context = context
+        self.channel = context.channel
+        self.user = context.author
+        self.message = getattr(context, "message", None)
+        self.response = MockInteractionResponse(self)
+        self.followup = MockFollowup(self)
+        self._response_message: Any | None = None
+
+    async def original_response(self) -> Any:
+        if self._response_message is not None:
+            return self._response_message
+        return self.message
+
+
+def attach_command_interaction(context: Any) -> MockCommandInteraction:
+    """Attach a tracked interaction to *context* (for slash/context-menu command tests)."""
+    interaction = MockCommandInteraction(context)
+    context.interaction = interaction
+    return interaction
+
+
+async def invoke_interaction_command(
+    cog: Any,
+    command: Any,
+    context: Any,
+    *args: Any,
+    **kwargs: Any,
+) -> MockCommandInteraction:
+    """Run *command* as a deferred slash interaction (mirrors global before_invoke defer)."""
+    from ..types import Bot
+
+    interaction = attach_command_interaction(context)
+    if command is not None and not command.extras.get("no_interaction_defer"):
+        await Bot._defer_interaction_command(context)
+    await command(cog, context, *args, **kwargs)
+    return interaction
 
 
 class MockComponentInteraction:
@@ -76,8 +113,8 @@ class MockComponentInteraction:
         self.client = client
         self.channel = context.channel
         self.guild_id = getattr(context.guild, "id", None)
-        self.response = _MockInteractionResponse(self)
-        self.followup = _MockFollowup(self)
+        self.response = MockInteractionResponse(self)
+        self.followup = MockFollowup(self)
         self._response_message: Any | None = None
         self.interaction = None
 
@@ -91,3 +128,14 @@ class MockComponentInteraction:
         if self._response_message is not None:
             return self._response_message
         return self.message
+
+
+__all__ = [
+    "InteractionResponded",
+    "MockCommandInteraction",
+    "MockComponentInteraction",
+    "MockFollowup",
+    "MockInteractionResponse",
+    "attach_command_interaction",
+    "invoke_interaction_command",
+]

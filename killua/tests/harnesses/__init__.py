@@ -11,7 +11,13 @@ from .assertions import (
 )
 from .context import respond_to_view
 from .dm_view import patch_user_confirm_dm
-from .interaction import MockComponentInteraction
+from .interaction import (
+    InteractionResponded,
+    MockCommandInteraction,
+    MockComponentInteraction,
+    attach_command_interaction,
+    invoke_interaction_command,
+)
 from .member_dm import patch_member_rps_select, patch_member_trivia_select
 from .paginator import embed_footer_page, press_paginator_button
 from .poll_wyr import (
@@ -55,7 +61,11 @@ __all__ = [
     "ListenerFakeButton",
     "ListenerFakeRow",
     "MET_ERROR_FRAGMENT",
+    "InteractionResponded",
+    "MockCommandInteraction",
     "MockComponentInteraction",
+    "attach_command_interaction",
+    "invoke_interaction_command",
     "STEAL_TARGET_CARD",
     "assert_content_contains",
     "assert_content_equals",

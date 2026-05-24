@@ -182,9 +182,7 @@ class ImageManipulation(commands.GroupCog, group_name="image"):
                 )
         else:
             data = target
-        if extra_time > 0 and ctx.interaction and not ctx.interaction.response.is_done():
-            await ctx.defer()
-        else:
+        if not ctx.interaction:
             await ctx.channel.typing()
         try:
             r: pxl_object.PxlObject = await wait_for(function(data, t), timeout=2 + extra_time)

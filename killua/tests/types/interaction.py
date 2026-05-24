@@ -7,39 +7,62 @@ from typing import Literal, Any
 from .utils import get_random_discord_id, random_name
 
 
-class ArgumentResponseInteraction:
-    def __init__(self, interaction: ArgumentInteraction):
-        self.interaction = interaction
-        self._is_done = False
+class InteractionResponded(Exception):
+    """Raised when a mock interaction response is used more than once (mirrors discord.py)."""
 
-    async def defer(self) -> None:
-        self._is_done = True
+
+class StrictInteractionResponse:
+    """Single-use interaction response mock; errors on a second defer or initial response."""
+
+    def __init__(self, owner: Any) -> None:
+        self._owner = owner
+        self._done = False
+        self._deferred = False
+
+    @property
+    def deferred(self) -> bool:
+        return self._deferred
+
+    def is_done(self) -> bool:
+        return self._done
+
+    def _mark_responded(self, action: str, *, deferred: bool = False) -> None:
+        if self._done:
+            raise InteractionResponded(
+                f"This interaction has already been responded to; cannot {action}."
+            )
+        self._done = True
+        if deferred:
+            self._deferred = True
+
+    async def defer(self, *args: Any, **kwargs: Any) -> None:
+        self._mark_responded("defer", deferred=True)
+
+
+class ArgumentResponseInteraction(StrictInteractionResponse):
+    def __init__(self, interaction: ArgumentInteraction) -> None:
+        super().__init__(interaction)
+
+    @property
+    def interaction(self) -> ArgumentInteraction:
+        return self._owner
 
     async def send_message(self, *args, **kwargs) -> None:
-        if self._is_done:
-            raise Exception("Interaction can only be responded to once.")
-        self._is_done = True
+        self._mark_responded("send_message")
         view = kwargs.pop(
             "view", self.interaction.context.current_view
         )  # If no new view is responded we want the old one still as the current view
         await self.interaction.context.send(view=view, *args, **kwargs)
 
     async def edit_message(self, *args, **kwargs) -> None:
-        if self._is_done:
-            raise Exception("Interaction can only be responded to once.")
-        self._is_done = True
+        self._mark_responded("edit_message")
         msg = getattr(self.interaction, "message", None)
         if msg is not None and hasattr(msg, "edit"):
             await msg.edit(*args, **kwargs)
 
     async def send_modal(self, *args, **kwargs) -> None:
-        if self._is_done:
-            raise Exception("Interaction can only be responded to once.")
-        self._is_done = True
+        self._mark_responded("send_modal")
         await self.interaction.context.send_modal(*args, **kwargs)
-
-    def is_done(self) -> bool:
-        return self._is_done
 
 
 class ArgumentInteraction:

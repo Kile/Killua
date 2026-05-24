@@ -1113,7 +1113,7 @@ class Events(commands.Cog):
                 f"An error occurred\nGuild id: {guild}\nCommand name: {command}\nError: \n"
                 + "".join(
                     traceback.format_exception(
-                        etype=type(error), value=error, tb=error.__traceback__
+                        type(error), error, error.__traceback__
                     )
                 )
             )

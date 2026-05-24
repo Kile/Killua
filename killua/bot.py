@@ -91,6 +91,16 @@ class BaseBot(commands.AutoShardedBot):
         self.secret_api_key = os.getenv("API_KEY")
         self.hash_secret = os.getenv("HASH_SECRET")
 
+        self.before_invoke(self._defer_interaction_command)
+
+    async def _defer_interaction_command(self, ctx: commands.Context) -> None:
+        """Ack slash/context-menu commands immediately so handlers can take >3s."""
+        if ctx.interaction is None or ctx.interaction.response.is_done():
+            return
+        if ctx.command is not None and ctx.command.extras.get("no_interaction_defer"):
+            return
+        await ctx.defer()
+
     def api_url(self, *, to_fetch=False, is_for_cards=False):
         if to_fetch or (self.force_local and is_for_cards):
             return (
@@ -618,22 +628,27 @@ class BaseBot(commands.AutoShardedBot):
 
     def _encrypt(self, n: int, b: int = 10000, smallest: bool = True) -> str:
         """Changes an integer into base 10000 but with my own characters resembling numbers. It only returns the last 2 characters as they are the most unique"""
-        chars = "".join([chr(i) for i in range(b + 1)][::-1])
-        chars = (
-            chars.replace(":", "").replace(";", "").replace("-", "").replace(",", "")
-        )  # These characters are indicators used in the ids so they should be not be available as characters
+        forbidden = {":", ";", "-", ","}
+        # These characters are indicators used in the ids so they should be not be available as characters
+        chars_list = [c for c in "".join(chr(i) for i in range(b + 1))[::-1] if c not in forbidden]
+        i = b + 1
+        while len(chars_list) < b:
+            c = chr(i)
+            if c not in forbidden:
+                chars_list.append(c)
+            i += 1
+        chars = "".join(chars_list)
 
         if n == 0:
-            return [0]
+            encoded = chars[0]
+            return encoded[-2:] if smallest else encoded
+
         digits = []
         while n:
             digits.append(int(n % b))
             n //= b
-        return (
-            "".join([chars[d] for d in digits[::-1]])[-2:]
-            if smallest
-            else "".join([chars[d] for d in digits[::-1]])
-        )
+        encoded = "".join(chars[d] for d in digits[::-1])
+        return encoded[-2:] if smallest else encoded
 
     def is_user_installed(self, ctx: commands.Context) -> bool:
         if not ctx.interaction:

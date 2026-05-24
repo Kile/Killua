@@ -69,8 +69,9 @@ class TestingContext:
         return message
 
     async def defer(self, *args, **kwargs) -> None:
-        """Defers the interaction response"""
-        ...
+        """Defers the interaction response when a slash/context-menu interaction is attached."""
+        if self.interaction is not None and hasattr(self.interaction, "response"):
+            await self.interaction.response.defer(*args, **kwargs)
 
     async def invoke(self, command: str, *args, **kwargs) -> None:
         """Invokes a command"""

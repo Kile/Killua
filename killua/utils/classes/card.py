@@ -34,6 +34,9 @@ class CardNotFound(Exception):
     pass
 
 
+BOOK_COMPLETION_CARD_ID = 0
+
+
 class Card:
     """A class preventing a circular import by providing the bare minimum of methods and properties. Only used in this module"""
 
@@ -54,6 +57,10 @@ class Card:
 
     cache: ClassVar[dict[int, Card]] = {}  # Cached objects
     cached_raw: ClassVar[list[tuple[str, int]]] = []  # String to int ID mapping
+
+    @classmethod
+    def is_book_completion_card(cls, card_id: int) -> bool:
+        return card_id == BOOK_COMPLETION_CARD_ID
 
     @classmethod
     def _should_ignore(cls, cached: Type[Card]) -> bool:
@@ -310,6 +317,8 @@ class Card:
             raise CheckFailure("You don't have any space in your free slots left!")
 
     async def _is_valid_card_check(self, card_id: int) -> None:
+        if self.is_book_completion_card(card_id):
+            raise CheckFailure("Specified card is invalid!")
         try:
             Card(card_id)
         except CardNotFound:

@@ -383,9 +383,6 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         elif target.lower() in LANGS:
             target = LANGS[target.lower()]
 
-        if hasattr(ctx, "invoked_by_context_menu") and ctx.interaction:
-            await ctx.interaction.response.defer()
-
         if (
             target not in LANGS.values() and not hasattr(ctx, "invoked_by_context_menu")
         ) or (source not in LANGS.values()):
@@ -493,7 +490,10 @@ class SmallCommands(commands.GroupCog, group_name="misc"):
         )
 
     @check()
-    @commands.hybrid_command(extras={"category": Category.FUN, "id": 90}, usage="poll")
+    @commands.hybrid_command(
+        extras={"category": Category.FUN, "id": 90, "no_interaction_defer": True},
+        usage="poll",
+    )
     async def poll(self, ctx: commands.Context):
         """Creates a poll"""
         if not ctx.interaction:
