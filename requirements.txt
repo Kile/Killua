@@ -1,5 +1,5 @@
 aiohappyeyeballs==2.5.0
-aiohttp==3.13.5
+aiohttp==3.14.0
 aiosignal==1.4.0
 async-timeout==5.0.1
 attrs==25.2.0
