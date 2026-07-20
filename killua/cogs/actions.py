@@ -12,6 +12,9 @@ from killua.static.enums import Category, PrintColors
 from killua.utils.interactions import View
 from killua.static.constants import ACTIONS, KILLUA_BADGES, LIMITED_HUGS_ENDPOINT
 
+# nekos.best requires APP_NAME (CONTACT_INFO); library defaults are blocked
+NEKOS_BEST_HEADERS = {"User-Agent": "Killua (https://killua.dev)"}
+
 
 class ActionException(Exception):
     def __init__(self, message: str):
@@ -129,7 +132,9 @@ class Actions(commands.GroupCog, group_name="action"):
             APIException: If the API returns an error
         """
 
-        r = await self.session.get(f"https://nekos.best/api/v2/{endpoint}")
+        r = await self.session.get(
+            f"https://nekos.best/api/v2/{endpoint}", headers=NEKOS_BEST_HEADERS
+        )
         if r.status == 200:
             res = await r.json()
 
